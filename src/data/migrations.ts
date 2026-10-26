@@ -26,6 +26,7 @@ export function migrateState(value: unknown): AppState {
     sleepPlan: {
       ...initial.sleepPlan,
       ...candidate.sleepPlan,
+      paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
