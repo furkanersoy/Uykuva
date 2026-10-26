@@ -1,6 +1,11 @@
 import { CareEvent, FeedingForecast } from "./types";
 import { median } from "./sleep";
 
+export const TRACKED_ALLERGENS = [
+  "Gluten içeren tahıllar", "Kabuklular", "Yumurta", "Balık", "Yer fıstığı", "Soya", "Süt",
+  "Sert kabuklu yemişler", "Kereviz", "Hardal", "Susam", "Sülfit", "Acı bakla", "Yumuşakçalar"
+] as const;
+
 export function completedFeedMinutes(event: CareEvent): number {
   if (event.kind !== "feed" || !event.endedAt) return 0;
   return Math.max(0, Math.round((new Date(event.endedAt).getTime() - new Date(event.startedAt).getTime()) / 60_000));
