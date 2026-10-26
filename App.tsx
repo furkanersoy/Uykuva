@@ -330,7 +330,14 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   if (bedtimeTarget) {
     const [bedtimeHour, bedtimeMinute] = app.state.sleepPlan.bedtime.split(":").map(Number);
     bedtimeTarget.setHours(bedtimeHour!, bedtimeMinute!, 0, 0);
+    if (bedtimeTarget.getTime() <= now.getTime()) bedtimeTarget.setDate(bedtimeTarget.getDate() + 1);
   }
+  const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
+  if (forecast.available && forecast.start && forecast.end) agenda.push({ id: "next-sleep", at: forecast.start, endAt: forecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Kayıt ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
+  if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı beslenme aralığı", detail: "Açlık işaretleri ve bebeğinizin ihtiyacı her zaman önceliklidir." });
+  if (bedtimeTarget && bedtimeTarget.getTime() <= careWindowEnd) agenda.push({ id: "bedtime", at: bedtimeTarget, kind: "bedtime", label: "Hedef yatış", detail: "Uyku planınızdaki esnek hedef saat." });
+  nextCareTasks.forEach((task) => agenda.push({ id: task.id, at: new Date(task.dueAt), kind: "care", label: task.title, detail: task.type === "vaccine" ? "Aşı" : "Randevu", task }));
+  agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
   if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
@@ -341,20 +348,12 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         {app.runningSleep ? <Text style={styles.awake}>{wakeEstimate.available && wakeEstimate.from && wakeEstimate.typical && wakeEstimate.to ? `Benzer uykulara göre olası uyanma ${time(wakeEstimate.from)}–${time(wakeEstimate.to)} (ortanca ${time(wakeEstimate.typical)}). ${wakeEstimate.sampleCount} kayıt.` : wakeEstimate.explanation}</Text> : null}
         {!app.runningSleep && forecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{forecast.awakeMinutes} dakikadır uyanık</Text> : null}
       </Card>
+      <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
       <Card>
-        <View style={styles.cardTopline}><Text style={styles.eyebrow}>SIRADAKİ BESLENME</Text><Text style={styles.confidence}>{feedingForecast.confidence === "high" ? "Kişisel ritim" : "Kayıtlardan"}</Text></View>
-        <Text style={styles.feedForecast}>{feedingForecast.available ? `${time(feedingForecast.start)}–${time(feedingForecast.end)}` : "Ritim öğreniliyor"}</Text>
-        <Text style={styles.body}>{feedingForecast.explanation}</Text>
-      </Card>
-      <SectionTitle title="Önümüzdeki 24 saat" action={`${nextCareTasks.length} bakım işi`} />
-      <Card>
-        <View style={styles.eventRow}>
-          <View style={[styles.eventDot, { backgroundColor: colors.lavender }]} />
-          <View style={styles.flex}><Text style={styles.eventTitle}>Bu akşam hedef yatış</Text><Text style={styles.muted}>Uyku planınızdaki hedef saat · değiştirilebilir</Text></View>
-          <Text style={styles.taskDate}>{time(bedtimeTarget)}</Text>
-        </View>
-        {nextCareTasks.length ? nextCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />) : <Text style={styles.body}>Bu aralıkta yaklaşan aşı veya randevu kaydı yok.</Text>}
-        <Text style={styles.hint}>Aşı ve randevu tarihlerini hekiminizle belirleyin. Yatış saati bir hedeftir; bebeğinizin işaretlerine göre esnetebilirsiniz.</Text>
+        {agenda.length ? agenda.map((item) => item.task
+          ? <CareTaskRow key={item.id} task={item.task} onToggle={() => app.toggleCareTask(item.task!.id)} onDelete={() => app.deleteCareTask(item.task!.id)} />
+          : <View key={item.id} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: item.kind === "sleep" ? colors.sage : item.kind === "feed" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{item.label}</Text><Text style={styles.muted}>{item.detail}</Text></View><Text style={styles.taskDate}>{time(item.at)}{item.endAt ? `–${time(item.endAt)}` : ""}</Text></View>) : <Text style={styles.body}>Kişisel tahmin için kayıtlar öğreniliyor. Uyku ve beslenme kaydı ekledikçe olası aralıklar burada görünür.</Text>}
+        <Text style={styles.hint}>Uyku ve beslenme aralıkları tahmindir; kesin program değildir. Aşı ve randevu tarihlerini sağlık uzmanınızla belirleyin.</Text>
       </Card>
 
       <SectionTitle title="Hızlı kayıt" />
