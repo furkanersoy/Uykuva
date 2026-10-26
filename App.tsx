@@ -20,7 +20,7 @@ import * as Sharing from "expo-sharing";
 import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
-import { createDataExport } from "./src/domain/export";
+import { createDataExport, parseDataExport } from "./src/domain/export";
 import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
@@ -80,6 +80,7 @@ export default function App() {
   const [vaccineSuggestionsOpen, setVaccineSuggestionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
   const [eventEditor, setEventEditor] = useState<CareEvent | null>(null);
@@ -156,7 +157,7 @@ export default function App() {
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
-        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} />}
+        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
 
         <View style={styles.nav}>
           {tabs.map((item) => (
@@ -172,6 +173,7 @@ export default function App() {
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
+      <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentBabyName={app.state.baby.name} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
     </SafeAreaView>
@@ -516,7 +518,7 @@ function Measure({ value, label }: { value: string; label: string }) {
   return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
 }
 
-function FamilyScreen({ app, onEditProfile, onAddCaregiver }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void }) {
+function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onRestoreData: () => void }) {
   const summary = handoffSummary(app.state);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
   const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
@@ -571,9 +573,32 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver }: { app: ReturnType<
         {app.state.preferences.careTaskRemindersEnabled ? <><Text style={styles.inputLabel}>Ne zaman hatırlatılsın?</Text><View style={styles.choiceRow}>{([{ minutes: 30, label: "30 dk" }, { minutes: 120, label: "2 saat" }, { minutes: 1440, label: "1 gün" }] as const).map(({ minutes, label }) => <Pill key={minutes} label={label} active={app.state.preferences.careTaskReminderMinutes === minutes} onPress={() => app.updatePreferences({ careTaskReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Hatırlatmalar sessiz saatlere denk gelirse sessiz dönem bitiminde, görev saatinden önce gönderilir.</Text></> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
-      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini okunabilir JSON biçiminde paylaşabilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Verilerimi dışa aktar" quiet onPress={() => void Share.share({ title: "Uykuva veri dışa aktarımı", message: createDataExport(app.state) })} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
+      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini JSON yedeği olarak paylaşabilir, daha sonra geri yükleyebilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Verilerimi dışa aktar" quiet onPress={() => void Share.share({ title: "Uykuva veri dışa aktarımı", message: createDataExport(app.state) })} /><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini geri yükle" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
     </ScrollView>
   );
+}
+
+function DataRestoreModal({ visible, close, currentBabyName, restore }: { visible: boolean; close: () => void; currentBabyName: string; restore: ReturnType<typeof useUykuvaState>["restoreData"] }) {
+  const [raw, setRaw] = useState("");
+  useEffect(() => { if (visible) setRaw(""); }, [visible]);
+  if (!visible) return null;
+  const reviewBackup = () => {
+    let restored;
+    try {
+      restored = parseDataExport(raw.trim());
+    } catch (error) {
+      return Alert.alert("Yedeği okuyamadım", error instanceof Error ? error.message : "JSON içeriğini ve yedek biçimini kontrol edin.");
+    }
+    Alert.alert(
+      "Yedek geri yüklensin mi?",
+      `${restored.baby.name} profiliyle ${restored.events.length} bakım kaydı ve ${restored.careTasks.length} aşı/randevu yüklenecek. Bu cihazdaki ${currentBabyName} verilerinin yerini alacak. İsterseniz önce mevcut verileri dışa aktarın.`,
+      [
+        { text: "Vazgeç", style: "cancel" },
+        { text: "Yedeği geri yükle", style: "destructive", onPress: () => { restore(restored); setRaw(""); close(); } }
+      ]
+    );
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini geri yükle</Text><Text style={styles.pageIntro}>Daha önce “Verilerimi dışa aktar” ile oluşturduğunuz Uykuva JSON metnini kopyalayıp buraya yapıştırın. Yedek bu cihazdaki kayıtların yerini alır.</Text><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve geri yükle" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
