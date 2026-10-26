@@ -50,3 +50,37 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur; tıbbi değerlendirme veya doz önerisi değildir.");
   return lines.join("\n");
 }
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[character] ?? character);
+}
+
+export function createDoctorSummaryHtml(state: AppState, now = new Date()): string {
+  const lines = createDoctorSummary(state, now).split("\n");
+  const [title, subtitle, prepared, ...details] = lines;
+  const detailMarkup = details.map((line) => {
+    if (!line.trim()) return "";
+    if (line.endsWith(":")) return `<h2>${escapeHtml(line)}</h2>`;
+    if (line.startsWith("- ")) return `<p class="bullet">• ${escapeHtml(line.slice(2))}</p>`;
+    return `<p>${escapeHtml(line)}</p>`;
+  }).join("\n");
+  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    @page { size: A4; margin: 18mm 16mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263631; font-size: 12px; line-height: 1.55; }
+    header { border-bottom: 2px solid #718b7c; padding-bottom: 12px; margin-bottom: 18px; }
+    h1 { font-size: 22px; margin: 0 0 5px; color: #3e594d; }
+    .subtitle { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+    .prepared { color: #66746d; font-size: 10px; margin: 0; }
+    h2 { font-size: 13px; margin: 15px 0 4px; color: #3e594d; }
+    p { margin: 5px 0; }
+    .bullet { padding-left: 12px; }
+    .notice { margin-top: 22px; border-top: 1px solid #d9e0dc; padding-top: 10px; font-size: 10px; color: #66746d; }
+  </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva bakım özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
+}
+
