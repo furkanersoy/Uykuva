@@ -66,6 +66,13 @@ export type SleepPlanDayRecord = {
   totalTasks: number;
 };
 
+export type SleepPlanRun = {
+  id: string;
+  startDate: string;
+  completedDate: string;
+  days: SleepPlanDayRecord[];
+};
+
 export type SleepPlan = {
   method: SleepMethod;
   focus: SleepFocus;
@@ -79,6 +86,7 @@ export type SleepPlan = {
   routine: RoutineStep[];
   completedToday: string[];
   completedDays: SleepPlanDayRecord[];
+  completedRuns: SleepPlanRun[];
   readinessCompleted: string[];
   checkIns: SleepCheckIn[];
 };
