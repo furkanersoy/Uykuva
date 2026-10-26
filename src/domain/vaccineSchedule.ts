@@ -4,6 +4,18 @@ export type VaccineMilestone = {
   title: string;
 };
 
+export const TURKEY_VACCINE_SCHEDULE_BASE_VERSION = "2025";
+export const TURKEY_VACCINE_SCHEDULE_UPDATE_DATE = "2026-09-01";
+export const TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE = "https://hatayism.saglik.gov.tr/TR-391851/cocukluk-donemi-asilama-takviminde-yeni-duzenleme.html";
+
+export function completedAgeMonths(birthDate: string, now = new Date()) {
+  const birth = new Date(`${birthDate}T12:00:00`);
+  if (Number.isNaN(birth.getTime())) return -1;
+  let months = (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth();
+  if (now.getDate() < birth.getDate()) months -= 1;
+  return Math.max(0, months);
+}
+
 // Suggested tracking dates based on the Ministry's 2025 national schedule.
 // The second varicella dose at 48 months was added from 1 September 2026.
 export const TURKEY_CHILDHOOD_VACCINE_MILESTONES: VaccineMilestone[] = [
