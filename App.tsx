@@ -309,6 +309,21 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
     if (!routineLabel.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 60) return Alert.alert("Adımı kontrol edin", "Bir ad ve 1–60 dakika arasında süre yazın.");
     app.addRoutineStep(routineLabel, minutes); setRoutineLabel(""); setRoutineMinutes("5");
   };
+  const sharePlan = () => {
+    const enabledRoutine = app.state.sleepPlan.routine.filter((item) => item.enabled);
+    const message = [
+      `Uykuva · ${app.state.baby.name} için uyku planı`,
+      `Yaklaşım: ${methodDescription(app.state.sleepPlan.method).name}`,
+      `Bugünkü rehber: ${plan.title}`,
+      `Hedef yatış: ${app.state.sleepPlan.bedtime} · Sabah başlangıcı: ${app.state.sleepPlan.wakeTime}`,
+      "Akşam rutini:",
+      ...enabledRoutine.map((item, index) => `${index + 1}. ${item.label} (${item.minutes} dk)`),
+      "Bugünün adımları:",
+      ...plan.tasks.map((task) => `• ${task}`),
+      "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
+    ].join("\n");
+    void Share.share({ title: `${app.state.baby.name} için uyku planı`, message });
+  };
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Uyku planı</Text>
@@ -323,6 +338,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <Text style={styles.heroSmall}>{plan.focus}</Text>
         <Text style={styles.body}>{methodDescription(app.state.sleepPlan.method).support}</Text>
       </Card>
+      <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
       <SectionTitle title="Kayıtlardan öneri" action={`${insights.nightsUsed} gece`} />
       <Card>
         <View style={styles.measureRow}><Measure value={insights.actualBedtime ?? "—"} label="Gerçek medyan" /><Measure value={insights.targetBedtime} label="Hedef" /><Measure value={insights.suggestedBedtime} label="Bu gece" /></View>
