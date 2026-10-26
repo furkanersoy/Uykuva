@@ -152,6 +152,12 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - Doğum tarihi
 - Gebelik haftası
 
+### `Caregiver`
+
+- Kimlik, görünen ad ve ebeveyn/aile/bakıcı rolü
+- Aktif bakım veren kimliği
+- Yeni bakım kayıtlarında kullanılan bakım veren adı
+
 ### `CareEvent`
 
 - Uyku, beslenme, bez veya bakım notu türü
@@ -209,6 +215,9 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Gecelik değişimi 15 dakika ile sınırlayan yatış önerisi eklendi.
 - [x] Düzenlenebilir hedef yatış ve sabah saatleri eklendi.
 - [x] Açılıp kapatılabilen, ekleme ve silme destekli kişisel akşam rutini eklendi.
+- [x] Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri eklendi.
+- [x] Aktif bakım veren değiştirme ve seçilen kişi adına kayıt ekleme eklendi.
+- [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -216,7 +225,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 - [ ] Bakım kayıtlarını ayrı SQLite tablolarına taşıma ve ayrıntılı veri göçleri
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
-- [ ] Gerçek bakım veren daveti, roller ve erişim kaldırma
+- [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
 - [ ] Gelişmiş bildirim tercihleri ve görev hatırlatmaları
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [ ] WHO büyüme grafikleri
@@ -273,3 +282,4 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
+
