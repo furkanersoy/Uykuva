@@ -123,6 +123,8 @@ uykuva:state:v3
 
 Eski `v1` AsyncStorage kaydı ilk açılışta okunur, yeni şemayla birleştirilir ve SQLite deposuna taşınır. Gerçek çoklu cihaz senkronizasyonundan önce her bakım kaydı ayrı bir SQLite satırı/değiştirilemez olay olarak modellenmelidir.
 
+Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema sürümü taşıyan JSON'a dönüştürür. `parseDataExport` boyutu, biçimi ve temel profil/kayıt yapılarını doğrular; `migrateState` veriyi geçerli şemaya birleştirir. Kullanıcı mevcut verinin yerini alacağını onayladıktan sonra durum SQLite anahtarına kaydedilir. Yedekler otomatik olarak sunucuya gönderilmez.
+
 ## 6. Uyku tahmin motoru
 
 Tahmin motorunun mevcut davranışı:
