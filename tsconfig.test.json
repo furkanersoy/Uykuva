@@ -11,6 +11,6 @@
     "rootDir": "src",
     "outDir": ".test-build"
   },
-  "include": ["src/domain/**/*.ts"],
+  "include": ["src/domain/**/*.ts", "src/data/seed.ts", "src/data/migrations.ts", "src/data/storage.test.ts"],
   "exclude": ["node_modules"]
 }

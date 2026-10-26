@@ -14,6 +14,8 @@ export function createInitialState(): AppState {
   const sleep3 = iso(7.1, 48);
   const sleep4 = iso(10.4, 55);
   return {
+    schemaVersion: 2,
+    onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
     events: [
@@ -37,7 +39,14 @@ export function createInitialState(): AppState {
         { id: "r4", label: "Kısa kitap veya ninni", minutes: 10, enabled: true },
         { id: "r5", label: "Yatağa geçiş", minutes: 5, enabled: true }
       ],
-      completedToday: []
+      completedToday: [],
+      checkIns: []
+    },
+    preferences: {
+      notificationsEnabled: false,
+      sleepReminderMinutes: 15,
+      quietStart: "21:00",
+      quietEnd: "07:00"
     }
   };
 }

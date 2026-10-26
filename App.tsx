@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -8,14 +9,16 @@ import {
   Share,
   StatusBar,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View
 } from "react-native";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
-import { useUykvuaState } from "./src/app/useUykvuaState";
+import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, createSleepForecast, handoffSummary, methodDescription } from "./src/domain/sleep";
 import { CareEvent, SleepMethod } from "./src/domain/types";
+import { cancelSleepReminders, requestNotificationPermission, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -49,10 +52,27 @@ function eventTitle(event: CareEvent) {
 }
 
 export default function App() {
-  const app = useUykvuaState();
+  const app = useUykuvaState();
   const [tab, setTab] = useState<Tab>("today");
   const [logMode, setLogMode] = useState<LogMode>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events), [app.state.baby, app.state.events]);
+
+  useEffect(() => {
+    if (!app.hydrated || !app.state.onboardingComplete) return;
+    if (!app.state.preferences.notificationsEnabled) {
+      void cancelSleepReminders();
+      return;
+    }
+    void scheduleSleepReminder(
+      app.state.baby.name,
+      forecast,
+      app.state.preferences.sleepReminderMinutes
+    );
+  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, forecast]);
+
+  if (!app.hydrated) return <LoadingScreen />;
+  if (!app.state.onboardingComplete) return <OnboardingScreen onComplete={app.completeOnboarding} />;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -61,17 +81,17 @@ export default function App() {
       <View style={styles.shell}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.brand}>uykvua</Text>
+            <Text style={styles.brand}>uykuva</Text>
             <Text style={styles.headerSub}>{app.state.baby.name} · bugün</Text>
           </View>
-          <Pressable style={styles.avatar}><Text style={styles.avatarText}>D</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
         </View>
 
         {tab === "today" && <TodayScreen app={app} forecast={forecast} openLog={setLogMode} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen events={app.state.events} />}
-        {tab === "family" && <FamilyScreen summary={handoffSummary(app.state)} />}
+        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} />}
 
         <View style={styles.nav}>
           {tabs.map((item) => (
@@ -83,11 +103,66 @@ export default function App() {
         </View>
       </View>
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} add={app.addSimpleEvent} />
+      <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
     </SafeAreaView>
   );
 }
 
-function TodayScreen({ app, forecast, openLog }: { app: ReturnType<typeof useUykvuaState>; forecast: ReturnType<typeof createSleepForecast>; openLog: (mode: LogMode) => void }) {
+function LoadingScreen() {
+  return <SafeAreaView style={[styles.safe, styles.center]}><ActivityIndicator color={colors.sageDark} /><Text style={styles.loadingText}>Uykuva hazırlanıyor…</Text></SafeAreaView>;
+}
+
+function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUykuvaState>["completeOnboarding"] }) {
+  const defaultBirth = new Date();
+  defaultBirth.setDate(defaultBirth.getDate() - 120);
+  const [step, setStep] = useState<"welcome" | "profile">("welcome");
+  const [babyName, setBabyName] = useState("");
+  const [caregiverName, setCaregiverName] = useState("");
+  const [birthDate, setBirthDate] = useState(defaultBirth.toISOString().slice(0, 10));
+  const [gestationalWeek, setGestationalWeek] = useState("40");
+
+  if (step === "welcome") {
+    return (
+      <SafeAreaView style={styles.onboarding}>
+        <View style={styles.onboardingMark}><Text style={styles.onboardingMoon}>☾</Text></View>
+        <Text style={styles.onboardingBrand}>uykuva</Text>
+        <Text style={styles.onboardingTitle}>Bebeğinizin ritmi, herkesin elinde.</Text>
+        <Text style={styles.onboardingBody}>Uyku, beslenme ve günlük bakım kayıtlarını sakin bir akışta tutun. Tüm özellikler ücretsiz.</Text>
+        <View style={styles.onboardingBottom}><PrimaryButton label="Başlayalım" onPress={() => setStep("profile")} /><Text style={styles.privacyLine}>Verileriniz şimdilik yalnızca bu cihazda saklanır.</Text></View>
+      </SafeAreaView>
+    );
+  }
+
+  const submit = () => {
+    const week = Number(gestationalWeek);
+    const birth = new Date(`${birthDate}T12:00:00`);
+    if (!babyName.trim() || !caregiverName.trim()) return Alert.alert("Eksik bilgi", "Bebek ve bakım veren adını yazın.");
+    if (Number.isNaN(birth.getTime()) || birth.getTime() > Date.now()) return Alert.alert("Tarihi kontrol edin", "Doğum tarihini YYYY-AA-GG biçiminde ve geçmiş bir tarih olarak yazın.");
+    if (!Number.isInteger(week) || week < 22 || week > 42) return Alert.alert("Haftayı kontrol edin", "Gebelik haftası 22–42 arasında olmalı.");
+    onComplete({ babyName, caregiverName, birthDate, gestationalWeek: week });
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.formPage} keyboardShouldPersistTaps="handled">
+        <Text style={styles.eyebrow}>İLK KURULUM</Text><Text style={styles.pageTitle}>Sizi tanıyalım</Text>
+        <Text style={styles.pageIntro}>Bu bilgiler yaşa uygun uyku aralıklarını hesaplamak ve kayıtları kimin eklediğini göstermek için kullanılır.</Text>
+        <Field label="Bebeğin adı" value={babyName} onChangeText={setBabyName} placeholder="Örn. Deniz" />
+        <Field label="Doğum tarihi" value={birthDate} onChangeText={setBirthDate} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" />
+        <Field label="Doğduğu gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} placeholder="40" keyboardType="number-pad" />
+        <Field label="Bakım veren adı veya rolü" value={caregiverName} onChangeText={setCaregiverName} placeholder="Örn. Anne, Baba, Ece" />
+        <Card tone="peach"><Text style={styles.cardTitle}>Önemli sınır</Text><Text style={styles.body}>Uykuva kayıt ve genel rutin desteği sunar; tıbbi tanı veya tedavi sağlamaz. Sağlık endişesinde uzmanınıza danışın.</Text></Card>
+        <PrimaryButton label="Profili oluştur" onPress={submit} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function Field({ label, ...props }: { label: string } & ComponentProps<typeof TextInput>) {
+  return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} style={styles.input} placeholderTextColor="#93A09C" /></View>;
+}
+
+function TodayScreen({ app, forecast, openLog }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; openLog: (mode: LogMode) => void }) {
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[forecast.confidence];
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
@@ -116,7 +191,7 @@ function TodayScreen({ app, forecast, openLog }: { app: ReturnType<typeof useUyk
 
       <SectionTitle title="Son kayıtlar" action="Tümünü gör" />
       <Card>{app.state.events.slice(0, 4).map((event) => <EventRow key={event.id} event={event} />)}</Card>
-      <Text style={styles.disclaimer}>Uykvua tıbbi tanı veya tedavi önermez. Endişeniz varsa sağlık uzmanınıza başvurun.</Text>
+      <Text style={styles.disclaimer}>Uykuva tıbbi tanı veya tedavi önermez. Endişeniz varsa sağlık uzmanınıza başvurun.</Text>
     </ScrollView>
   );
 }
@@ -131,9 +206,11 @@ function TimelineScreen({ events, onDelete }: { events: CareEvent[]; onDelete: (
   );
 }
 
-function CoachScreen({ app }: { app: ReturnType<typeof useUykvuaState> }) {
+function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const plan = coachingDay(app.state.sleepPlan.day, app.state.sleepPlan.method);
   const methods: SleepMethod[] = ["responsive", "gradual", "camping"];
+  const today = new Date().toISOString().slice(0, 10);
+  const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Uyku planı</Text>
@@ -160,7 +237,11 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykvuaState> }) {
       </Card>
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
       <Card>{app.state.sleepPlan.routine.filter((item) => item.enabled).map((item, index) => <View key={item.id} style={styles.routineRow}><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></View>)}</Card>
-      <Card tone="peach"><Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text></Card>
+      <Card tone="peach">
+        <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
+        <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
+        <Text style={styles.easeLabels}><Text>Zordu</Text><Text>                                      Kolaydı</Text></Text>
+      </Card>
       <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
     </ScrollView>
@@ -189,16 +270,69 @@ function InsightsScreen({ events }: { events: CareEvent[] }) {
   );
 }
 
-function FamilyScreen({ summary }: { summary: string }) {
+function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void }) {
+  const summary = handoffSummary(app.state);
+  const toggleNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ notificationsEnabled: false });
+      await cancelSleepReminders();
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ notificationsEnabled: true });
+  };
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
-      <Card tone="mint"><Text style={styles.cardTitle}>Anne · yönetici</Text><Text style={styles.body}>Tüm kayıtları görebilir ve düzenleyebilir.</Text></Card>
+      <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.caregiverName} · bu cihaz</Text><Text style={styles.body}>{app.state.baby.name} profilinin kayıtlarını yönetiyor.</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Düzenle</Text></Pressable></View></Card>
       <Card><Text style={styles.cardTitle}>Baba · bakım veren</Text><Text style={styles.body}>Kayıt ekleyebilir ve ortak akışı görebilir.</Text></Card>
       <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
       <View style={styles.spacer12} />
       <PrimaryButton label="Bakım veren davet et" quiet onPress={() => Alert.alert("Yakında", "Güvenli davet bağlantıları bulut senkronizasyonuyla birlikte eklenecek.")} />
+      <SectionTitle title="Hatırlatmalar" />
+      <Card>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
+      </Card>
     </ScrollView>
+  );
+}
+
+function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
+  const [babyName, setBabyName] = useState(app.state.baby.name);
+  const [caregiverName, setCaregiverName] = useState(app.state.caregiverName);
+  const [birthDate, setBirthDate] = useState(app.state.baby.birthDate);
+  const [gestationalWeek, setGestationalWeek] = useState(String(app.state.baby.gestationalWeek));
+
+  useEffect(() => {
+    if (!visible) return;
+    setBabyName(app.state.baby.name); setCaregiverName(app.state.caregiverName);
+    setBirthDate(app.state.baby.birthDate); setGestationalWeek(String(app.state.baby.gestationalWeek));
+  }, [visible, app.state.baby, app.state.caregiverName]);
+
+  const save = () => {
+    const week = Number(gestationalWeek);
+    const birth = new Date(`${birthDate}T12:00:00`);
+    if (!babyName.trim() || !caregiverName.trim() || Number.isNaN(birth.getTime()) || birth > new Date() || !Number.isInteger(week) || week < 22 || week > 42) {
+      return Alert.alert("Bilgileri kontrol edin", "Adları, doğum tarihini ve 22–42 arasındaki gebelik haftasını kontrol edin.");
+    }
+    app.updateProfile({ ...app.state.baby, name: babyName.trim(), birthDate, gestationalWeek: week }, caregiverName);
+    close();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+      <Pressable style={styles.backdrop} onPress={close} />
+      <ScrollView style={styles.sheet} keyboardShouldPersistTaps="handled">
+        <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Profili düzenle</Text>
+        <Field label="Bebeğin adı" value={babyName} onChangeText={setBabyName} />
+        <Field label="Doğum tarihi" value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
+        <Field label="Gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} keyboardType="number-pad" />
+        <Field label="Bakım veren" value={caregiverName} onChangeText={setCaregiverName} />
+        <PrimaryButton label="Değişiklikleri kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
+      </ScrollView>
+    </Modal>
   );
 }
 
@@ -220,7 +354,7 @@ function Stat({ value, label, tone }: { value: string; label: string; tone: "whi
   return <View style={styles.stat}><Card tone={tone}><Text style={styles.statValue}>{value}</Text><Text style={styles.muted}>{label}</Text></Card></View>;
 }
 
-function QuickLogModal({ mode, close, add }: { mode: LogMode; close: () => void; add: ReturnType<typeof useUykvuaState>["addSimpleEvent"] }) {
+function QuickLogModal({ mode, close, add }: { mode: LogMode; close: () => void; add: ReturnType<typeof useUykuvaState>["addSimpleEvent"] }) {
   const [amount, setAmount] = useState("90");
   const [note, setNote] = useState("");
   if (!mode) return null;
@@ -242,6 +376,17 @@ function QuickLogModal({ mode, close, add }: { mode: LogMode; close: () => void;
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper, paddingTop: StatusBar.currentHeight ?? 0 },
+  center: { alignItems: "center", justifyContent: "center" },
+  loadingText: { color: colors.inkSoft, fontSize: 13, marginTop: 12 },
+  onboarding: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 26, paddingTop: 80 },
+  onboardingMark: { width: 74, height: 74, borderRadius: 26, backgroundColor: colors.mint, alignItems: "center", justifyContent: "center" },
+  onboardingMoon: { color: colors.sageDark, fontSize: 38 },
+  onboardingBrand: { color: colors.sageDark, fontSize: 18, fontWeight: "800", letterSpacing: 2, marginTop: 28 },
+  onboardingTitle: { color: colors.ink, fontSize: 38, lineHeight: 44, fontWeight: "800", letterSpacing: -1.5, marginTop: 16 },
+  onboardingBody: { color: colors.inkSoft, fontSize: 16, lineHeight: 25, marginTop: 16 },
+  onboardingBottom: { marginTop: "auto", paddingBottom: 28 },
+  privacyLine: { color: colors.inkSoft, fontSize: 11, textAlign: "center", marginTop: 13 },
+  formPage: { paddingHorizontal: 22, paddingTop: 28, paddingBottom: 40 },
   shell: { flex: 1, backgroundColor: colors.paper },
   header: { height: 72, paddingHorizontal: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   brand: { color: colors.ink, fontSize: 25, fontWeight: "800", letterSpacing: -1.2 },
@@ -264,6 +409,7 @@ const styles = StyleSheet.create({
   quickLabel: { color: colors.ink, fontSize: 11, fontWeight: "700" },
   cardTitle: { color: colors.ink, fontSize: 17, fontWeight: "700", marginBottom: 6 },
   spacer12: { height: 12 },
+  spacer24: { height: 24 },
   disclaimer: { color: colors.inkSoft, fontSize: 11, lineHeight: 17, textAlign: "center", paddingHorizontal: 16, marginVertical: 20 },
   pageTitle: { color: colors.ink, fontSize: 30, fontWeight: "800", letterSpacing: -1.2, marginTop: 10 },
   pageIntro: { color: colors.inkSoft, fontSize: 14, lineHeight: 21, marginTop: 6, marginBottom: 20 },
@@ -282,6 +428,12 @@ const styles = StyleSheet.create({
   taskTextDone: { color: colors.inkSoft, textDecorationLine: "line-through" },
   routineRow: { flexDirection: "row", alignItems: "center", minHeight: 48 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
+  easeRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
+  easeButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: "rgba(255,255,255,.58)", alignItems: "center", justifyContent: "center" },
+  easeButtonActive: { backgroundColor: colors.sageDark },
+  easeText: { color: colors.ink, fontWeight: "700" },
+  easeTextActive: { color: "white" },
+  easeLabels: { color: colors.inkSoft, fontSize: 10, marginTop: 7 },
   statGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
   stat: { width: "50%", paddingHorizontal: 5 },
   statValue: { color: colors.ink, fontSize: 24, fontWeight: "800", letterSpacing: -0.7 },
@@ -294,7 +446,10 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.paper, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
   sheetHandle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.line, alignSelf: "center", marginBottom: 4 },
   inputLabel: { color: colors.inkSoft, fontSize: 12, fontWeight: "700", marginTop: 20, marginBottom: 7 },
+  field: { marginBottom: 2 },
   input: { minHeight: 52, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: "white", paddingHorizontal: 15, color: colors.ink, fontSize: 17 },
   noteInput: { height: 100, paddingTop: 14, textAlignVertical: "top", marginBottom: 14 },
-  choiceRow: { flexDirection: "row", marginTop: 16, flexWrap: "wrap" }
+  choiceRow: { flexDirection: "row", marginTop: 16, flexWrap: "wrap", rowGap: 8 },
+  settingRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  editLink: { color: colors.sageDark, fontSize: 13, fontWeight: "700" }
 });

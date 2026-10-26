@@ -1,23 +1,37 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import LegacyStorage from "@react-native-async-storage/async-storage";
+import Storage from "expo-sqlite/kv-store";
 import { AppState } from "../domain/types";
 import { createInitialState } from "./seed";
+import { migrateState } from "./migrations";
 
-const STORAGE_KEY = "uykvua:state:v1";
+const STORAGE_KEY = "uykuva:state:v2";
+const MISSPELLED_V2_KEY = "uykvua:state:v2";
+const LEGACY_KEY = "uykvua:state:v1";
 
 export async function loadState(): Promise<AppState> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  if (!raw) return createInitialState();
+  const raw = await Storage.getItem(STORAGE_KEY);
   try {
-    return JSON.parse(raw) as AppState;
+    if (raw) return migrateState(JSON.parse(raw));
+    const misspelledV2 = await Storage.getItem(MISSPELLED_V2_KEY);
+    const legacy = misspelledV2 ?? await LegacyStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const migrated = migrateState(JSON.parse(legacy));
+      await Storage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      await Storage.removeItem(MISSPELLED_V2_KEY);
+      return migrated;
+    }
+    return createInitialState();
   } catch {
     return createInitialState();
   }
 }
 
 export async function saveState(state: AppState) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  await Storage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 export async function resetState() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await Storage.removeItem(STORAGE_KEY);
+  await Storage.removeItem(MISSPELLED_V2_KEY);
+  await LegacyStorage.removeItem(LEGACY_KEY);
 }

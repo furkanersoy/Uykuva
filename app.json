@@ -1,19 +1,23 @@
 {
   "expo": {
-    "name": "Uykvua",
-    "slug": "uykvua",
+    "name": "Uykuva",
+    "slug": "uykuva",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.uykvua.app"
+      "bundleIdentifier": "com.uykuva.app"
     },
     "android": {
-      "package": "com.uykvua.app",
+      "package": "com.uykuva.app",
       "adaptiveIcon": {
         "backgroundColor": "#F7F5F1"
       }
-    }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-notifications"
+    ]
   }
 }

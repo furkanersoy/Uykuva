@@ -1,6 +1,6 @@
-# Uykvua
+# Uykuva
 
-Uykvua, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
+Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
 
 ## Mevcut özellikler
 
@@ -11,7 +11,10 @@ Uykvua, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
 - Akşam rutini ve günlük görevler
 - Günlük bakım özeti
-- Çevrimdışı cihaz içi saklama
+- İlk kurulum ve düzenlenebilir bebek/bakım veren profili
+- SQLite tabanlı çevrimdışı cihaz içi saklama
+- İsteğe bağlı uyku penceresi bildirimleri
+- Uyku planı için günlük kolaylık değerlendirmesi
 
 Uygulama tıbbi tanı veya tedavi önermez.
 

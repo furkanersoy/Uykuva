@@ -1,10 +1,10 @@
-# Uykvua — Ürün ve Teknik Mimari
+# Uykuva — Ürün ve Teknik Mimari
 
 Son güncelleme: 26 Ekim 2026
 
 ## 1. Ürün amacı
 
-Uykvua, 0–18 aylık bebeği olan ebeveyn ve bakım verenlerin günlük bakımı tek yerde yönetmesini amaçlayan, çevrimdışı çalışabilen bir mobil uygulamadır.
+Uykuva, 0–18 aylık bebeği olan ebeveyn ve bakım verenlerin günlük bakımı tek yerde yönetmesini amaçlayan, çevrimdışı çalışabilen bir mobil uygulamadır.
 
 Ürünün üç temel sorusu vardır:
 
@@ -29,7 +29,7 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | --- | --- | --- |
 | Mobil | Expo SDK 58, React Native 0.88 | iOS ve Android için ortak kod tabanı |
 | Dil | TypeScript | Veri modeli ve özelliklerde tip güvenliği |
-| Yerel saklama | AsyncStorage | İlk sürümde cihaz içi kalıcılık |
+| Yerel saklama | Expo SQLite KV Store | Cihaz içi kalıcılık ve sürümlü veri geçişi |
 | Test | TypeScript derleyicisi + Node test runner | Uyku motorunu arayüzden bağımsız test etme |
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
@@ -44,8 +44,9 @@ SleepWell/
 ├── package.json                    # Komutlar ve bağımlılıklar
 ├── src/
 │   ├── app/
-│   │   └── useUykvuaState.ts       # Uygulama durumu ve kullanıcı eylemleri
+│   │   └── useUykuvaState.ts       # Uygulama durumu ve kullanıcı eylemleri
 │   ├── data/
+│   │   ├── migrations.ts           # Eski cihaz verileri için şema geçişleri
 │   │   ├── seed.ts                 # Geliştirme başlangıç verisi
 │   │   └── storage.ts              # Cihaz içi yükleme/kaydetme
 │   ├── domain/
@@ -55,6 +56,8 @@ SleepWell/
 │   └── ui/
 │       ├── components.tsx          # Ortak kart, buton ve etiket bileşenleri
 │       └── theme.ts                # Renkler ve görsel token'lar
+│   └── services/
+│       └── notifications.ts        # İzin ve uyku hatırlatması planlama
 └── ARCHITECTURE.md                 # Bu doküman
 ```
 
@@ -72,7 +75,7 @@ SleepWell/
 
 ### Uygulama durumu
 
-`useUykvuaState`, ekranların doğrudan depolama sistemiyle konuşmasını engeller. Şu eylemleri sağlar:
+`useUykuvaState`, ekranların doğrudan depolama sistemiyle konuşmasını engeller. Şu eylemleri sağlar:
 
 - Yeni bakım kaydı ekleme
 - Uyku sayacını başlatma ve bitirme
@@ -96,13 +99,13 @@ Ana fonksiyonlar:
 
 ### Veri katmanı
 
-İlk sürümde tüm durum tek bir sürümlü anahtarla AsyncStorage içinde tutulur:
+Mevcut sürümde tüm durum SQLite destekli anahtar-değer deposunda sürümlü bir anahtarla tutulur:
 
 ```text
-uykvua:state:v1
+uykuva:state:v2
 ```
 
-Bu seçim prototip için yeterlidir. Gerçek çoklu cihaz senkronizasyonundan önce veri deposu SQLite'a taşınmalı ve her bakım kaydı değiştirilemez bir olay olarak modellenmelidir.
+Eski `v1` AsyncStorage kaydı ilk açılışta okunur, yeni şemayla birleştirilir ve SQLite deposuna taşınır. Gerçek çoklu cihaz senkronizasyonundan önce her bakım kaydı ayrı bir SQLite satırı/değiştirilemez olay olarak modellenmelidir.
 
 ## 6. Uyku tahmin motoru
 
@@ -167,7 +170,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 ## 9. Şu ana kadar yapılanlar
 
 - [x] Expo/React Native TypeScript projesi oluşturuldu.
-- [x] Uykvua marka adı ve paket kimlikleri tanımlandı.
+- [x] Uykuva marka adı ve paket kimlikleri tanımlandı.
 - [x] Sakin, gece kullanımına uygun temel tasarım sistemi oluşturuldu.
 - [x] Bugün ekranı ve açıklanabilir uyku kartı eklendi.
 - [x] Uyku başlatma/bitirme işlemi eklendi.
@@ -181,16 +184,20 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Akşam rutini veri modeli ve görünümü eklendi.
 - [x] Günlük uyku, beslenme ve bez özeti eklendi.
 - [x] Cihaz içinde otomatik veri saklama eklendi.
+- [x] Gerçek ilk kurulum ve profil düzenleme akışı eklendi.
+- [x] SQLite KV Store'a geçiş ve eski veri migrasyonu eklendi.
+- [x] İsteğe bağlı yerel uyku penceresi bildirimi eklendi.
+- [x] Bildirim süresi seçimi (5–30 dakika) eklendi.
+- [x] Uyku planı sabah kolaylık değerlendirmesi eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
 ## 10. Henüz tamamlanmayanlar
 
-- [ ] Gerçek kullanıcı onboarding'i ve bebek profili düzenleme
-- [ ] SQLite tabanlı güçlü çevrimdışı depo ve veri göçleri
+- [ ] Bakım kayıtlarını ayrı SQLite tablolarına taşıma ve ayrıntılı veri göçleri
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
 - [ ] Gerçek bakım veren daveti, roller ve erişim kaldırma
-- [ ] Yerel bildirimler ve sessiz saatler
+- [ ] Sessiz saatler ve gelişmiş bildirim tercihleri
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [ ] WHO büyüme grafikleri
 - [ ] Türkiye aşı takvimi
@@ -206,14 +213,13 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 ## 11. Sonraki geliştirme sırası
 
-1. Kurulum/onboarding ve profil yönetimi
-2. SQLite veri deposu ve güvenilir zamanlayıcılar
-3. Yerel bildirimler, sessiz saatler ve tahmin hatırlatmaları
-4. Aile hesabı, davet ve çevrimdışı senkronizasyon
-5. Büyüme, aşı ve doktor raporu
-6. Widget, Live Activity ve sesli kayıt
-7. İçerik/uyku planlarının uzman doğrulaması
-8. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
+1. Bakım kayıtlarını normalize SQLite tablolarına ayırma
+2. Sessiz saatler ve güvenilir zamanlayıcılar
+3. Aile hesabı, davet ve çevrimdışı senkronizasyon
+4. Büyüme, aşı ve doktor raporu
+5. Widget, Live Activity ve sesli kayıt
+6. İçerik/uyku planlarının uzman doğrulaması
+7. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
 
 ## 12. Güvenlik ve mevzuat notları
 
@@ -243,7 +249,7 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 26 Ekim 2026 tarihinde:
 
 - `npm.cmd run typecheck`: başarılı
-- `npm.cmd test`: 5/5 test başarılı
+- `npm.cmd test`: 6/6 test başarılı
 - `npx.cmd expo-doctor`: 20/20 kontrol başarılı
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 

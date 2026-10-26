@@ -36,13 +36,31 @@ export type SleepPlan = {
   wakeTime: string;
   routine: RoutineStep[];
   completedToday: string[];
+  checkIns: SleepCheckIn[];
+};
+
+export type SleepCheckIn = {
+  date: string;
+  ease: 1 | 2 | 3 | 4 | 5;
+  nightWakings?: number;
+  note?: string;
+};
+
+export type AppPreferences = {
+  notificationsEnabled: boolean;
+  sleepReminderMinutes: 5 | 10 | 15 | 20 | 30;
+  quietStart: string;
+  quietEnd: string;
 };
 
 export type AppState = {
+  schemaVersion: 2;
+  onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
   events: CareEvent[];
   sleepPlan: SleepPlan;
+  preferences: AppPreferences;
 };
 
 export type SleepForecast = {

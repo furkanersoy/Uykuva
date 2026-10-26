@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppState, CareEvent, EventKind, SleepMethod } from "../domain/types";
+import { AppPreferences, AppState, Baby, CareEvent, EventKind, SleepCheckIn, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
 import { loadState, saveState } from "../data/storage";
 
@@ -7,20 +7,46 @@ function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export function useUykvuaState() {
+export function useUykuvaState() {
   const [state, setState] = useState<AppState>(createInitialState);
   const [hydrated, setHydrated] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadState().then((saved) => {
-      setState(saved);
-      setHydrated(true);
-    });
+    loadState()
+      .then((saved) => setState(saved))
+      .catch(() => setStorageError("Kayıtlar bu açılışta yüklenemedi."))
+      .finally(() => setHydrated(true));
   }, []);
 
   useEffect(() => {
-    if (hydrated) void saveState(state);
+    if (hydrated) {
+      void saveState(state).catch(() => setStorageError("Değişiklik cihazınıza kaydedilemedi."));
+    }
   }, [hydrated, state]);
+
+  const completeOnboarding = useCallback((profile: { babyName: string; birthDate: string; gestationalWeek: number; caregiverName: string }) => {
+    setState((current) => ({
+      ...current,
+      onboardingComplete: true,
+      baby: {
+        ...current.baby,
+        name: profile.babyName.trim(),
+        birthDate: profile.birthDate,
+        gestationalWeek: profile.gestationalWeek
+      },
+      caregiverName: profile.caregiverName.trim(),
+      events: []
+    }));
+  }, []);
+
+  const updateProfile = useCallback((baby: Baby, caregiverName: string) => {
+    setState((current) => ({ ...current, baby, caregiverName: caregiverName.trim() }));
+  }, []);
+
+  const updatePreferences = useCallback((patch: Partial<AppPreferences>) => {
+    setState((current) => ({ ...current, preferences: { ...current.preferences, ...patch } }));
+  }, []);
 
   const addEvent = useCallback((event: Omit<CareEvent, "id" | "caregiver" | "startedAt"> & { startedAt?: string }) => {
     setState((current) => ({
@@ -86,6 +112,16 @@ export function useUykvuaState() {
     }));
   }, []);
 
+  const saveCheckIn = useCallback((checkIn: SleepCheckIn) => {
+    setState((current) => ({
+      ...current,
+      sleepPlan: {
+        ...current.sleepPlan,
+        checkIns: [checkIn, ...current.sleepPlan.checkIns.filter((item) => item.date !== checkIn.date)]
+      }
+    }));
+  }, []);
+
   const runningSleep = useMemo(
     () => state.events.find((event) => event.kind === "sleep" && !event.endedAt),
     [state.events]
@@ -98,13 +134,18 @@ export function useUykvuaState() {
   return {
     state,
     hydrated,
+    storageError,
     runningSleep,
+    completeOnboarding,
+    updateProfile,
+    updatePreferences,
     addEvent,
     addSimpleEvent,
     toggleSleep,
     deleteEvent,
     setMethod,
     toggleTask,
-    advancePlan
+    advancePlan,
+    saveCheckIn
   };
 }
