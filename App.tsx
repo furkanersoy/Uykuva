@@ -479,7 +479,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const napPattern = compareNapPatterns(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
-  const today = localDateValue(new Date());
+  const today = localDateValue(now);
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
   const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
@@ -532,6 +532,14 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   };
   const sharePlan = () => {
     const enabledRoutine = app.state.sleepPlan.routine.filter((item) => item.enabled);
+    const shareCheckIns = app.state.sleepPlan.checkIns
+      .filter((item) => item.date >= localDateValue(oldestNight) && item.date <= today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(-7);
+    const comparisonLines = planCheckInComparison.available ? [
+      `Kolaylık karşılaştırması (ilk 3 / son 3 plan günü): ${planCheckInComparison.firstEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.firstEaseAverage.toFixed(1)}/5`} / ${planCheckInComparison.recentEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.recentEaseAverage.toFixed(1)}/5`}`,
+      `Gece uyanma ortalaması: ${planCheckInComparison.firstWakingsAverage === undefined ? "ilk dönemde kayıt yok" : planCheckInComparison.firstWakingsAverage.toFixed(1)} / ${planCheckInComparison.recentWakingsAverage === undefined ? "son dönemde kayıt yok" : planCheckInComparison.recentWakingsAverage.toFixed(1)} (5+ uyanma sayıları ortalamaya katılmaz)`
+    ] : [];
     const message = [
       `Uykuva · ${app.state.baby.name} için uyku planı`,
       `Yaş aşaması: ${stage.label}`,
@@ -543,6 +551,8 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       "Akşam rutini:",
       ...enabledRoutine.map((item, index) => `${index + 1}. ${item.label} (${item.minutes} dk)`),
       ...(!app.state.sleepPlan.paused && !programCompleted ? ["Bugünün adımları:", ...plan.tasks.map((task) => `• ${task}`)] : []),
+      ...comparisonLines,
+      ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
     void Share.share({ title: `${app.state.baby.name} için uyku planı`, message });
