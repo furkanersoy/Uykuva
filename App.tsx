@@ -28,6 +28,7 @@ import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
+import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -229,6 +230,7 @@ function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUyk
   const [caregiverName, setCaregiverName] = useState("");
   const [birthDate, setBirthDate] = useState(defaultBirth.toISOString().slice(0, 10));
   const [gestationalWeek, setGestationalWeek] = useState("40");
+  const [growthChartSex, setGrowthChartSex] = useState<"female" | "male" | undefined>();
 
   if (step === "welcome") {
     return (
@@ -248,7 +250,7 @@ function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUyk
     if (!babyName.trim() || !caregiverName.trim()) return Alert.alert("Eksik bilgi", "Bebek ve bakım veren adını yazın.");
     if (Number.isNaN(birth.getTime()) || birth.getTime() > Date.now()) return Alert.alert("Tarihi kontrol edin", "Doğum tarihini YYYY-AA-GG biçiminde ve geçmiş bir tarih olarak yazın.");
     if (!Number.isInteger(week) || week < 22 || week > 42) return Alert.alert("Haftayı kontrol edin", "Gebelik haftası 22–42 arasında olmalı.");
-    onComplete({ babyName, caregiverName, birthDate, gestationalWeek: week });
+    onComplete({ babyName, caregiverName, birthDate, gestationalWeek: week, growthChartSex });
   };
 
   return (
@@ -259,6 +261,9 @@ function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUyk
         <Field label="Bebeğin adı" value={babyName} onChangeText={setBabyName} placeholder="Örn. Deniz" />
         <Field label="Doğum tarihi" value={birthDate} onChangeText={setBirthDate} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" />
         <Field label="Doğduğu gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} placeholder="40" keyboardType="number-pad" />
+        <Text style={styles.inputLabel}>WHO büyüme eğrisi (isteğe bağlı)</Text>
+        <View style={styles.choiceRow}><Pill label="Kız çocuk" active={growthChartSex === "female"} onPress={() => setGrowthChartSex("female")} /><Pill label="Erkek çocuk" active={growthChartSex === "male"} onPress={() => setGrowthChartSex("male")} /><Pill label="Atla" active={!growthChartSex} onPress={() => setGrowthChartSex(undefined)} /></View>
+        <Text style={styles.hint}>Seçim yapılmazsa persentil gösterilmez. WHO standartları büyüme eğrisini bu bilgiye göre ayırır.</Text>
         <Field label="Bakım veren adı veya rolü" value={caregiverName} onChangeText={setCaregiverName} placeholder="Örn. Anne, Baba, Ece" />
         <Card tone="peach"><Text style={styles.cardTitle}>Önemli sınır</Text><Text style={styles.body}>Uykuva kayıt ve genel rutin desteği sunar; tıbbi tanı veya tedavi sağlamaz. Sağlık endişesinde uzmanınıza danışın.</Text></Card>
         <PrimaryButton label="Profili oluştur" onPress={submit} />
@@ -648,7 +653,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
       <MilkStockCard events={events} now={now} update={app.updateEvent} />
-      <GrowthHistoryCard measurements={growthMeasurements} />
+      <GrowthHistoryCard measurements={growthMeasurements} baby={app.state.baby} />
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
@@ -703,18 +708,55 @@ function Measure({ value, label }: { value: string; label: string }) {
   return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
 }
 
-function GrowthHistoryCard({ measurements }: { measurements: CareEvent[] }) {
+function GrowthMetricChart({ indicator, measurements, baby }: { indicator: GrowthIndicator; measurements: CareEvent[]; baby: ReturnType<typeof useUykuvaState>["state"]["baby"] }) {
+  const [width, setWidth] = useState(0);
+  const entries = [...measurements].sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+    .map((event) => ({ event, score: whoGrowthScore(baby, event, indicator) }))
+    .filter((item): item is { event: CareEvent; score: GrowthScore } => Boolean(item.score));
+  const label = { weight: "Kilo · kg", length: "Boy · cm", head: "Baş çevresi · cm" }[indicator];
+  if (!entries.length) return null;
+  const plotHeight = 106, left = 28, right = 8, top = 8;
+  const minAge = entries[0]!.score.ageDays, maxAge = entries.at(-1)!.score.ageDays;
+  const points = entries.map((item, index) => ({
+    ...item,
+    x: left + (maxAge === minAge ? (width - left - right) / 2 : (width - left - right) * (item.score.ageDays - minAge) / (maxAge - minAge)),
+    y: top + (plotHeight - top) * (1 - (Math.max(-3, Math.min(3, item.score.z)) + 3) / 6)
+  }));
+  const guides = [{ z: 1.2816, label: "P90" }, { z: 0, label: "P50" }, { z: -1.2816, label: "P10" }];
+  return <View style={styles.growthChartBlock}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <View style={styles.growthChart} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+      {guides.map((guide) => { const y = top + (plotHeight - top) * (1 - (guide.z + 3) / 6); return <View key={guide.label} style={[styles.growthGuide, { top: y, left, right }]}><Text style={styles.growthGuideLabel}>{guide.label}</Text></View>; })}
+      {points.slice(1).map((point, index) => {
+        const previous = points[index]!; const dx = point.x - previous.x; const dy = point.y - previous.y;
+        const length = Math.sqrt(dx * dx + dy * dy); const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        return <View key={`line-${point.event.id}`} style={[styles.growthLine, { left: (previous.x + point.x - length) / 2, top: (previous.y + point.y) / 2, width: length, transform: [{ rotate: `${angle}deg` }] }]} />;
+      })}
+      {points.map((point) => <View key={point.event.id} style={[styles.growthPoint, { left: point.x - 4, top: point.y - 4 }]} />)}
+    </View>
+    <View style={styles.growthChartDates}><Text style={styles.muted}>{growthAgeLabel(baby, entries[0]!.event)}</Text><Text style={styles.muted}>{growthAgeLabel(baby, entries.at(-1)!.event)}</Text></View>
+    <Text style={styles.hint}>Son ölçüm: P{Math.round(entries.at(-1)!.score.percentile)} · z {entries.at(-1)!.score.z.toFixed(1)}</Text>
+  </View>;
+}
+
+function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; baby: ReturnType<typeof useUykuvaState>["state"]["baby"] }) {
   if (!measurements.length) return null;
   const rows = measurements.slice(0, 8);
   return <>
     <SectionTitle title="Büyüme geçmişi" action={`${measurements.length} ölçüm`} />
     <Card tone="mint">
+      {baby.growthChartSex ? <>
+        <Text style={styles.cardTitle}>WHO büyüme eğrileri · {baby.growthChartSex === "female" ? "Kız çocuk" : "Erkek çocuk"}</Text>
+        <GrowthMetricChart indicator="weight" measurements={measurements} baby={baby} />
+        <GrowthMetricChart indicator="length" measurements={measurements} baby={baby} />
+        <GrowthMetricChart indicator="head" measurements={measurements} baby={baby} />
+      </> : <Text style={styles.hint}>WHO persentil eğrilerini görmek için Profil’den kız/erkek çocuk eğrisini seçin. Seçim yapmadan da ölçümlerinizi kaydedebilirsiniz.</Text>}
       {rows.map((event) => <View key={event.id} style={styles.growthHistoryRow}>
         <Text style={styles.muted}>{new Date(event.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}</Text>
         <View style={styles.measureRow}><Measure value={event.weightG ? `${event.weightG} g` : "—"} label="Kilo" /><Measure value={event.lengthCm ? `${event.lengthCm} cm` : "—"} label="Boy" /><Measure value={event.headCm ? `${event.headCm} cm` : "—"} label="Baş" /></View>
       </View>)}
       {measurements.length > rows.length ? <Text style={styles.hint}>Son 8 ölçüm gösteriliyor.</Text> : null}
-      <Text style={styles.hint}>Yalnızca sizin girdiğiniz değerlerdir; persentil veya büyüme değerlendirmesi değildir.</Text>
+      <Text style={styles.hint}>WHO eğrileri 0–5 yaş standardını gösterir; tek bir persentil tıbbi değerlendirme veya tanı değildir. Ölçüm değişimini çocuk sağlığı uzmanıyla birlikte değerlendirin.</Text>
     </Card>
   </>;
 }
@@ -853,11 +895,12 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
   const [caregiverName, setCaregiverName] = useState(app.state.caregiverName);
   const [birthDate, setBirthDate] = useState(app.state.baby.birthDate);
   const [gestationalWeek, setGestationalWeek] = useState(String(app.state.baby.gestationalWeek));
+  const [growthChartSex, setGrowthChartSex] = useState<"female" | "male" | undefined>(app.state.baby.growthChartSex);
 
   useEffect(() => {
     if (!visible) return;
     setBabyName(app.state.baby.name); setCaregiverName(app.state.caregiverName);
-    setBirthDate(app.state.baby.birthDate); setGestationalWeek(String(app.state.baby.gestationalWeek));
+    setBirthDate(app.state.baby.birthDate); setGestationalWeek(String(app.state.baby.gestationalWeek)); setGrowthChartSex(app.state.baby.growthChartSex);
   }, [visible, app.state.baby, app.state.caregiverName]);
 
   const save = () => {
@@ -866,7 +909,7 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
     if (!babyName.trim() || !caregiverName.trim() || Number.isNaN(birth.getTime()) || birth > new Date() || !Number.isInteger(week) || week < 22 || week > 42) {
       return Alert.alert("Bilgileri kontrol edin", "Adları, doğum tarihini ve 22–42 arasındaki gebelik haftasını kontrol edin.");
     }
-    app.updateProfile({ ...app.state.baby, name: babyName.trim(), birthDate, gestationalWeek: week }, caregiverName);
+    app.updateProfile({ ...app.state.baby, name: babyName.trim(), birthDate, gestationalWeek: week, growthChartSex }, caregiverName);
     close();
   };
 
@@ -878,6 +921,8 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
         <Field label="Bebeğin adı" value={babyName} onChangeText={setBabyName} />
         <Field label="Doğum tarihi" value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
         <Field label="Gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} keyboardType="number-pad" />
+        <Text style={styles.inputLabel}>WHO büyüme eğrisi (isteğe bağlı)</Text><View style={styles.choiceRow}><Pill label="Kız çocuk" active={growthChartSex === "female"} onPress={() => setGrowthChartSex("female")} /><Pill label="Erkek çocuk" active={growthChartSex === "male"} onPress={() => setGrowthChartSex("male")} /><Pill label="Atla" active={!growthChartSex} onPress={() => setGrowthChartSex(undefined)} /></View>
+        <Text style={styles.hint}>Bu seçim yalnızca WHO büyüme eğrisi karşılaştırması içindir.</Text>
         <Field label="Bakım veren" value={caregiverName} onChangeText={setCaregiverName} />
         <PrimaryButton label="Değişiklikleri kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
       </ScrollView>
@@ -1086,6 +1131,7 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
   const [dose, setDose] = useState("");
   const [weight, setWeight] = useState("");
   const [length, setLength] = useState("");
+  const [lengthPosition, setLengthPosition] = useState<"recumbent" | "standing">(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
   const [head, setHead] = useState("");
   const [memoryTitle, setMemoryTitle] = useState("");
   if (!mode) return null;
@@ -1107,7 +1153,7 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
     const lengthCm = Number(length.replace(",", "."));
     const headCm = Number(head.replace(",", "."));
     if (![weightG, lengthCm, headCm].some((value) => Number.isFinite(value) && value > 0)) return Alert.alert("En az bir ölçüm yazın", "Kilo, boy veya baş çevresinden en az biri gerekli.");
-    save({ weightG: weightG > 0 ? weightG : undefined, lengthCm: lengthCm > 0 ? lengthCm : undefined, headCm: headCm > 0 ? headCm : undefined });
+    save({ weightG: weightG > 0 ? weightG : undefined, lengthCm: lengthCm > 0 ? lengthCm : undefined, lengthPosition: lengthCm > 0 ? lengthPosition : undefined, headCm: headCm > 0 ? headCm : undefined });
   };
   const saveSolidMeal = () => {
     const list = foods.split(",").map((item) => item.trim()).filter(Boolean);
@@ -1147,7 +1193,7 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
           <PrimaryButton label="Sağlık kaydını ekle" onPress={saveHealth} />
           <Text style={styles.disclaimer}>Uykuva miktar veya tekrar zamanı önermez; yalnızca yazdığınız bilgiyi saklar.</Text>
         </> : null}
-        {mode === "growth" ? <><Field label="Kilo (gram)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="Örn. 6450" /><Field label="Boy (cm)" value={length} onChangeText={setLength} keyboardType="decimal-pad" placeholder="Örn. 63,5" /><Field label="Baş çevresi (cm)" value={head} onChangeText={setHead} keyboardType="decimal-pad" placeholder="Örn. 41" /><PrimaryButton label="Ölçümü kaydet" onPress={saveGrowth} /></> : null}
+        {mode === "growth" ? <><Field label="Kilo (gram)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="Örn. 6450" /><Field label="Boy (cm)" value={length} onChangeText={setLength} keyboardType="decimal-pad" placeholder="Örn. 63,5" /><Text style={styles.inputLabel}>Boy nasıl ölçüldü?</Text><View style={styles.choiceRow}><Pill label="Yatarak" active={lengthPosition === "recumbent"} onPress={() => setLengthPosition("recumbent")} /><Pill label="Ayakta" active={lengthPosition === "standing"} onPress={() => setLengthPosition("standing")} /></View><Text style={styles.hint}>WHO eğrisinde yaşa göre 0,7 cm dönüşümü için kullanılır.</Text><Field label="Baş çevresi (cm)" value={head} onChangeText={setHead} keyboardType="decimal-pad" placeholder="Örn. 41" /><PrimaryButton label="Ölçümü kaydet" onPress={saveGrowth} /></> : null}
         <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} />
       </ScrollView>
     </Modal>
@@ -1270,6 +1316,13 @@ const styles = StyleSheet.create({
   measure: { flex: 1 },
   measureValue: { color: colors.ink, fontSize: 18, fontWeight: "800" },
   growthHistoryRow: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.line },
+  growthChartBlock: { marginTop: 12 },
+  growthChart: { height: 112, position: "relative", marginTop: 2 },
+  growthGuide: { height: 1, position: "absolute", borderTopWidth: 1, borderStyle: "dashed", borderColor: colors.line },
+  growthGuideLabel: { position: "absolute", left: -28, top: -8, width: 24, color: colors.inkSoft, fontSize: 9 },
+  growthLine: { position: "absolute", height: 2, backgroundColor: colors.sageDark },
+  growthPoint: { position: "absolute", width: 8, height: 8, borderRadius: 4, backgroundColor: colors.sageDark, borderWidth: 1, borderColor: colors.paper },
+  growthChartDates: { flexDirection: "row", justifyContent: "space-between", marginLeft: 28 },
   dualButtons: { flexDirection: "row", gap: 10, marginBottom: 14 },
   dualButton: { flex: 1 },
   taskDate: { color: colors.ink, fontSize: 12, fontWeight: "700" },
@@ -1304,3 +1357,4 @@ const styles = StyleSheet.create({
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.sage },
   radioActive: { borderWidth: 6, borderColor: colors.sageDark }
 });
+

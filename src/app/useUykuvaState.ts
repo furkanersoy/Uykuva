@@ -38,7 +38,7 @@ export function useUykuvaState() {
     }
   }, [hydrated, storageReady, state]);
 
-  const completeOnboarding = useCallback((profile: { babyName: string; birthDate: string; gestationalWeek: number; caregiverName: string }) => {
+  const completeOnboarding = useCallback((profile: { babyName: string; birthDate: string; gestationalWeek: number; caregiverName: string; growthChartSex?: "female" | "male" }) => {
     setState((current) => ({
       ...current,
       onboardingComplete: true,
@@ -46,7 +46,8 @@ export function useUykuvaState() {
         ...current.baby,
         name: profile.babyName.trim(),
         birthDate: profile.birthDate,
-        gestationalWeek: profile.gestationalWeek
+        gestationalWeek: profile.gestationalWeek,
+        growthChartSex: profile.growthChartSex
       },
       caregiverName: profile.caregiverName.trim(),
       caregivers: [{ id: "caregiver-1", name: profile.caregiverName.trim(), role: "parent" }],
@@ -322,3 +323,4 @@ export function useUykuvaState() {
     clearAllData
   };
 }
+

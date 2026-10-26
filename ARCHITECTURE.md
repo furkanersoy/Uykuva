@@ -141,7 +141,7 @@ Akşam rutini adımları ebeveyn tarafından etkinleştirilip devre dışı bır
 
 Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir; gelişim zamanlaması veya değerlendirmesi sunulmaz.
 
-Büyüme geçmişi, kaydedilen son sekiz kilo/boy/baş çevresi ölçümünü tarihle listeler; persentil hesabı veya normatif yorum yapmaz.
+Büyüme geçmişi son sekiz kilo/boy/baş çevresi ölçümünü tarihle gösterir. İsteğe bağlı WHO eğrisi seçimiyle `src/domain/whoGrowth.ts`, WHO Anthro'nun resmî deposundaki günlük LMS tablolarından (0–1826 gün) z-skoru ve persentil hesaplar; küçük grafikler P10/P50/P90 referans çizgileri ve ölçüm noktalarını gösterir. Boy ölçümünde yatış/ayakta bilgisi saklanır ve yaşa uymayan ölçüm konumunda WHO'nun 0,7 cm düzeltmesi uygulanır. WHO verileri `src/data/{weianthro,lenanthro,hcanthro}.json` dosyalarında tutulur. Kaynak: [WHO Anthro büyüme standartları hesaplama deposu](https://github.com/WorldHealthOrganization/anthro). Eğriler bilgilendirme amaçlıdır; tıbbi yorum veya tanı oluşturmaz.
 
 Gece uyanması rehberi yaş aşamasına göre ayrılır: yeni doğanda destek ve ihtiyaçlara yanıt, hazırlık döneminde tutarlı rutin, hazır oluş koşulları tamamlandığında ise seçili yaklaşımın adımları gösterilir. Beslenme ihtiyacını ertelemeyi veya ağlamayı görmezden gelmeyi önermeyen kısa yol gösterimi sunar. Bir yaş altı için güvenli uyku notu, [AAP HealthyChildren rehberindeki](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx) sırtüstü, sert/düz yüzey ve boş uyku alanı ilkelerine bağlanır. Bebeğin farklı bireysel ihtiyaçları için metin klinik değerlendirme yerine geçmez.
 
@@ -278,7 +278,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
 - [ ] Gelişmiş bildirim tercihleri (tekrarlayan görevler ve ayrıntılı zamanlama seçenekleri)
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
-- [ ] WHO büyüme grafikleri
+- [x] WHO 0–5 yaş kilo, boy ve baş çevresi z-skor tablolarıyla persentil eğrileri; kız/erkek eğrisi profilde isteğe bağlı seçilir
 - [ ] Aşı takvimi kaynak sürümleme ve hekim yönlendirmeli eksik doz/49–72 ay yakalama akışı
 - [ ] Ek gıda ve alerjen günlüğü
 - [ ] Sesli Türkçe kayıt
@@ -292,7 +292,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 1. Görev hatırlatmaları ve güvenilir zamanlayıcılar; görev verilerini normalize SQLite tablosuna taşıma
 2. Aile hesabı, davet ve çevrimdışı senkronizasyon
-3. WHO büyüme grafikleri ve ek dozlar için hekim yönlendirmeli aşı akışı
+3. Ek dozlar için hekim yönlendirmeli aşı akışı
 4. Widget, Live Activity ve sesli kayıt
 5. İçerik/uyku planlarının uzman doğrulaması
 6. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
@@ -330,3 +330,4 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
+

@@ -11,6 +11,7 @@ export type Baby = {
   name: string;
   birthDate: string;
   gestationalWeek: number;
+  growthChartSex?: "female" | "male";
 };
 
 export type CareEvent = {
@@ -38,6 +39,7 @@ export type CareEvent = {
   weightG?: number;
   lengthCm?: number;
   headCm?: number;
+  lengthPosition?: "recumbent" | "standing";
   note?: string;
   memoryTitle?: string;
   caregiver: string;
@@ -130,3 +132,4 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
+

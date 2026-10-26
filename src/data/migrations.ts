@@ -17,7 +17,11 @@ export function migrateState(value: unknown): AppState {
     ...candidate,
     schemaVersion: 3,
     onboardingComplete: candidate.onboardingComplete ?? true,
-    baby: { ...initial.baby, ...candidate.baby },
+    baby: {
+      ...initial.baby,
+      ...candidate.baby,
+      growthChartSex: candidate.baby?.growthChartSex === "female" || candidate.baby?.growthChartSex === "male" ? candidate.baby.growthChartSex : undefined
+    },
     caregiverName,
     caregivers,
     activeCaregiverId: caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id,
@@ -43,3 +47,4 @@ export function migrateState(value: unknown): AppState {
     }
   };
 }
+

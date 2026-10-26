@@ -44,6 +44,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Uyku planı hazır oluş kontrol listesi
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
 - Son sekiz büyüme ölçümünü tarih sırasıyla karşılaştırma
+- İsteğe bağlı WHO 0–5 yaş kilo, boy ve baş çevresi eğrileri; z-skoru/persentil özeti ve ölçüm konumu düzeltmesi
 - Paylaşılabilir yedi günlük doktor özeti
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
@@ -66,6 +67,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 
 Uygulama tıbbi tanı veya tedavi önermez.
 
+WHO büyüme tabloları WHO Anthro'nun [resmî kaynak deposundan](https://github.com/WorldHealthOrganization/anthro) alınmıştır. Eğriler bilgilendirme amaçlıdır; ölçümlerin klinik değerlendirmesi için çocuk sağlığı uzmanına başvurun.
+
 ## Kurulum
 
 ```powershell
@@ -83,3 +86,4 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
+
