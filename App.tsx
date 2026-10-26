@@ -362,6 +362,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping"] : ["responsive"];
   const today = localDateValue(new Date());
+  const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const [bedtime, setBedtime] = useState(app.state.sleepPlan.bedtime);
   const [wakeTime, setWakeTime] = useState(app.state.sleepPlan.wakeTime);
@@ -471,7 +472,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <TextInput value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
       </Card>
-      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />}
+      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : app.state.sleepPlan.day >= 14 ? <Text style={styles.pausedMessage}>14 günlük rehber tamamlandı. Uyku ve check-in kayıtlarınızı tutmaya devam edebilirsiniz.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bugünkü plan adımını tamamladınız. Yarın kaldığınız yerden devam edebilirsiniz.</Text> : <PrimaryButton label="Günü tamamla" onPress={app.advancePlan} />}
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
       <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
     </ScrollView>
