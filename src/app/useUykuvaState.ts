@@ -186,6 +186,17 @@ export function useUykuvaState() {
     }));
   }, []);
 
+  const moveRoutineStep = useCallback((stepId: string, direction: -1 | 1) => {
+    setState((current) => {
+      const routine = [...current.sleepPlan.routine];
+      const index = routine.findIndex((step) => step.id === stepId);
+      const destination = index + direction;
+      if (index < 0 || destination < 0 || destination >= routine.length) return current;
+      [routine[index], routine[destination]] = [routine[destination]!, routine[index]!];
+      return { ...current, sleepPlan: { ...current.sleepPlan, routine } };
+    });
+  }, []);
+
   const addRoutineStep = useCallback((label: string, minutes: number) => {
     setState((current) => ({
       ...current,
@@ -262,6 +273,7 @@ export function useUykuvaState() {
     saveCheckIn,
     updateSleepSchedule,
     toggleRoutineStep,
+    moveRoutineStep,
     addRoutineStep,
     deleteRoutineStep,
     addCareTask,
