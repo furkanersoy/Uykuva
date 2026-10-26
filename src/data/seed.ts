@@ -46,6 +46,7 @@ export function createInitialState(): AppState {
       ],
       completedToday: [],
       completedDays: [],
+      completedRuns: [],
       readinessCompleted: [],
       checkIns: []
     },
