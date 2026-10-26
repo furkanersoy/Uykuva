@@ -65,12 +65,6 @@ SleepWell/
 
 ### Sunum katmanı
 
-### Ulusal aşı takvimi önerileri
-
-`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır. `App.tsx` içindeki aşı öneri penceresi yalnızca gelecekteki önerileri gösterir; kullanıcı her birini ayrıca takvime ekler. Bu kayıtlar aşı yapıldığını göstermez. Geçmiş dozlar için telafi takvimi oluşturulmaz ve kullanıcı aile hekimine yönlendirilir.
-
-Takvim verisi Sağlık Bakanlığının 2025 ulusal takvimine dayanır. 1 Eylül 2026 tarihli güncelleme suçiçeği aşısının ikinci dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri sağlık profesyoneliyle doğrulanmalıdır.
-
 `App.tsx`, alt gezinmeyi ve beş ana alanı içerir:
 
 - **Bugün:** Sıradaki uyku aralığı, hızlı kayıt, bakım devri ve son kayıtlar.
@@ -78,6 +72,12 @@ Takvim verisi Sağlık Bakanlığının 2025 ulusal takvimine dayanır. 1 Eylül
 - **Uyku:** 14 günlük uyku planı, yaklaşım seçimi, günlük görevler ve akşam rutini.
 - **Özet:** Günlük toplamlar ve ileride eklenecek doktor raporu alanı.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
+
+### Ulusal aşı takvimi önerileri
+
+`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır. `App.tsx` içindeki aşı öneri penceresi yalnızca gelecekteki önerileri gösterir; kullanıcı her birini ayrıca takvime ekler. Bu kayıtlar aşı yapıldığını göstermez. Geçmiş dozlar için telafi takvimi oluşturulmaz ve kullanıcı aile hekimine yönlendirilir.
+
+Takvim verisi Sağlık Bakanlığının 2025 ulusal takvimine dayanır. 1 Eylül 2026 tarihli güncelleme suçiçeği aşısının ikinci dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri sağlık profesyoneliyle doğrulanmalıdır.
 
 ### Uygulama durumu
 
