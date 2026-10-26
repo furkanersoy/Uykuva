@@ -332,11 +332,17 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     bedtimeTarget.setHours(bedtimeHour!, bedtimeMinute!, 0, 0);
     if (bedtimeTarget.getTime() <= now.getTime()) bedtimeTarget.setDate(bedtimeTarget.getDate() + 1);
   }
+  const napOutline = createDailyNapOutline(app.state.events, now);
   const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
   if (forecast.available && forecast.start && forecast.end) agenda.push({ id: "next-sleep", at: forecast.start, endAt: forecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Kayıt ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
   if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı beslenme aralığı", detail: "Açlık işaretleri ve bebeğinizin ihtiyacı her zaman önceliklidir." });
   if (bedtimeTarget && bedtimeTarget.getTime() <= careWindowEnd) agenda.push({ id: "bedtime", at: bedtimeTarget, kind: "bedtime", label: "Hedef yatış", detail: "Uyku planınızdaki esnek hedef saat." });
   nextCareTasks.forEach((task) => agenda.push({ id: task.id, at: new Date(task.dueAt), kind: "care", label: task.title, detail: task.type === "vaccine" ? "Aşı" : "Randevu", task }));
+  napOutline.forEach((nap) => {
+    if (nap.actualStart || nap.typical.getTime() <= now.getTime() || nap.typical.getTime() > careWindowEnd) return;
+    if (forecast.available && forecast.end && nap.typical.getTime() <= forecast.end.getTime()) return;
+    agenda.push({ id: `nap-outline-${nap.order}`, at: nap.from.getTime() > now.getTime() ? nap.from : now, endAt: nap.to, kind: "sleep", label: `${nap.order}. gündüz uykusu taslağı`, detail: `Son 14 günde ${nap.sampleCount} günde kaydedilen saatlerin ortancası ${time(nap.typical)}; kesin program değildir.` });
+  });
   agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
   if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} />;
   return (
