@@ -166,6 +166,60 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   };
 }
 
+export type SleepWakeEstimate = {
+  available: boolean;
+  from?: Date;
+  typical?: Date;
+  to?: Date;
+  sampleCount: number;
+  explanation: string;
+};
+
+function percentile(sortedValues: number[], fraction: number) {
+  if (sortedValues.length === 1) return sortedValues[0]!;
+  const position = (sortedValues.length - 1) * fraction;
+  const lower = Math.floor(position);
+  const upper = Math.ceil(position);
+  const weight = position - lower;
+  return sortedValues[lower]! * (1 - weight) + sortedValues[upper]! * weight;
+}
+
+export function estimateSleepWakeWindow(events: CareEvent[], runningSleep?: CareEvent, now = new Date()): SleepWakeEstimate {
+  if (!runningSleep || runningSleep.kind !== "sleep" || runningSleep.endedAt) {
+    return { available: false, sampleCount: 0, explanation: "Devam eden uyku yok." };
+  }
+  const sleepStart = new Date(runningSleep.startedAt);
+  if (!Number.isFinite(sleepStart.getTime()) || sleepStart.getTime() > now.getTime()) {
+    return { available: false, sampleCount: 0, explanation: "Uyku başlangıç saati kontrol edilemiyor." };
+  }
+  const startsAtNight = (date: Date) => date.getHours() >= 18 || date.getHours() < 6;
+  const night = startsAtNight(sleepStart);
+  const cutoff = now.getTime() - 30 * DAY;
+  const durations = events.flatMap((event) => {
+    if (event.id === runningSleep.id || event.kind !== "sleep" || !event.endedAt) return [];
+    const start = new Date(event.startedAt);
+    const end = new Date(event.endedAt);
+    const duration = (end.getTime() - start.getTime()) / 60_000;
+    const inRange = night ? duration >= 120 && duration <= 900 : duration >= 20 && duration <= 240;
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start.getTime() < cutoff || start.getTime() > now.getTime() || !inRange || startsAtNight(start) !== night) return [];
+    return [{ start: start.getTime(), duration }];
+  }).sort((a, b) => b.start - a.start).slice(0, 10).map((item) => item.duration).sort((a, b) => a - b);
+
+  if (durations.length < 5) {
+    return { available: false, sampleCount: durations.length, explanation: `Benzer uyku süresi aralığı için son 30 günde en az 5 tamamlanmış kayıt gerekiyor (${durations.length}/5).` };
+  }
+  const elapsed = (now.getTime() - sleepStart.getTime()) / 60_000;
+  const projectedTime = (durationMinutes: number) => new Date(now.getTime() + Math.max(0, durationMinutes - elapsed) * 60_000);
+  return {
+    available: true,
+    from: projectedTime(percentile(durations, 0.25)),
+    typical: projectedTime(percentile(durations, 0.5)),
+    to: projectedTime(percentile(durations, 0.75)),
+    sampleCount: durations.length,
+    explanation: `Son 30 gündeki ${durations.length} benzer uykunun süre dağılımı. Bu bir alarm veya kesin uyanma saati değildir.`
+  };
+}
+
 export type CoachingDay = {
   title: string;
   focus: string;
