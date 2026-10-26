@@ -117,7 +117,7 @@ Ana fonksiyonlar:
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir.
 - `coachingDay`: Seçilen yaklaşıma göre 14 günlük planın günlük görevlerini üretir.
 - `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir.
-- `handoffSummary`: Son dört saati bakım veren için kısa bir özete dönüştürür.
+- `handoffSummary`: Son dört saatte başlayan kayıtları özetler; uyku süresini pencereyle kesişen zaman üzerinden hesaplar ve henüz bitmeyen uykuyu belirtir.
 
 ### Veri katmanı
 
