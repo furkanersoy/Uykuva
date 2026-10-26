@@ -280,12 +280,12 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <QuickAction glyph="♡" label="Anı" onPress={() => openLog("memory")} />
       </View>
 
-      <SectionTitle title="Bakım devri" action="Son 4 saat" />
+      <SectionTitle title="Bakım devri" action={`Son ${app.state.preferences.handoffHours} saat`} />
       <Card tone="peach">
         <Text style={styles.cardTitle}>Herkes aynı sayfada</Text>
-        <Text style={styles.body}>{handoffSummary(app.state)}</Text>
+        <Text style={styles.body}>{handoffSummary(app.state, new Date(), app.state.preferences.handoffHours)}</Text>
         <View style={styles.spacer12} />
-        <PrimaryButton label="Özeti paylaş" quiet onPress={() => void Share.share({ message: `${app.state.baby.name} · ${handoffSummary(app.state)}` })} />
+        <PrimaryButton label="Özeti paylaş" quiet onPress={() => void Share.share({ message: `${app.state.baby.name} · ${handoffSummary(app.state, new Date(), app.state.preferences.handoffHours)}` })} />
       </Card>
 
       <SectionTitle title="Son kayıtlar" action="Tümünü gör" />
@@ -677,7 +677,7 @@ function GrowthHistoryCard({ measurements }: { measurements: CareEvent[] }) {
 }
 
 function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onRestoreData: () => void }) {
-  const summary = handoffSummary(app.state);
+  const summary = handoffSummary(app.state, new Date(), app.state.preferences.handoffHours);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
   const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
   const toggleNotifications = async (enabled: boolean) => {
@@ -720,6 +720,11 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
         return <Pressable accessibilityRole="radio" accessibilityState={{ selected: active }} key={caregiver.id} onPress={() => app.setActiveCaregiver(caregiver.id)} onLongPress={() => { if (app.state.caregivers.length > 1) Alert.alert("Bakım vereni sil", `${caregiver.name} bu cihazdan kaldırılsın mı?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Sil", style: "destructive", onPress: () => app.deleteCaregiver(caregiver.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{caregiver.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{caregiver.name}</Text><Text style={styles.muted}>{role}{active ? " · aktif" : ""}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
       })}<View style={styles.spacer12} /><PrimaryButton label="Bu cihaza bakım veren ekle" quiet onPress={onAddCaregiver} /><Text style={styles.hint}>Kişiyi seçtiğinizde yeni kayıtlar onun adına yazılır. Silmek için basılı tutun.</Text></Card>
       <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
+      <Card>
+        <Text style={styles.cardTitle}>Bakım devri aralığı</Text>
+        <Text style={styles.body}>Paylaşılan özetin kapsayacağı süreyi aile nöbetlerinize göre seçin.</Text>
+        <View style={styles.choiceRow}>{([2, 4, 6, 8] as const).map((hours) => <Pill key={hours} label={`${hours} saat`} active={app.state.preferences.handoffHours === hours} onPress={() => app.updatePreferences({ handoffHours: hours })} />)}</View>
+      </Card>
       <View style={styles.spacer12} />
       <PrimaryButton label="Başka telefona davet et" quiet onPress={() => Alert.alert("Bulut paylaşımı yakında", "Bu cihazda birden fazla bakım veren kullanılabilir. Telefonlar arası güvenli davet, hesap senkronizasyonuyla eklenecek.")} />
       <SectionTitle title="Hatırlatmalar" />
