@@ -440,6 +440,8 @@ export type SleepCoachInsights = {
   adjustmentMinutes: number;
   checkInAverage?: number;
   nightWakingsAverage?: number;
+  routineToSleepMedianMinutes?: number;
+  routineToSleepSamples: number;
   nightsUsed: number;
 };
 
@@ -459,6 +461,31 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
       return date.getHours() * 60 + date.getMinutes();
     });
   const actual = nightStarts.length ? median(nightStarts) : undefined;
+  const routineEvents = events
+    .filter((event) => event.kind === "note" && event.endedAt && event.note?.startsWith("Akşam rutini tamamlandı"))
+    .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime());
+  const nightSleepEvents = events
+    .filter((event) => {
+      if (event.kind !== "sleep") return false;
+      const start = new Date(event.startedAt);
+      if (start.getHours() < 17) return false;
+      return !event.endedAt || (new Date(event.endedAt).getTime() - start.getTime()) / 60_000 >= 120;
+    })
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+  const matchedSleepIds = new Set<string>();
+  const routineLatencies: number[] = [];
+  for (const routine of routineEvents) {
+    const routineEnd = new Date(routine.endedAt!).getTime();
+    const sleep = nightSleepEvents.find((event) => {
+      if (matchedSleepIds.has(event.id)) return false;
+      const sleepStart = new Date(event.startedAt).getTime();
+      return sleepStart >= routineEnd && sleepStart - routineEnd <= 3 * 60 * 60 * 1000;
+    });
+    if (!sleep) continue;
+    matchedSleepIds.add(sleep.id);
+    routineLatencies.push((new Date(sleep.startedAt).getTime() - routineEnd) / 60_000);
+    if (routineLatencies.length === 7) break;
+  }
   let delta = actual === undefined ? 0 : target - actual;
   if (delta > 720) delta -= 1440;
   if (delta < -720) delta += 1440;
@@ -475,6 +502,8 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     adjustmentMinutes: adjustment,
     checkInAverage,
     nightWakingsAverage,
+    routineToSleepMedianMinutes: routineLatencies.length ? median(routineLatencies) : undefined,
+    routineToSleepSamples: routineLatencies.length,
     nightsUsed: nightStarts.length
   };
 }
