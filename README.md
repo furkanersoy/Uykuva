@@ -60,6 +60,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Biberon ve katı gıda ayrıntıları
 - Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
+- Uyku ve beslenme tahminleri, hedef yatış ve randevuları saat sırasıyla aynı 24 saatlik bakım planında görme
 - Doktor görüşmesi için yedi günlük bakım özetini PDF veya metin olarak paylaşma
 - Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri
 - Aktif bakım vereni seçme ve kayıtları seçilen kişi adına yazma
