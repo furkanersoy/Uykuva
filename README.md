@@ -56,6 +56,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Aktif bakım vereni seçme ve kayıtları seçilen kişi adına yazma
 - Kişisel uyku yaklaşımını, hedef saatleri, rutin adımlarını ve günlük rehberi bakım verenlerle paylaşma
 - Gerçek gece kayıtlarını hedef yatışla karşılaştıran uyku koçu
+- Eşleşen son rutin kayıtlarından rutin bitişi ile uyku başlangıcı arasındaki ortanca süre
 - Gecelik en fazla 15 dakikalık yatış saati ayarlaması
 - Düzenlenebilir hedef saatler ve kişisel akşam rutini
 
