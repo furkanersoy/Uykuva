@@ -35,7 +35,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
 - Sessiz saatlere uyan uyku bildirimleri
-- JSON veri dışa aktarma ve kontrollü cihaz verisi silme
+- JSON veri dışa aktarma, doğrulanmış yedek geri yükleme ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Biberon ve katı gıda ayrıntıları
 - Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
