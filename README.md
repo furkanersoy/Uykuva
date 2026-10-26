@@ -10,6 +10,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Devam eden uykunun canlı süresini gösterme
 - Yeterli benzer kayıt varsa devam eden uyku için geçmiş sürelerden uyanma aralığı gösterme
 - Uyku, beslenme, bez ve bakım notu kaydı
+- İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
 - Ortak bakım zaman çizelgesi
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
