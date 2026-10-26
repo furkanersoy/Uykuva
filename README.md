@@ -29,7 +29,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Gece yarısını aşan kayıtları günlere dağıtan yedi günlük uyku süresi grafiği
 - Düzeltilmiş yaşı 9 haftadan küçük bebekler için kayan son 24 saat özeti
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
-- SQLite tabanlı çevrimdışı cihaz içi saklama
+- Profil ve plan için SQLite saklama, bakım kayıtları için indeksli SQLite olay tablosu ve çevrimdışı göç
 - İsteğe bağlı uyku penceresi bildirimleri
 - Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
 - Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
@@ -56,6 +56,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Aktif bakım vereni seçme ve kayıtları seçilen kişi adına yazma
 - Kişisel uyku yaklaşımını, hedef saatleri, rutin adımlarını ve günlük rehberi bakım verenlerle paylaşma
 - Gerçek gece kayıtlarını hedef yatışla karşılaştıran uyku koçu
+- Akşam rutini bitişi ile uyku başlangıcı arasındaki ortanca süreyi gösteren kişisel içgörü
 - Eşleşen son rutin kayıtlarından rutin bitişi ile uyku başlangıcı arasındaki ortanca süre
 - Gecelik en fazla 15 dakikalık yatış saati ayarlaması
 - Düzenlenebilir hedef saatler ve kişisel akşam rutini
