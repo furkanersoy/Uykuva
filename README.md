@@ -25,6 +25,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Biberon ve katı gıda ayrıntıları
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
+- Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri
+- Aktif bakım vereni seçme ve kayıtları seçilen kişi adına yazma
 - Gerçek gece kayıtlarını hedef yatışla karşılaştıran uyku koçu
 - Gecelik en fazla 15 dakikalık yatış saati ayarlaması
 - Düzenlenebilir hedef saatler ve kişisel akşam rutini
@@ -48,3 +50,4 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
+
