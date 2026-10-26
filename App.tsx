@@ -375,12 +375,15 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
   const coachingMethod = trainingReady ? app.state.sleepPlan.method : "responsive";
   const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady);
+  const completedTodayCount = plan.tasks.filter((task) => app.state.sleepPlan.completedToday.includes(task)).length;
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping"] : ["responsive"];
   const today = localDateValue(new Date());
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
+  const programCompleted = Boolean(app.state.sleepPlan.completedDate);
+  const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const [bedtime, setBedtime] = useState(app.state.sleepPlan.bedtime);
   const [wakeTime, setWakeTime] = useState(app.state.sleepPlan.wakeTime);
@@ -421,6 +424,11 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Uyku planı</Text>
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
+      <Card>
+        <View style={styles.cardTopline}><Text style={styles.eyebrow}>PROGRAM İLERLEYİŞİ</Text><Text style={styles.confidence}>{completedProgramDays}/14 gün</Text></View>
+        <View style={styles.planProgressBar}>{Array.from({ length: 14 }, (_, index) => <View key={index} style={[styles.planProgressSegment, index < completedProgramDays && styles.planProgressComplete, index === app.state.sleepPlan.day - 1 && !programCompleted && styles.planProgressCurrent]} />)}</View>
+        <Text style={styles.body}>{programCompleted ? "14 günlük rehber tamamlandı. Uyku ve sabah check-in kayıtlarını kullanmaya devam edebilirsiniz." : `Şu an ${app.state.sleepPlan.day}. gündesiniz${alreadyAdvancedToday ? "; sıradaki gün yarın açılır" : ""}.`}</Text>
+      </Card>
       <Card>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: nightGuideOpen }} onPress={() => setNightGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
           <View style={styles.flex}><Text style={styles.cardTitle}>Gece uyanırsa ne yapmalı?</Text><Text style={styles.body}>{nightGuide.title}</Text></View>
@@ -477,12 +485,12 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         })}
         {!stage.canReduceSupport ? <Text style={styles.readinessNote}>Bu yaş aşamasında tüm maddeler tamamlansa bile desteği azaltma hedefi yoktur; rutin ve duyarlı bakım önceliklidir.</Text> : null}
       </Card>
-      <SectionTitle title="Bugünün adımları" />
+      <SectionTitle title="Bugünün adımları" action={alreadyAdvancedToday ? "Yarın devam" : `${completedTodayCount}/${plan.tasks.length}`} />
       <Card>
         {plan.tasks.map((task) => {
           const done = app.state.sleepPlan.completedToday.includes(task);
           return (
-            <Pressable key={task} disabled={app.state.sleepPlan.paused} onPress={() => app.toggleTask(task)} style={[styles.taskRow, app.state.sleepPlan.paused && styles.pausedTask]}>
+            <Pressable key={task} disabled={app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
               <View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View>
               <Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>
             </Pressable>
@@ -511,7 +519,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <TextInput value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
       </Card>
-      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : app.state.sleepPlan.day >= 14 ? <Text style={styles.pausedMessage}>14 günlük rehber tamamlandı. Uyku ve check-in kayıtlarınızı tutmaya devam edebilirsiniz.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bugünkü plan adımını tamamladınız. Yarın kaldığınız yerden devam edebilirsiniz.</Text> : <PrimaryButton label="Günü tamamla" onPress={app.advancePlan} />}
+      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={app.advancePlan} />}
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
       <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
     </ScrollView>
@@ -1155,6 +1163,10 @@ const styles = StyleSheet.create({
   routineMoveText: { color: colors.sageDark, fontSize: 17, fontWeight: "800" },
   pausedTask: { opacity: 0.5 },
   pausedMessage: { color: colors.inkSoft, fontSize: 13, textAlign: "center", paddingVertical: 14 },
+  planProgressBar: { flexDirection: "row", gap: 4, marginTop: 14, marginBottom: 12 },
+  planProgressSegment: { flex: 1, height: 7, borderRadius: 4, backgroundColor: "#E5EAE5" },
+  planProgressComplete: { backgroundColor: colors.sageDark },
+  planProgressCurrent: { backgroundColor: colors.sage, borderWidth: 1, borderColor: colors.sageDark },
   nightGuideHeader: { flexDirection: "row", alignItems: "center" },
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
   nightGuideContent: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
