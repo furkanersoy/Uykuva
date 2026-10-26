@@ -48,7 +48,7 @@ test("sleep support stays foundational before six months", () => {
 
 test("bedtime adjustment is capped at fifteen minutes", () => {
   const events: CareEvent[] = [{ id: "night", kind: "sleep", startedAt: "2026-10-25T21:00:00", endedAt: "2026-10-26T03:00:00", caregiver: "Anne" }];
-  const insight = createSleepCoachInsights(events, "20:00", [{ ease: 4 }, { ease: 2 }]);
+  const insight = createSleepCoachInsights(events, "20:00", [{ date: "2026-10-26", ease: 2 }, { date: "2026-10-25", ease: 4 }], new Date("2026-10-26T12:00:00"));
   assert.equal(insight.actualBedtime, "21:00");
   assert.equal(insight.suggestedBedtime, "20:45");
   assert.equal(insight.adjustmentMinutes, -15);
