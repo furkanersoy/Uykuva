@@ -27,6 +27,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - JSON veri dışa aktarma ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Biberon ve katı gıda ayrıntıları
+- Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
 - Doktor görüşmesi için yedi günlük bakım özetini PDF veya metin olarak paylaşma
 - Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri
