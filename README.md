@@ -7,6 +7,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Açıklanabilir uyku penceresi tahmini
 - Son 14 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi
 - Devam eden uykunun canlı süresini gösterme
+- Yeterli benzer kayıt varsa devam eden uyku için geçmiş sürelerden uyanma aralığı gösterme
 - Uyku, beslenme, bez ve bakım notu kaydı
 - Ortak bakım zaman çizelgesi
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
