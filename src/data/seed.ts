@@ -18,6 +18,8 @@ export function createInitialState(): AppState {
     onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
+    caregivers: [{ id: "caregiver-1", name: "Anne", role: "parent" }],
+    activeCaregiverId: "caregiver-1",
     events: [
       { id: "sleep-1", kind: "sleep", ...sleep1, caregiver: "Anne" },
       { id: "feed-1", kind: "feed", ...iso(0.7), amountMl: 90, feedType: "bottle", caregiver: "Anne" },
@@ -52,3 +54,4 @@ export function createInitialState(): AppState {
     }
   };
 }
+
