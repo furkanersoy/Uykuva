@@ -23,7 +23,8 @@ export function ageInDays(birthDate: string, now = new Date()): number {
 
 export function correctedAgeDays(baby: Baby, now = new Date()): number {
   const chronological = ageInDays(baby.birthDate, now);
-  const prematureDays = Math.max(0, 40 - baby.gestationalWeek) * 7;
+  // Corrected age applies to babies born preterm (before 37 completed weeks).
+  const prematureDays = baby.gestationalWeek < 37 ? Math.max(0, 40 - baby.gestationalWeek) * 7 : 0;
   return chronological < 730 ? Math.max(0, chronological - prematureDays) : chronological;
 }
 

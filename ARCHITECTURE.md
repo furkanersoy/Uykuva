@@ -109,7 +109,7 @@ Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak iste�
 
 Ana fonksiyonlar:
 
-- `correctedAgeDays`: Prematüre bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar.
+- `correctedAgeDays`: Gebelik haftası 37'nin altında olan bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar; uyku ekranı bu kullanımı açıklar. Aşı/randevu tarihleri gerçek doğum tarihine bağlıdır.
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
 - `createSleepForecast`: Yaş aralığı ile tahmini saat dilimine ait son kullanılabilir uyanıklık sürelerini harmanlar.
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
