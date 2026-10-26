@@ -34,7 +34,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Profil ve plan için SQLite saklama, bakım kayıtları için indeksli SQLite olay tablosu ve çevrimdışı göç
 - İsteğe bağlı uyku penceresi bildirimleri
 - Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
-- Uyku sayacı 12 saati aşmışsa uygulamaya dönüldüğünde hâlâ sürüp sürmediğini sorma; otomatik süre düzeltmesi yapmama
+- Uyku sayacı 12 saati aşmışsa uygulama açıkken veya uygulamaya dönüldüğünde hâlâ sürüp sürmediğini sorma; otomatik süre düzeltmesi yapmama
 - Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
 - Son bez kaydından 2, 3 veya 4 saat sonra isteğe bağlı tek seferlik bez kontrol bildirimi
 - Uyku planı için günlük kolaylık değerlendirmesi
