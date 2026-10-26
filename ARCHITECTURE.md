@@ -117,7 +117,7 @@ Ana fonksiyonlar:
 
 - `correctedAgeDays`: Gebelik haftası 37'nin altında olan bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar; uyku ekranı bu kullanımı açıklar. Aşı/randevu tarihleri gerçek doğum tarihine bağlıdır.
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
-- `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Yaş aralığı ile tahmini saat dilimine ait yakın dönem uyanıklık sürelerini harmanlar ve kişisel/yaş bandı dışındaki uç değerleri yaş aralığında sınırlar; böylece tahmin başlangıcı bitişten sonraya kaymaz.
+- `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Kişisel uyanıklık örneklerini son 30 günden toplar, yaş aralığıyla harmanlar ve kişisel/yaş bandı dışındaki uç değerleri yaş aralığında sınırlar; böylece tahmin başlangıcı bitişten sonraya kaymaz.
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
 - `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir. Bugünkü planda henüz kaydedilmemiş, gelecekteki uyku taslakları sonraki uyku tahminiyle çakışmıyorsa listelenir.
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
@@ -169,7 +169,7 @@ Tahmin motorunun mevcut davranışı:
 1. Düzeltilmiş yaş 9 haftadan küçükse tahmin göstermez.
 2. Bitmiş son uyku kaydını bulur.
 3. Yaşa uygun genel uyanıklık aralığını seçer.
-4. Son 14 takvim günündeki geçerli uyanıklık sürelerini altı yerel saat dilimine ayırır; her dilimde en fazla son 10 örneği tutar.
+4. Son 30 takvim günündeki geçerli uyanıklık sürelerini altı yerel saat dilimine ayırır; her dilimde en fazla son 10 örneği tutar.
 5. Gece diliminde en az iki, diğer dilimlerde en az beş örnek varsa ilgili dilimin medyanını yaş aralığıyla harmanlar; veri yetmezse yaş aralığını kullanır.
 6. Tek saat yerine başlangıç ve bitiş aralığı üretir.
 7. Veri miktarına göre düşük, orta veya yüksek güven etiketi verir.
@@ -307,7 +307,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Zaman çizelgesinden geçmiş uyku ekleme ve kayıt saatlerini düzenleme eklendi.
 - [x] Zaman çizelgesinden tüm bakım kayıtlarının tarih ve saatini içeriği koruyarak düzeltme eklendi.
 - [x] Zaman çizelgesi kaydı silme işlemi ikinci onay ister; uzun basma tek başına kaydı silmez.
-- [x] Uyku tahmini kişisel uyanıklık örneklerini son 14 günle sınırlar ve aktif uyku süresini canlı gösterir.
+- [x] Uyku tahmini kişisel uyanıklık örneklerini son 30 günle sınırlar ve aktif uyku süresini canlı gösterir.
 - [x] Son tamamlanmış uyku seçimi de son 14 gün ve şu ana kadar olan geçerli kayıtlarla sınırlanır; uzun kayıt aralarında eski bir uykudan tahmin üretilmez.
 - [x] Uyku/beslenme tahminleri, hedef yatış ve bakım görevleri Bugün ekranında saat sıralı tek 24 saat planında birleştirildi; yatış hedefi geçmişse ertesi güne taşınır.
 - [x] Yeterli kayıt bulunan sonraki gündüz uykuları 24 saatlik plana tarihsel, yaklaşık aralık olarak eklenir; tamamlanan uykular ve sıradaki uyku tahminiyle çakışan taslaklar tekrarlanmaz.
