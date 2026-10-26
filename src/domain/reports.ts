@@ -60,6 +60,15 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
       lines.push(`- ${trDate(event.startedAt)} · ${details}`);
     });
   }
+  const appointments = state.careTasks
+    .filter((task) => task.type === "appointment" && new Date(task.dueAt).getTime() >= now.getTime())
+    .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+  if (appointments.length) {
+    lines.push("", "Yaklaşan doktor randevuları ve hazırlık notları:");
+    appointments.slice(0, 5).forEach((task) => {
+      lines.push(`- ${task.title} · ${trDate(task.dueAt)}${task.note ? ` · Hazırlık notu: ${task.note}` : ""}`);
+    });
+  }
   lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur; tıbbi değerlendirme veya doz önerisi değildir.");
   return lines.join("\n");
 }
