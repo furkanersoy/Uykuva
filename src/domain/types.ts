@@ -36,6 +36,7 @@ export type CareEvent = {
   temperatureC?: number;
   medicineName?: string;
   doseAsEntered?: string;
+  medicationReminderAt?: string;
   weightG?: number;
   lengthCm?: number;
   headCm?: number;

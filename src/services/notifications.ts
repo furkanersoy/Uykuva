@@ -7,6 +7,7 @@ const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
 const CARE_TASK_NOTIFICATION_KIND = "uykuva-care-task";
 const DIAPER_NOTIFICATION_KIND = "uykuva-diaper-check";
+const MEDICATION_NOTIFICATION_KIND = "uykuva-medication-reminder";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -41,6 +42,16 @@ async function ensureDiaperChannel() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync("diaper-reminders", {
     name: "Bez kontrol hatırlatmaları",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+    lightColor: "#A8C7B5"
+  });
+}
+
+async function ensureMedicationChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("medication-reminders", {
+    name: "İlaç planı hatırlatmaları",
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 180],
     lightColor: "#A8C7B5"
@@ -178,3 +189,42 @@ export async function scheduleDiaperReminder(
   });
   return true;
 }
+
+export async function scheduleMedicationReminders(events: CareEvent[]) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter((item) => String(item.content.data?.kind) === MEDICATION_NOTIFICATION_KIND)
+    .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+
+  const latestByMedicine = new Map<string, CareEvent>();
+  for (const event of events) {
+    const name = event.kind === "health" && event.healthType === "medicine" ? event.medicineName?.trim() : undefined;
+    if (!name) continue;
+    const key = name.toLocaleLowerCase("tr-TR");
+    const existing = latestByMedicine.get(key);
+    if (!existing || new Date(event.startedAt).getTime() > new Date(existing.startedAt).getTime()) latestByMedicine.set(key, event);
+  }
+
+  await ensureMedicationChannel();
+  let count = 0;
+  for (const event of latestByMedicine.values()) {
+    if (!event.medicationReminderAt) continue;
+    const reminderAt = new Date(event.medicationReminderAt);
+    if (!Number.isFinite(reminderAt.getTime()) || reminderAt.getTime() <= Date.now()) continue;
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "İlaç planı hatırlatması",
+        body: `${event.medicineName} için kaydettiğiniz saat geldi. Sağlık uzmanınızın veya ilaç etiketindeki talimatı kontrol edin.`,
+        data: { kind: MEDICATION_NOTIFICATION_KIND, eventId: event.id }
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: reminderAt,
+        channelId: Platform.OS === "android" ? "medication-reminders" : undefined
+      }
+    });
+    count += 1;
+  }
+  return count;
+}
+

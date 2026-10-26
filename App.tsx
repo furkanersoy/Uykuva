@@ -31,7 +31,7 @@ import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, 
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
-import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleSleepReminder } from "./src/services/notifications";
+import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -196,6 +196,11 @@ export default function App() {
       app.state.preferences.quietEnd
     );
   }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
+
+  useEffect(() => {
+    if (!app.hydrated) return;
+    void scheduleMedicationReminders(app.state.onboardingComplete ? app.state.events : []);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events]);
 
   if (!app.hydrated) return <LoadingScreen />;
   if (!app.storageReady) return <StorageRecoveryScreen message={app.storageError ?? "Kayıtlar yüklenemedi. Mevcut veriler korunuyor."} onRetry={app.retryStorage} />;
@@ -1045,7 +1050,7 @@ function EventRow({ event, onPress, onDelete }: { event: CareEvent; onPress?: ()
   return (
     <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `${eventTitle(event)} · saatleri düzenle` : undefined} onPress={onPress} onLongPress={onDelete} style={styles.eventRow}>
       <View style={[styles.eventDot, { backgroundColor: event.kind === "sleep" ? colors.lavender : event.kind === "feed" ? colors.peach : colors.mint }]} />
-      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text></View>
+      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "health" && event.medicationReminderAt ? ` · plan hatırlatması ${new Date(event.medicationReminderAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}` : ""}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text></View>
       <Text style={styles.eventTime}>{time(event.startedAt)}</Text>
     </Pressable>
   );
@@ -1204,6 +1209,8 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
   const [temperature, setTemperature] = useState("37.0");
   const [medicineName, setMedicineName] = useState("");
   const [dose, setDose] = useState("");
+  const [medicationReminderDate, setMedicationReminderDate] = useState(localDateValue(now));
+  const [medicationReminderClock, setMedicationReminderClock] = useState("");
   const [weight, setWeight] = useState("");
   const [length, setLength] = useState("");
   const [lengthPosition, setLengthPosition] = useState<"recumbent" | "standing">(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
@@ -1213,19 +1220,34 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
     if (mode !== "growth") return;
     setLengthPosition(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
   }, [mode, app.state.baby.birthDate]);
+  useEffect(() => {
+    if (mode !== "health") return;
+    setHealthType("temperature"); setMedicineName(""); setDose(""); setMedicationReminderDate(localDateValue(new Date())); setMedicationReminderClock(""); setNote("");
+  }, [mode]);
   if (!mode) return null;
   const save = (details: Partial<CareEvent>) => { add(mode, details); setNote(""); close(); };
   const title = { feed: "Beslenme kaydı", diaper: "Bez kaydı", note: "Bakım notu", health: "Sağlık kaydı", growth: "Büyüme ölçümü", memory: "Anı günlüğü" }[mode];
   const suggestedSide = nextBreastSide(app.state.events);
   const milkInventory = createMilkInventory(app.state.events);
-  const saveHealth = () => {
+  const saveHealth = async () => {
     if (healthType === "temperature") {
       const value = Number(temperature.replace(",", "."));
       if (!Number.isFinite(value) || value < 30 || value > 45) return Alert.alert("Değeri kontrol edin", "Sıcaklığı 30–45 °C arasında yazın.");
       return save({ healthType, temperatureC: value, note });
     }
     if (healthType === "medicine" && !medicineName.trim()) return Alert.alert("İlaç adını yazın", "Bu alan yalnızca verdiğiniz bilgiyi kaydeder; doz önermez.");
-    save({ healthType, medicineName: medicineName.trim() || undefined, doseAsEntered: dose.trim() || undefined, note: note.trim() || undefined });
+    let medicationReminderAt: string | undefined;
+    let permissionMissing = false;
+    if (healthType === "medicine" && medicationReminderClock.trim()) {
+      const reminder = new Date(`${medicationReminderDate}T${medicationReminderClock}:00`);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(medicationReminderDate) || localDateValue(reminder) !== medicationReminderDate || !isValidClock(medicationReminderClock)) return Alert.alert("Hatırlatma saatini kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
+      if (reminder.getTime() <= now.getTime()) return Alert.alert("Gelecek bir saat seçin", "Hatırlatma saati şu andan sonra olmalı.");
+      try { medicationReminderAt = await requestNotificationPermission() ? reminder.toISOString() : undefined; }
+      catch { medicationReminderAt = undefined; }
+      permissionMissing = !medicationReminderAt;
+    }
+    save({ healthType, medicineName: medicineName.trim() || undefined, doseAsEntered: dose.trim() || undefined, medicationReminderAt, note: note.trim() || undefined });
+    if (permissionMissing) Alert.alert("İlaç kaydı eklendi", "Bildirim izni olmadığı için saat hatırlatması kurulmadı. İzni cihaz ayarlarından açabilirsiniz.");
   };
   const saveGrowth = () => {
     const weightG = Number(weight.replace(",", "."));
@@ -1267,10 +1289,10 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
         {mode === "health" ? <>
           <View style={styles.choiceRow}><Pill label="Ateş" active={healthType === "temperature"} onPress={() => setHealthType("temperature")} /><Pill label="İlaç" active={healthType === "medicine"} onPress={() => setHealthType("medicine")} /><Pill label="Belirti" active={healthType === "symptom"} onPress={() => setHealthType("symptom")} /></View>
           {healthType === "temperature" ? <Field label="Ölçülen sıcaklık (°C)" value={temperature} onChangeText={setTemperature} keyboardType="decimal-pad" /> : null}
-          {healthType === "medicine" ? <><Field label="İlaç adı" value={medicineName} onChangeText={setMedicineName} placeholder="Kutudaki adıyla" /><Field label="Verdiğiniz miktar (isteğe bağlı)" value={dose} onChangeText={setDose} placeholder="Örn. 2 ml — öneri değildir" /></> : null}
+          {healthType === "medicine" ? <><Field label="İlaç adı" value={medicineName} onChangeText={setMedicineName} placeholder="Kutudaki adıyla" /><Field label="Verdiğiniz miktar (isteğe bağlı)" value={dose} onChangeText={setDose} placeholder="Örn. 2 ml — öneri değildir" /><Text style={styles.inputLabel}>Sağlık planınızda belirtilen sonraki hatırlatma (isteğe bağlı)</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Tarih</Text><TextInput value={medicationReminderDate} onChangeText={setMedicationReminderDate} style={styles.compactInput} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /></View><View style={styles.timeField}><Text style={styles.muted}>Saat</Text><TextInput value={medicationReminderClock} onChangeText={setMedicationReminderClock} style={styles.compactInput} keyboardType="numbers-and-punctuation" placeholder="SS:DD" /></View></View><Text style={styles.hint}>Saati yalnızca sağlık uzmanınızın veya ilaç etiketinin talimatına göre girin. Uykuva doz ya da tekrar aralığı önermez; hatırlatma verdiğiniz saatte yalnızca planınızı kontrol etmenizi söyler.</Text></> : null}
           <Text style={styles.inputLabel}>{healthType === "symptom" ? "Belirti notu" : "Not (isteğe bağlı)"}</Text><TextInput value={note} onChangeText={setNote} multiline style={[styles.input, styles.noteInput]} placeholder="Gözleminizi yazın" />
           <PrimaryButton label="Sağlık kaydını ekle" onPress={saveHealth} />
-          <Text style={styles.disclaimer}>Uykuva miktar veya tekrar zamanı önermez; yalnızca yazdığınız bilgiyi saklar.</Text>
+          <Text style={styles.disclaimer}>Uykuva ilaç miktarı veya kullanım aralığı önermez; yalnızca girdiğiniz kaydı ve isteğe bağlı hatırlatmayı saklar.</Text>
         </> : null}
         {mode === "growth" ? <><Field label="Kilo (gram)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="Örn. 6450" /><Field label="Boy (cm)" value={length} onChangeText={setLength} keyboardType="decimal-pad" placeholder="Örn. 63,5" /><Text style={styles.inputLabel}>Boy nasıl ölçüldü?</Text><View style={styles.choiceRow}><Pill label="Yatarak" active={lengthPosition === "recumbent"} onPress={() => setLengthPosition("recumbent")} /><Pill label="Ayakta" active={lengthPosition === "standing"} onPress={() => setLengthPosition("standing")} /></View><Text style={styles.hint}>WHO eğrisinde yaşa göre 0,7 cm dönüşümü için kullanılır.</Text><Field label="Baş çevresi (cm)" value={head} onChangeText={setHead} keyboardType="decimal-pad" placeholder="Örn. 41" /><PrimaryButton label="Ölçümü kaydet" onPress={saveGrowth} /></> : null}
         <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} />

@@ -47,6 +47,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
+- İlaç kaydında kullanıcının girdiği sonraki kontrol saatine tek seferlik yerel hatırlatma
 - Son sekiz büyüme ölçümünü tarih sırasıyla karşılaştırma
 - İsteğe bağlı WHO 0–5 yaş kilo, boy ve baş çevresi eğrileri; z-skoru/persentil özeti ve ölçüm konumu düzeltmesi
 - Paylaşılabilir yedi günlük doktor özeti

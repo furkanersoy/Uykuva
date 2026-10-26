@@ -129,6 +129,8 @@ Durum `uykuva.db` dosyasında tutulur. Profil, tercih, görev ve uyku planı JSO
 
 JSON dışa aktarımı, `app_state` ile `care_events` satırlarını tam `AppState` olarak birleştirir. Böylece yedek şeması uygulama içi SQLite tablolarından bağımsız kalır.
 
+İlaç kaydı isteğe bağlı `medicationReminderAt` saatini olayda saklar. `scheduleMedicationReminders` her ilaç adı için en son ilaç kaydını esas alır, eski plan bildirimlerini iptal eder ve yalnızca kullanıcının açıkça girdiği gelecek saat için tek seferlik yerel bildirim kurar. Hatırlatma dozu veya aralığı söylemez; ilaç planını kontrol etmeyi hatırlatır. Bildirim izni yoksa doz kaydı yine tutulur, hatırlatma kurulmadığı açıklanır. İçe aktarılan hatırlatma tarihleri JSON doğrulamasından geçer; profil/veri sıfırlanınca zamanlanmış ilaç bildirimleri iptal edilir.
+
 Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema sürümü taşıyan JSON'a dönüştürür. `parseDataExport` boyutu, biçimi ve temel profil/kayıt yapılarını doğrular; `migrateState` veriyi geçerli şemaya birleştirir. Kullanıcı mevcut verinin yerini alacağını onayladıktan sonra durum SQLite anahtarına kaydedilir. JSON yedeği `expo-file-system` ile yerel cache'e yazılır ve `expo-sharing` üzerinden dosya olarak paylaşılır. İçe aktarmada `expo-document-picker` dosyayı seçer; içerik mevcut JSON doğrulama ve kullanıcı onayı akışına girer. Metin yapıştırma seçeneği de korunur. Aile ekranındaki tek seferlik cihaz aktarımı aynı JSON dosyasını paylaşır; otomatik cihaz senkronizasyonu sağlamaz. Yedekler otomatik olarak sunucuya gönderilmez.
 
 Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
@@ -242,6 +244,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Yaşa göre ritim temelleri / nazik hazırlık / kişisel plan ayrımı eklendi.
 - [x] Uyku planı hazır oluş ve güvenli uyku kontrol listesi eklendi.
 - [x] Ateş, ilaç ve belirti kayıtları eklendi; doz önerisi verilmez.
+- [x] İlaç kaydından kullanıcının girdiği sonraki kontrol saatine tek seferlik bildirim eklendi; doz ve tekrar aralığı önerilmez.
 - [x] Kilo, boy ve baş çevresi ölçüm kayıtları eklendi.
 - [x] Yedi günlük paylaşılabilir doktor özeti eklendi.
 - [x] Manuel aşı ve doktor randevusu görevleri eklendi.
