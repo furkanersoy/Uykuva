@@ -5,7 +5,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
-- Son 14 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi
+- Son 30 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi (kişisel örnek azsa yaş aralığına ağırlık verir)
 - Son 14 günde tekrar eden gündüz uykularından kişisel günlük taslak çıkarma
 - Yeterli geçmiş kayıt olduğunda sıradaki gündüz uykularını 24 saatlik planda tarihsel aralıklarla görme
 - İki haftanın kayıtlı gündüz uykusu örüntüsünü karşılaştırma; uyku geçişi tanısı veya kesin tahmin üretmez
