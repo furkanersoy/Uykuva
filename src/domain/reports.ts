@@ -16,20 +16,20 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const events = state.events.filter((event) => new Date(event.startedAt).getTime() >= since);
   const sleeps = events.filter((event) => event.kind === "sleep" && event.endedAt);
   const feeds = events.filter((event) => event.kind === "feed");
+  const solidMeals = feeds.filter((event) => event.feedType === "solid");
   const diapers = events.filter((event) => event.kind === "diaper");
   const health = events.filter((event) => event.kind === "health");
   const growth = state.events.find((event) => event.kind === "growth");
   const totalSleepHours = sleeps.reduce((sum, event) => sum + minutesBetween(event), 0) / 60;
   const bottleMl = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
   const breastMinutes = feeds.reduce((sum, event) => sum + completedFeedMinutes(event), 0);
-  const solidMeals = feeds.filter((event) => event.feedType === "solid").length;
   const lines = [
     `UYKUVA · 7 GÜNLÜK BAKIM ÖZETİ`,
     `${state.baby.name} · ${ageInDays(state.baby.birthDate, now)} günlük · ${state.baby.gestationalWeek}. gebelik haftasında doğdu`,
     `Hazırlanma: ${trDate(now)}`,
     "",
     `Uyku: ${sleeps.length} tamamlanmış kayıt · toplam ${totalSleepHours.toFixed(1)} saat`,
-    `Beslenme: ${feeds.length} kayıt${breastMinutes ? ` · ${breastMinutes} dk emzirme` : ""}${bottleMl ? ` · kayıtlı biberon toplamı ${bottleMl} ml` : ""}${solidMeals ? ` · ${solidMeals} katı öğün` : ""}`,
+    `Beslenme: ${feeds.length} kayıt${breastMinutes ? ` · ${breastMinutes} dk emzirme` : ""}${bottleMl ? ` · kayıtlı biberon toplamı ${bottleMl} ml` : ""}${solidMeals.length ? ` · ${solidMeals.length} katı öğün` : ""}`,
     `Bez: ${diapers.length} kayıt`,
     `Sağlık: ${health.length} kullanıcı kaydı`
   ];
@@ -45,6 +45,17 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
           ? `${event.medicineName || "İlaç"}${event.doseAsEntered ? ` · kullanıcının girdiği: ${event.doseAsEntered}` : ""}`
           : event.note || "Belirti notu";
       lines.push(`- ${trDate(event.startedAt)} · ${detail}`);
+    });
+  }
+  if (solidMeals.length) {
+    lines.push("", "Katı gıda kayıtları:");
+    solidMeals.slice(0, 20).forEach((event) => {
+      const details = [
+        event.foods?.length ? event.foods.join(", ") : "Yiyecek adı girilmedi",
+        event.allergens?.length ? `etiketler: ${event.allergens.join(", ")}` : undefined,
+        event.reactionNote ? `gözlem: ${event.reactionNote}` : undefined
+      ].filter(Boolean).join(" · ");
+      lines.push(`- ${trDate(event.startedAt)} · ${details}`);
     });
   }
   lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur; tıbbi değerlendirme veya doz önerisi değildir.");
@@ -83,4 +94,3 @@ export function createDoctorSummaryHtml(state: AppState, now = new Date()): stri
     .notice { margin-top: 22px; border-top: 1px solid #d9e0dc; padding-top: 10px; font-size: 10px; color: #66746d; }
   </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva bakım özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
 }
-
