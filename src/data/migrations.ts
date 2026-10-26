@@ -1,6 +1,12 @@
 import { AppState } from "../domain/types";
 import { createInitialState } from "./seed";
 
+function isSleepPlanDayRecord(item: unknown) {
+  if (!item || typeof item !== "object") return false;
+  const record = item as Record<string, unknown>;
+  return typeof record.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(record.date) && Number.isInteger(record.day) && Number(record.day) >= 1 && Number(record.day) <= 14 && ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(record.method)) && ["bedtime", "nightWakings", "naps", "routine"].includes(String(record.focus)) && Number.isInteger(record.completedTasks) && Number(record.completedTasks) >= 0 && Number.isInteger(record.totalTasks) && Number(record.totalTasks) >= Number(record.completedTasks);
+}
+
 export function migrateState(value: unknown): AppState {
   const initial = createInitialState();
   if (!value || typeof value !== "object") return initial;
@@ -40,7 +46,10 @@ export function migrateState(value: unknown): AppState {
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
       completedDays: Array.isArray(candidate.sleepPlan?.completedDays)
-        ? candidate.sleepPlan!.completedDays!.filter((item) => item && typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && Number.isInteger(item.day) && item.day >= 1 && item.day <= 14 && ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(item.method) && ["bedtime", "nightWakings", "naps", "routine"].includes(item.focus) && Number.isInteger(item.completedTasks) && item.completedTasks >= 0 && Number.isInteger(item.totalTasks) && item.totalTasks >= item.completedTasks).slice(-14)
+        ? candidate.sleepPlan!.completedDays!.filter(isSleepPlanDayRecord).slice(-14)
+        : [],
+      completedRuns: Array.isArray(candidate.sleepPlan?.completedRuns)
+        ? candidate.sleepPlan!.completedRuns!.filter((run) => run && typeof run.id === "string" && typeof run.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.startDate) && typeof run.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.completedDate) && Array.isArray(run.days) && run.days.length <= 14 && run.days.every(isSleepPlanDayRecord)).slice(-10)
         : [],
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
       checkIns: candidate.sleepPlan?.checkIns ?? []
