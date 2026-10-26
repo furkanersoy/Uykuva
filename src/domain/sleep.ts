@@ -71,7 +71,28 @@ export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailyS
   }));
 }
 
-function recentAwakeWindows(events: CareEvent[], now = new Date()): number[] {
+type DayPart = "night" | "earlyMorning" | "morning" | "midday" | "afternoon" | "evening";
+
+const DAY_PART_LABELS: Record<DayPart, string> = {
+  night: "gece",
+  earlyMorning: "erken sabah",
+  morning: "sabah",
+  midday: "öğle",
+  afternoon: "öğleden sonra",
+  evening: "akşam"
+};
+
+function dayPartFor(date: Date): DayPart {
+  const hour = date.getHours();
+  if (hour < 5 || hour >= 22) return "night";
+  if (hour < 8) return "earlyMorning";
+  if (hour < 11) return "morning";
+  if (hour < 14) return "midday";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
+
+function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Record<DayPart, number[]> {
   const cutoff = now.getTime() - 14 * DAY;
   const sleeps = events
     .filter((event) => {
@@ -82,13 +103,16 @@ function recentAwakeWindows(events: CareEvent[], now = new Date()): number[] {
     })
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
-  const windows: number[] = [];
+  const windows: Record<DayPart, number[]> = {
+    night: [], earlyMorning: [], morning: [], midday: [], afternoon: [], evening: []
+  };
   for (let index = 1; index < sleeps.length; index += 1) {
     const previous = sleeps[index - 1]!;
     const current = sleeps[index]!;
     const minutes = (new Date(current.startedAt).getTime() - new Date(previous.endedAt!).getTime()) / 60_000;
-    if (minutes >= 25 && minutes <= 480) windows.push(minutes);
+    if (minutes >= 25 && minutes <= 480) windows[dayPartFor(new Date(current.startedAt))].push(minutes);
   }
+  for (const part of Object.keys(windows) as DayPart[]) windows[part] = windows[part].slice(-10);
   return windows;
 }
 
@@ -115,12 +139,17 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   }
 
   const band = wakeBandFor(baby, now);
-  const personal = recentAwakeWindows(events, now);
-  const personalMedian = median(personal);
+  const personalByPart = recentAwakeWindowsByDayPart(events, now);
   const baseline = (band.min + band.max) / 2;
-  const target = personal.length >= 3 ? baseline * 0.35 + personalMedian * 0.65 : baseline;
-  const spread = personal.length >= 7 ? 12 : personal.length >= 3 ? 18 : Math.max(20, (band.max - band.min) / 2);
   const wakeAt = new Date(lastSleep.endedAt);
+  const expectedSleepBlock = new Date(wakeAt.getTime() + baseline * 60_000);
+  const dayPart = dayPartFor(expectedSleepBlock);
+  const personal = personalByPart[dayPart];
+  const requiredSamples = dayPart === "night" ? 2 : 5;
+  const hasPersonalPattern = personal.length >= requiredSamples;
+  const personalMedian = median(personal);
+  const target = hasPersonalPattern ? baseline * 0.35 + personalMedian * 0.65 : baseline;
+  const spread = hasPersonalPattern ? personal.length >= 8 ? 12 : 18 : Math.max(20, (band.max - band.min) / 2);
   const start = new Date(wakeAt.getTime() + Math.max(band.min, target - spread) * 60_000);
   const end = new Date(wakeAt.getTime() + Math.min(band.max, target + spread) * 60_000);
   const awakeMinutes = Math.max(0, Math.floor((now.getTime() - wakeAt.getTime()) / 60_000));
@@ -130,11 +159,10 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
     start,
     end,
     awakeMinutes,
-    confidence: personal.length >= 7 ? "high" : personal.length >= 3 ? "medium" : "low",
-    explanation:
-      personal.length >= 3
-        ? `Yaş aralığı ve son ${personal.length} kullanılabilir uyanıklık süresi birlikte değerlendirildi.`
-        : "Şimdilik yaşa göre genel aralık kullanılıyor; üç düzenli kayıttan sonra kişiselleşecek."
+    confidence: hasPersonalPattern ? personal.length >= 8 ? "high" : "medium" : "low",
+    explanation: hasPersonalPattern
+      ? `${DAY_PART_LABELS[dayPart]} saat dilimindeki son ${personal.length} uyanıklık kaydı ve yaş aralığı birlikte değerlendirildi.`
+      : `${DAY_PART_LABELS[dayPart]} saat diliminde kişisel tahmin için yeterli kayıt yok (${personal.length}/${requiredSamples}); yaş aralığı kullanılıyor.`
   };
 }
 
