@@ -397,7 +397,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const readyItems = app.state.sleepPlan.readinessCompleted;
   const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
   const coachingMethod = trainingReady ? app.state.sleepPlan.method : "responsive";
-  const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady);
+  const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady, correctedAgeDays(app.state.baby));
   const completedTodayCount = plan.tasks.filter((task) => app.state.sleepPlan.completedToday.includes(task)).length;
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);

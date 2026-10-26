@@ -385,39 +385,63 @@ export function methodDescription(method: SleepMethod) {
   return METHOD_COPY[method];
 }
 
-export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true): CoachingDay {
+export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true, correctedAge = 183): CoachingDay {
   const safeDay = Math.min(14, Math.max(1, day));
   if (!canReduceSupport) {
-    return {
-      title: `${safeDay}. gün · Ritim temelleri`,
-      focus: "Duyarlı bakım ve güvenli ritim",
-      tasks: [
-        "Sabah başlangıcını mümkün olduğunca tutarlı tut",
-        "Gündüz doğal ışık ve yaşa uygun etkileşim sun",
-        "Akşam rutinini sakin ve esnek biçimde uygula",
-        "Uyku işaretlerine erken ve duyarlı yanıt ver",
-        "Gece bakımını bebeğin sinyallerine ve beslenme ihtiyacına göre sürdür"
-      ],
-      checkIn: "Bu sabah bebeğinizin uyku işaretlerini ve gece uyanmalarını kısaca kaydedin."
-    };
+    const isYoungInfant = correctedAge < 112;
+    const foundations: CoachingDay[] = isYoungInfant ? [
+      { title: "1. gün · Gündüz ve geceyi ayırt et", focus: "Ritmi gözlemle", tasks: ["Gündüz olağan ev ışığı ve sesleriyle yaşa uygun etkileşim sun", "Gece bakımını loş ve sakin tut", "Uyku başlangıç ve bitişlerini kaydet"], checkIn: "Gündüz ile gece bakımının farklılaşması aileniz için nasıl hissettirdi?" },
+      { title: "2. gün · Sabah ışığı", focus: "Güne sakin başlangıç", tasks: ["Sabah uyanışından sonra gündüz ışığına ve olağan etkinliklere yer ver", "Bebeğin uykulu olma işaretlerini gözlemle", "Her uykuda güvenli uyku alanını kullan"], checkIn: "Bebeğinizin uykulu olduğunu hangi işaretlerden anladınız?" },
+      { title: "3. gün · İşaretleri tanı", focus: "Bebeğin sinyallerini izle", tasks: ["Esneme, bakışı kaçırma veya huzursuzluk gibi kendi gözlemlerinizi not edin", "İşaret gördüğünüzde ortamı yumuşatın", "Kesin saat hedefi koymadan bebeğin tepkisini izleyin"], checkIn: "Bugün hangi uyku işaretini daha erken fark ettiniz?" },
+      { title: "4. gün · Gece uyanmaları", focus: "Duyarlı yanıt", tasks: ["Uyanınca önce bebeğinizin temel ihtiyacını ve durumunu kontrol edin", "Beslenme ve yakınlık ihtiyacına bebeğin işaretlerine göre yanıt verin", "Gece ortamını sakin ve loş tutun"], checkIn: "Gece bakımında hangi sakinleştirme biçimi size yardımcı oldu?" },
+      { title: "5. gün · Güvenli uyku", focus: "Her uykuda güvenlik", tasks: ["Bebeği her uykuya sırtüstü yatırın", "Uyku alanında sert, düz yüzey ve gergin çarşaf bulunduğunu kontrol edin", "Yastık, yorgan, oyuncak ve gevşek örtüleri uyku alanından çıkarın"], checkIn: "Uyku alanında değiştirmek istediğiniz bir şey fark ettiniz mi?" },
+      { title: "6. gün · Kısa sakinleşme sırası", focus: "Esnek bir akşam", tasks: ["Işıkları azaltma veya kısa ninni gibi tek sakin adım deneyin", "Bebeğin tepkisine göre rutini kısaltın ya da atlayın", "Sakinleşmek için ihtiyaç duyduğu desteği verin"], checkIn: "Kısa bir akşam adımı bebeğinizin sakinleşmesine yardımcı oldu mu?" },
+      { title: "7. gün · İlk haftayı gözden geçir", focus: "Beklenti değil gözlem", tasks: ["Son haftadaki uyku ve uyanıklık kayıtlarını gözden geçirin", "Tek bir farklı geceyi sorun veya gerileme olarak yorumlamayın", "İşe yarayan bir bakım adımını sürdürün"], checkIn: "Aileniz için en kolay ve en zor uyku anı hangisiydi?" },
+      { title: "8. gün · Gündüz uykuları", focus: "Esnek destek", tasks: ["Gündüz uykusu öncesinde bebeğinizin yorgunluk işaretlerini izleyin", "Kısa uykular olduğunda bir sonraki uykuya esnek yaklaşın", "Bebeğinizin ihtiyacına göre destek verin"], checkIn: "Gündüz uykusunda hangi işaret veya rutin size yol gösterdi?" },
+      { title: "9. gün · Bakım verenler", focus: "Ortak yaklaşım", tasks: ["Bakım verenle bebeği sakinleştiren yöntemleri paylaşın", "Beslenme ve sağlıkla ilgili bakım talimatlarını aynen devredin", "Kendi dinlenme molanızı planlayın"], checkIn: "Bakım devrinde hangi bilgi en yararlı oldu?" },
+      { title: "10. gün · Sakin ses ve yakınlık", focus: "İhtiyaca yanıt", tasks: ["Bebeğinizin huzursuzluk işaretlerine erken yanıt verin", "Ses, nazik dokunuş veya kucak desteğinden bebeğinize uygun olanı deneyin", "Huzursuzluk artarsa daha fazla destek sunun"], checkIn: "Bebeğiniz hangi sakinleştirme desteğine daha iyi yanıt verdi?" },
+      { title: "11. gün · Gece bakımını kolaylaştır", focus: "Hazırlıklı ol", tasks: ["Güvenli uyku alanını yatmadan önce hazırlayın", "Gece bakımında gereken malzemeleri erişilebilir tutun", "Gece beslenmesi ve yakınlık ihtiyacına yanıt vermeyi sürdürün"], checkIn: "Gece bakımını kolaylaştırmak için neyi önceden hazırladınız?" },
+      { title: "12. gün · İşe yarayanı tekrarla", focus: "Nazik tekrar", tasks: ["Ailenize yardımcı olan sakin akşam adımını yineleyin", "Bebeğinizin tepkisine göre rutini esnetin", "Yeni bir uyku yöntemi veya destek azaltma hedefi eklemeyin"], checkIn: "Tekrarladığınız adım bugün de işe yaradı mı?" },
+      { title: "13. gün · Kendinize de alan açın", focus: "Bakım verenin iyilik hâli", tasks: ["Mümkünse bakım görevini kısa süreli paylaşın", "Yardım istemek veya rutini sadeleştirmek için kendinize izin verin", "Bebeğinizin ihtiyacına duyarlı biçimde yanıt verin"], checkIn: "Bugün sizin dinlenmenize ne yardımcı oldu?" },
+      { title: "14. gün · Ritim temellerini gözden geçir", focus: "Esnek devam", tasks: ["Son iki haftadan ailenize uyan rutinleri seçin", "Bebeğinizin gelişimiyle birlikte ihtiyaçların değişebileceğini hatırlayın", "Uyku, beslenme veya sağlık endişelerinizi çocuk doktoruyla konuşun"], checkIn: "Önümüzdeki hafta sürdürmek istediğiniz bir adım nedir?" }
+    ] : [
+      { title: "1. gün · Mevcut ritmi gözle", focus: "Önce temel çizgi", tasks: ["Uyku başlangıç ve bitiş saatlerini kaydet", "Bu hafta mevcut sakinleştirme desteğini değiştirme", "Bakım verenlerle uyku ve beslenme planını konuş"], checkIn: "Şu an yatma rutininin en kolay ve en zor bölümü hangisi?" },
+      { title: "2. gün · Sabah başlangıcı", focus: "Öngörülebilir sabah", tasks: ["Sabahı ailenizin yaşamına uyan benzer bir aralıkta başlat", "Uyanınca gündüz ışığı ve olağan etkinliklere yer ver", "Uyku saatlerini kaydetmeye devam et"], checkIn: "Benzer bir sabah başlangıcı bugünkü ritme nasıl yansıdı?" },
+      { title: "3. gün · Akşamı yumuşat", focus: "Düşük uyarımlı geçiş", tasks: ["Yatmaya yakın ortamı ve etkinlikleri sakinleştir", "Yatma rutininde kısa ve tekrarlanabilir bir sıra belirle", "Bebeğin yorgunluk işaretlerini izle"], checkIn: "Sakin geçiş için hangi adım uygulanabilir geldi?" },
+      { title: "4. gün · Rutini aynı sırayla dene", focus: "Tanıdık ipuçları", tasks: ["Akşam adımlarını benzer sırayla uygula", "Rutin sırasında bebeğine eşlik et ve gerekirse destek ver", "Rutin çok uzarsa basitleştir"], checkIn: "Rutinin hangi bölümü bebeğinize tanıdık gelmeye başladı?" },
+      { title: "5. gün · Uyku işaretlerine bak", focus: "Saate değil bebeğe göre", tasks: ["Uyku yaklaşırken bebeğinizin davranışlarını gözlemle", "İşaretlere göre rutinin başlangıcını ayarla", "Bebeğiniz rahatsızsa rutine ara ver"], checkIn: "Bebeğinizin uykuya hazır olduğunu nasıl anladınız?" },
+      { title: "6. gün · Bir sakin işaret seç", focus: "Basit tekrar", tasks: ["Ninni, kısa kitap veya loş ışık gibi bir işaret seç", "Bu işareti rutin içinde tekrar kullan", "Bebeğinizin istediği desteği azaltmaya çalışma"], checkIn: "Seçtiğiniz sakin işaret rutine uydu mu?" },
+      { title: "7. gün · İlk haftayı gözden geçir", focus: "Küçük kazanımları fark et", tasks: ["Son haftada işe yarayan rutin adımını belirle", "Uykuya geçiş kolaylığını isteğe bağlı olarak kaydet", "Bir zor geceyi başarısızlık olarak görme"], checkIn: "Aynı kalmasını istediğiniz bir rutin adımı var mı?" },
+      { title: "8. gün · Rutini koru", focus: "Tutarlılık", tasks: ["İşe yarayan rutini benzer sırayla uygula", "Gündüz uykularını ve uyanışları kaydet", "Bebeğin sinyallerine göre destek ver"], checkIn: "Rutini sürdürmek bu hafta ne kadar kolay oldu?" },
+      { title: "9. gün · Bakım devri", focus: "Herkes aynı bilgide", tasks: ["Diğer bakım verene akşam rutinini paylaş", "Bebeğin uyku ve beslenme işaretlerini aktar", "Aynı destek adımlarını uygulayıp uygulamadığınızı konuş"], checkIn: "Bakım verenler arasında netleştirmek istediğiniz bir şey kaldı mı?" },
+      { title: "10. gün · Rutin süresini ayarla", focus: "Yeterince kısa ve sakin", tasks: ["Akşam rutinini bebeğinizin ihtiyacına göre kısa tut", "Yatma öncesi aşırı uyarıcı etkinlikleri azalt", "Bebeğiniz huzursuzsa rahatlatmaya öncelik ver"], checkIn: "Daha kısa bir rutin yatma geçişini kolaylaştırdı mı?" },
+      { title: "11. gün · Veriye bak, esnek kal", focus: "Kayıtları bağlamda oku", tasks: ["Son birkaç günün uyku kayıtlarına birlikte bak", "Eksik kayıtların örüntüyü değiştirebileceğini hesaba kat", "Tek bir saate bağlı katı program kurma"], checkIn: "Kayıtlarınızda tekrar eden ama kesin olmayan bir örüntü gördünüz mü?" },
+      { title: "12. gün · Destek vermeye devam", focus: "Bebeğin tepkisi öncelikli", tasks: ["Bebeğinize iyi gelen desteği sürdür", "Yoğun huzursuzlukta desteği azaltma adımını bırak", "Beslenme ihtiyacını uyku planından ayrı değerlendir"], checkIn: "Bugün bebeğinizin işaretleri bakımınızı nasıl yönlendirdi?" },
+      { title: "13. gün · Aileye uyan biçimi seç", focus: "Sürdürülebilir rutin", tasks: ["Gerçek yaşamınızda sürdürebildiğiniz adımları belirle", "Gerekirse rutini daha kısa ve basit hâle getir", "Bakım verenlerle değişiklikleri önceden konuş"], checkIn: "Sürdürülebilir bulduğunuz rutin nasıl görünüyor?" },
+      { title: "14. gün · Hazırlık dönemini gözden geçir", focus: "Sonraki adım aileye bağlı", tasks: ["İki haftalık uyku ve rutin kayıtlarını gözden geçir", "Hazır değilseniz destek azaltma adımını ertele", "Sağlık veya beslenme endişesinde çocuk doktorunuza danış"], checkIn: "Hazırlık döneminden hangi alışkanlığı sürdürmek istersiniz?" }
+    ];
+    const item = foundations[safeDay - 1]!;
+    return { ...item, title: item.title.replace(/^\d+/, String(safeDay)) };
   }
-  const phase = safeDay <= 3 ? 0 : safeDay <= 7 ? 1 : safeDay <= 10 ? 2 : 3;
-  const shared = [
-    ["Sabah başlangıcını aynı 30 dakikalık aralıkta tut", "Gündüz gün ışığı ve yaşa uygun hareket zamanı sun", "Akşam rutinini aynı sırayla uygula"],
-    ["Son uykunun bitişini kaydet", "Uyku penceresinden 20 dakika önce ortamı sakinleştir", "Bebeği uykulu ama mümkünse uyanık yatır"],
-    ["Gece desteğinde seçtiğin yaklaşımı tutarlı uygula", "Zor bir geceyi başarısızlık sayma", "Sabah kısa check-in doldur"],
-    ["İşe yarayan adımları sabitle", "Yatma saatini gerekirse yalnızca 10–15 dakika değiştir", "Planı ailedeki diğer bakım verenle paylaş"]
-  ];
+
+  const phase = safeDay <= 3 ? "observe" : safeDay <= 7 ? "routine" : safeDay <= 10 ? "practice" : "consolidate";
+  const shared: Record<typeof phase, string[]> = {
+    observe: ["Bugün uyku başlangıç ve bitişlerini kaydet", "Mevcut sakinleştirme desteğini değiştirme", "Ailedeki bakım verenlerle aynı hedefi konuş"],
+    routine: ["Akşam adımlarını benzer sırayla uygula", "Bebeğinin uyku işaretlerine göre rutini başlat", "Bu hafta yalnızca bir küçük değişikliği değerlendirmeye al"],
+    practice: ["Seçtiğin yaklaşımı yalnızca yatma rutininin bir bölümünde dene", "Huzursuzluk artarsa önceki desteğe dön", "Beslenme, hastalık ve rahatlık ihtiyacını geciktirme"],
+    consolidate: ["İşe yarayan destek adımlarını aynı biçimde sürdür", "Yeni bir azaltma adımı eklemeden önce birkaç gece gözlemle", "Bakım verenlerle check-in sonuçlarını paylaş"]
+  };
+  const phaseNames = { observe: "Ritmi gözle", routine: "Rutini kur", practice: "Nazikçe dene", consolidate: "İşe yarayanı koru" };
   const methodTask: Record<SleepMethod, string[]> = {
-    responsive: ["İlk huzursuzlukta ses ve dokunuşla yanıt ver", "Sakinleşmezse kucağa al; sakinleşince yeniden yatağa koy"],
-    gradual: ["Bu gece alışılmış desteği yalnızca küçük bir adım azalt", "Yoğun huzursuzlukta geri dönüp sakinleştir"],
-    camping: ["Yatağın yanında sakin ve görünür biçimde kal", "Her üç gecede mesafeyi küçük bir adım artır"]
+    responsive: ["İlk huzursuzlukta sesinle veya yakınlığınla yanıt ver", "Gerekirse kucağa alıp bebeğin sakinleşince yatağa geri dön"],
+    gradual: ["Alışılmış desteğin yalnızca tek küçük bölümünü azaltmayı seç; süre tutma", "Bebek belirgin biçimde huzursuzsa önceki desteğe dön ve denemeyi bırak"],
+    camping: ["Bebeğin yanında kalıp sesinle veya nazik dokunuşla destek ver", "Bebek rahat ve aile hazır değilse mesafeyi artırma; değişikliği ancak birkaç rahat geceden sonra değerlendir"]
   };
   return {
     title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,
-    focus: ["Ritmi gözlemle", "Tutarlı başlangıç", "Desteği ayarla", "Yeni rutini koru"][phase]!,
-    tasks: [...shared[phase]!, ...methodTask[method]],
-    checkIn: "Bu sabah uykuya geçiş dünden daha kolay mıydı?"
+    focus: phaseNames[phase],
+    tasks: [...shared[phase], ...methodTask[method]],
+    checkIn: safeDay <= 3 ? "Son 24 saatte uyku ve uyanma örüntüsünde ne fark ettiniz?" : safeDay <= 7 ? "Rutinin hangi bölümü daha öngörülebilir oldu?" : safeDay <= 10 ? "Denediğiniz küçük adım bebeğiniz ve sizin için nasıl hissettirdi?" : "Bu yaklaşım aile için sürdürülebilir mi; aynı şekilde devam etmek ister misiniz?"
   };
 }
 
