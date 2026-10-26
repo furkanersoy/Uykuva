@@ -14,6 +14,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
 - SQLite tabanlı çevrimdışı cihaz içi saklama
 - İsteğe bağlı uyku penceresi bildirimleri
+- Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi
@@ -51,4 +52,3 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
-
