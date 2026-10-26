@@ -447,9 +447,9 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <Card>
         <PrimaryButton label="Akşam rutinine başla" onPress={startRoutine} />
         <View style={styles.spacer12} />
-        {app.state.sleepPlan.routine.map((item, index) => <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable>)}
+        {app.state.sleepPlan.routine.map((item, index) => <View key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} accessibilityLabel={`${item.label}, ${item.enabled ? "etkin" : "devre dışı"}; silmek için basılı tutun`} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} style={styles.routineToggle}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable><View style={styles.routineControls}><Pressable accessibilityRole="button" accessibilityLabel={`${item.label} adımını yukarı taşı`} disabled={index === 0} onPress={() => app.moveRoutineStep(item.id, -1)} style={[styles.routineMove, index === 0 && styles.routineMoveDisabled]}><Text style={styles.routineMoveText}>↑</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`${item.label} adımını aşağı taşı`} disabled={index === app.state.sleepPlan.routine.length - 1} onPress={() => app.moveRoutineStep(item.id, 1)} style={[styles.routineMove, index === app.state.sleepPlan.routine.length - 1 && styles.routineMoveDisabled]}><Text style={styles.routineMoveText}>↓</Text></Pressable></View></View>)}
         <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
-        <Text style={styles.hint}>Bir adımı kapatmak için dokunun, silmek için basılı tutun.</Text>
+        <Text style={styles.hint}>Bir adımı etkinleştirmek için dokunun, sırayı oklarla değiştirin; silmek için adım adına basılı tutun.</Text>
       </Card>
       <SectionTitle title="Hedef saatler" />
       <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={setBedtime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={setWakeTime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
@@ -1097,6 +1097,11 @@ const styles = StyleSheet.create({
   readinessNote: { color: colors.sageDark, fontSize: 12, lineHeight: 18, marginTop: 14 },
   suggestion: { color: colors.sageDark, fontSize: 12, fontWeight: "700", marginTop: 2 },
   routineRow: { flexDirection: "row", alignItems: "center", minHeight: 48 },
+  routineToggle: { flex: 1, flexDirection: "row", alignItems: "center", minHeight: 48 },
+  routineControls: { flexDirection: "row", gap: 4, marginLeft: 6 },
+  routineMove: { width: 32, height: 32, borderRadius: 11, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
+  routineMoveDisabled: { opacity: 0.3 },
+  routineMoveText: { color: colors.sageDark, fontSize: 17, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
