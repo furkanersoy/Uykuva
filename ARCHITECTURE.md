@@ -4,6 +4,8 @@ Son güncelleme: 26 Ekim 2026
 
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki 24 saatlik bakım kartı uyku planındaki hedef yatış saatini ve yaklaşan aşı/randevuları aynı yerde listeler; görevler bu karttan tamamlanabilir veya silinebilir.
 
+Randevu gorevleri istege bagli note alaninda hazirlik notlarini saklar. Notlar gorev kartinda gorunur ve paylasilan doktor ozetine en yakin bes gelecek randevuyla birlikte eklenir; tamamlanmis veya gecmis randevular ozete alinmaz.
+
 ## 1. Ürün amacı
 
 Uykuva, 0–18 aylık bebeği olan ebeveyn ve bakım verenlerin günlük bakımı tek yerde yönetmesini amaçlayan, çevrimdışı çalışabilen bir mobil uygulamadır.
