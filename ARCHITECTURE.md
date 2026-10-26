@@ -289,6 +289,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
 - [x] Yaklaşan doktor randevuları ve hazırlık notları paylaşılabilir doktor özetine ekleniyor.
+- [x] Tamamlanan aşı ve randevular için tarihli geçmiş gösteriliyor; son 20 tamamlanan aşı doktor özetinde uygulamada işaretleme tarihi ve planlanan tarihle ayrı belirtiliyor.
 - [x] Aşı ve doktor randevuları için sessiz saatleri gözeten yerel hatırlatmalar eklendi.
 - [x] Son bez kaydına göre 2/3/4 saat seçenekli, sessiz saatleri gözeten tek seferlik kontrol hatırlatması eklendi.
 - [x] Uyku koçluğu yaş aşamasına göre ritim temellerine geçiyor; plan yaklaşımları hazırlık listesi tamamlanana kadar açılmıyor.
