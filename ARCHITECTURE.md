@@ -51,6 +51,7 @@ SleepWell/
 │   │   └── storage.ts              # Cihaz içi yükleme/kaydetme
 │   ├── domain/
 │   │   ├── types.ts                # Bebek, kayıt ve uyku planı veri modelleri
+│   │   ├── vaccineSchedule.ts      # Ulusal aşı takvimi öneri tarihleri
 │   │   ├── sleep.ts                # Tahmin, koçluk ve devir özeti kuralları
 │   │   └── sleep.test.ts           # Saf iş kuralları testleri
 │   └── ui/
