@@ -32,6 +32,10 @@ function isDateOnly(value: string) {
   return parsed.getFullYear() === year && parsed.getMonth() === month! - 1 && parsed.getDate() === day;
 }
 
+function isClockString(value: unknown) {
+  return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
 export function parseDataExport(raw: string): AppState {
   if (raw.length > 2_000_000) throw new Error("Yedek dosyası 2 MB sınırını aşıyor.");
   let parsed: unknown;
@@ -53,11 +57,11 @@ export function parseDataExport(raw: string): AppState {
     throw new Error("Yedekte okunamayan aşı veya randevu kayıtları var.");
   }
   const plan = parsed.sleepPlan;
-  if (!isRecord(plan) || !["responsive", "gradual", "camping"].includes(String(plan.method)) || !isDateString(plan.startDate) || typeof plan.day !== "number" || !Number.isInteger(plan.day) || plan.day < 1 || plan.day > 14 || !Array.isArray(plan.routine) || !plan.routine.every((step) => isRecord(step) && typeof step.id === "string" && typeof step.label === "string" && typeof step.enabled === "boolean" && typeof step.minutes === "number" && Number.isInteger(step.minutes) && step.minutes > 0) || !Array.isArray(plan.completedToday) || !plan.completedToday.every((item) => typeof item === "string") || !Array.isArray(plan.readinessCompleted) || !plan.readinessCompleted.every((item) => typeof item === "string") || !Array.isArray(plan.checkIns) || !plan.checkIns.every((item) => isRecord(item) && typeof item.date === "string" && (item.ease === undefined || [1, 2, 3, 4, 5].includes(Number(item.ease))) && (item.nightWakings === undefined || typeof item.nightWakings === "number" && Number.isInteger(item.nightWakings) && item.nightWakings >= 0 && item.nightWakings <= 5) && (item.note === undefined || typeof item.note === "string"))) {
+  if (!isRecord(plan) || !["responsive", "gradual", "camping"].includes(String(plan.method)) || !isDateString(plan.startDate) || typeof plan.day !== "number" || !Number.isInteger(plan.day) || plan.day < 1 || plan.day > 14 || !isClockString(plan.bedtime) || !isClockString(plan.wakeTime) || !Array.isArray(plan.routine) || !plan.routine.every((step) => isRecord(step) && typeof step.id === "string" && typeof step.label === "string" && typeof step.enabled === "boolean" && typeof step.minutes === "number" && Number.isInteger(step.minutes) && step.minutes > 0) || !Array.isArray(plan.completedToday) || !plan.completedToday.every((item) => typeof item === "string") || !Array.isArray(plan.readinessCompleted) || !plan.readinessCompleted.every((item) => typeof item === "string") || !Array.isArray(plan.checkIns) || !plan.checkIns.every((item) => isRecord(item) && typeof item.date === "string" && (item.ease === undefined || [1, 2, 3, 4, 5].includes(Number(item.ease))) && (item.nightWakings === undefined || typeof item.nightWakings === "number" && Number.isInteger(item.nightWakings) && item.nightWakings >= 0 && item.nightWakings <= 5) && (item.note === undefined || typeof item.note === "string"))) {
     throw new Error("Uyku planı veya check-in kayıtları geçersiz.");
   }
   const preferences = parsed.preferences;
-  if (!isRecord(preferences) || typeof preferences.notificationsEnabled !== "boolean" || typeof preferences.careTaskRemindersEnabled !== "boolean" || typeof parsed.caregiverName !== "string" || !Array.isArray(parsed.caregivers) || !parsed.caregivers.length || !parsed.caregivers.every((caregiver) => isRecord(caregiver) && typeof caregiver.id === "string" && typeof caregiver.name === "string" && ["parent", "family", "caregiver"].includes(String(caregiver.role)))) {
+  if (!isRecord(preferences) || typeof preferences.notificationsEnabled !== "boolean" || ![5, 10, 15, 20, 30].includes(Number(preferences.sleepReminderMinutes)) || typeof preferences.careTaskRemindersEnabled !== "boolean" || ![30, 120, 1440].includes(Number(preferences.careTaskReminderMinutes)) || !isClockString(preferences.quietStart) || !isClockString(preferences.quietEnd) || typeof parsed.caregiverName !== "string" || !Array.isArray(parsed.caregivers) || !parsed.caregivers.length || !parsed.caregivers.every((caregiver) => isRecord(caregiver) && typeof caregiver.id === "string" && typeof caregiver.name === "string" && ["parent", "family", "caregiver"].includes(String(caregiver.role)))) {
     throw new Error("Uyku planı veya tercih bilgileri eksik.");
   }
   return migrateState({ ...parsed, onboardingComplete: true });
