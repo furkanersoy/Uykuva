@@ -482,6 +482,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const today = localDateValue(now);
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
+  const completedPlanRuns = app.state.sleepPlan.completedRuns ?? [];
   const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const nightSummary = summarizeNightSleep(app.state.events, todayCheckIn, now);
@@ -663,6 +664,25 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
             </View>
           </View>)}
           <Text style={styles.hint}>Bu geçmiş yalnızca plan gününü ilerlettiğinizde kaydedilir; gün atlamak tamamlanan görev sayısı anlamına gelmez.</Text>
+        </Card>
+      </> : null}
+      {completedPlanRuns.length ? <>
+        <SectionTitle title="Tamamlanan uyku programları" action={`${completedPlanRuns.length} döngü`} />
+        <Card>
+          {completedPlanRuns.slice().reverse().map((run) => {
+            const completedTasks = run.days.reduce((sum, day) => sum + day.completedTasks, 0);
+            const totalTasks = run.days.reduce((sum, day) => sum + day.totalTasks, 0);
+            const firstMethod = run.days[0]?.method;
+            return <View key={run.id} style={styles.growthHistoryRow}>
+              <View style={styles.eventRow}>
+                <View style={styles.flex}>
+                  <Text style={styles.eventTitle}>{new Date(`${run.completedDate}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} · {run.days.length}/14 gün</Text>
+                  <Text style={styles.muted}>{firstMethod ? `Başlangıç yaklaşımı: ${methodDescription(firstMethod).name} · ` : ""}{completedTasks}/{totalTasks} günlük görev</Text>
+                </View>
+              </View>
+            </View>;
+          })}
+          <Text style={styles.hint}>Özet, yalnızca ilerlettiğiniz plan günlerinden oluşur. Görev oranı bir uyku sonucu veya sağlık değerlendirmesi değildir.</Text>
         </Card>
       </> : null}
       {planCheckInComparison.available ? <>
