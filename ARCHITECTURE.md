@@ -75,6 +75,8 @@ SleepWell/
 - **Özet:** Günlük toplamlar ve ileride eklenecek doktor raporu alanı.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
 
+Zaman çizelgesi, kayıt türüne göre filtreleri ve içerik/bakım veren adına göre yerel metin aramasını sunar; kayıt verileri depoda değişmeden kalır.
+
 ### Ulusal aşı takvimi önerileri
 
 `src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır. `App.tsx` içindeki aşı öneri penceresi yalnızca gelecekteki önerileri gösterir; kullanıcı her birini ayrıca takvime ekler. Bu kayıtlar aşı yapıldığını göstermez. Geçmiş dozlar için telafi takvimi oluşturulmaz ve kullanıcı aile hekimine yönlendirilir.
