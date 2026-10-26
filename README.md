@@ -30,6 +30,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
 - Paylaşılabilir yedi günlük doktor özeti
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
+- Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
 - Sessiz saatlere uyan uyku bildirimleri
 - JSON veri dışa aktarma ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
@@ -46,8 +47,6 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 Uygulama tıbbi tanı veya tedavi önermez.
 
 ## Kurulum
-
-Ulusal çocukluk dönemi aşı takvimi için bebeğin doğum tarihine göre yaklaşan yaş dönüm noktaları önerilebilir. Öneriler ayrı ayrı ebeveyn onayıyla yerel aşı/randevu takvimine eklenir; geçmiş dozlar için otomatik telafi planı üretilmez.
 
 ```powershell
 npm.cmd install
