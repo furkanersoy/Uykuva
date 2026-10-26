@@ -15,7 +15,8 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const since = now.getTime() - 7 * 86_400_000;
   const events = state.events.filter((event) => new Date(event.startedAt).getTime() >= since);
   const sleeps = events.filter((event) => event.kind === "sleep" && event.endedAt);
-  const feeds = events.filter((event) => event.kind === "feed");
+  const feeds = events.filter((event) => event.kind === "feed" && event.feedType !== "pump");
+  const pumping = events.filter((event) => event.kind === "feed" && event.feedType === "pump");
   const solidMeals = feeds.filter((event) => event.feedType === "solid");
   const diapers = events.filter((event) => event.kind === "diaper");
   const health = events.filter((event) => event.kind === "health");
@@ -33,6 +34,7 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
     `Bez: ${diapers.length} kayıt`,
     `Sağlık: ${health.length} kullanıcı kaydı`
   ];
+  if (pumping.length) lines.push(`Sağım: ${pumping.length} kayıt · toplam ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml`);
   if (growth) {
     lines.push(`Son ölçüm (${trDate(growth.startedAt)}): ${growth.weightG ? `${growth.weightG} g` : "—"} · ${growth.lengthCm ? `${growth.lengthCm} cm` : "—"} · baş ${growth.headCm ? `${growth.headCm} cm` : "—"}`);
   }
