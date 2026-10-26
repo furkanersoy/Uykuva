@@ -1222,7 +1222,8 @@ function Stat({ value, label, tone }: { value: string; label: string; tone: "whi
 }
 
 function CareTaskModal({ mode, task, close, add, update }: { mode: TaskMode; task: CareTask | null; close: () => void; add: ReturnType<typeof useUykuvaState>["addCareTask"]; update: ReturnType<typeof useUykuvaState>["updateCareTask"] }) {
-  const tomorrow = new Date(Date.now() + 86_400_000);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(localDateValue(tomorrow));
   const [clock, setClock] = useState("10:00");
@@ -1238,7 +1239,7 @@ function CareTaskModal({ mode, task, close, add, update }: { mode: TaskMode; tas
   const save = () => {
     const dueAt = new Date(`${date}T${clock}:00`);
     if (!title.trim()) return Alert.alert("Başlık gerekli", mode === "vaccine" ? "Aşının adını yazın." : "Randevuyu tanımlayın.");
-    if (Number.isNaN(dueAt.getTime()) || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(dueAt.getTime()) || localDateValue(dueAt) !== date || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Gerçek bir tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
     const changes = { type: mode, title: title.trim(), dueAt: dueAt.toISOString(), note: note.trim() || undefined };
     if (task) update(task.id, changes);
     else add(changes);
