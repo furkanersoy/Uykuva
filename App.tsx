@@ -109,6 +109,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("today");
   const [logMode, setLogMode] = useState<LogMode>(null);
   const [taskMode, setTaskMode] = useState<TaskMode>(null);
+  const [taskToEdit, setTaskToEdit] = useState<CareTask | null>(null);
   const [vaccineSuggestionsOpen, setVaccineSuggestionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
@@ -232,7 +233,7 @@ export default function App() {
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} now={clockNow} />}
-        {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
+        {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
 
         {!nightMode ? <View style={styles.nav}>
@@ -245,7 +246,7 @@ export default function App() {
         </View> : null}
       </View>
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} now={clockNow} />
-      <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
+      <CareTaskModal mode={taskMode} task={taskToEdit} close={() => { setTaskMode(null); setTaskToEdit(null); }} add={app.addCareTask} update={app.updateCareTask} />
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
@@ -772,7 +773,7 @@ async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"])
   }
 }
 
-function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openVaccineSuggestions: () => void; now: Date }) {
+function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openEditTask: (task: CareTask) => void; openVaccineSuggestions: () => void; now: Date }) {
   const state = app.state;
   const events = state.events;
   const newbornSummary = correctedAgeDays(state.baby, now) < 63;
@@ -885,15 +886,15 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
-      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
-      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}<Text style={styles.hint}>Bir kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
+      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
+      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
     </ScrollView>
   );
 }
 
-function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: () => void; onDelete: () => void }) {
+function CareTaskRow({ task, onToggle, onDelete, onEdit }: { task: CareTask; onToggle: () => void; onDelete: () => void; onEdit?: () => void }) {
   const taskType = task.type === "vaccine" ? "Aşı" : "Randevu";
   const taskDate = new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
   const completedDate = task.completedAt ? new Date(task.completedAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }) : undefined;
@@ -901,7 +902,7 @@ function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: (
     { text: "Vazgeç", style: "cancel" },
     { text: "Sil", style: "destructive", onPress: onDelete }
   ]);
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${task.title}, ${taskType}, ${task.completedAt ? `uygulamada tamamlandı ${completedDate}; yeniden aç` : `${taskDate}; tamamla`}. Silmek için basılı tutun ve onaylayın.`} onPress={onToggle} onLongPress={confirmDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{taskType} · {task.completedAt ? `uygulamada tamamlandı ${completedDate} · dokununca yeniden aç` : "dokununca tamamla"}</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</View><Text style={styles.taskDate}>{taskDate}</Text></Pressable>;
+  return <View style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><Pressable accessibilityRole="button" accessibilityLabel={`${task.title}, ${taskType}, ${task.completedAt ? `uygulamada tamamlandı ${completedDate}; yeniden aç` : `${taskDate}; tamamla`}. Silmek için basılı tutun ve onaylayın.`} onPress={onToggle} onLongPress={confirmDelete} style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{taskType} · {task.completedAt ? `uygulamada tamamlandı ${completedDate} · dokununca yeniden aç` : "dokununca tamamla"}</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</Pressable><View style={{ alignItems: "flex-end", marginLeft: 8 }}><Text style={styles.taskDate}>{taskDate}</Text>{onEdit ? <Pressable accessibilityRole="button" accessibilityLabel={`${task.title} kaydını düzenle`} onPress={onEdit} hitSlop={8}><Text style={styles.taskDate}>Düzenle</Text></Pressable> : null}</View></View>;
 }
 
 function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
@@ -1220,21 +1221,30 @@ function Stat({ value, label, tone }: { value: string; label: string; tone: "whi
   return <View style={styles.stat}><Card tone={tone}><Text style={styles.statValue}>{value}</Text><Text style={styles.muted}>{label}</Text></Card></View>;
 }
 
-function CareTaskModal({ mode, close, add }: { mode: TaskMode; close: () => void; add: ReturnType<typeof useUykuvaState>["addCareTask"] }) {
+function CareTaskModal({ mode, task, close, add, update }: { mode: TaskMode; task: CareTask | null; close: () => void; add: ReturnType<typeof useUykuvaState>["addCareTask"]; update: ReturnType<typeof useUykuvaState>["updateCareTask"] }) {
   const tomorrow = new Date(Date.now() + 86_400_000);
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(tomorrow.toISOString().slice(0, 10));
+  const [date, setDate] = useState(localDateValue(tomorrow));
   const [clock, setClock] = useState("10:00");
   const [note, setNote] = useState("");
+  useEffect(() => {
+    if (!mode) return;
+    setTitle(task?.title ?? "");
+    setDate(task ? localDateValue(new Date(task.dueAt)) : localDateValue(tomorrow));
+    setClock(task ? time(task.dueAt) : "10:00");
+    setNote(task?.note ?? "");
+  }, [mode, task?.id]);
   if (!mode) return null;
   const save = () => {
     const dueAt = new Date(`${date}T${clock}:00`);
     if (!title.trim()) return Alert.alert("Başlık gerekli", mode === "vaccine" ? "Aşının adını yazın." : "Randevuyu tanımlayın.");
     if (Number.isNaN(dueAt.getTime()) || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
-    add({ type: mode, title: title.trim(), dueAt: dueAt.toISOString(), note: note.trim() || undefined });
+    const changes = { type: mode, title: title.trim(), dueAt: dueAt.toISOString(), note: note.trim() || undefined };
+    if (task) update(task.id, changes);
+    else add(changes);
     setTitle(""); setNote(""); close();
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{mode === "vaccine" ? "Aşı ekle" : "Randevu ekle"}</Text><Text style={styles.pageIntro}>Uykuva resmi takvim yerine sizin girdiğiniz tarihi hatırlar; sağlık kararını uzmanınızla verin.</Text><Field label={mode === "vaccine" ? "Aşı adı" : "Randevu başlığı"} value={title} onChangeText={setTitle} placeholder={mode === "vaccine" ? "Örn. 6. ay aşıları" : "Örn. Çocuk doktoru kontrolü"} /><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Saat" value={clock} onChangeText={setClock} keyboardType="numbers-and-punctuation" placeholder="10:00" /><Field label={mode === "appointment" ? "Doktora sorularınız ve notlar" : "Not (isteğe bağlı)"} value={note} onChangeText={setNote} placeholder={mode === "appointment" ? "Örn. Uyku, beslenme veya büyüme hakkında sorular" : "İsteğe bağlı ek not"} /><PrimaryButton label="Takvime ekle" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{task ? "Kaydı düzenle" : mode === "vaccine" ? "Aşı ekle" : "Randevu ekle"}</Text><Text style={styles.pageIntro}>Uykuva resmi takvim yerine sizin girdiğiniz tarihi hatırlar; sağlık kararını uzmanınızla verin.</Text><Field label={mode === "vaccine" ? "Aşı adı" : "Randevu başlığı"} value={title} onChangeText={setTitle} placeholder={mode === "vaccine" ? "Örn. 6. ay aşıları" : "Örn. Çocuk doktoru kontrolü"} /><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Saat" value={clock} onChangeText={setClock} keyboardType="numbers-and-punctuation" placeholder="10:00" /><Field label={mode === "appointment" ? "Doktora sorularınız ve notlar" : "Not (isteğe bağlı)"} value={note} onChangeText={setNote} placeholder={mode === "appointment" ? "Örn. Uyku, beslenme veya büyüme hakkında sorular" : "İsteğe bağlı ek not"} /><PrimaryButton label={task ? "Değişiklikleri kaydet" : "Takvime ekle"} onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function VaccineSuggestionsModal({ visible, close, birthDate, tasks, add, now }: { visible: boolean; close: () => void; birthDate: string; tasks: CareTask[]; add: ReturnType<typeof useUykuvaState>["addCareTask"]; now: Date }) {
