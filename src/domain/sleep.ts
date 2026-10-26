@@ -470,12 +470,14 @@ export type SleepCoachInsights = {
   nightsUsed: number;
 };
 
-export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: Pick<SleepCheckIn, "ease" | "nightWakings" | "bedtime">[]): SleepCoachInsights {
+export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: { date?: string; ease?: number; nightWakings?: number; bedtime?: string }[], now = new Date()): SleepCoachInsights {
   const target = clockMinutes(targetBedtime) ?? 20 * 60;
+  const cutoff = now.getTime() - 30 * DAY;
   const nightStarts = events
     .filter((event) => {
       if (event.kind !== "sleep" || !event.endedAt) return false;
       const start = new Date(event.startedAt);
+      if (start.getTime() < cutoff || start.getTime() > now.getTime()) return false;
       const duration = (new Date(event.endedAt).getTime() - start.getTime()) / 60_000;
       return start.getHours() >= 17 && duration >= 120;
     })
@@ -485,7 +487,8 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
       const date = new Date(event.startedAt);
       return date.getHours() * 60 + date.getMinutes();
     });
-  const checkInBedtimes = checkIns.flatMap((item) => {
+  const recentCheckIns = checkIns.filter((item) => !item.date || item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now)).slice(0, 7);
+  const checkInBedtimes = recentCheckIns.flatMap((item) => {
     if (!item.bedtime || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.bedtime)) return [];
     const [hour, minute] = item.bedtime.split(":").map(Number);
     return [hour! * 60 + minute!];
@@ -499,6 +502,7 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     .filter((event) => {
       if (event.kind !== "sleep") return false;
       const start = new Date(event.startedAt);
+      if (start.getTime() < cutoff || start.getTime() > now.getTime()) return false;
       if (start.getHours() < 17) return false;
       return !event.endedAt || (new Date(event.endedAt).getTime() - start.getTime()) / 60_000 >= 120;
     })
@@ -521,7 +525,6 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
   if (delta > 720) delta -= 1440;
   if (delta < -720) delta += 1440;
   const adjustment = Math.max(-15, Math.min(15, Math.round(delta)));
-  const recentCheckIns = checkIns.slice(0, 7);
   const easeRatings = recentCheckIns.flatMap((item) => item.ease === undefined ? [] : [item.ease]);
   const recordedWakings = recentCheckIns.flatMap((item) => item.nightWakings === undefined ? [] : [item.nightWakings]);
   const checkInAverage = easeRatings.length ? easeRatings.reduce((sum, value) => sum + value, 0) / easeRatings.length : undefined;
