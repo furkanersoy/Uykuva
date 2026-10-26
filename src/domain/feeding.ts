@@ -8,7 +8,40 @@ export const TRACKED_ALLERGENS = [
 
 export function completedFeedMinutes(event: CareEvent): number {
   if (event.kind !== "feed" || !event.endedAt) return 0;
+  if (event.breastSessions?.length) {
+    return event.breastSessions.reduce((sum, session) => {
+      if (!session.endedAt) return sum;
+      return sum + Math.max(0, Math.round((new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60_000));
+    }, 0);
+  }
   return Math.max(0, Math.round((new Date(event.endedAt).getTime() - new Date(event.startedAt).getTime()) / 60_000));
+}
+
+export function feedingElapsedMinutes(event: CareEvent, now = new Date()): number {
+  if (event.kind !== "feed") return 0;
+  if (!event.breastSessions?.length) {
+    const end = event.endedAt ? new Date(event.endedAt) : now;
+    return Math.max(0, Math.round((end.getTime() - new Date(event.startedAt).getTime()) / 60_000));
+  }
+  return event.breastSessions.reduce((sum, session) => {
+    const end = session.endedAt ? new Date(session.endedAt) : now;
+    return sum + Math.max(0, Math.round((end.getTime() - new Date(session.startedAt).getTime()) / 60_000));
+  }, 0);
+}
+
+export function breastfeedingSideMinutes(event: CareEvent, now = new Date()) {
+  const totals = { left: 0, right: 0 };
+  if (event.breastSessions?.length) {
+    for (const session of event.breastSessions) {
+      const end = session.endedAt ? new Date(session.endedAt) : now;
+      totals[session.side] += Math.max(0, Math.round((end.getTime() - new Date(session.startedAt).getTime()) / 60_000));
+    }
+    return totals;
+  }
+  const total = feedingElapsedMinutes(event, now);
+  if (event.breastSide === "left") totals.left = total;
+  else if (event.breastSide === "right") totals.right = total;
+  return totals;
 }
 
 export function nextBreastSide(events: CareEvent[]): "left" | "right" | null {

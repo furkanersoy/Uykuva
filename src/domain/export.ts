@@ -36,6 +36,13 @@ function isClockString(value: unknown) {
   return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+function isBreastSessions(value: unknown) {
+  return value === undefined || Array.isArray(value) && value.every((session) =>
+    isRecord(session) && ["left", "right"].includes(String(session.side)) && isDateString(session.startedAt) &&
+    (session.endedAt === undefined || isDateString(session.endedAt))
+  );
+}
+
 export function parseDataExport(raw: string): AppState {
   if (raw.length > 2_000_000) throw new Error("Yedek dosyası 2 MB sınırını aşıyor.");
   let parsed: unknown;
@@ -50,7 +57,7 @@ export function parseDataExport(raw: string): AppState {
   if (!isRecord(parsed.baby) || typeof parsed.baby.id !== "string" || typeof parsed.baby.name !== "string" || !parsed.baby.name.trim() || typeof parsed.baby.birthDate !== "string" || !isDateOnly(parsed.baby.birthDate) || typeof parsed.baby.gestationalWeek !== "number" || !Number.isInteger(parsed.baby.gestationalWeek) || parsed.baby.gestationalWeek < 22 || parsed.baby.gestationalWeek > 42) {
     throw new Error("Yedekte geçerli bir bebek profili bulunamadı.");
   }
-  if (!Array.isArray(parsed.events) || !parsed.events.every((event) => isRecord(event) && typeof event.id === "string" && ["sleep", "feed", "diaper", "note", "health", "growth", "memory"].includes(String(event.kind)) && isDateString(event.startedAt) && typeof event.caregiver === "string" && (event.endedAt === undefined || isDateString(event.endedAt)) && (event.memoryTitle === undefined || typeof event.memoryTitle === "string") && (event.feedType === undefined || ["breast", "bottle", "solid", "pump"].includes(String(event.feedType))) && (event.bottleSource === undefined || ["formula", "expressed"].includes(String(event.bottleSource))) && (event.milkStorageLocation === undefined || ["room", "fridge", "freezer"].includes(String(event.milkStorageLocation))) && (event.milkLabel === undefined || typeof event.milkLabel === "string") && (event.milkDiscardedAt === undefined || isDateString(event.milkDiscardedAt)) && (event.milkThawedAt === undefined || isDateString(event.milkThawedAt)))) {
+  if (!Array.isArray(parsed.events) || !parsed.events.every((event) => isRecord(event) && typeof event.id === "string" && ["sleep", "feed", "diaper", "note", "health", "growth", "memory"].includes(String(event.kind)) && isDateString(event.startedAt) && typeof event.caregiver === "string" && (event.endedAt === undefined || isDateString(event.endedAt)) && (event.breastSessions === undefined || isBreastSessions(event.breastSessions)) && (event.memoryTitle === undefined || typeof event.memoryTitle === "string") && (event.feedType === undefined || ["breast", "bottle", "solid", "pump"].includes(String(event.feedType))) && (event.bottleSource === undefined || ["formula", "expressed"].includes(String(event.bottleSource))) && (event.milkStorageLocation === undefined || ["room", "fridge", "freezer"].includes(String(event.milkStorageLocation))) && (event.milkLabel === undefined || typeof event.milkLabel === "string") && (event.milkDiscardedAt === undefined || isDateString(event.milkDiscardedAt)) && (event.milkThawedAt === undefined || isDateString(event.milkThawedAt)))) {
     throw new Error("Yedekte okunamayan veya eksik bakım kayıtları var.");
   }
   if (!Array.isArray(parsed.careTasks) || !parsed.careTasks.every((task) => isRecord(task) && typeof task.id === "string" && ["vaccine", "appointment"].includes(String(task.type)) && typeof task.title === "string" && isDateString(task.dueAt))) {

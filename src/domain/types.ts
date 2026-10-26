@@ -1,5 +1,11 @@
 export type EventKind = "sleep" | "feed" | "diaper" | "note" | "health" | "growth" | "memory";
 
+export type BreastfeedingSegment = {
+  side: "left" | "right";
+  startedAt: string;
+  endedAt?: string;
+};
+
 export type Baby = {
   id: string;
   name: string;
@@ -20,6 +26,7 @@ export type CareEvent = {
   milkDiscardedAt?: string;
   milkThawedAt?: string;
   breastSide?: "left" | "right" | "both";
+  breastSessions?: BreastfeedingSegment[];
   foods?: string[];
   allergens?: string[];
   reactionNote?: string;

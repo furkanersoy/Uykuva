@@ -12,6 +12,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Düşük parlaklıklı arayüzle uyku sayacı, beslenme ve bez kayıtlarına hızlı erişim sağlayan gece modu
 - Yeterli benzer kayıt varsa devam eden uyku için geçmiş sürelerden uyanma aralığı gösterme
 - Uyku, beslenme, bez ve bakım notu kaydı
+- Emzirme zamanlayıcısında tek oturum içinde taraf değiştirme ve sol/sağ sürelerini ayrı görme
 - İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
 - Ortak bakım zaman çizelgesi
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama/filtreleme

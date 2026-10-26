@@ -73,6 +73,7 @@ SleepWell/
 
 - **Bugün:** Sıradaki uyku aralığı, hızlı kayıt, bakım devri ve son kayıtlar.
 - **Akış:** Uyku, beslenme, bez ve notların ortak zaman çizelgesi.
+- **Emzirme:** Tek oturumda sol/sağ taraf değişimi ve taraf başına ayrı süre; eski kayıtlar toplam süre olarak okunmaya devam eder.
 - **Uyku:** 14 günlük uyku planı, yaklaşım seçimi, günlük görevler ve akşam rutini.
 - **Özet:** Günlük toplamlar ve ileride eklenecek doktor raporu alanı.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.

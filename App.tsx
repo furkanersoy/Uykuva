@@ -26,7 +26,7 @@ import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/repor
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
-import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
+import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleSleepReminder } from "./src/services/notifications";
@@ -73,6 +73,11 @@ function eventTitle(event: CareEvent) {
     if (event.feedType === "solid") return `Katı gıda · ${event.foods?.join(", ") || "öğün"}`;
     const side = { left: "sol", right: "sağ", both: "iki taraf" }[event.breastSide ?? "both"];
     const minutes = completedFeedMinutes(event);
+    if (event.breastSessions?.length) {
+      const sides = breastfeedingSideMinutes(event);
+      const details = [sides.left ? `sol ${sides.left} dk` : "", sides.right ? `sağ ${sides.right} dk` : ""].filter(Boolean).join(" + ");
+      return `Emzirme · ${details || side}${event.endedAt ? ` · ${minutes} dk` : " · sürüyor"}`;
+    }
     return `Emzirme · ${side}${minutes ? ` · ${minutes} dk` : " · sürüyor"}`;
   }
   if (event.kind === "diaper") return `Bez · ${{ wet: "ıslak", dirty: "kirli", both: "ıslak + kirli" }[event.diaperType ?? "wet"]}`;
@@ -185,7 +190,7 @@ export default function App() {
           ))}
         </View> : null}
       </View>
-      <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} />
+      <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} now={clockNow} />
       <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
@@ -1030,14 +1035,19 @@ function RecordTimeModal({ event, close, update }: { event: CareEvent | null; cl
       if (end.getTime() <= start.getTime()) end.setDate(end.getDate() + 1);
       if (end.getTime() > Date.now() || end.getTime() - start.getTime() > 24 * 60 * 60 * 1000) return Alert.alert("Bitiş saatini kontrol edin", "Bitiş, başlangıçtan sonra ve 24 saat içinde olmalı.");
     }
-    update(event.id, { startedAt: start.toISOString(), ...(event.endedAt ? { endedAt: end?.toISOString() } : {}) });
+    const breastSessions = event.breastSessions?.length ? event.breastSessions.map((session, index) => ({
+      ...session,
+      ...(index === 0 ? { startedAt: start.toISOString() } : {}),
+      ...(index === event.breastSessions!.length - 1 && session.endedAt && end ? { endedAt: end.toISOString() } : {})
+    })) : undefined;
+    update(event.id, { startedAt: start.toISOString(), ...(event.endedAt ? { endedAt: end?.toISOString() } : {}), ...(breastSessions ? { breastSessions } : {}) });
     close();
   };
 
   return <Modal visible={Boolean(event)} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Kayıt saatini düzelt</Text><Text style={styles.pageIntro}>{event ? eventTitle(event) : ""} · Kayıt içeriği ve bakım veren bilgisi korunur.</Text><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Başlangıç saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="10:00" />{event?.endedAt ? <Field label="Bitiş saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="10:20" /> : null}<Text style={styles.hint}>Bitiş saati başlangıçtan erkense ertesi gün kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Değişikliği kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
-function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
+function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => void; app: ReturnType<typeof useUykuvaState>; now: Date }) {
   const add = app.addSimpleEvent;
   const [amount, setAmount] = useState("90");
   const [feedType, setFeedType] = useState<"breast" | "bottle" | "solid" | "pump">("breast");
@@ -1096,9 +1106,9 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
         <View style={styles.sheetHandle} />
         <Text style={styles.pageTitle}>{title}</Text>
         {mode === "feed" ? <>
-          {app.runningFeed ? <Card tone="peach"><Text style={styles.cardTitle}>Emzirme devam ediyor</Text><Text style={styles.body}>{app.runningFeed.breastSide === "left" ? "Sol" : app.runningFeed.breastSide === "right" ? "Sağ" : "İki taraf"} · {time(app.runningFeed.startedAt)} başlangıç</Text><View style={styles.spacer12} /><PrimaryButton label="Emzirmeyi bitir" onPress={() => { app.toggleBreastfeed("both"); close(); }} /></Card> : <>
+          {app.runningFeed ? <Card tone="peach"><Text style={styles.cardTitle}>Emzirme devam ediyor · {feedingElapsedMinutes(app.runningFeed, now)} dk</Text><Text style={styles.body}>Sol {breastfeedingSideMinutes(app.runningFeed, now).left} dk · Sağ {breastfeedingSideMinutes(app.runningFeed, now).right} dk · {time(app.runningFeed.startedAt)} başlangıç</Text><Text style={styles.inputLabel}>Taraf değiştir</Text><View style={styles.choiceRow}>{app.runningFeed.breastSide !== "left" ? <Pill label="Sağdan sola geç" onPress={() => app.toggleBreastfeed("left")} /> : <Pill label="Soldan sağa geç" onPress={() => app.toggleBreastfeed("right")} />}</View><View style={styles.spacer12} /><PrimaryButton label="Emzirmeyi bitir" onPress={() => { app.toggleBreastfeed("both"); close(); }} /></Card> : <>
             <View style={styles.choiceRow}><Pill label="Emzirme" active={feedType === "breast"} onPress={() => setFeedType("breast")} /><Pill label="Biberon" active={feedType === "bottle"} onPress={() => setFeedType("bottle")} /><Pill label="Katı gıda" active={feedType === "solid"} onPress={() => setFeedType("solid")} /><Pill label="Sağım" active={feedType === "pump"} onPress={() => setFeedType("pump")} /></View>
-            {feedType === "breast" ? <><Text style={styles.inputLabel}>Hangi taraf?</Text>{suggestedSide ? <Text style={styles.suggestion}>Sıradaki öneri: {suggestedSide === "left" ? "sol" : "sağ"} taraf</Text> : null}<View style={styles.choiceRow}><Pill label="Sol" active={suggestedSide === "left"} onPress={() => { app.toggleBreastfeed("left"); close(); }} /><Pill label="Sağ" active={suggestedSide === "right"} onPress={() => { app.toggleBreastfeed("right"); close(); }} /><Pill label="İki taraf" onPress={() => { app.toggleBreastfeed("both"); close(); }} /></View></> : null}
+            {feedType === "breast" ? <><Text style={styles.inputLabel}>Hangi tarafla başlıyor?</Text>{suggestedSide ? <Text style={styles.suggestion}>Son kayda göre sıradaki taraf: {suggestedSide === "left" ? "sol" : "sağ"}</Text> : null}<View style={styles.choiceRow}><Pill label="Sol" active={suggestedSide === "left"} onPress={() => { app.toggleBreastfeed("left"); close(); }} /><Pill label="Sağ" active={suggestedSide === "right"} onPress={() => { app.toggleBreastfeed("right"); close(); }} /></View></> : null}
             {feedType === "bottle" ? <><Text style={styles.inputLabel}>Süt türü</Text><View style={styles.choiceRow}><Pill label="Mama / diğer" active={bottleSource === "formula"} onPress={() => setBottleSource("formula")} /><Pill label="Sağılan süt" active={bottleSource === "expressed"} onPress={() => setBottleSource("expressed")} /></View>{bottleSource === "expressed" ? <Text style={styles.hint}>Takipli stok: {milkInventory.availableMl} ml. Kaydedince en eski uygun partiden düşülür; miktar fazla olsa da beslenme kaydı tutulur.</Text> : null}<Field label="Miktar (ml)" value={amount} onChangeText={setAmount} keyboardType="number-pad" /><PrimaryButton label="Biberonu kaydet" onPress={() => { const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || value > 1000) return Alert.alert("Miktarı kontrol edin", "Pozitif bir ml değeri yazın."); save({ feedType: "bottle", amountMl: value, bottleSource }); }} /></> : null}
             {feedType === "pump" ? <><Field label="Sağılan miktar (ml)" value={amount} onChangeText={setAmount} keyboardType="number-pad" /><Text style={styles.inputLabel}>Saklama yeri</Text><View style={styles.choiceRow}><Pill label="Oda · 4 sa" active={milkStorageLocation === "room"} onPress={() => setMilkStorageLocation("room")} /><Pill label="Buzdolabı · 4 gün" active={milkStorageLocation === "fridge"} onPress={() => setMilkStorageLocation("fridge")} /><Pill label="Dondurucu · 6–12 ay" active={milkStorageLocation === "freezer"} onPress={() => setMilkStorageLocation("freezer")} /></View><Field label="Kap etiketi (isteğe bağlı)" value={milkLabel} onChangeText={setMilkLabel} placeholder="Örn. Pazartesi sabah" /><Text style={styles.hint}>Saklama aralıkları CDC'nin 25°C veya altındaki oda, 4°C buzdolabı ve -18°C veya altındaki dondurucu önerilerine dayanır. Prematüre veya hasta bebeklerde sağlık uzmanınıza danışın.</Text><PrimaryButton label="Sağım ve stoğu kaydet" onPress={() => { const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || value > 2000) return Alert.alert("Miktarı kontrol edin", "0–2000 ml arasında pozitif bir miktar yazın."); save({ feedType: "pump", amountMl: value, milkStorageLocation, milkLabel: milkLabel.trim() || undefined }); setMilkLabel(""); }} /></> : null}
             {feedType === "solid" ? <><Field label="Yiyecekler" value={foods} onChangeText={setFoods} placeholder="Örn. yoğurt, muz" /><Text style={styles.inputLabel}>Takip edilen alerjen içerikleri (isteğe bağlı)</Text><View style={styles.choiceRow}>{TRACKED_ALLERGENS.map((allergen) => <Pill key={allergen} label={allergen} active={selectedAllergens.includes(allergen)} onPress={() => toggleAllergen(allergen)} />)}</View><Text style={styles.hint}>Bunlar yalnızca öğün kaydına eklenen etiketlerdir; güvenli gıda veya alerji önerisi değildir.</Text><Field label="Gözlenen tepki (isteğe bağlı)" value={reaction} onChangeText={setReaction} placeholder="Gözleminizi yazın" /><PrimaryButton label="Öğünü kaydet" onPress={saveSolidMeal} /></> : null}

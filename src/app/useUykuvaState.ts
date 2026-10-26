@@ -127,12 +127,27 @@ export function useUykuvaState() {
   const toggleBreastfeed = useCallback((side: "left" | "right" | "both") => {
     setState((current) => {
       const running = current.events.find((event) => event.kind === "feed" && event.feedType === "breast" && !event.endedAt);
+      const now = new Date().toISOString();
       if (running) {
-        return { ...current, events: current.events.map((event) => event.id === running.id ? { ...event, endedAt: new Date().toISOString() } : event) };
+        const sessions = running.breastSessions?.length
+          ? running.breastSessions
+          : [{ side: running.breastSide === "right" ? "right" as const : "left" as const, startedAt: running.startedAt }];
+        const last = sessions[sessions.length - 1]!;
+        if (side !== "both" && side === last.side) return current;
+        const closedSessions = sessions.map((session, index) => index === sessions.length - 1 && !session.endedAt ? { ...session, endedAt: now } : session);
+        if (side === "both") {
+          return { ...current, events: current.events.map((event) => event.id === running.id ? { ...event, breastSessions: closedSessions, endedAt: now } : event) };
+        }
+        return {
+          ...current,
+          events: current.events.map((event) => event.id === running.id
+            ? { ...event, breastSide: side, breastSessions: [...closedSessions, { side, startedAt: now }] }
+            : event)
+        };
       }
       return {
         ...current,
-        events: [{ id: id("feed"), kind: "feed", feedType: "breast", breastSide: side, startedAt: new Date().toISOString(), caregiver: current.caregiverName }, ...current.events]
+        events: [{ id: id("feed"), kind: "feed", feedType: "breast", breastSide: side, breastSessions: side === "both" ? [] : [{ side, startedAt: now }], startedAt: now, caregiver: current.caregiverName }, ...current.events]
       };
     });
   }, []);
