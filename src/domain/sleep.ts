@@ -127,15 +127,20 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
     };
   }
 
+  const recentCutoff = now.getTime() - 14 * DAY;
   const lastSleep = events
-    .filter((event) => event.kind === "sleep" && event.endedAt)
+    .filter((event) => {
+      if (event.kind !== "sleep" || !event.endedAt) return false;
+      const end = new Date(event.endedAt).getTime();
+      return Number.isFinite(end) && end >= recentCutoff && end <= now.getTime();
+    })
     .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime())[0];
 
   if (!lastSleep?.endedAt) {
     return {
       available: false,
       confidence: "low",
-      explanation: "İlk tahmin için bitmiş bir uyku kaydı gerekiyor."
+      explanation: "Tahmin için son 14 gün içinde tamamlanmış bir uyku kaydı gerekiyor."
     };
   }
 
