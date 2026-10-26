@@ -33,6 +33,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
+- Son sekiz büyüme ölçümünü tarih sırasıyla karşılaştırma
 - Paylaşılabilir yedi günlük doktor özeti
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
