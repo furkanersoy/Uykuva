@@ -22,7 +22,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, createDailyNapOutline, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -474,6 +474,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const coachingMethod = trainingReady ? app.state.sleepPlan.method : "responsive";
   const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady, correctedAgeDays(app.state.baby), app.state.sleepPlan.focus);
   const planCheckInComparison = compareSleepPlanCheckIns(app.state.sleepPlan.completedDays, app.state.sleepPlan.checkIns, coachingMethod, app.state.sleepPlan.focus);
+  const sleepCoachGuidance = createSleepCoachGuidance(app.state.sleepPlan.checkIns, now);
   const completedTodayCount = plan.tasks.filter((task) => app.state.sleepPlan.completedToday.includes(task)).length;
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
@@ -573,6 +574,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {programCompleted ? <View style={styles.spacer12} /> : null}
         {programCompleted ? <PrimaryButton label="Yeni 14 günlük programa başla" onPress={app.restartSleepPlan} /> : null}
       </Card>
+      {sleepCoachGuidance ? <Card tone={sleepCoachGuidance.tone}><Text style={styles.eyebrow}>SON CHECK-IN'E GÖRE</Text><Text style={styles.cardTitle}>{sleepCoachGuidance.title}</Text><Text style={styles.body}>{sleepCoachGuidance.body}</Text></Card> : null}
       <Card>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: nightGuideOpen }} onPress={() => setNightGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
           <View style={styles.flex}><Text style={styles.cardTitle}>Gece uyanırsa ne yapmalı?</Text><Text style={styles.body}>{nightGuide.title}</Text></View>
