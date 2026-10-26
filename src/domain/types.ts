@@ -73,11 +73,19 @@ export type CareTask = {
   completedAt?: string;
 };
 
+export type Caregiver = {
+  id: string;
+  name: string;
+  role: "parent" | "family" | "caregiver";
+};
+
 export type AppState = {
   schemaVersion: 3;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
+  caregivers: Caregiver[];
+  activeCaregiverId: string;
   events: CareEvent[];
   careTasks: CareTask[];
   sleepPlan: SleepPlan;
@@ -100,3 +108,4 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
+
