@@ -756,8 +756,12 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
         <Text style={styles.body}>Paylaşılan özetin kapsayacağı süreyi aile nöbetlerinize göre seçin.</Text>
         <View style={styles.choiceRow}>{([2, 4, 6, 8] as const).map((hours) => <Pill key={hours} label={`${hours} saat`} active={app.state.preferences.handoffHours === hours} onPress={() => app.updatePreferences({ handoffHours: hours })} />)}</View>
       </Card>
-      <View style={styles.spacer12} />
-      <PrimaryButton label="Başka telefona davet et" quiet onPress={() => Alert.alert("Bulut paylaşımı yakında", "Bu cihazda birden fazla bakım veren kullanılabilir. Telefonlar arası güvenli davet, hesap senkronizasyonuyla eklenecek.")} />
+      <Card>
+        <Text style={styles.cardTitle}>Başka telefona veri aktar</Text>
+        <Text style={styles.body}>JSON yedeği dosyasını diğer telefona paylaşın. Bu tek seferlik kopyadır; değişiklikler iki cihaz arasında otomatik eşitlenmez.</Text>
+        <View style={styles.spacer12} />
+        <PrimaryButton label="Yedeği paylaş" quiet onPress={() => Alert.alert("Tek seferlik veri aktarımı", "Bu dosya bebek profili ve bakım kayıtları dahil tüm verileri içerir. Diğer telefonda JSON yedeği olarak geri yükleyin. Otomatik eşitleme yapılmaz.", [{ text: "Vazgeç", style: "cancel" }, { text: "Dosyayı paylaş", onPress: () => void exportBackupFile() }])} />
+      </Card>
       <SectionTitle title="Hatırlatmalar" />
       <Card>
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
