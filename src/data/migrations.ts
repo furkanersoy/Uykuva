@@ -7,6 +7,12 @@ function isSleepPlanDayRecord(item: unknown) {
   return typeof record.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(record.date) && Number.isInteger(record.day) && Number(record.day) >= 1 && Number(record.day) <= 14 && ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(record.method)) && ["bedtime", "nightWakings", "naps", "routine"].includes(String(record.focus)) && Number.isInteger(record.completedTasks) && Number(record.completedTasks) >= 0 && Number.isInteger(record.totalTasks) && Number(record.totalTasks) >= Number(record.completedTasks);
 }
 
+function localDateOnly(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function migrateState(value: unknown): AppState {
   const initial = createInitialState();
   if (!value || typeof value !== "object") return initial;
@@ -18,6 +24,15 @@ export function migrateState(value: unknown): AppState {
   const caregivers = storedCaregivers.length ? storedCaregivers : [{ id: "caregiver-1", name: legacyName, role: "parent" as const }];
   const activeCaregiverId = caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id;
   const caregiverName = caregivers.find((item) => item.id === activeCaregiverId)?.name ?? legacyName;
+  const completedDays = Array.isArray(candidate.sleepPlan?.completedDays) ? candidate.sleepPlan!.completedDays!.filter(isSleepPlanDayRecord).slice(-14) : [];
+  const completedRuns = Array.isArray(candidate.sleepPlan?.completedRuns)
+    ? candidate.sleepPlan!.completedRuns!.filter((run) => run && typeof run.id === "string" && typeof run.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.startDate) && typeof run.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.completedDate) && Array.isArray(run.days) && run.days.length <= 14 && run.days.every(isSleepPlanDayRecord)).slice(-10)
+    : [];
+  const legacyRunStart = typeof candidate.sleepPlan?.startDate === "string" ? localDateOnly(candidate.sleepPlan.startDate) : undefined;
+  const legacyCompletedDate = typeof candidate.sleepPlan?.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(candidate.sleepPlan.completedDate) ? candidate.sleepPlan.completedDate : undefined;
+  if (legacyCompletedDate && legacyRunStart && completedDays.some((day) => day.date >= legacyRunStart) && !completedRuns.some((run) => run.completedDate === legacyCompletedDate)) {
+    completedRuns.push({ id: `legacy-sleep-run-${legacyCompletedDate}`, startDate: legacyRunStart, completedDate: legacyCompletedDate, days: completedDays.filter((day) => day.date >= legacyRunStart) });
+  }
   return {
     ...initial,
     ...candidate,
@@ -45,12 +60,8 @@ export function migrateState(value: unknown): AppState {
       paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
-      completedDays: Array.isArray(candidate.sleepPlan?.completedDays)
-        ? candidate.sleepPlan!.completedDays!.filter(isSleepPlanDayRecord).slice(-14)
-        : [],
-      completedRuns: Array.isArray(candidate.sleepPlan?.completedRuns)
-        ? candidate.sleepPlan!.completedRuns!.filter((run) => run && typeof run.id === "string" && typeof run.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.startDate) && typeof run.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.completedDate) && Array.isArray(run.days) && run.days.length <= 14 && run.days.every(isSleepPlanDayRecord)).slice(-10)
-        : [],
+      completedDays,
+      completedRuns: completedRuns.slice(-10),
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
       checkIns: candidate.sleepPlan?.checkIns ?? []
     },
