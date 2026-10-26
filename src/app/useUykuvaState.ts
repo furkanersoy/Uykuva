@@ -136,6 +136,10 @@ export function useUykuvaState() {
     setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, method } }));
   }, []);
 
+  const toggleSleepPlanPaused = useCallback(() => {
+    setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, paused: !current.sleepPlan.paused } }));
+  }, []);
+
   const toggleTask = useCallback((task: string) => {
     setState((current) => {
       const completed = current.sleepPlan.completedToday.includes(task)
@@ -155,7 +159,7 @@ export function useUykuvaState() {
   }, []);
 
   const advancePlan = useCallback(() => {
-    setState((current) => ({
+    setState((current) => current.sleepPlan.paused ? current : ({
       ...current,
       sleepPlan: {
         ...current.sleepPlan,
@@ -267,6 +271,7 @@ export function useUykuvaState() {
     deleteEvent,
     updateEvent,
     setMethod,
+    toggleSleepPlanPaused,
     toggleTask,
     toggleReadiness,
     advancePlan,
