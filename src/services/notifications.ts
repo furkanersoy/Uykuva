@@ -1,10 +1,12 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { SleepForecast } from "../domain/types";
+import { CareTask } from "../domain/types";
 import { isInQuietHours } from "../domain/time";
 
 const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
+const CARE_TASK_NOTIFICATION_KIND = "uykuva-care-task";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,6 +21,16 @@ async function ensureAndroidChannel() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync("sleep-reminders", {
     name: "Uyku hatırlatmaları",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+    lightColor: "#A8C7B5"
+  });
+}
+
+async function ensureCareTaskChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("care-task-reminders", {
+    name: "Aşı ve randevu hatırlatmaları",
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 180],
     lightColor: "#A8C7B5"
@@ -68,4 +80,47 @@ export async function scheduleSleepReminder(
     }
   });
   return true;
+}
+
+export async function scheduleCareTaskReminders(
+  tasks: CareTask[],
+  enabled: boolean,
+  leadMinutes: number,
+  quietStart: string,
+  quietEnd: string
+) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter((item) => String(item.content.data?.kind) === CARE_TASK_NOTIFICATION_KIND)
+    .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+  if (!enabled) return 0;
+  await ensureCareTaskChannel();
+  const now = Date.now();
+  const upcoming = tasks.filter((task) => !task.completedAt && new Date(task.dueAt).getTime() > now);
+  let count = 0;
+  for (const task of upcoming) {
+    const dueAt = new Date(task.dueAt);
+    const reminderAt = new Date(dueAt.getTime() - leadMinutes * 60_000);
+    if (reminderAt.getTime() <= now) continue;
+    if (isInQuietHours(reminderAt, quietStart, quietEnd)) {
+      const [hour, minute] = quietEnd.split(":").map(Number);
+      reminderAt.setHours(hour ?? 0, minute ?? 0, 0, 0);
+      if (reminderAt.getTime() <= now) reminderAt.setDate(reminderAt.getDate() + 1);
+    }
+    if (reminderAt.getTime() >= dueAt.getTime()) continue;
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: task.type === "vaccine" ? "Aşı hatırlatması" : "Randevu hatırlatması",
+        body: `${task.title} · ${dueAt.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}`,
+        data: { kind: CARE_TASK_NOTIFICATION_KIND, taskId: task.id }
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: reminderAt,
+        channelId: Platform.OS === "android" ? "care-task-reminders" : undefined
+      }
+    });
+    count += 1;
+  }
+  return count;
 }
