@@ -435,18 +435,48 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
     consolidate: ["İşe yarayan destek adımlarını aynı biçimde sürdür", "Yeni bir azaltma adımı eklemeden önce birkaç gece gözlemle", "Bakım verenlerle check-in sonuçlarını paylaş"]
   };
   const phaseNames = { observe: "Ritmi gözle", routine: "Rutini kur", practice: "Nazikçe dene", consolidate: "İşe yarayanı koru" };
-  const methodTask: Record<SleepMethod, string[]> = {
-    responsive: ["İlk huzursuzlukta sesinle veya yakınlığınla yanıt ver", "Gerekirse kucağa alıp bebeğin sakinleşince yatağa geri dön"],
-    gradual: ["Alışılmış desteğin yalnızca tek küçük bölümünü azaltmayı seç; süre tutma", "Bebek belirgin biçimde huzursuzsa önceki desteğe dön ve denemeyi bırak"],
-    camping: ["Bebeğin yanında kalıp sesinle veya nazik dokunuşla destek ver", "Bebek rahat ve aile hazır değilse mesafeyi artırma; değişikliği ancak birkaç rahat geceden sonra değerlendir"],
-    bedtimeFading: ["Son gecelerdeki yatış saatlerini gözden geçir; yeterli kayıt yoksa mevcut hedefi koru", "Yatma saatini yalnızca küçük bir adımla değiştir ve bebeğin tepkisini birkaç gece izle"],
-    pickUpPutDown: ["Huzursuzluk belirginleşirse bebeğini kucağa alıp sakinleşmesine yardım et", "Rahatlayınca sırtüstü ve güvenli uyku alanına geri yatır; gerekirse döngüyü tekrarla"],
-    routineFirst: ["Akşam rutininden iki veya üç sakin adımı benzer sırayla uygula", "Uykuya geçişte ihtiyaç duyduğu desteği ver; azaltma hedefi koyma"]
+  const methodTasks: Record<SleepMethod, Record<typeof phase, string[]>> = {
+    responsive: {
+      observe: ["Bebeğinizin hangi ses veya yakınlık desteğine yanıt verdiğini not edin", "Uyanınca temel ihtiyaçlarına göre karşılık verin"],
+      routine: ["İlk huzursuzlukta sesinizle veya yakınlığınızla yanıt verin", "Gerekirse kucağa alıp sakinleşince yatağa geri dönün"],
+      practice: ["Gündüz veya gece uykusunda aynı sakinleştirme ipucunu deneyin", "Daha fazla desteğe ihtiyaç duyarsa desteği artırın"],
+      consolidate: ["Bebeğinize iyi gelen yanıt biçimini sürdürün", "Bakım verenlerle hangi desteğin işe yaradığını paylaşın"]
+    },
+    gradual: {
+      observe: ["Uykuya geçişte en çok hangi desteği kullandığınızı belirleyin", "Bu aşamada desteği değiştirmeden bebeğinizin tepkisini izleyin"],
+      routine: ["Yalnızca tek bir destek adımını daha az yoğun sunmayı değerlendirin", "Bebeğiniz rahatsız olursa önceki desteğe dönün"],
+      practice: ["Seçtiğiniz küçük değişikliği yalnızca rahat bir anda deneyin", "Belirgin huzursuzlukta denemeyi bırakıp sakinleştirin"],
+      consolidate: ["Aile için sürdürülebilir olan destek düzeyini koruyun", "Yeni bir adımı ancak önceki adım rahat geçtiyse düşünün"]
+    },
+    camping: {
+      observe: ["Bebeğinizin yanında hangi sakin desteği verdiğinizi gözlemleyin", "Bakım verenlerin gece için ortak bir yanıt belirlemesini sağlayın"],
+      routine: ["Yatağın yanında kalıp sesinizle veya nazik dokunuşla destek verin", "Yakınlığınızı azaltmak zorunda değilsiniz"],
+      practice: ["Birkaç rahat geçiş olduysa yalnızca küçük bir mesafe değişikliğini deneyin", "Bebeğiniz sizi ararsa yaklaşıp ihtiyacına yanıt verin"],
+      consolidate: ["Bebeğiniz ve aileniz için rahat olan yakınlığı sürdürün", "Mesafeyi artırmayı istemiyorsanız mevcut şekilde devam edin"]
+    },
+    bedtimeFading: {
+      observe: ["Son yatış ve uyku başlangıçlarını gözden geçirin", "Saat değişikliği yapmadan uykuya geçiş kolaylığını kaydedin"],
+      routine: ["Akşam rutinini son günlerdeki gerçek uykuya dalma zamanına göre planlayın", "Yeterli kayıt yoksa hedef saati değiştirmeyin"],
+      practice: ["Uykuya geçiş sürekli zorlanıyorsa hedef saati küçük bir adımla ayarlamayı değerlendirin", "Bebeğiniz daha yorgun veya huzursuz görünürse önceki düzene dönün"],
+      consolidate: ["Rahat uykuya geçiş saatini birkaç gece gözlemleyin", "Saat hedefini yalnızca aileye ve bebeğe iyi geliyorsa yeniden ayarlayın"]
+    },
+    pickUpPutDown: {
+      observe: ["Bebeğinizin hangi durumda kucak desteğine ihtiyaç duyduğunu fark edin", "Uyku alanını güvenli ve hazır tutun"],
+      routine: ["Uyku öncesi sakinleştirme sırasını belirleyin", "Bebeğiniz sakinse yatağında sesinizle destek verin"],
+      practice: ["Belirgin huzursuzlukta kucağa alıp sakinleşmesine yardım edin", "Rahatlayınca sırtüstü güvenli uyku alanına geri yatırın"],
+      consolidate: ["Gerekirse aynı alıp sakinleştirme döngüsünü tekrarlayın", "Bebeğiniz veya siz yorulursanız daha fazla destek verip ara verin"]
+    },
+    routineFirst: {
+      observe: ["Akşamı kolaylaştıran veya zorlaştıran adımları not edin", "Mevcut rutini değiştirmeden izleyin"],
+      routine: ["İki veya üç kısa, sakin adımı benzer sırayla uygulayın", "Uyku işaretlerine göre rutini kısaltın veya ara verin"],
+      practice: ["Bebeğinizin sevdiği bir kitap, ninni veya loş ışık ipucunu tekrarlayın", "Uykuya geçişte ihtiyaç duyduğu desteği verin"],
+      consolidate: ["Aileniz için uygulanabilir rutin adımlarını seçin", "Desteği azaltma hedefi koymadan bu sırayı sürdürün"]
+    }
   };
   return {
     title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,
     focus: phaseNames[phase],
-    tasks: [...shared[phase], ...methodTask[method]],
+    tasks: [...shared[phase], ...methodTasks[method][phase]],
     checkIn: safeDay <= 3 ? "Son 24 saatte uyku ve uyanma örüntüsünde ne fark ettiniz?" : safeDay <= 7 ? "Rutinin hangi bölümü daha öngörülebilir oldu?" : safeDay <= 10 ? "Denediğiniz küçük adım bebeğiniz ve sizin için nasıl hissettirdi?" : "Bu yaklaşım aile için sürdürülebilir mi; aynı şekilde devam etmek ister misiniz?"
   };
 }
