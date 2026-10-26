@@ -114,6 +114,7 @@ Ana fonksiyonlar:
 - `createSleepForecast`: Yaş aralığı ile tahmini saat dilimine ait son kullanılabilir uyanıklık sürelerini harmanlar.
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
 - `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir.
+- `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir.
 - `coachingDay`: Seçilen yaklaşıma göre 14 günlük planın günlük görevlerini üretir.
 - `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir.
