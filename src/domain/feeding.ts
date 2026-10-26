@@ -21,7 +21,7 @@ export function nextBreastSide(events: CareEvent[]): "left" | "right" | null {
 
 export function createFeedingForecast(events: CareEvent[], now = new Date()): FeedingForecast {
   const feeds = events
-    .filter((event) => event.kind === "feed")
+    .filter((event) => event.kind === "feed" && event.feedType !== "pump")
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
     .slice(-11);
   if (feeds.length < 4) {
@@ -56,7 +56,7 @@ export function todayFeedingTotals(events: CareEvent[], now = new Date(), rollin
     : new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const periodEnd = now.getTime();
   const feeds = events.filter((event) => {
-    if (event.kind !== "feed") return false;
+    if (event.kind !== "feed" || event.feedType === "pump") return false;
     const start = new Date(event.startedAt).getTime();
     if (!Number.isFinite(start) || start > periodEnd) return false;
     if (event.feedType !== "breast") return start >= periodStart;
