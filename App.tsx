@@ -629,6 +629,21 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           );
         })}
       </Card>
+      {app.state.sleepPlan.completedDays.length ? <>
+        <SectionTitle title="14 günlük plan geçmişi" action={`${app.state.sleepPlan.completedDays.length} gün`} />
+        <Card>
+          {app.state.sleepPlan.completedDays.slice(-7).reverse().map((record) => <View key={`${record.date}-${record.day}`} style={styles.growthHistoryRow}>
+            <View style={styles.eventRow}>
+              <View style={styles.flex}>
+                <Text style={styles.eventTitle}>{record.day}. gün · {record.completedTasks}/{record.totalTasks} görev</Text>
+                <Text style={styles.muted}>{new Date(`${record.date}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · {methodDescription(record.method).name}</Text>
+              </View>
+              <Text style={styles.taskDate}>{sleepFocusOptions.find((item) => item.id === record.focus)?.label ?? "Akşam rutini"}</Text>
+            </View>
+          </View>)}
+          <Text style={styles.hint}>Bu geçmiş yalnızca plan gününü ilerlettiğinizde kaydedilir; gün atlamak tamamlanan görev sayısı anlamına gelmez.</Text>
+        </Card>
+      </> : null}
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
       <Card>
         <PrimaryButton label="Akşam rutinine başla" onPress={startRoutine} />
@@ -670,7 +685,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </View>) : <Text style={styles.body}>Gece özeti veya uyanma sayısı eklendikçe son yedi gün burada görünür.</Text>}
         <Text style={styles.hint}>Uyku süreleri yalnızca uygulamaya kaydedilmiş uyku aralıklarının toplamıdır.</Text>
       </Card>
-      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={app.advancePlan} />}
+      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={() => app.advancePlan(completedTodayCount, plan.tasks.length)} />}
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
       <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
     </ScrollView>

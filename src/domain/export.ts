@@ -36,6 +36,17 @@ function isClockString(value: unknown) {
   return typeof value === "string" && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+function isCompletedPlanDayHistory(value: unknown) {
+  return Array.isArray(value) && value.length <= 14 && value.every((item) =>
+    isRecord(item) && typeof item.date === "string" && isDateOnly(item.date) &&
+    typeof item.day === "number" && Number.isInteger(item.day) && item.day >= 1 && item.day <= 14 &&
+    ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(item.method)) &&
+    ["bedtime", "nightWakings", "naps", "routine"].includes(String(item.focus)) &&
+    typeof item.completedTasks === "number" && Number.isInteger(item.completedTasks) && item.completedTasks >= 0 &&
+    typeof item.totalTasks === "number" && Number.isInteger(item.totalTasks) && item.totalTasks >= item.completedTasks
+  );
+}
+
 function isBreastSessions(value: unknown) {
   return value === undefined || Array.isArray(value) && value.every((session) =>
     isRecord(session) && ["left", "right"].includes(String(session.side)) && isDateString(session.startedAt) &&
@@ -64,7 +75,7 @@ export function parseDataExport(raw: string): AppState {
     throw new Error("Yedekte okunamayan aşı veya randevu kayıtları var.");
   }
   const plan = parsed.sleepPlan;
-  if (!isRecord(plan) || (plan.paused !== undefined && typeof plan.paused !== "boolean") || (plan.lastAdvancedDate !== undefined && (typeof plan.lastAdvancedDate !== "string" || !isDateOnly(plan.lastAdvancedDate))) || (plan.completedDate !== undefined && (typeof plan.completedDate !== "string" || !isDateOnly(plan.completedDate))) || !["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(plan.method)) || (plan.focus !== undefined && !["bedtime", "nightWakings", "naps", "routine"].includes(String(plan.focus))) || !isDateString(plan.startDate) || typeof plan.day !== "number" || !Number.isInteger(plan.day) || plan.day < 1 || plan.day > 14 || !isClockString(plan.bedtime) || !isClockString(plan.wakeTime) || !Array.isArray(plan.routine) || !plan.routine.every((step) => isRecord(step) && typeof step.id === "string" && typeof step.label === "string" && typeof step.enabled === "boolean" && typeof step.minutes === "number" && Number.isInteger(step.minutes) && step.minutes > 0) || !Array.isArray(plan.completedToday) || !plan.completedToday.every((item) => typeof item === "string") || !Array.isArray(plan.readinessCompleted) || !plan.readinessCompleted.every((item) => typeof item === "string") || !Array.isArray(plan.checkIns) || !plan.checkIns.every((item) => isRecord(item) && typeof item.date === "string" && (item.ease === undefined || [1, 2, 3, 4, 5].includes(Number(item.ease))) && (item.nightWakings === undefined || typeof item.nightWakings === "number" && Number.isInteger(item.nightWakings) && item.nightWakings >= 0 && item.nightWakings <= 5) && (item.bedtime === undefined || isClockString(item.bedtime)) && (item.wakeTime === undefined || isClockString(item.wakeTime)) && (item.note === undefined || typeof item.note === "string"))) {
+  if (!isRecord(plan) || (plan.paused !== undefined && typeof plan.paused !== "boolean") || (plan.lastAdvancedDate !== undefined && (typeof plan.lastAdvancedDate !== "string" || !isDateOnly(plan.lastAdvancedDate))) || (plan.completedDate !== undefined && (typeof plan.completedDate !== "string" || !isDateOnly(plan.completedDate))) || !["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(plan.method)) || (plan.focus !== undefined && !["bedtime", "nightWakings", "naps", "routine"].includes(String(plan.focus))) || (plan.completedDays !== undefined && !isCompletedPlanDayHistory(plan.completedDays)) || !isDateString(plan.startDate) || typeof plan.day !== "number" || !Number.isInteger(plan.day) || plan.day < 1 || plan.day > 14 || !isClockString(plan.bedtime) || !isClockString(plan.wakeTime) || !Array.isArray(plan.routine) || !plan.routine.every((step) => isRecord(step) && typeof step.id === "string" && typeof step.label === "string" && typeof step.enabled === "boolean" && typeof step.minutes === "number" && Number.isInteger(step.minutes) && step.minutes > 0) || !Array.isArray(plan.completedToday) || !plan.completedToday.every((item) => typeof item === "string") || !Array.isArray(plan.readinessCompleted) || !plan.readinessCompleted.every((item) => typeof item === "string") || !Array.isArray(plan.checkIns) || !plan.checkIns.every((item) => isRecord(item) && typeof item.date === "string" && (item.ease === undefined || [1, 2, 3, 4, 5].includes(Number(item.ease))) && (item.nightWakings === undefined || typeof item.nightWakings === "number" && Number.isInteger(item.nightWakings) && item.nightWakings >= 0 && item.nightWakings <= 5) && (item.bedtime === undefined || isClockString(item.bedtime)) && (item.wakeTime === undefined || isClockString(item.wakeTime)) && (item.note === undefined || typeof item.note === "string"))) {
     throw new Error("Uyku planı veya check-in kayıtları geçersiz.");
   }
   const preferences = parsed.preferences;

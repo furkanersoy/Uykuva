@@ -35,6 +35,9 @@ export function migrateState(value: unknown): AppState {
       paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
+      completedDays: Array.isArray(candidate.sleepPlan?.completedDays)
+        ? candidate.sleepPlan!.completedDays!.filter((item) => item && typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && Number.isInteger(item.day) && item.day >= 1 && item.day <= 14 && ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(item.method) && ["bedtime", "nightWakings", "naps", "routine"].includes(item.focus) && Number.isInteger(item.completedTasks) && item.completedTasks >= 0 && Number.isInteger(item.totalTasks) && item.totalTasks >= item.completedTasks).slice(-14)
+        : [],
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
       checkIns: candidate.sleepPlan?.checkIns ?? []
     },

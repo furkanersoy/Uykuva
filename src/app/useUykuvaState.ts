@@ -195,16 +195,25 @@ export function useUykuvaState() {
     });
   }, []);
 
-  const advancePlan = useCallback(() => {
+  const advancePlan = useCallback((completedTaskCount: number, totalTaskCount: number) => {
     const today = localDateKey();
     setState((current) => {
       const plan = current.sleepPlan;
       if (plan.paused || plan.completedDate || plan.lastAdvancedDate === today) return current;
+      const dayRecord = {
+        date: today,
+        day: plan.day,
+        method: plan.method,
+        focus: plan.focus,
+        completedTasks: Math.max(0, Math.min(totalTaskCount, completedTaskCount)),
+        totalTasks: Math.max(0, totalTaskCount)
+      };
+      const completedDays = [...plan.completedDays.filter((item) => item.date !== today), dayRecord].slice(-14);
       return {
         ...current,
         sleepPlan: plan.day >= 14
-          ? { ...plan, completedDate: today, lastAdvancedDate: today }
-          : { ...plan, day: plan.day + 1, lastAdvancedDate: today, completedToday: [] }
+          ? { ...plan, completedDate: today, lastAdvancedDate: today, completedDays }
+          : { ...plan, day: plan.day + 1, lastAdvancedDate: today, completedToday: [], completedDays }
       };
     });
   }, []);

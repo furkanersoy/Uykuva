@@ -45,6 +45,7 @@ export function createInitialState(): AppState {
         { id: "r5", label: "Yatağa geçiş", minutes: 5, enabled: true }
       ],
       completedToday: [],
+      completedDays: [],
       readinessCompleted: [],
       checkIns: []
     },

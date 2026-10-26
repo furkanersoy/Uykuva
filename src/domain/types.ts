@@ -57,6 +57,15 @@ export type RoutineStep = {
 export type SleepMethod = "responsive" | "gradual" | "camping" | "bedtimeFading" | "pickUpPutDown" | "routineFirst";
 export type SleepFocus = "bedtime" | "nightWakings" | "naps" | "routine";
 
+export type SleepPlanDayRecord = {
+  date: string;
+  day: number;
+  method: SleepMethod;
+  focus: SleepFocus;
+  completedTasks: number;
+  totalTasks: number;
+};
+
 export type SleepPlan = {
   method: SleepMethod;
   focus: SleepFocus;
@@ -69,6 +78,7 @@ export type SleepPlan = {
   wakeTime: string;
   routine: RoutineStep[];
   completedToday: string[];
+  completedDays: SleepPlanDayRecord[];
   readinessCompleted: string[];
   checkIns: SleepCheckIn[];
 };

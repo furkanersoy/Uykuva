@@ -140,7 +140,7 @@ Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts
 
 Katı gıda günlüğü, `src/domain/solids.ts` içinde kaydedilen yiyecek adlarını, ilk uygulama kayıt tarihini, öğün sayısını ve seçilen alerjen etiketlerini özetler. Tepki gözlemleri öğün notuyla birlikte tarih sırasıyla gösterilir; etiketlerden veya notlardan alerji durumu çıkarılmaz.
 
-Uyku koçluğu günü yerel takvim gününde en fazla bir kez ilerler. `SleepPlan.lastAdvancedDate` bu günü saklar; gün 14'e ulaştığında son gün ayrıca tamamlanır ve `completedDate` kaydedilir. Arayüz 14 günlük ilerlemeyi gösterir, aynı gün tekrar ilerlemeyi engeller. Yedek doğrulaması yeni tarih alanlarını varsa doğrular, yoksa eski yedek uyumluluğunu korur.
+Uyku koçluğu günü yerel takvim gününde en fazla bir kez ilerler. `SleepPlan.lastAdvancedDate` bu günü saklar; ilerletilen her gün `completedDays` geçmişine tarih, yaklaşım, odak ve tamamlanan/toplam görev sayısını yazar. Gün 14'e ulaştığında son gün ayrıca tamamlanır ve `completedDate` kaydedilir. Arayüz son yedi plan gününün görev sayılarını gösterir ve aynı gün tekrar ilerlemeyi engeller. Eski yedeklerde geçmiş yoksa boş listeye geçiş yapılır; içe aktarılan geçmiş tarih, yöntem, odak ve sayım doğrulamasından geçer.
 
 Uyku planı duraklatma durumu `SleepPlan.paused` alanında saklanır. Duraklatılmış planda günlük koçluk adımları etkileşime kapanır ve gün ilerlemez; bakım kayıtları ile rutin çalıştırıcısı kullanılmaya devam eder. Migrasyon eski verilerde bu alanı `false` yapar; JSON yedek doğrulaması alan yoksa eski yedekleri kabul eder.
 
@@ -232,6 +232,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - Hedef yatış/kalkış zamanı
 - Akşam rutini adımları
 - Günlük tamamlanan görevler
+- İlerletilen günlerin yöntem, odak ve görev sayısı geçmişi (en çok 14 gün)
 
 ## 9. Şu ana kadar yapılanlar
 
@@ -247,6 +248,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] 14 günlük uyku eğitimi/alışkanlık planı eklendi.
 - [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
+- [x] Plan günü ilerletildiğinde yaklaşım/odak ve tamamlanan görev sayısı 14 günlük geçmişte korunuyor.
 - [x] Günlük görev tamamlama ve plan ilerletme eklendi.
 - [x] Akşam rutini veri modeli ve görünümü eklendi.
 - [x] Günlük uyku, beslenme ve bez özeti eklendi.
