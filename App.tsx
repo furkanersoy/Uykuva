@@ -1134,6 +1134,10 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
   const [lengthPosition, setLengthPosition] = useState<"recumbent" | "standing">(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
   const [head, setHead] = useState("");
   const [memoryTitle, setMemoryTitle] = useState("");
+  useEffect(() => {
+    if (mode !== "growth") return;
+    setLengthPosition(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
+  }, [mode, app.state.baby.birthDate]);
   if (!mode) return null;
   const save = (details: Partial<CareEvent>) => { add(mode, details); setNote(""); close(); };
   const title = { feed: "Beslenme kaydı", diaper: "Bez kaydı", note: "Bakım notu", health: "Sağlık kaydı", growth: "Büyüme ölçümü", memory: "Anı günlüğü" }[mode];
