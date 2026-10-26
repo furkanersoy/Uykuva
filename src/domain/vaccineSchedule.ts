@@ -7,6 +7,7 @@ export type VaccineMilestone = {
 // Suggested tracking dates based on the Ministry's 2025 national schedule.
 // The second varicella dose at 48 months was added from 1 September 2026.
 export const TURKEY_CHILDHOOD_VACCINE_MILESTONES: VaccineMilestone[] = [
+  { id: "hepb-birth", ageMonths: 0, title: "Hepatit B · doğum dozu" },
   { id: "bcg-2m", ageMonths: 2, title: "BCG (Verem)" },
   { id: "kpa-2m", ageMonths: 2, title: "KPA · 1. doz" },
   { id: "hexavalent-2m", ageMonths: 2, title: "DaBT-İPA-Hib-HepB · 1. doz" },
@@ -41,11 +42,13 @@ function addMonths(date: Date, months: number) {
 export function suggestedVaccineTasks(birthDate: string, existingTitles: string[], now = new Date()) {
   const birth = new Date(`${birthDate}T12:00:00`);
   if (Number.isNaN(birth.getTime())) return [];
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const normalizedExisting = existingTitles.map((title) => title.trim().toLocaleLowerCase("tr-TR"));
   return TURKEY_CHILDHOOD_VACCINE_MILESTONES.flatMap((milestone) => {
     const dueAt = addMonths(birth, milestone.ageMonths);
+    const dueDay = new Date(dueAt.getFullYear(), dueAt.getMonth(), dueAt.getDate()).getTime();
     const normalizedTitle = milestone.title.toLocaleLowerCase("tr-TR");
-    if (dueAt.getTime() < now.getTime() || normalizedExisting.includes(normalizedTitle)) return [];
+    if (dueDay < today || normalizedExisting.includes(normalizedTitle)) return [];
     return [{ ...milestone, dueAt }];
   });
 }

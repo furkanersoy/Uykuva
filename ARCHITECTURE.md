@@ -82,9 +82,9 @@ Zaman çizelgesi, kayıt türüne göre filtreleri ve içerik/bakım veren adın
 
 ### Ulusal aşı takvimi önerileri
 
-`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır. `App.tsx` içindeki aşı öneri penceresi yalnızca gelecekteki önerileri gösterir; kullanıcı her birini ayrıca takvime ekler. Bu kayıtlar aşı yapıldığını göstermez. Geçmiş dozlar için telafi takvimi oluşturulmaz ve kullanıcı aile hekimine yönlendirilir.
+`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır; doğum günündeki öneri gün sonuna kadar görünür kalır. `App.tsx` içindeki aşı öneri penceresi kullanıcı her birini ayrıca takvime eklemeden kayıt oluşturmaz. Bu kayıtlar aşı yapıldığını göstermez. Geçmiş dozlar ve 49–72 ay suçiçeği yakalama dozu için plan üretmez; kullanıcı aile hekimine yönlendirilir.
 
-Takvim verisi Sağlık Bakanlığının 2025 ulusal takvimine dayanır. 1 Eylül 2026 tarihli güncelleme suçiçeği aşısının ikinci dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri sağlık profesyoneliyle doğrulanmalıdır.
+Takvim verisi Sağlık Bakanlığının [2025 ulusal çocukluk dönemi aşı kartına](https://hsgm.saglik.gov.tr/depo/birimler/asi-ile-onlenebilir-hastaliklar-db/dokumanlar/2025/asi_haftasi/50X30_asi_karti.pdf) dayanır; Hepatit B doğum dozunu içerir. Bakanlığın [1 Eylül 2026 güncellemesi](https://iskilipdh.saglik.gov.tr/TR-1590795/cocukluk-donemi-asilama-takvimi-guncellendi-sucicegi-asisinda-ikinci-doz-uygulamasi-basladi.html) ikinci suçiçeği dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri aile hekimiyle doğrulanmalıdır.
 
 Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını ve o günün rehberini yerel paylaşım menüsüyle metin olarak diğer bakım verenlere gönderebilir. Paylaşım sunucuya yüklenmez.
 
@@ -239,6 +239,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Kilo, boy ve baş çevresi ölçüm kayıtları eklendi.
 - [x] Yedi günlük paylaşılabilir doktor özeti eklendi.
 - [x] Manuel aşı ve doktor randevusu görevleri eklendi.
+- [x] Ulusal çocukluk takvimi yaş dönümü önerileri eklendi; Hepatit B doğum dozu ve 48. ay suçiçeği ikinci dozu dahil.
 - [x] Gece yarısını aşabilen sessiz saatler eklendi.
 - [x] Tüm kullanıcı verisini JSON olarak dışa aktarma eklendi.
 - [x] Onaylı cihaz verisi silme akışı eklendi.
@@ -278,7 +279,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] Gelişmiş bildirim tercihleri (tekrarlayan görevler ve ayrıntılı zamanlama seçenekleri)
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [ ] WHO büyüme grafikleri
-- [ ] Türkiye aşı takvimi
+- [ ] Aşı takvimi kaynak sürümleme ve hekim yönlendirmeli eksik doz/49–72 ay yakalama akışı
 - [ ] Ek gıda ve alerjen günlüğü
 - [ ] Sesli Türkçe kayıt
 - [ ] İkiz ve çoklu bebek desteği
@@ -291,7 +292,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 1. Görev hatırlatmaları ve güvenilir zamanlayıcılar; görev verilerini normalize SQLite tablosuna taşıma
 2. Aile hesabı, davet ve çevrimdışı senkronizasyon
-3. Büyüme, aşı ve doktor raporu
+3. WHO büyüme grafikleri ve ek dozlar için hekim yönlendirmeli aşı akışı
 4. Widget, Live Activity ve sesli kayıt
 5. İçerik/uyku planlarının uzman doğrulaması
 6. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
