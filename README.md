@@ -25,6 +25,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Günlük gece uyanma kaydı ve son yedi check-in ortalaması
+- Sabah check-in'ine isteğe bağlı bağlam notu ekleme
 - Uyku planı yaklaşımını yaş aşaması ve hazırlık listesine göre gösterme
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi
