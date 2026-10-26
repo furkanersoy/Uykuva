@@ -322,6 +322,10 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 
 ## 10. Henüz tamamlanmayanlar
 
+### Yeni koçluk döngüsü
+
+14 günlük rehber tamamlandıktan sonra kullanıcı yeni bir döngü başlatabilir. Başlangıç tarihi ve gün ilerlemesi sıfırlanır; yaklaşım, odak, rutin, check-in kayıtları ve son 14 plan gününün geçmişi korunur. Yeni döngü, aynı yerel takvim gününde tekrar ilerletilemez.
+
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
 - [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
 - [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
