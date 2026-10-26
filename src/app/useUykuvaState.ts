@@ -11,6 +11,22 @@ function localDateKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function nextRecurringDueAt(task: CareTask, now: Date) {
+  const next = new Date(task.dueAt);
+  const anchorDay = task.recurrenceDay ?? next.getDate();
+  do {
+    if (task.repeat === "weekly") next.setDate(next.getDate() + 7);
+    else {
+      const month = next.getMonth() + 1;
+      next.setDate(1);
+      next.setMonth(month);
+      const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+      next.setDate(Math.min(anchorDay, lastDay));
+    }
+  } while (next.getTime() <= now.getTime());
+  return next.toISOString();
+}
+
 export function useUykuvaState() {
   const [state, setState] = useState<AppState>(createInitialState);
   const [hydrated, setHydrated] = useState(false);
@@ -269,23 +285,36 @@ export function useUykuvaState() {
   }, []);
 
   const addCareTask = useCallback((task: Omit<CareTask, "id">) => {
-    setState((current) => ({ ...current, careTasks: [...current.careTasks, { ...task, id: id(task.type) }] }));
+    setState((current) => {
+      const recurring = task.type === "appointment" && task.repeat;
+      const dueAt = new Date(task.dueAt);
+      return { ...current, careTasks: [...current.careTasks, { ...task, repeat: recurring ? task.repeat : undefined, recurrenceId: recurring ? task.recurrenceId ?? id("recurrence") : undefined, recurrenceDay: recurring ? task.recurrenceDay ?? dueAt.getDate() : undefined, id: id(task.type) }] };
+    });
   }, []);
 
   const updateCareTask = useCallback((taskId: string, patch: Partial<Omit<CareTask, "id">>) => {
     setState((current) => ({
       ...current,
-      careTasks: current.careTasks.map((task) => task.id === taskId ? { ...task, ...patch, id: task.id } : task)
+      careTasks: current.careTasks.map((task) => task.id === taskId ? { ...task, ...patch, repeat: patch.type === "vaccine" || patch.repeat === undefined ? undefined : patch.repeat, recurrenceId: patch.type === "vaccine" || patch.repeat === undefined ? undefined : task.recurrenceId ?? id("recurrence"), recurrenceDay: patch.type === "vaccine" || patch.repeat === undefined ? undefined : task.recurrenceDay ?? new Date(patch.dueAt ?? task.dueAt).getDate(), id: task.id } : task)
     }));
   }, []);
 
   const toggleCareTask = useCallback((taskId: string) => {
-    setState((current) => ({
-      ...current,
-      careTasks: current.careTasks.map((task) => task.id === taskId
-        ? { ...task, completedAt: task.completedAt ? undefined : new Date().toISOString() }
-        : task)
-    }));
+    setState((current) => {
+      const task = current.careTasks.find((item) => item.id === taskId);
+      if (!task) return current;
+      if (task.completedAt) return {
+        ...current,
+        careTasks: current.careTasks.filter((item) => !(task.recurrenceId && item.generated && !item.completedAt && item.recurrenceId === task.recurrenceId)).map((item) => item.id === taskId ? { ...item, completedAt: undefined } : item)
+      };
+      const completedAt = new Date();
+      const following = task.type === "appointment" && task.repeat && task.recurrenceId
+        ? { ...task, id: id("appointment"), dueAt: nextRecurringDueAt(task, completedAt), completedAt: undefined, generated: true }
+        : undefined;
+      const exists = following && current.careTasks.some((item) => item.recurrenceId === task.recurrenceId && !item.completedAt && new Date(item.dueAt).getTime() > completedAt.getTime());
+      const careTasks = current.careTasks.filter((item) => !(following && item.id !== taskId && item.generated && !item.completedAt && item.recurrenceId === task.recurrenceId && new Date(item.dueAt).getTime() <= completedAt.getTime()));
+      return { ...current, careTasks: [...careTasks.map((item) => item.id === taskId ? { ...item, completedAt: completedAt.toISOString() } : item), ...(following && !exists ? [following] : [])] };
+    });
   }, []);
 
   const deleteCareTask = useCallback((taskId: string) => {
