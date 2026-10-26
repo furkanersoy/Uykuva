@@ -180,6 +180,61 @@ export function coachingDay(day: number, method: SleepMethod): CoachingDay {
   };
 }
 
+function clockMinutes(value: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour <= 23 && minute <= 59 ? hour * 60 + minute : null;
+}
+
+function formatClock(minutes: number) {
+  const normalized = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
+}
+
+export type SleepCoachInsights = {
+  actualBedtime?: string;
+  targetBedtime: string;
+  suggestedBedtime: string;
+  adjustmentMinutes: number;
+  checkInAverage?: number;
+  nightsUsed: number;
+};
+
+export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: { ease: number }[]): SleepCoachInsights {
+  const target = clockMinutes(targetBedtime) ?? 20 * 60;
+  const nightStarts = events
+    .filter((event) => {
+      if (event.kind !== "sleep" || !event.endedAt) return false;
+      const start = new Date(event.startedAt);
+      const duration = (new Date(event.endedAt).getTime() - start.getTime()) / 60_000;
+      return start.getHours() >= 17 && duration >= 120;
+    })
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+    .slice(0, 7)
+    .map((event) => {
+      const date = new Date(event.startedAt);
+      return date.getHours() * 60 + date.getMinutes();
+    });
+  const actual = nightStarts.length ? median(nightStarts) : undefined;
+  let delta = actual === undefined ? 0 : target - actual;
+  if (delta > 720) delta -= 1440;
+  if (delta < -720) delta += 1440;
+  const adjustment = Math.max(-15, Math.min(15, Math.round(delta)));
+  const checkInAverage = checkIns.length
+    ? checkIns.slice(0, 7).reduce((sum, item) => sum + item.ease, 0) / Math.min(7, checkIns.length)
+    : undefined;
+  return {
+    actualBedtime: actual === undefined ? undefined : formatClock(actual),
+    targetBedtime: formatClock(target),
+    suggestedBedtime: formatClock((actual ?? target) + adjustment),
+    adjustmentMinutes: adjustment,
+    checkInAverage,
+    nightsUsed: nightStarts.length
+  };
+}
+
 export function handoffSummary(state: AppState, now = new Date()): string {
   const since = now.getTime() - 4 * 60 * 60 * 1000;
   const recent = state.events.filter((event) => new Date(event.startedAt).getTime() >= since);

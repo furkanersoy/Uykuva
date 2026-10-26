@@ -25,6 +25,9 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Biberon ve katı gıda ayrıntıları
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
+- Gerçek gece kayıtlarını hedef yatışla karşılaştıran uyku koçu
+- Gecelik en fazla 15 dakikalık yatış saati ayarlaması
+- Düzenlenebilir hedef saatler ve kişisel akşam rutini
 
 Uygulama tıbbi tanı veya tedavi önermez.
 

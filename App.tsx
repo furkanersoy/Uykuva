@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage } from "./src/domain/sleep";
+import { coachingDay, createSleepCoachInsights, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage } from "./src/domain/sleep";
 import { createDoctorSummary } from "./src/domain/reports";
 import { createDataExport } from "./src/domain/export";
 import { isValidClock } from "./src/domain/time";
@@ -238,9 +238,23 @@ function TimelineScreen({ events, onDelete }: { events: CareEvent[]; onDelete: (
 function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const plan = coachingDay(app.state.sleepPlan.day, app.state.sleepPlan.method);
   const stage = sleepProgramStage(app.state.baby);
+  const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = ["responsive", "gradual", "camping"];
   const today = new Date().toISOString().slice(0, 10);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
+  const [bedtime, setBedtime] = useState(app.state.sleepPlan.bedtime);
+  const [wakeTime, setWakeTime] = useState(app.state.sleepPlan.wakeTime);
+  const [routineLabel, setRoutineLabel] = useState("");
+  const [routineMinutes, setRoutineMinutes] = useState("5");
+  const saveSchedule = () => {
+    if (!isValidClock(bedtime) || !isValidClock(wakeTime)) return Alert.alert("Saatleri kontrol edin", "Saatleri 20:00 gibi SS:DD biçiminde yazın.");
+    app.updateSleepSchedule(bedtime, wakeTime);
+  };
+  const addRoutine = () => {
+    const minutes = Number(routineMinutes);
+    if (!routineLabel.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 60) return Alert.alert("Adımı kontrol edin", "Bir ad ve 1–60 dakika arasında süre yazın.");
+    app.addRoutineStep(routineLabel, minutes); setRoutineLabel(""); setRoutineMinutes("5");
+  };
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Uyku planı</Text>
@@ -253,6 +267,12 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <Text style={styles.eyebrow}>{plan.title.toUpperCase()}</Text>
         <Text style={styles.heroSmall}>{plan.focus}</Text>
         <Text style={styles.body}>{methodDescription(app.state.sleepPlan.method).support}</Text>
+      </Card>
+      <SectionTitle title="Kayıtlardan öneri" action={`${insights.nightsUsed} gece`} />
+      <Card>
+        <View style={styles.measureRow}><Measure value={insights.actualBedtime ?? "—"} label="Gerçek medyan" /><Measure value={insights.targetBedtime} label="Hedef" /><Measure value={insights.suggestedBedtime} label="Bu gece" /></View>
+        <Text style={styles.body}>{insights.nightsUsed ? insights.adjustmentMinutes === 0 ? "Kayıtlı yatış saati hedefle uyumlu görünüyor." : `Hedefe doğru bu gece yalnızca ${Math.abs(insights.adjustmentMinutes)} dakikalık küçük bir değişim öneriliyor.` : "En az bir uzun gece uykusu kaydedildiğinde hedefle karşılaştırma yapılacak."}</Text>
+        {insights.checkInAverage ? <Text style={styles.awake}>Son check-in ortalaması: {insights.checkInAverage.toFixed(1)}/5</Text> : null}
       </Card>
       <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
       <Card>
@@ -275,7 +295,13 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         })}
       </Card>
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
-      <Card>{app.state.sleepPlan.routine.filter((item) => item.enabled).map((item, index) => <View key={item.id} style={styles.routineRow}><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></View>)}</Card>
+      <Card>
+        {app.state.sleepPlan.routine.map((item, index) => <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable>)}
+        <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
+        <Text style={styles.hint}>Bir adımı kapatmak için dokunun, silmek için basılı tutun.</Text>
+      </Card>
+      <SectionTitle title="Hedef saatler" />
+      <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={setBedtime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={setWakeTime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
       <Card tone="peach">
         <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
         <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
@@ -566,7 +592,12 @@ const styles = StyleSheet.create({
   readinessNote: { color: colors.sageDark, fontSize: 12, lineHeight: 18, marginTop: 14 },
   suggestion: { color: colors.sageDark, fontSize: 12, fontWeight: "700", marginTop: 2 },
   routineRow: { flexDirection: "row", alignItems: "center", minHeight: 48 },
+  routineDisabled: { opacity: 0.45 },
+  miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
+  inlineForm: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
+  minutesInput: { width: 62, marginTop: 0 },
+  hint: { color: colors.inkSoft, fontSize: 10, lineHeight: 15, marginTop: 10 },
   easeRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
   easeButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: "rgba(255,255,255,.58)", alignItems: "center", justifyContent: "center" },
   easeButtonActive: { backgroundColor: colors.sageDark },

@@ -96,6 +96,7 @@ Ana fonksiyonlar:
 - `createSleepForecast`: Yaş aralığı ile son kullanılabilir uyanıklık sürelerini harmanlar.
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir.
 - `coachingDay`: Seçilen yaklaşıma göre 14 günlük planın günlük görevlerini üretir.
+- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir.
 - `handoffSummary`: Son dört saati bakım veren için kısa bir özete dönüştürür.
 
 ### Veri katmanı
@@ -204,6 +205,10 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Biberon miktarı ve katı gıda/tepki kaydı eklendi.
 - [x] Açıklanabilir sıradaki beslenme aralığı eklendi.
 - [x] Günlük emzirme süresi, biberon ve katı öğün toplamları eklendi.
+- [x] Gerçek gece başlangıçlarını hedef yatışla karşılaştıran koçluk içgörüsü eklendi.
+- [x] Gecelik değişimi 15 dakika ile sınırlayan yatış önerisi eklendi.
+- [x] Düzenlenebilir hedef yatış ve sabah saatleri eklendi.
+- [x] Açılıp kapatılabilen, ekleme ve silme destekli kişisel akşam rutini eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -263,7 +268,7 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 26 Ekim 2026 tarihinde:
 
 - `npm.cmd run typecheck`: başarılı
-- `npm.cmd test`: 12/12 test başarılı
+- `npm.cmd test`: 13/13 test başarılı
 - `npx.cmd expo-doctor`: 20/20 kontrol başarılı
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 

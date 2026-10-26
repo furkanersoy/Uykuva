@@ -144,6 +144,28 @@ export function useUykuvaState() {
     }));
   }, []);
 
+  const updateSleepSchedule = useCallback((bedtime: string, wakeTime: string) => {
+    setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, bedtime, wakeTime } }));
+  }, []);
+
+  const toggleRoutineStep = useCallback((stepId: string) => {
+    setState((current) => ({
+      ...current,
+      sleepPlan: { ...current.sleepPlan, routine: current.sleepPlan.routine.map((step) => step.id === stepId ? { ...step, enabled: !step.enabled } : step) }
+    }));
+  }, []);
+
+  const addRoutineStep = useCallback((label: string, minutes: number) => {
+    setState((current) => ({
+      ...current,
+      sleepPlan: { ...current.sleepPlan, routine: [...current.sleepPlan.routine, { id: id("routine"), label: label.trim(), minutes, enabled: true }] }
+    }));
+  }, []);
+
+  const deleteRoutineStep = useCallback((stepId: string) => {
+    setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, routine: current.sleepPlan.routine.filter((step) => step.id !== stepId) } }));
+  }, []);
+
   const addCareTask = useCallback((task: Omit<CareTask, "id">) => {
     setState((current) => ({ ...current, careTasks: [...current.careTasks, { ...task, id: id(task.type) }] }));
   }, []);
@@ -199,6 +221,10 @@ export function useUykuvaState() {
     toggleReadiness,
     advancePlan,
     saveCheckIn,
+    updateSleepSchedule,
+    toggleRoutineStep,
+    addRoutineStep,
+    deleteRoutineStep,
     addCareTask,
     toggleCareTask,
     deleteCareTask,
