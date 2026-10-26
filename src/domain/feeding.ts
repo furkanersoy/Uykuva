@@ -73,6 +73,9 @@ export function createFeedingForecast(events: CareEvent[], now = new Date()): Fe
   const spread = intervals.length >= 7 ? 15 : 25;
   const start = new Date(last.getTime() + Math.max(30, typical - spread) * 60_000);
   const end = new Date(last.getTime() + (typical + spread) * 60_000);
+  if (end.getTime() <= now.getTime()) {
+    return { available: false, confidence: "low", explanation: "Son kayıtlı beslenme aralığı geçti; yeni bir kayıt olmadan tahmin yenilenemez." };
+  }
   return {
     available: true,
     start,
