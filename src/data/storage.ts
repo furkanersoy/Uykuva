@@ -1,7 +1,7 @@
 import LegacyStorage from "@react-native-async-storage/async-storage";
 import Storage from "expo-sqlite/kv-store";
 import { openDatabaseAsync, SQLiteDatabase } from "expo-sqlite";
-import { AppState, CareEvent } from "../domain/types";
+import { AppState, CareEvent, CareTask } from "../domain/types";
 import { createInitialState } from "./seed";
 import { migrateState } from "./migrations";
 
@@ -37,6 +37,17 @@ function getDatabase() {
           ON care_events(kind, started_at DESC);
         CREATE INDEX IF NOT EXISTS idx_care_events_started_at
           ON care_events(started_at DESC);
+        CREATE TABLE IF NOT EXISTS care_tasks (
+          id TEXT PRIMARY KEY NOT NULL,
+          type TEXT NOT NULL,
+          due_at TEXT NOT NULL,
+          completed_at TEXT,
+          payload_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_care_tasks_due_at
+          ON care_tasks(due_at ASC);
+        CREATE INDEX IF NOT EXISTS idx_care_tasks_type_due_at
+          ON care_tasks(type, due_at ASC);
       `);
       return db;
     })().catch((error) => {
@@ -49,6 +60,7 @@ function getDatabase() {
 
 type StoredStateRow = { state_json: string };
 type StoredEventRow = { payload_json: string };
+type StoredTaskRow = { payload_json: string };
 
 async function readNormalizedState(db: SQLiteDatabase): Promise<AppState | null> {
   const row = await db.getFirstAsync<StoredStateRow>("SELECT state_json FROM app_state WHERE id = ?", STATE_ROW_ID);
@@ -56,13 +68,19 @@ async function readNormalizedState(db: SQLiteDatabase): Promise<AppState | null>
   const saved = JSON.parse(row.state_json) as Partial<AppState>;
   const eventRows = await db.getAllAsync<StoredEventRow>("SELECT payload_json FROM care_events ORDER BY started_at DESC, id ASC");
   const events = eventRows.map((event) => JSON.parse(event.payload_json) as CareEvent);
-  return migrateState({ ...saved, events });
+  const taskRows = await db.getAllAsync<StoredTaskRow>("SELECT payload_json FROM care_tasks ORDER BY rowid ASC");
+  const storedTasks = taskRows.map((task) => JSON.parse(task.payload_json) as CareTask);
+  const embeddedTasks = Array.isArray(saved.careTasks) ? saved.careTasks : [];
+  const migrated = migrateState({ ...saved, events, careTasks: storedTasks.length || !embeddedTasks.length ? storedTasks : embeddedTasks });
+  if (!storedTasks.length && embeddedTasks.length) await saveNormalizedState(db, migrated);
+  return migrated;
 }
 
 async function saveNormalizedState(db: SQLiteDatabase, state: AppState) {
-  const stateWithoutEvents = JSON.stringify({ ...state, events: [] });
+  const stateWithoutEventsAndTasks = JSON.stringify({ ...state, events: [], careTasks: [] });
   await db.withExclusiveTransactionAsync(async (transaction) => {
     await transaction.runAsync("DELETE FROM care_events");
+    await transaction.runAsync("DELETE FROM care_tasks");
     for (const event of state.events) {
       await transaction.runAsync(
         "INSERT INTO care_events(id, kind, started_at, ended_at, caregiver, payload_json) VALUES (?, ?, ?, ?, ?, ?)",
@@ -74,10 +92,20 @@ async function saveNormalizedState(db: SQLiteDatabase, state: AppState) {
         JSON.stringify(event)
       );
     }
+    for (const task of state.careTasks) {
+      await transaction.runAsync(
+        "INSERT INTO care_tasks(id, type, due_at, completed_at, payload_json) VALUES (?, ?, ?, ?, ?)",
+        task.id,
+        task.type,
+        task.dueAt,
+        task.completedAt ?? null,
+        JSON.stringify(task)
+      );
+    }
     await transaction.runAsync(
       "INSERT INTO app_state(id, state_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at",
       STATE_ROW_ID,
-      stateWithoutEvents,
+      stateWithoutEventsAndTasks,
       new Date().toISOString()
     );
   });
@@ -122,6 +150,7 @@ export async function resetState() {
   const db = await getDatabase();
   await db.withExclusiveTransactionAsync(async (transaction) => {
     await transaction.runAsync("DELETE FROM care_events");
+    await transaction.runAsync("DELETE FROM care_tasks");
     await transaction.runAsync("DELETE FROM app_state WHERE id = ?", STATE_ROW_ID);
   });
   await removeLegacyKeys();

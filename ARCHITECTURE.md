@@ -31,7 +31,7 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | --- | --- | --- |
 | Mobil | Expo SDK 58, React Native 0.88 | iOS ve Android için ortak kod tabanı |
 | Dil | TypeScript | Veri modeli ve özelliklerde tip güvenliği |
-| Yerel saklama | Expo SQLite (`uykuva.db`) | `app_state` ve indeksli `care_events` tabloları; eski SQLite KV/AsyncStorage verisinden güvenli geçiş |
+| Yerel saklama | Expo SQLite (`uykuva.db`) | `app_state`, indeksli `care_events` ve `care_tasks` tabloları; eski SQLite KV/AsyncStorage verisinden güvenli geçiş |
 | Test | TypeScript derleyicisi + Node test runner | Uyku motorunu arayüzden bağımsız test etme |
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
@@ -123,7 +123,7 @@ Ana fonksiyonlar:
 
 ### Veri katmanı
 
-Durum `uykuva.db` dosyasında tutulur. Profil, tercih, görev ve uyku planı JSON olarak `app_state` satırında saklanır; bakım kayıtları ayrı `care_events` tablosundadır. `care_events` tablosu kayıt türü, başlangıç zamanı, bitiş zamanı ve bakım veren sütunlarını indeksleyerek taşır; geri kalan ayrıntılar olay JSON yükünde korunur. `saveState` olay tablosunu ve durum satırını aynı SQLite işlemi içinde günceller.
+Durum `uykuva.db` dosyasında tutulur. Profil, tercih ve uyku planı JSON olarak `app_state` satırında saklanır; bakım kayıtları `care_events`, aşı/randevu gibi bakım görevleri ise `care_tasks` tablosundadır. Bu tablolar kimlik, tür ve sorgulamada kullanılan tarih alanlarını ayrı sütunlarda tutar; geri kalan ayrıntılar JSON yükünde korunur. `saveState` ilgili tabloları ve durum satırını aynı SQLite işlemi içinde günceller. Eski durum JSON'unda gömülü görevler ilk okumada tabloya taşınır.
 
 İlk açılışta depolama göçü eski `ExpoSQLiteStorage` anahtar deposundaki `uykuva:state:v3` / v2 veya önceki `uykvua:state:v1` AsyncStorage kaydını okur; durum ve olayları yeni veritabanına yazdıktan sonra eski anahtarları temizler. Göç tamamlanamazsa kayıt kurtarma ekranı yeniden deneme sunar; uygulama boş başlangıç durumunu eski verinin üzerine yazmaz.
 
@@ -286,7 +286,8 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 ## 10. Henüz tamamlanmayanlar
 
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
-- [ ] Bakım görevleri ve diğer büyüyen veri kümelerini normalize tablolara ayırma
+- [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
+- [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
 - [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
 - [ ] Gelişmiş bildirim tercihleri (tekrarlayan görevler ve ayrıntılı zamanlama seçenekleri)
@@ -303,7 +304,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 ## 11. Sonraki geliştirme sırası
 
-1. Görev hatırlatmaları ve güvenilir zamanlayıcılar; görev verilerini normalize SQLite tablosuna taşıma
+1. Görev hatırlatmaları ve güvenilir zamanlayıcılar
 2. Aile hesabı, davet ve çevrimdışı senkronizasyon
 3. Ek dozlar için hekim yönlendirmeli aşı akışı
 4. Widget, Live Activity ve sesli kayıt
@@ -343,4 +344,3 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
-
