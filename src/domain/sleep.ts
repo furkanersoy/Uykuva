@@ -449,7 +449,14 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const pumping = recent.filter((event) => event.kind === "feed" && event.feedType === "pump");
   const solidMeals = feeds.filter((event) => event.feedType === "solid");
   const amount = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const breastfeedingOngoing = feeds.some((event) => event.feedType === "breast" && !event.endedAt);
   const diapers = recent.filter((event) => event.kind === "diaper").length;
+  const healthEvents = recent.filter((event) => event.kind === "health");
+  const notes = recent.filter((event) => event.kind === "note" && event.note?.trim());
+  const nextTasks = state.careTasks
+    .filter((task) => !task.completedAt && new Date(task.dueAt).getTime() >= now.getTime() && new Date(task.dueAt).getTime() <= now.getTime() + 24 * 60 * 60 * 1000)
+    .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
+    .slice(0, 3);
   const sleepSegments = state.events.filter((event) => event.kind === "sleep").flatMap((event) => {
     const start = new Date(event.startedAt).getTime();
     const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
@@ -460,6 +467,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
   if (feeds.length) parts.push(amount ? `${amount} ml beslenme` : `${feeds.length} beslenme`);
+  if (breastfeedingOngoing) parts.push("emzirme sürüyor");
   if (pumping.length) parts.push(`${pumping.length} sağım · ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml stoğa eklendi`);
   if (solidMeals.length) {
     const tagged = [...new Set(solidMeals.flatMap((event) => event.allergens ?? []))];
@@ -467,5 +475,15 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   }
   if (sleepMinutes) parts.push(`Son ${windowHours} saatte ${Math.round(sleepMinutes)} dk uyku${sleepOngoing ? " · şu anda uyuyor" : ""}`);
   if (diapers) parts.push(`${diapers} bez`);
+  if (healthEvents.length) {
+    const healthSummaries = healthEvents.map((event) => {
+      if (event.healthType === "temperature") return `ateş ${event.temperatureC ?? "—"} °C`;
+      if (event.healthType === "medicine") return `${event.medicineName || "ilaç"}${event.doseAsEntered ? ` (${event.doseAsEntered})` : ""}`;
+      return `belirti${event.note ? `: ${event.note.slice(0, 70)}` : ""}`;
+    });
+    parts.push(`Sağlık: ${healthSummaries.join(", ")}`);
+  }
+  if (notes.length) parts.push(`Not: ${notes.map((event) => event.note!.trim().slice(0, 70)).join("; ")}`);
+  if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   return `${parts.join(" · ")}.`;
 }
