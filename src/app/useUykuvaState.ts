@@ -265,6 +265,13 @@ export function useUykuvaState() {
     setState((current) => ({ ...current, careTasks: [...current.careTasks, { ...task, id: id(task.type) }] }));
   }, []);
 
+  const updateCareTask = useCallback((taskId: string, patch: Partial<Omit<CareTask, "id">>) => {
+    setState((current) => ({
+      ...current,
+      careTasks: current.careTasks.map((task) => task.id === taskId ? { ...task, ...patch, id: task.id } : task)
+    }));
+  }, []);
+
   const toggleCareTask = useCallback((taskId: string) => {
     setState((current) => ({
       ...current,
@@ -335,6 +342,7 @@ export function useUykuvaState() {
     addRoutineStep,
     deleteRoutineStep,
     addCareTask,
+    updateCareTask,
     toggleCareTask,
     deleteCareTask,
     restoreData,
