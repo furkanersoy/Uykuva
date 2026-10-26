@@ -172,7 +172,7 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
     confidence: hasPersonalPattern ? personal.length >= 8 ? "high" : "medium" : "low",
     explanation: hasPersonalPattern
       ? `Son 30 gündeki ${DAY_PART_LABELS[dayPart]} uyanıklık kayıtlarının son ${personal.length} örneği yaş aralığıyla birlikte değerlendirildi.`
-      : `${DAY_PART_LABELS[dayPart]} saat diliminde kişisel tahmin için yeterli kayıt yok (${personal.length}/${requiredSamples}); yaş aralığı kullanılıyor.`
+      : `${DAY_PART_LABELS[dayPart]} saat diliminde kişisel tahmin için yeterli kayıt yok (${personal.length}/${requiredSamples}); yaşa göre referans aralığı kullanılıyor.`
   };
 }
 
