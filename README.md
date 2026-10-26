@@ -25,6 +25,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Biberon ve katı gıda ayrıntıları
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
+- Doktor görüşmesi için yedi günlük bakım özetini PDF veya metin olarak paylaşma
 - Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri
 - Aktif bakım vereni seçme ve kayıtları seçilen kişi adına yazma
 - Gerçek gece kayıtlarını hedef yatışla karşılaştıran uyku koçu
