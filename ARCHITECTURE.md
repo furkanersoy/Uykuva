@@ -255,6 +255,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
 - [x] Plan günü ilerletildiğinde yaklaşım/odak ve tamamlanan görev sayısı 14 günlük geçmişte korunuyor.
+- [x] Bakım verenlerle paylaşılan uyku planı son 7 gecenin check-in ölçümlerini/notlarını ve varsa ilk/son dönem karşılaştırmasını içeriyor.
 - [x] Aynı yaklaşım/odakta ilk ve son üç plan gününün check-in kolaylığı ve sayısal gece uyanması kayıtları karşılaştırılabiliyor.
 - [x] Günlük görev tamamlama ve plan ilerletme eklendi.
 - [x] Akşam rutini veri modeli ve görünümü eklendi.
