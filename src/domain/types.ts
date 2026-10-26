@@ -13,7 +13,12 @@ export type CareEvent = {
   startedAt: string;
   endedAt?: string;
   amountMl?: number;
-  feedType?: "breast" | "bottle" | "solid";
+  feedType?: "breast" | "bottle" | "solid" | "pump";
+  bottleSource?: "formula" | "expressed";
+  milkStorageLocation?: "room" | "fridge" | "freezer";
+  milkLabel?: string;
+  milkDiscardedAt?: string;
+  milkThawedAt?: string;
   breastSide?: "left" | "right" | "both";
   foods?: string[];
   allergens?: string[];
