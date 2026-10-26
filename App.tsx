@@ -294,7 +294,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping"] : ["responsive"];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateValue(new Date());
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const [bedtime, setBedtime] = useState(app.state.sleepPlan.bedtime);
   const [wakeTime, setWakeTime] = useState(app.state.sleepPlan.wakeTime);
@@ -389,6 +389,9 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <Text style={styles.inputLabel}>Gece uyanma sayısı</Text>
         <View style={styles.easeRow}>{([0, 1, 2, 3, 4, 5] as const).map((count) => <Pressable accessibilityRole="button" accessibilityLabel={count === 5 ? "5 veya daha fazla uyanma" : `${count} gece uyanması`} key={count} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, nightWakings: count })} style={[styles.easeButton, todayCheckIn?.nightWakings === count && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.nightWakings === count && styles.easeTextActive]}>{count === 5 ? "5+" : count}</Text></Pressable>)}</View>
         <Text style={styles.hint}>Uyanma sayısı isteğe bağlıdır; son yedi değerlendirmenin ortalaması koçluk özetinde görünür.</Text>
+        <Text style={styles.inputLabel}>Dünden farklı olan neydi? (isteğe bağlı)</Text>
+        <TextInput value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
+        <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
       </Card>
       <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
