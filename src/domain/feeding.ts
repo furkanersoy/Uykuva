@@ -49,13 +49,29 @@ export function createFeedingForecast(events: CareEvent[], now = new Date()): Fe
   };
 }
 
-export function todayFeedingTotals(events: CareEvent[], now = new Date()) {
+export function todayFeedingTotals(events: CareEvent[], now = new Date(), rolling24Hours = false) {
   const day = now.toDateString();
-  const feeds = events.filter((event) => event.kind === "feed" && new Date(event.startedAt).toDateString() === day);
+  const periodStart = rolling24Hours
+    ? now.getTime() - 24 * 60 * 60 * 1000
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const periodEnd = now.getTime();
+  const feeds = events.filter((event) => {
+    if (event.kind !== "feed") return false;
+    const start = new Date(event.startedAt).getTime();
+    if (!Number.isFinite(start) || start > periodEnd) return false;
+    if (event.feedType !== "breast") return start >= periodStart;
+    const end = event.endedAt ? new Date(event.endedAt).getTime() : periodEnd;
+    return Number.isFinite(end) && start < periodEnd && end > periodStart;
+  });
   return {
     count: feeds.length,
     bottleMl: feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0),
-    breastMinutes: feeds.reduce((sum, event) => sum + completedFeedMinutes(event), 0),
+    breastMinutes: feeds.reduce((sum, event) => {
+      if (event.feedType !== "breast") return sum;
+      const start = Math.max(new Date(event.startedAt).getTime(), periodStart);
+      const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : periodEnd, periodEnd);
+      return sum + Math.max(0, Math.round((end - start) / 60_000));
+    }, 0),
     solids: feeds.filter((event) => event.feedType === "solid").length
   };
 }
