@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 14450)
-Total output lines: 696
-
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
@@ -304,7 +301,188 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
       <Card>
         {app.state.sleepPlan.routine.map((item, index) => <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable>)}
-        <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View sty…4450 tokens truncated…} />
+        <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
+        <Text style={styles.hint}>Bir adımı kapatmak için dokunun, silmek için basılı tutun.</Text>
+      </Card>
+      <SectionTitle title="Hedef saatler" />
+      <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={setBedtime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={setWakeTime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
+      <Card tone="peach">
+        <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
+        <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
+        <Text style={styles.easeLabels}><Text>Zordu</Text><Text>                                      Kolaydı</Text></Text>
+      </Card>
+      <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />
+      <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
+    </ScrollView>
+  );
+}
+
+async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
+  try {
+    const file = await Print.printToFileAsync({ html: createDoctorSummaryHtml(state), base64: false });
+    const canShare = await Sharing.isAvailableAsync();
+    if (!canShare) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva doktor özetini paylaş" });
+  } catch {
+    Alert.alert("PDF oluşturulamadı", "Doktor özeti PDF olarak hazırlanırken bir sorun oluştu. Metin özeti paylaşımını kullanabilirsiniz.");
+  }
+}
+
+function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void }) {
+  const state = app.state;
+  const events = state.events;
+  const today = new Date().toDateString();
+  const recent = events.filter((event) => new Date(event.startedAt).toDateString() === today);
+  const sleeps = recent.filter((event) => event.kind === "sleep" && event.endedAt);
+  const sleepMinutes = sleeps.reduce((sum, event) => sum + (new Date(event.endedAt!).getTime() - new Date(event.startedAt).getTime()) / 60_000, 0);
+  const feeds = recent.filter((event) => event.kind === "feed");
+  const feedingTotals = todayFeedingTotals(events);
+  const diapers = recent.filter((event) => event.kind === "diaper");
+  const health = recent.filter((event) => event.kind === "health");
+  const latestGrowth = events.find((event) => event.kind === "growth");
+  const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+  return (
+    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
+      <Text style={styles.pageTitle}>Günlük özet</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
+      <View style={styles.statGrid}>
+        <Stat value={`${Math.floor(sleepMinutes / 60)}s ${Math.round(sleepMinutes % 60)}d`} label="Toplam uyku" tone="mint" />
+        <Stat value={`${feeds.length}`} label="Beslenme" tone="peach" />
+        <Stat value={`${diapers.length}`} label="Bez" tone="lavender" />
+        <Stat value={`${health.length}`} label="Sağlık kaydı" tone="white" />
+      </View>
+      <SectionTitle title="Bugünkü beslenme" />
+      <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
+      {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
+      <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
+      <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
+      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
+      <SectionTitle title="Doktor görüşmesi" />
+      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
+    </ScrollView>
+  );
+}
+
+function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: () => void; onDelete: () => void }) {
+  return <Pressable onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{task.type === "vaccine" ? "Aşı" : "Randevu"} · dokununca tamamla</Text></View><Text style={styles.taskDate}>{new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })}</Text></Pressable>;
+}
+
+function Measure({ value, label }: { value: string; label: string }) {
+  return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
+}
+
+function FamilyScreen({ app, onEditProfile, onAddCaregiver }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void }) {
+  const summary = handoffSummary(app.state);
+  const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
+  const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
+  const toggleNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ notificationsEnabled: false });
+      await cancelSleepReminders();
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ notificationsEnabled: true });
+  };
+  const saveQuietHours = () => {
+    if (!isValidClock(quietStart) || !isValidClock(quietEnd)) return Alert.alert("Saatleri kontrol edin", "Saatleri 21:00 gibi SS:DD biçiminde yazın.");
+    app.updatePreferences({ quietStart, quietEnd });
+    Alert.alert("Kaydedildi", "Bu saatler arasında uyku penceresi bildirimi planlanmayacak.");
+  };
+  const confirmDelete = () => Alert.alert(
+    "Tüm cihaz verileri silinsin mi?",
+    "Bebek profili, bakım kayıtları ve uyku planı bu cihazdan kalıcı olarak silinir.",
+    [{ text: "Vazgeç", style: "cancel" }, { text: "Tümünü sil", style: "destructive", onPress: () => void app.clearAllData() }]
+  );
+  return (
+    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
+      <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
+      <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.baby.name} profili</Text><Text style={styles.body}>Aktif bakım veren: {app.state.caregiverName}</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Profili düzenle</Text></Pressable></View></Card>
+      <SectionTitle title="Bu cihazdaki bakım verenler" action={`${app.state.caregivers.length} kişi`} />
+      <Card>{app.state.caregivers.map((caregiver) => {
+        const active = caregiver.id === app.state.activeCaregiverId;
+        const role = { parent: "Ebeveyn", family: "Aile", caregiver: "Bakıcı" }[caregiver.role];
+        return <Pressable accessibilityRole="radio" accessibilityState={{ selected: active }} key={caregiver.id} onPress={() => app.setActiveCaregiver(caregiver.id)} onLongPress={() => { if (app.state.caregivers.length > 1) Alert.alert("Bakım vereni sil", `${caregiver.name} bu cihazdan kaldırılsın mı?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Sil", style: "destructive", onPress: () => app.deleteCaregiver(caregiver.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{caregiver.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{caregiver.name}</Text><Text style={styles.muted}>{role}{active ? " · aktif" : ""}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
+      })}<View style={styles.spacer12} /><PrimaryButton label="Bu cihaza bakım veren ekle" quiet onPress={onAddCaregiver} /><Text style={styles.hint}>Kişiyi seçtiğinizde yeni kayıtlar onun adına yazılır. Silmek için basılı tutun.</Text></Card>
+      <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
+      <View style={styles.spacer12} />
+      <PrimaryButton label="Başka telefona davet et" quiet onPress={() => Alert.alert("Bulut paylaşımı yakında", "Bu cihazda birden fazla bakım veren kullanılabilir. Telefonlar arası güvenli davet, hesap senkronizasyonuyla eklenecek.")} />
+      <SectionTitle title="Hatırlatmalar" />
+      <Card>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
+        {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
+      </Card>
+      <SectionTitle title="Verileriniz" />
+      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini okunabilir JSON biçiminde paylaşabilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Verilerimi dışa aktar" quiet onPress={() => void Share.share({ title: "Uykuva veri dışa aktarımı", message: createDataExport(app.state) })} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
+    </ScrollView>
+  );
+}
+
+function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
+  const [babyName, setBabyName] = useState(app.state.baby.name);
+  const [caregiverName, setCaregiverName] = useState(app.state.caregiverName);
+  const [birthDate, setBirthDate] = useState(app.state.baby.birthDate);
+  const [gestationalWeek, setGestationalWeek] = useState(String(app.state.baby.gestationalWeek));
+
+  useEffect(() => {
+    if (!visible) return;
+    setBabyName(app.state.baby.name); setCaregiverName(app.state.caregiverName);
+    setBirthDate(app.state.baby.birthDate); setGestationalWeek(String(app.state.baby.gestationalWeek));
+  }, [visible, app.state.baby, app.state.caregiverName]);
+
+  const save = () => {
+    const week = Number(gestationalWeek);
+    const birth = new Date(`${birthDate}T12:00:00`);
+    if (!babyName.trim() || !caregiverName.trim() || Number.isNaN(birth.getTime()) || birth > new Date() || !Number.isInteger(week) || week < 22 || week > 42) {
+      return Alert.alert("Bilgileri kontrol edin", "Adları, doğum tarihini ve 22–42 arasındaki gebelik haftasını kontrol edin.");
+    }
+    app.updateProfile({ ...app.state.baby, name: babyName.trim(), birthDate, gestationalWeek: week }, caregiverName);
+    close();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+      <Pressable style={styles.backdrop} onPress={close} />
+      <ScrollView style={styles.sheet} keyboardShouldPersistTaps="handled">
+        <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Profili düzenle</Text>
+        <Field label="Bebeğin adı" value={babyName} onChangeText={setBabyName} />
+        <Field label="Doğum tarihi" value={birthDate} onChangeText={setBirthDate} keyboardType="numbers-and-punctuation" />
+        <Field label="Gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} keyboardType="number-pad" />
+        <Field label="Bakım veren" value={caregiverName} onChangeText={setCaregiverName} />
+        <PrimaryButton label="Değişiklikleri kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
+      </ScrollView>
+    </Modal>
+  );
+}
+
+function CaregiverModal({ visible, close, add }: { visible: boolean; close: () => void; add: (caregiver: Omit<Caregiver, "id">) => void }) {
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<Caregiver["role"]>("parent");
+  useEffect(() => {
+    if (visible) { setName(""); setRole("parent"); }
+  }, [visible]);
+  const save = () => {
+    const cleanName = name.trim();
+    if (!cleanName) return Alert.alert("İsim gerekli", "Bakım verenin adını veya aile içindeki rolünü yazın.");
+    add({ name: cleanName, role });
+    close();
+  };
+  const roles: { value: Caregiver["role"]; label: string }[] = [
+    { value: "parent", label: "Ebeveyn" },
+    { value: "family", label: "Aile" },
+    { value: "caregiver", label: "Bakıcı" }
+  ];
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+      <Pressable style={styles.backdrop} onPress={close} />
+      <ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled">
+        <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Bakım veren ekle</Text>
+        <Text style={styles.pageIntro}>Bu kişi bu cihazdaki profilde seçilebilir ve yaptığı yeni kayıtlar kendi adıyla görünür.</Text>
+        <Field label="İsim veya rol" value={name} onChangeText={setName} placeholder="Örn. Baba, Anneanne, Ece" />
+        <Text style={styles.inputLabel}>Rol</Text>
+        <View style={styles.choiceRow}>{roles.map((item) => <Pill key={item.value} label={item.label} active={role === item.value} onPress={() => setRole(item.value)} />)}</View>
+        <View style={styles.spacer24} /><PrimaryButton label="Bakım vereni ekle" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
       </ScrollView>
     </Modal>
   );
@@ -515,4 +693,3 @@ const styles = StyleSheet.create({
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.sage },
   radioActive: { borderWidth: 6, borderColor: colors.sageDark }
 });
-
