@@ -164,15 +164,16 @@ export function useUykuvaState() {
 
   const advancePlan = useCallback(() => {
     const today = localDateKey();
-    setState((current) => current.sleepPlan.paused || current.sleepPlan.day >= 14 || current.sleepPlan.lastAdvancedDate === today ? current : ({
-      ...current,
-      sleepPlan: {
-        ...current.sleepPlan,
-        day: Math.min(14, current.sleepPlan.day + 1),
-        lastAdvancedDate: today,
-        completedToday: []
-      }
-    }));
+    setState((current) => {
+      const plan = current.sleepPlan;
+      if (plan.paused || plan.completedDate || plan.lastAdvancedDate === today) return current;
+      return {
+        ...current,
+        sleepPlan: plan.day >= 14
+          ? { ...plan, completedDate: today, lastAdvancedDate: today }
+          : { ...plan, day: plan.day + 1, lastAdvancedDate: today, completedToday: [] }
+      };
+    });
   }, []);
 
   const saveCheckIn = useCallback((checkIn: SleepCheckIn) => {
