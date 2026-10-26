@@ -405,13 +405,14 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
     const enabledRoutine = app.state.sleepPlan.routine.filter((item) => item.enabled);
     const message = [
       `Uykuva · ${app.state.baby.name} için uyku planı`,
-      `Yaklaşım: ${methodDescription(app.state.sleepPlan.method).name}`,
-      `Bugünkü rehber: ${plan.title}`,
+      `Yaş aşaması: ${stage.label}`,
+      `Yaklaşım: ${methodDescription(coachingMethod).name}`,
+      `Program durumu: ${app.state.sleepPlan.paused ? "Duraklatıldı; günlük plan adımları beklemede." : programCompleted ? "14 günlük rehber tamamlandı." : `${app.state.sleepPlan.day}/14. gün`}`,
+      `Günlük rehber: ${plan.title}`,
       `Hedef yatış: ${app.state.sleepPlan.bedtime} · Sabah başlangıcı: ${app.state.sleepPlan.wakeTime}`,
       "Akşam rutini:",
       ...enabledRoutine.map((item, index) => `${index + 1}. ${item.label} (${item.minutes} dk)`),
-      "Bugünün adımları:",
-      ...plan.tasks.map((task) => `• ${task}`),
+      ...(!app.state.sleepPlan.paused && !programCompleted ? ["Bugünün adımları:", ...plan.tasks.map((task) => `• ${task}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
     void Share.share({ title: `${app.state.baby.name} için uyku planı`, message });
