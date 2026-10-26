@@ -10,6 +10,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Uyku, beslenme, bez ve bakım notu kaydı
 - Ortak bakım zaman çizelgesi
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
+- Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Son dört saat için bakım devri özeti
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
 - Akşam rutini ve günlük görevler
