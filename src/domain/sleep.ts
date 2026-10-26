@@ -290,6 +290,43 @@ export function createDailyNapOutline(events: CareEvent[], now = new Date()): Da
   return rows;
 }
 
+export type NapPatternComparison = {
+  available: boolean;
+  recentLoggedDays: number;
+  previousLoggedDays: number;
+  recentMedian: number;
+  previousMedian: number;
+  trend: "fewer" | "more" | "similar" | "insufficient";
+};
+
+export function compareNapPatterns(events: CareEvent[], now = new Date()): NapPatternComparison {
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
+  const recentCounts = new Map<string, number>();
+  const previousCounts = new Map<string, number>();
+  for (let offset = 1; offset <= 14; offset += 1) {
+    const date = new Date(midnight);
+    date.setDate(date.getDate() - offset);
+    const target = offset <= 7 ? recentCounts : previousCounts;
+    target.set(localDayKey(date), 0);
+  }
+  for (const event of events) {
+    if (!event.endedAt || !isDaytimeNap(event, now)) continue;
+    const day = localDayKey(new Date(event.startedAt));
+    if (recentCounts.has(day)) recentCounts.set(day, recentCounts.get(day)! + 1);
+    if (previousCounts.has(day)) previousCounts.set(day, previousCounts.get(day)! + 1);
+  }
+  const recent = [...recentCounts.values()].filter((count) => count > 0);
+  const previous = [...previousCounts.values()].filter((count) => count > 0);
+  if (recent.length < 4 || previous.length < 4) {
+    return { available: false, recentLoggedDays: recent.length, previousLoggedDays: previous.length, recentMedian: 0, previousMedian: 0, trend: "insufficient" };
+  }
+  const recentMedian = median(recent)!;
+  const previousMedian = median(previous)!;
+  const trend = recentMedian <= previousMedian - 1 ? "fewer" : recentMedian >= previousMedian + 1 ? "more" : "similar";
+  return { available: true, recentLoggedDays: recent.length, previousLoggedDays: previous.length, recentMedian, previousMedian, trend };
+}
+
 export type CoachingDay = {
   title: string;
   focus: string;
