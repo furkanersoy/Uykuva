@@ -269,7 +269,8 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 ## 10. Henüz tamamlanmayanlar
 
-- [ ] Bakım kayıtlarını ayrı SQLite tablolarına taşıma ve ayrıntılı veri göçleri
+- [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
+- [ ] Bakım görevleri ve diğer büyüyen veri kümelerini normalize tablolara ayırma
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
 - [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
 - [ ] Gelişmiş bildirim tercihleri ve görev hatırlatmaları (tekrarlayan görevler ve zamanlama seçenekleri)
@@ -286,13 +287,12 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 
 ## 11. Sonraki geliştirme sırası
 
-1. Bakım kayıtlarını normalize SQLite tablolarına ayırma
-2. Görev hatırlatmaları ve güvenilir zamanlayıcılar
-3. Aile hesabı, davet ve çevrimdışı senkronizasyon
-4. Büyüme, aşı ve doktor raporu
-5. Widget, Live Activity ve sesli kayıt
-6. İçerik/uyku planlarının uzman doğrulaması
-7. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
+1. Görev hatırlatmaları ve güvenilir zamanlayıcılar; görev verilerini normalize SQLite tablosuna taşıma
+2. Aile hesabı, davet ve çevrimdışı senkronizasyon
+3. Büyüme, aşı ve doktor raporu
+4. Widget, Live Activity ve sesli kayıt
+5. İçerik/uyku planlarının uzman doğrulaması
+6. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
 
 ## 12. Güvenlik ve mevzuat notları
 
