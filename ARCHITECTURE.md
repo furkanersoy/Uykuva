@@ -322,9 +322,9 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 
 ## 10. Henüz tamamlanmayanlar
 
-### Yeni koçluk döngüsü
+### Uyku planı döngü arşivi
 
-14 günlük rehber tamamlandıktan sonra kullanıcı yeni bir döngü başlatabilir. Başlangıç tarihi ve gün ilerlemesi sıfırlanır; yaklaşım, odak, rutin, check-in kayıtları ve son 14 plan gününün geçmişi korunur. Yeni döngü, aynı yerel takvim gününde tekrar ilerletilemez.
+14 günlük rehber tamamlandığında günlük kayıtlar `completedRuns` içine başlangıç ve bitiş tarihiyle arşivlenir (en çok 10 döngü). Yeni döngü başlatıldığında aktif döngünün 14 günlük geçmişi temizlenir; yaklaşım, odak, rutin ve check-in kayıtları korunur. Arşivlenmiş döngüler koç ekranında gün sayısı ve ilerletilen günlük görev toplamıyla görünür. Yeni döngü, aynı yerel takvim gününde tekrar ilerletilemez.
 
 Randevular tek seferlik, haftalık veya aylık olarak ayarlanabilir. Tekrarlanan sonraki randevu, mevcut kayıt tamamlandığında oluşturulur; geçmişteki tamamlanmış kayıt silinmez. Aşı kayıtları tekrarlama seçeneği almaz. Bildirim tercihi açıksa sıradaki örnek mevcut randevu hatırlatma zamanlamasına girer.
 
