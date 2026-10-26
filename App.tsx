@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
+  AppState,
   Alert,
   Linking,
   Modal,
@@ -107,6 +108,16 @@ export default function App() {
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
   const [eventEditor, setEventEditor] = useState<CareEvent | null>(null);
   const [promptedSleepWindow, setPromptedSleepWindow] = useState<number | null>(null);
+  const [promptedRunningSleepId, setPromptedRunningSleepId] = useState<string | null>(null);
+  const [foregroundCycle, setForegroundCycle] = useState(0);
+  useEffect(() => {
+    let awayFromApp = AppState.currentState !== "active";
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active" && awayFromApp) setForegroundCycle((cycle) => cycle + 1);
+      awayFromApp = nextState !== "active";
+    });
+    return () => subscription.remove();
+  }, []);
   useEffect(() => {
     const timer = setInterval(() => setClockNow(new Date()), 30_000);
     return () => clearInterval(timer);
@@ -132,6 +143,22 @@ export default function App() {
       ]
     );
   }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, clockNow, forecast.available, forecast.start?.getTime(), forecast.end?.getTime(), sleepEditor, promptedSleepWindow]);
+
+  useEffect(() => {
+    const running = app.runningSleep;
+    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || logMode || taskMode || sleepEditor || eventEditor) return;
+    const startedAt = new Date(running.startedAt).getTime();
+    if (!Number.isFinite(startedAt) || Date.now() - startedAt < 12 * 60 * 60_000) return;
+    setPromptedRunningSleepId(running.id);
+    Alert.alert(
+      "Uyku sayacı hâlâ çalışıyor mu?",
+      `Kayıt ${time(running.startedAt)} saatinde başladı. Uyku süresini tahmin etmiyoruz. Bebeğiniz hâlâ uyuyorsa sayacı açık bırakın; uyandıysa gerçek uyanış saatini düzeltebilirsiniz.`,
+      [
+        { text: "Hâlâ uyuyor", style: "cancel" },
+        { text: "Uyanış saatini düzelt", onPress: () => { const current = app.state.events.find((item) => item.id === running.id); if (current) setSleepEditor(current); } }
+      ]
+    );
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, logMode, taskMode, sleepEditor, eventEditor]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
