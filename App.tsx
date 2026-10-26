@@ -569,6 +569,8 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <View style={styles.cardTopline}><Text style={styles.eyebrow}>PROGRAM İLERLEYİŞİ</Text><Text style={styles.confidence}>{completedProgramDays}/14 gün</Text></View>
         <View style={styles.planProgressBar}>{Array.from({ length: 14 }, (_, index) => <View key={index} style={[styles.planProgressSegment, index < completedProgramDays && styles.planProgressComplete, index === app.state.sleepPlan.day - 1 && !programCompleted && styles.planProgressCurrent]} />)}</View>
         <Text style={styles.body}>{programCompleted ? "14 günlük rehber tamamlandı. Uyku ve sabah check-in kayıtlarını kullanmaya devam edebilirsiniz." : `Şu an ${app.state.sleepPlan.day}. gündesiniz${alreadyAdvancedToday ? "; sıradaki gün yarın açılır" : ""}.`}</Text>
+        {programCompleted ? <View style={styles.spacer12} /> : null}
+        {programCompleted ? <PrimaryButton label="Yeni 14 günlük programa başla" onPress={app.restartSleepPlan} /> : null}
       </Card>
       <Card>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: nightGuideOpen }} onPress={() => setNightGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
