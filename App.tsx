@@ -877,7 +877,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
 }
 
 function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: () => void; onDelete: () => void }) {
-  return <Pressable onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{task.type === "vaccine" ? "Aşı" : "Randevu"} · dokununca tamamla</Text></View><Text style={styles.taskDate}>{new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })}</Text></Pressable>;
+  return <Pressable onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{task.type === "vaccine" ? "Aşı" : "Randevu"} · dokununca tamamla</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</View><Text style={styles.taskDate}>{new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })}</Text></Pressable>;
 }
 
 function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
