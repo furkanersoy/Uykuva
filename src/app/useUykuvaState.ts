@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppPreferences, AppState, Baby, CareEvent, EventKind, SleepCheckIn, SleepMethod } from "../domain/types";
+import { AppPreferences, AppState, Baby, CareEvent, CareTask, EventKind, SleepCheckIn, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
-import { loadState, saveState } from "../data/storage";
+import { loadState, resetState, saveState } from "../data/storage";
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -131,6 +131,29 @@ export function useUykuvaState() {
     }));
   }, []);
 
+  const addCareTask = useCallback((task: Omit<CareTask, "id">) => {
+    setState((current) => ({ ...current, careTasks: [...current.careTasks, { ...task, id: id(task.type) }] }));
+  }, []);
+
+  const toggleCareTask = useCallback((taskId: string) => {
+    setState((current) => ({
+      ...current,
+      careTasks: current.careTasks.map((task) => task.id === taskId
+        ? { ...task, completedAt: task.completedAt ? undefined : new Date().toISOString() }
+        : task)
+    }));
+  }, []);
+
+  const deleteCareTask = useCallback((taskId: string) => {
+    setState((current) => ({ ...current, careTasks: current.careTasks.filter((task) => task.id !== taskId) }));
+  }, []);
+
+  const clearAllData = useCallback(async () => {
+    await resetState();
+    setState(createInitialState());
+    setStorageError(null);
+  }, []);
+
   const runningSleep = useMemo(
     () => state.events.find((event) => event.kind === "sleep" && !event.endedAt),
     [state.events]
@@ -156,6 +179,10 @@ export function useUykuvaState() {
     toggleTask,
     toggleReadiness,
     advancePlan,
-    saveCheckIn
+    saveCheckIn,
+    addCareTask,
+    toggleCareTask,
+    deleteCareTask,
+    clearAllData
   };
 }

@@ -194,6 +194,10 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Ateş, ilaç ve belirti kayıtları eklendi; doz önerisi verilmez.
 - [x] Kilo, boy ve baş çevresi ölçüm kayıtları eklendi.
 - [x] Yedi günlük paylaşılabilir doktor özeti eklendi.
+- [x] Manuel aşı ve doktor randevusu görevleri eklendi.
+- [x] Gece yarısını aşabilen sessiz saatler eklendi.
+- [x] Tüm kullanıcı verisini JSON olarak dışa aktarma eklendi.
+- [x] Onaylı cihaz verisi silme akışı eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -202,7 +206,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] Bakım kayıtlarını ayrı SQLite tablolarına taşıma ve ayrıntılı veri göçleri
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
 - [ ] Gerçek bakım veren daveti, roller ve erişim kaldırma
-- [ ] Sessiz saatler ve gelişmiş bildirim tercihleri
+- [ ] Gelişmiş bildirim tercihleri ve görev hatırlatmaları
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [ ] WHO büyüme grafikleri
 - [ ] Türkiye aşı takvimi
@@ -218,7 +222,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 ## 11. Sonraki geliştirme sırası
 
 1. Bakım kayıtlarını normalize SQLite tablolarına ayırma
-2. Sessiz saatler ve güvenilir zamanlayıcılar
+2. Görev hatırlatmaları ve güvenilir zamanlayıcılar
 3. Aile hesabı, davet ve çevrimdışı senkronizasyon
 4. Büyüme, aşı ve doktor raporu
 5. Widget, Live Activity ve sesli kayıt
@@ -253,7 +257,7 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 26 Ekim 2026 tarihinde:
 
 - `npm.cmd run typecheck`: başarılı
-- `npm.cmd test`: 8/8 test başarılı
+- `npm.cmd test`: 10/10 test başarılı
 - `npx.cmd expo-doctor`: 20/20 kontrol başarılı
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 

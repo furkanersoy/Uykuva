@@ -12,6 +12,7 @@ export function migrateState(value: unknown): AppState {
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: { ...initial.baby, ...candidate.baby },
     events: Array.isArray(candidate.events) ? candidate.events : initial.events,
+    careTasks: Array.isArray(candidate.careTasks) ? candidate.careTasks : [],
     sleepPlan: {
       ...initial.sleepPlan,
       ...candidate.sleepPlan,

@@ -19,6 +19,9 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Uyku planı hazır oluş kontrol listesi
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
 - Paylaşılabilir yedi günlük doktor özeti
+- Kullanıcının eklediği aşı ve doktor randevusu takibi
+- Sessiz saatlere uyan uyku bildirimleri
+- JSON veri dışa aktarma ve kontrollü cihaz verisi silme
 
 Uygulama tıbbi tanı veya tedavi önermez.
 

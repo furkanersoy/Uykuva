@@ -26,6 +26,7 @@ export function createInitialState(): AppState {
       { id: "sleep-3", kind: "sleep", ...sleep3, caregiver: "Anne" },
       { id: "sleep-4", kind: "sleep", ...sleep4, caregiver: "Baba" }
     ],
+    careTasks: [],
     sleepPlan: {
       method: "responsive",
       startDate: new Date().toISOString(),

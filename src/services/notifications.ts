@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { SleepForecast } from "../domain/types";
+import { isInQuietHours } from "../domain/time";
 
 const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
@@ -44,12 +45,15 @@ export async function cancelSleepReminders() {
 export async function scheduleSleepReminder(
   babyName: string,
   forecast: SleepForecast,
-  leadMinutes: number
+  leadMinutes: number,
+  quietStart: string,
+  quietEnd: string
 ): Promise<boolean> {
   await cancelSleepReminders();
   if (!forecast.available || !forecast.start) return false;
   const date = new Date(forecast.start.getTime() - leadMinutes * 60_000);
   if (date.getTime() <= Date.now()) return false;
+  if (isInQuietHours(date, quietStart, quietEnd)) return false;
   await ensureAndroidChannel();
   await Notifications.scheduleNotificationAsync({
     content: {

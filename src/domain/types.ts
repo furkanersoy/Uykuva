@@ -61,12 +61,22 @@ export type AppPreferences = {
   quietEnd: string;
 };
 
+export type CareTask = {
+  id: string;
+  type: "vaccine" | "appointment";
+  title: string;
+  dueAt: string;
+  note?: string;
+  completedAt?: string;
+};
+
 export type AppState = {
   schemaVersion: 3;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
   events: CareEvent[];
+  careTasks: CareTask[];
   sleepPlan: SleepPlan;
   preferences: AppPreferences;
 };

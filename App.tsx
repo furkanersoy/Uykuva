@@ -18,13 +18,16 @@ import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage } from "./src/domain/sleep";
 import { createDoctorSummary } from "./src/domain/reports";
-import { AppState, CareEvent, SleepMethod } from "./src/domain/types";
+import { createDataExport } from "./src/domain/export";
+import { isValidClock } from "./src/domain/time";
+import { CareEvent, CareTask, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
 type Tab = "today" | "timeline" | "coach" | "insights" | "family";
 type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | null;
+type TaskMode = "vaccine" | "appointment" | null;
 
 const tabs: { id: Tab; label: string; glyph: string }[] = [
   { id: "today", label: "Bugün", glyph: "⌂" },
@@ -62,6 +65,7 @@ export default function App() {
   const app = useUykuvaState();
   const [tab, setTab] = useState<Tab>("today");
   const [logMode, setLogMode] = useState<LogMode>(null);
+  const [taskMode, setTaskMode] = useState<TaskMode>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events), [app.state.baby, app.state.events]);
 
@@ -74,9 +78,11 @@ export default function App() {
     void scheduleSleepReminder(
       app.state.baby.name,
       forecast,
-      app.state.preferences.sleepReminderMinutes
+      app.state.preferences.sleepReminderMinutes,
+      app.state.preferences.quietStart,
+      app.state.preferences.quietEnd
     );
-  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, forecast]);
+  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, forecast]);
 
   if (!app.hydrated) return <LoadingScreen />;
   if (!app.state.onboardingComplete) return <OnboardingScreen onComplete={app.completeOnboarding} />;
@@ -97,7 +103,7 @@ export default function App() {
         {tab === "today" && <TodayScreen app={app} forecast={forecast} openLog={setLogMode} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} />}
         {tab === "coach" && <CoachScreen app={app} />}
-        {tab === "insights" && <InsightsScreen state={app.state} />}
+        {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} />}
 
         <View style={styles.nav}>
@@ -110,6 +116,7 @@ export default function App() {
         </View>
       </View>
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} add={app.addSimpleEvent} />
+      <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
     </SafeAreaView>
   );
@@ -267,7 +274,8 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   );
 }
 
-function InsightsScreen({ state }: { state: AppState }) {
+function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void }) {
+  const state = app.state;
   const events = state.events;
   const today = new Date().toDateString();
   const recent = events.filter((event) => new Date(event.startedAt).toDateString() === today);
@@ -277,6 +285,7 @@ function InsightsScreen({ state }: { state: AppState }) {
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
   const latestGrowth = events.find((event) => event.kind === "growth");
+  const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Günlük özet</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
@@ -287,10 +296,17 @@ function InsightsScreen({ state }: { state: AppState }) {
         <Stat value={`${health.length}`} label="Sağlık kaydı" tone="white" />
       </View>
       {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
+      <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
+      <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
+      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><PrimaryButton label="Doktor özetini paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></Card>
     </ScrollView>
   );
+}
+
+function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: () => void; onDelete: () => void }) {
+  return <Pressable onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{task.type === "vaccine" ? "Aşı" : "Randevu"} · dokununca tamamla</Text></View><Text style={styles.taskDate}>{new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })}</Text></Pressable>;
 }
 
 function Measure({ value, label }: { value: string; label: string }) {
@@ -299,6 +315,8 @@ function Measure({ value, label }: { value: string; label: string }) {
 
 function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void }) {
   const summary = handoffSummary(app.state);
+  const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
+  const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
   const toggleNotifications = async (enabled: boolean) => {
     if (!enabled) {
       app.updatePreferences({ notificationsEnabled: false });
@@ -309,6 +327,16 @@ function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuva
     if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
     app.updatePreferences({ notificationsEnabled: true });
   };
+  const saveQuietHours = () => {
+    if (!isValidClock(quietStart) || !isValidClock(quietEnd)) return Alert.alert("Saatleri kontrol edin", "Saatleri 21:00 gibi SS:DD biçiminde yazın.");
+    app.updatePreferences({ quietStart, quietEnd });
+    Alert.alert("Kaydedildi", "Bu saatler arasında uyku penceresi bildirimi planlanmayacak.");
+  };
+  const confirmDelete = () => Alert.alert(
+    "Tüm cihaz verileri silinsin mi?",
+    "Bebek profili, bakım kayıtları ve uyku planı bu cihazdan kalıcı olarak silinir.",
+    [{ text: "Vazgeç", style: "cancel" }, { text: "Tümünü sil", style: "destructive", onPress: () => void app.clearAllData() }]
+  );
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
@@ -321,7 +349,10 @@ function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuva
       <Card>
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
+        {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
       </Card>
+      <SectionTitle title="Verileriniz" />
+      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini okunabilir JSON biçiminde paylaşabilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Verilerimi dışa aktar" quiet onPress={() => void Share.share({ title: "Uykuva veri dışa aktarımı", message: createDataExport(app.state) })} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
     </ScrollView>
   );
 }
@@ -379,6 +410,23 @@ function EventRow({ event, onDelete }: { event: CareEvent; onDelete?: () => void
 
 function Stat({ value, label, tone }: { value: string; label: string; tone: "white" | "mint" | "peach" | "lavender" }) {
   return <View style={styles.stat}><Card tone={tone}><Text style={styles.statValue}>{value}</Text><Text style={styles.muted}>{label}</Text></Card></View>;
+}
+
+function CareTaskModal({ mode, close, add }: { mode: TaskMode; close: () => void; add: ReturnType<typeof useUykuvaState>["addCareTask"] }) {
+  const tomorrow = new Date(Date.now() + 86_400_000);
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(tomorrow.toISOString().slice(0, 10));
+  const [clock, setClock] = useState("10:00");
+  const [note, setNote] = useState("");
+  if (!mode) return null;
+  const save = () => {
+    const dueAt = new Date(`${date}T${clock}:00`);
+    if (!title.trim()) return Alert.alert("Başlık gerekli", mode === "vaccine" ? "Aşının adını yazın." : "Randevuyu tanımlayın.");
+    if (Number.isNaN(dueAt.getTime()) || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
+    add({ type: mode, title: title.trim(), dueAt: dueAt.toISOString(), note: note.trim() || undefined });
+    setTitle(""); setNote(""); close();
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{mode === "vaccine" ? "Aşı ekle" : "Randevu ekle"}</Text><Text style={styles.pageIntro}>Uykuva resmi takvim yerine sizin girdiğiniz tarihi hatırlar; sağlık kararını uzmanınızla verin.</Text><Field label={mode === "vaccine" ? "Aşı adı" : "Randevu başlığı"} value={title} onChangeText={setTitle} placeholder={mode === "vaccine" ? "Örn. 6. ay aşıları" : "Örn. Çocuk doktoru kontrolü"} /><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Saat" value={clock} onChangeText={setClock} keyboardType="numbers-and-punctuation" placeholder="10:00" /><Field label="Not (isteğe bağlı)" value={note} onChangeText={setNote} /><PrimaryButton label="Takvime ekle" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function QuickLogModal({ mode, close, add }: { mode: LogMode; close: () => void; add: ReturnType<typeof useUykuvaState>["addSimpleEvent"] }) {
@@ -501,6 +549,9 @@ const styles = StyleSheet.create({
   measureRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   measure: { flex: 1 },
   measureValue: { color: colors.ink, fontSize: 18, fontWeight: "800" },
+  dualButtons: { flexDirection: "row", gap: 10, marginBottom: 14 },
+  dualButton: { flex: 1 },
+  taskDate: { color: colors.ink, fontSize: 12, fontWeight: "700" },
   nav: { position: "absolute", left: 12, right: 12, bottom: 10, height: 72, borderRadius: 24, backgroundColor: "#FFFFFFF2", flexDirection: "row", alignItems: "center", justifyContent: "space-around", borderWidth: 1, borderColor: colors.line },
   navItem: { alignItems: "center", justifyContent: "center", minWidth: 54 },
   navGlyph: { color: colors.inkSoft, fontSize: 20, fontWeight: "600" },
@@ -516,5 +567,10 @@ const styles = StyleSheet.create({
   noteInput: { height: 100, paddingTop: 14, textAlignVertical: "top", marginBottom: 14 },
   choiceRow: { flexDirection: "row", marginTop: 16, flexWrap: "wrap", rowGap: 8 },
   settingRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  editLink: { color: colors.sageDark, fontSize: 13, fontWeight: "700" }
+  editLink: { color: colors.sageDark, fontSize: 13, fontWeight: "700" },
+  timeFields: { flexDirection: "row", gap: 12 },
+  timeField: { flex: 1 },
+  compactInput: { height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: "white", paddingHorizontal: 12, marginTop: 6, color: colors.ink },
+  dangerButton: { minHeight: 48, borderRadius: 16, borderWidth: 1, borderColor: "#E8C7C7", alignItems: "center", justifyContent: "center" },
+  dangerText: { color: colors.danger, fontSize: 14, fontWeight: "700" }
 });
