@@ -21,6 +21,7 @@ import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport } from "./src/domain/export";
+import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { CareEvent, CareTask, Caregiver, SleepMethod } from "./src/domain/types";
@@ -76,6 +77,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("today");
   const [logMode, setLogMode] = useState<LogMode>(null);
   const [taskMode, setTaskMode] = useState<TaskMode>(null);
+  const [vaccineSuggestionsOpen, setVaccineSuggestionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
@@ -153,7 +155,7 @@ export default function App() {
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} />}
-        {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} now={clockNow} />}
+        {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} />}
 
         <View style={styles.nav}>
@@ -167,6 +169,7 @@ export default function App() {
       </View>
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} />
       <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
+      <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
@@ -381,7 +384,7 @@ async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"])
   }
 }
 
-function InsightsScreen({ app, openTask, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; now: Date }) {
+function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openVaccineSuggestions: () => void; now: Date }) {
   const state = app.state;
   const events = state.events;
   const newbornSummary = correctedAgeDays(state.baby, now) < 63;
@@ -429,6 +432,7 @@ function InsightsScreen({ app, openTask, now }: { app: ReturnType<typeof useUyku
       {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
+      <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
       {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
@@ -606,6 +610,23 @@ function CareTaskModal({ mode, close, add }: { mode: TaskMode; close: () => void
     setTitle(""); setNote(""); close();
   };
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{mode === "vaccine" ? "Aşı ekle" : "Randevu ekle"}</Text><Text style={styles.pageIntro}>Uykuva resmi takvim yerine sizin girdiğiniz tarihi hatırlar; sağlık kararını uzmanınızla verin.</Text><Field label={mode === "vaccine" ? "Aşı adı" : "Randevu başlığı"} value={title} onChangeText={setTitle} placeholder={mode === "vaccine" ? "Örn. 6. ay aşıları" : "Örn. Çocuk doktoru kontrolü"} /><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Saat" value={clock} onChangeText={setClock} keyboardType="numbers-and-punctuation" placeholder="10:00" /><Field label="Not (isteğe bağlı)" value={note} onChangeText={setNote} /><PrimaryButton label="Takvime ekle" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+}
+
+function VaccineSuggestionsModal({ visible, close, birthDate, tasks, add, now }: { visible: boolean; close: () => void; birthDate: string; tasks: CareTask[]; add: ReturnType<typeof useUykuvaState>["addCareTask"]; now: Date }) {
+  const suggestions = useMemo(() => suggestedVaccineTasks(birthDate, tasks.map((task) => task.title), now), [birthDate, tasks, now]);
+  if (!visible) return null;
+  const addSuggestion = (suggestion: (typeof suggestions)[number]) => {
+    add({ type: "vaccine", title: suggestion.title, dueAt: suggestion.dueAt.toISOString(), note: "Öneri: Türkiye Ulusal Çocukluk Dönemi Aşılama Takvimi. Uygulama zamanını aile hekiminizle teyit edin." });
+    Alert.alert("Takvime eklendi", `${suggestion.title} için öneri tarihi eklendi.`);
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset}>
+    <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Aşı takvimi önerileri</Text>
+    <Text style={styles.pageIntro}>Doğum tarihine göre yaklaşan yaş dönüm noktaları. Her öneriyi ayrı ayrı takvime ekleyebilirsiniz; uygulama aşı yapıldığını varsaymaz.</Text>
+    <Card tone="peach"><Text style={styles.body}>Bu liste takip kolaylığı içindir. Aşı kartınızı ve aile hekiminizin önerisini esas alın. Geçmiş dozlar için telafi planını aile hekiminizle belirleyin.</Text></Card>
+    {suggestions.length ? suggestions.map((suggestion) => <Card key={suggestion.id}><View style={styles.measureRow}><View style={styles.flex}><Text style={styles.eventTitle}>{suggestion.title}</Text><Text style={styles.muted}>{suggestion.ageMonths === 156 ? "13 yaş" : `${suggestion.ageMonths}. ay`} · {suggestion.dueAt.toLocaleDateString("tr-TR")}</Text></View><PrimaryButton label="Ekle" quiet onPress={() => addSuggestion(suggestion)} /></View></Card>) : <Card><Text style={styles.body}>Eklenebilecek ileri tarihli öneri kalmadı. Aşı kayıtlarınızı ve sıradaki adımları aile hekiminizle gözden geçirin.</Text></Card>}
+    <Text style={styles.hint}>Suçiçeği ikinci doz önerisi, 1 Eylül 2026 itibarıyla 48. ay güncellemesini içerir.</Text>
+    <PrimaryButton label="Kapat" quiet onPress={close} /><View style={styles.spacer24} />
+  </ScrollView></Modal>;
 }
 
 function localDateValue(date: Date) {
