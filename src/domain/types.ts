@@ -111,6 +111,10 @@ export type CareTask = {
   dueAt: string;
   note?: string;
   completedAt?: string;
+  repeat?: "weekly" | "monthly";
+  recurrenceId?: string;
+  recurrenceDay?: number;
+  generated?: boolean;
 };
 
 export type Caregiver = {
