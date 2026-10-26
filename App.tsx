@@ -364,7 +364,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
       </Card>
 
       <SectionTitle title="Hızlı kayıt" />
-      <Pressable accessibilityRole="button" onPress={onToggleNightMode} style={styles.nightEntry}><Text style={styles.nightEntryText}>Gece moduna geç  ☾</Text></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Gece moduna geç" accessibilityHint="Gece ekranında uyku sayacını, beslenmeyi ve bez kaydını hızlıca açabilirsiniz." onPress={onToggleNightMode} style={styles.nightEntry}><Text style={styles.nightEntryText}>Gece moduna geç  ☾</Text></Pressable>
       <View style={styles.quickRow}>
         <QuickAction glyph={app.runningSleep ? "■" : "☾"} label={app.runningSleep ? "Uyandı" : "Uyku"} onPress={app.toggleSleep} active={Boolean(app.runningSleep)} />
         <QuickAction glyph="◒" label={app.runningFeed ? "Emzirme sürüyor" : "Beslenme"} onPress={() => openLog("feed")} active={Boolean(app.runningFeed)} />
@@ -1544,19 +1544,19 @@ const styles = StyleSheet.create({
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
   awake: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 14 },
-  nightEntry: { minHeight: 42, borderRadius: 15, backgroundColor: "#E7ECE6", alignItems: "center", justifyContent: "center", marginBottom: 14 },
+  nightEntry: { minHeight: 48, borderRadius: 15, backgroundColor: "#E7ECE6", alignItems: "center", justifyContent: "center", marginBottom: 14, paddingHorizontal: 14 },
   nightEntryText: { color: colors.sageDark, fontSize: 13, fontWeight: "800" },
   nightScreen: { flex: 1, backgroundColor: "#101715", paddingHorizontal: 22, paddingTop: 24, paddingBottom: 22, justifyContent: "space-between" },
   nightTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   nightEyebrow: { color: "#91A79B", fontSize: 11, fontWeight: "800", letterSpacing: 1.3 },
   nightBaby: { color: "#E5ECE7", fontSize: 25, fontWeight: "700", marginTop: 5 },
-  nightExit: { minWidth: 64, minHeight: 42, borderRadius: 15, backgroundColor: "#25332D", alignItems: "center", justifyContent: "center" },
+  nightExit: { minWidth: 64, minHeight: 48, borderRadius: 15, backgroundColor: "#25332D", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
   nightExitText: { color: "#DCE7DF", fontSize: 14, fontWeight: "700" },
   nightTimerCard: { borderRadius: 28, backgroundColor: "#19231F", padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#28362F" },
   nightTimer: { color: "#E8EFE9", fontSize: 42, fontWeight: "700", letterSpacing: -1.4, marginVertical: 12 },
   nightHint: { color: "#9CAC9F", fontSize: 13, textAlign: "center" },
   nightActions: { gap: 12 },
-  nightAction: { minHeight: 86, borderRadius: 21, backgroundColor: "#1B2621", paddingHorizontal: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
+  nightAction: { minHeight: 88, borderRadius: 21, backgroundColor: "#1B2621", paddingHorizontal: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
   nightActionPrimary: { backgroundColor: "#26382F", borderColor: "#3A5144" },
   nightActionGlyph: { color: "#B6CBB9", fontSize: 25, width: 42 },
   nightActionTitle: { color: "#E2EAE4", fontSize: 16, fontWeight: "700", flex: 1 },
