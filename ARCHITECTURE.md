@@ -117,7 +117,7 @@ Ana fonksiyonlar:
 
 - `correctedAgeDays`: Gebelik haftası 37'nin altında olan bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar; uyku ekranı bu kullanımı açıklar. Aşı/randevu tarihleri gerçek doğum tarihine bağlıdır.
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
-- `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Yaş aralığı ile tahmini saat dilimine ait yakın dönem uyanıklık sürelerini harmanlar.
+- `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Yaş aralığı ile tahmini saat dilimine ait yakın dönem uyanıklık sürelerini harmanlar ve kişisel/yaş bandı dışındaki uç değerleri yaş aralığında sınırlar; böylece tahmin başlangıcı bitişten sonraya kaymaz.
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
 - `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir. Bugünkü planda henüz kaydedilmemiş, gelecekteki uyku taslakları sonraki uyku tahminiyle çakışmıyorsa listelenir.
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
