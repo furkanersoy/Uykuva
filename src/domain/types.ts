@@ -52,7 +52,7 @@ export type SleepPlan = {
 
 export type SleepCheckIn = {
   date: string;
-  ease: 1 | 2 | 3 | 4 | 5;
+  ease?: 1 | 2 | 3 | 4 | 5;
   nightWakings?: number;
   note?: string;
 };
