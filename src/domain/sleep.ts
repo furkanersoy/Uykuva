@@ -154,7 +154,8 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   const requiredSamples = dayPart === "night" ? 2 : 5;
   const hasPersonalPattern = personal.length >= requiredSamples;
   const personalMedian = median(personal);
-  const target = hasPersonalPattern ? baseline * 0.35 + personalMedian * 0.65 : baseline;
+  const blendedTarget = hasPersonalPattern ? baseline * 0.35 + personalMedian * 0.65 : baseline;
+  const target = Math.max(band.min, Math.min(band.max, blendedTarget));
   const spread = hasPersonalPattern ? personal.length >= 8 ? 12 : 18 : Math.max(20, (band.max - band.min) / 2);
   const start = new Date(wakeAt.getTime() + Math.max(band.min, target - spread) * 60_000);
   const end = new Date(wakeAt.getTime() + Math.min(band.max, target + spread) * 60_000);
