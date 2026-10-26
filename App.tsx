@@ -18,6 +18,8 @@ import {
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import * as DocumentPicker from "expo-document-picker";
+import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, compareNapPatterns, correctedAgeDays, createDailyNapOutline, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
@@ -722,6 +724,17 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
     app.updatePreferences({ quietStart, quietEnd });
     Alert.alert("Kaydedildi", "Bu saatler arasında uyku penceresi bildirimi planlanmayacak.");
   };
+  const exportBackupFile = async () => {
+    try {
+      const file = new File(Paths.cache, `uykuva-yedek-${localDateValue(new Date())}.json`);
+      file.create({ overwrite: true });
+      await file.write(createDataExport(app.state));
+      if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "Bu cihazda dosya paylaşımı açılamadı.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/json", dialogTitle: "Uykuva yedeğini paylaş" });
+    } catch {
+      Alert.alert("Yedek oluşturulamadı", "JSON yedeği hazırlanırken bir sorun oluştu. Daha sonra yeniden deneyin.");
+    }
+  };
   const confirmDelete = () => Alert.alert(
     "Tüm cihaz verileri silinsin mi?",
     "Bebek profili, bakım kayıtları ve uyku planı bu cihazdan kalıcı olarak silinir.",
@@ -754,7 +767,7 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
         {app.state.preferences.careTaskRemindersEnabled ? <><Text style={styles.inputLabel}>Ne zaman hatırlatılsın?</Text><View style={styles.choiceRow}>{([{ minutes: 30, label: "30 dk" }, { minutes: 120, label: "2 saat" }, { minutes: 1440, label: "1 gün" }] as const).map(({ minutes, label }) => <Pill key={minutes} label={label} active={app.state.preferences.careTaskReminderMinutes === minutes} onPress={() => app.updatePreferences({ careTaskReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Hatırlatmalar sessiz saatlere denk gelirse sessiz dönem bitiminde, görev saatinden önce gönderilir.</Text></> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
-      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini JSON yedeği olarak paylaşabilir, daha sonra geri yükleyebilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Verilerimi dışa aktar" quiet onPress={() => void Share.share({ title: "Uykuva veri dışa aktarımı", message: createDataExport(app.state) })} /><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini geri yükle" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
+      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini JSON dosyası olarak paylaşabilir, başka cihazdan seçip geri yükleyebilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini dosya olarak paylaş" quiet onPress={() => void exportBackupFile()} /><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini geri yükle" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
     </ScrollView>
   );
 }
@@ -779,7 +792,22 @@ function DataRestoreModal({ visible, close, currentBabyName, restore }: { visibl
       ]
     );
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini geri yükle</Text><Text style={styles.pageIntro}>Daha önce “Verilerimi dışa aktar” ile oluşturduğunuz Uykuva JSON metnini kopyalayıp buraya yapıştırın. Yedek bu cihazdaki kayıtların yerini alır.</Text><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve geri yükle" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  const pickBackupFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: "application/json", copyToCacheDirectory: true, multiple: false });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset) return Alert.alert("Dosya bulunamadı", "JSON yedeğini seçip yeniden deneyin.");
+      if (asset.size !== undefined && asset.size > 5 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva JSON yedeklerinin dosya sınırı 5 MB.");
+      const contents = await new File(asset.uri).text();
+      if (contents.length > 2_000_000) return Alert.alert("Yedek çok büyük", "Uykuva JSON yedeklerinin metin sınırı 2 milyon karakter.");
+      setRaw(contents);
+      Alert.alert("Yedek yüklendi", "Dosya kontrol için hazır. İçeriği doğrulayıp geri yüklemeyi onaylayın.");
+    } catch {
+      Alert.alert("Dosya açılamadı", "Uykuva JSON yedeğini seçip yeniden deneyin.");
+    }
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini geri yükle</Text><Text style={styles.pageIntro}>Uykuva JSON yedeği dosyası seçin veya yedek metnini yapıştırın. Geri yükleme bu cihazdaki kayıtların yerini alır.</Text><PrimaryButton label="JSON yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve geri yükle" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
