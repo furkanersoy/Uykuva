@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Modal,
   Pressable,
   SafeAreaView,
@@ -24,6 +25,7 @@ import { createDataExport, parseDataExport } from "./src/domain/export";
 import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
+import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -55,7 +57,8 @@ function duration(event: CareEvent) {
 function eventTitle(event: CareEvent) {
   if (event.kind === "sleep") return `Uyku · ${duration(event)}`;
   if (event.kind === "feed") {
-    if (event.feedType === "bottle") return `Biberon · ${event.amountMl ?? 0} ml`;
+    if (event.feedType === "pump") return `Sağım · ${event.amountMl ?? 0} ml`;
+    if (event.feedType === "bottle") return `Biberon · ${event.amountMl ?? 0} ml${event.bottleSource === "expressed" ? " · sağılan süt" : ""}`;
     if (event.feedType === "solid") return `Katı gıda · ${event.foods?.join(", ") || "öğün"}`;
     const side = { left: "sol", right: "sağ", both: "iki taraf" }[event.breastSide ?? "both"];
     const minutes = completedFeedMinutes(event);
@@ -475,7 +478,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
     const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : periodEnd, periodEnd);
     return sum + Math.max(0, end - start) / 60_000;
   }, 0);
-  const feeds = recent.filter((event) => event.kind === "feed");
+  const feeds = recent.filter((event) => event.kind === "feed" && event.feedType !== "pump");
   const feedingTotals = todayFeedingTotals(events, now, newbornSummary);
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
@@ -505,6 +508,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       </Card>
       <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
+      <MilkStockCard events={events} now={now} update={app.updateEvent} />
       {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
@@ -518,6 +522,42 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
 
 function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: () => void; onDelete: () => void }) {
   return <Pressable onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{task.type === "vaccine" ? "Aşı" : "Randevu"} · dokununca tamamla</Text></View><Text style={styles.taskDate}>{new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })}</Text></Pressable>;
+}
+
+function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
+  const inventory = useMemo(() => createMilkInventory(events, now), [events, now]);
+  const batches = inventory.batches.filter((batch) => batch.remainingMl > 0);
+  const dateTime = (date: Date) => `${date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · ${time(date)}`;
+  const discard = (event: CareEvent) => Alert.alert("Stoğu çıkar?", `${event.amountMl ?? 0} ml ${milkStorageLabel(event)} kaydı artık envanterde görünmeyecek.`, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Stoktan çıkar", style: "destructive", onPress: () => update(event.id, { milkDiscardedAt: new Date().toISOString() }) }
+  ]);
+  const thaw = (event: CareEvent) => Alert.alert("Süt tamamen çözüldü mü?", "Süreyi yalnızca tamamen çözüldüğü anda başlatın. Çözülen sütü yeniden dondurmayın.", [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Tamamen çözüldü", onPress: () => update(event.id, { milkStorageLocation: "fridge", milkThawedAt: new Date().toISOString() }) }
+  ]);
+  const moveTo = (event: CareEvent, location: "fridge" | "freezer") => update(event.id, { milkStorageLocation: location });
+  return <>
+    <SectionTitle title="Sağılan süt stoğu" action={`${inventory.availableMl} ml kullanılabilir`} />
+    <Card>
+      {batches.length ? batches.map((batch) => {
+        const qualityDatePassed = !batch.isExpired && batch.bestBy.getTime() <= now.getTime() && batch.event.milkStorageLocation === "freezer" && !batch.isThawed;
+        const dueSoon = !batch.isExpired && batch.useBy.getTime() <= now.getTime() + 48 * 60 * 60 * 1000;
+        return <View key={batch.event.id} style={styles.eventRow}>
+          <View style={styles.flex}><Text style={styles.eventTitle}>{batch.remainingMl} ml · {milkStorageLabel(batch.event)}</Text><Text style={styles.muted}>{batch.event.milkLabel?.trim() || `Sağım ${dateTime(new Date(batch.event.startedAt))}`}</Text>
+            {batch.event.milkStorageLocation === "freezer" && !batch.isThawed ? <Text style={styles.muted}>En iyi kalite: {dateTime(batch.bestBy)} · Tavsiye edilen son tarih: {dateTime(batch.useBy)}</Text> : <Text style={styles.muted}>Kullanım aralığı: {dateTime(batch.useBy)} tarihine kadar</Text>}
+            {batch.isExpired ? <Text style={styles.dangerText}>Önerilen kullanım süresi geçti</Text> : qualityDatePassed ? <Text style={styles.muted}>En iyi kalite dönemi geçti; CDC'nin kabul edilebilir saklama süresi sürüyor.</Text> : dueSoon ? <Text style={styles.dangerText}>Önümüzdeki 48 saatte kullanım süresi doluyor</Text> : null}
+            {batch.event.milkStorageLocation === "freezer" && !batch.event.milkThawedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => thaw(batch.event)}><Text style={styles.linkText}>Tamamen çözüldüğünde işaretle</Text></Pressable> : null}
+            {batch.event.milkStorageLocation === "room" && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "fridge")}><Text style={styles.linkText}>Buzdolabına alındı olarak güncelle</Text></Pressable> : null}
+            {batch.event.milkStorageLocation === "fridge" && !batch.event.milkThawedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "freezer")}><Text style={styles.linkText}>Dondurucuya alındı olarak güncelle</Text></Pressable> : null}
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Süt stoğunu çıkar" onPress={() => discard(batch.event)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable>
+        </View>;
+      }) : <Text style={styles.body}>Henüz sağım stoğu yok. Beslenme kaydından “Sağım” seçerek miktarı ve saklama yerini ekleyebilirsiniz.</Text>}
+      <Text style={styles.hint}>Önerilen süreler taze sağılmış süt ve uygun sıcaklık koşulları içindir. Çözdürülmüş süt ve artan biberon için farklı süreler geçerlidir.</Text>
+      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/breastfeeding/breast-milk-preparation-and-storage/handling-breastmilk.html")}><Text style={styles.linkText}>CDC saklama rehberini aç</Text></Pressable>
+    </Card>
+  </>;
 }
 
 function Measure({ value, label }: { value: string; label: string }) {
@@ -826,7 +866,10 @@ function RecordTimeModal({ event, close, update }: { event: CareEvent | null; cl
 function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
   const add = app.addSimpleEvent;
   const [amount, setAmount] = useState("90");
-  const [feedType, setFeedType] = useState<"breast" | "bottle" | "solid">("breast");
+  const [feedType, setFeedType] = useState<"breast" | "bottle" | "solid" | "pump">("breast");
+  const [bottleSource, setBottleSource] = useState<"formula" | "expressed">("formula");
+  const [milkStorageLocation, setMilkStorageLocation] = useState<"room" | "fridge" | "freezer">("fridge");
+  const [milkLabel, setMilkLabel] = useState("");
   const [foods, setFoods] = useState("");
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [reaction, setReaction] = useState("");
@@ -842,6 +885,7 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
   const save = (details: Partial<CareEvent>) => { add(mode, details); setNote(""); close(); };
   const title = { feed: "Beslenme kaydı", diaper: "Bez kaydı", note: "Bakım notu", health: "Sağlık kaydı", growth: "Büyüme ölçümü" }[mode];
   const suggestedSide = nextBreastSide(app.state.events);
+  const milkInventory = createMilkInventory(app.state.events);
   const saveHealth = () => {
     if (healthType === "temperature") {
       const value = Number(temperature.replace(",", "."));
@@ -873,9 +917,10 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
         <Text style={styles.pageTitle}>{title}</Text>
         {mode === "feed" ? <>
           {app.runningFeed ? <Card tone="peach"><Text style={styles.cardTitle}>Emzirme devam ediyor</Text><Text style={styles.body}>{app.runningFeed.breastSide === "left" ? "Sol" : app.runningFeed.breastSide === "right" ? "Sağ" : "İki taraf"} · {time(app.runningFeed.startedAt)} başlangıç</Text><View style={styles.spacer12} /><PrimaryButton label="Emzirmeyi bitir" onPress={() => { app.toggleBreastfeed("both"); close(); }} /></Card> : <>
-            <View style={styles.choiceRow}><Pill label="Emzirme" active={feedType === "breast"} onPress={() => setFeedType("breast")} /><Pill label="Biberon" active={feedType === "bottle"} onPress={() => setFeedType("bottle")} /><Pill label="Katı gıda" active={feedType === "solid"} onPress={() => setFeedType("solid")} /></View>
+            <View style={styles.choiceRow}><Pill label="Emzirme" active={feedType === "breast"} onPress={() => setFeedType("breast")} /><Pill label="Biberon" active={feedType === "bottle"} onPress={() => setFeedType("bottle")} /><Pill label="Katı gıda" active={feedType === "solid"} onPress={() => setFeedType("solid")} /><Pill label="Sağım" active={feedType === "pump"} onPress={() => setFeedType("pump")} /></View>
             {feedType === "breast" ? <><Text style={styles.inputLabel}>Hangi taraf?</Text>{suggestedSide ? <Text style={styles.suggestion}>Sıradaki öneri: {suggestedSide === "left" ? "sol" : "sağ"} taraf</Text> : null}<View style={styles.choiceRow}><Pill label="Sol" active={suggestedSide === "left"} onPress={() => { app.toggleBreastfeed("left"); close(); }} /><Pill label="Sağ" active={suggestedSide === "right"} onPress={() => { app.toggleBreastfeed("right"); close(); }} /><Pill label="İki taraf" onPress={() => { app.toggleBreastfeed("both"); close(); }} /></View></> : null}
-            {feedType === "bottle" ? <><Field label="Miktar (ml)" value={amount} onChangeText={setAmount} keyboardType="number-pad" /><PrimaryButton label="Biberonu kaydet" onPress={() => { const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || value > 1000) return Alert.alert("Miktarı kontrol edin", "Pozitif bir ml değeri yazın."); save({ feedType: "bottle", amountMl: value }); }} /></> : null}
+            {feedType === "bottle" ? <><Text style={styles.inputLabel}>Süt türü</Text><View style={styles.choiceRow}><Pill label="Mama / diğer" active={bottleSource === "formula"} onPress={() => setBottleSource("formula")} /><Pill label="Sağılan süt" active={bottleSource === "expressed"} onPress={() => setBottleSource("expressed")} /></View>{bottleSource === "expressed" ? <Text style={styles.hint}>Takipli stok: {milkInventory.availableMl} ml. Kaydedince en eski uygun partiden düşülür; miktar fazla olsa da beslenme kaydı tutulur.</Text> : null}<Field label="Miktar (ml)" value={amount} onChangeText={setAmount} keyboardType="number-pad" /><PrimaryButton label="Biberonu kaydet" onPress={() => { const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || value > 1000) return Alert.alert("Miktarı kontrol edin", "Pozitif bir ml değeri yazın."); save({ feedType: "bottle", amountMl: value, bottleSource }); }} /></> : null}
+            {feedType === "pump" ? <><Field label="Sağılan miktar (ml)" value={amount} onChangeText={setAmount} keyboardType="number-pad" /><Text style={styles.inputLabel}>Saklama yeri</Text><View style={styles.choiceRow}><Pill label="Oda · 4 sa" active={milkStorageLocation === "room"} onPress={() => setMilkStorageLocation("room")} /><Pill label="Buzdolabı · 4 gün" active={milkStorageLocation === "fridge"} onPress={() => setMilkStorageLocation("fridge")} /><Pill label="Dondurucu · 6–12 ay" active={milkStorageLocation === "freezer"} onPress={() => setMilkStorageLocation("freezer")} /></View><Field label="Kap etiketi (isteğe bağlı)" value={milkLabel} onChangeText={setMilkLabel} placeholder="Örn. Pazartesi sabah" /><Text style={styles.hint}>Saklama aralıkları CDC'nin 25°C veya altındaki oda, 4°C buzdolabı ve -18°C veya altındaki dondurucu önerilerine dayanır. Prematüre veya hasta bebeklerde sağlık uzmanınıza danışın.</Text><PrimaryButton label="Sağım ve stoğu kaydet" onPress={() => { const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || value > 2000) return Alert.alert("Miktarı kontrol edin", "0–2000 ml arasında pozitif bir miktar yazın."); save({ feedType: "pump", amountMl: value, milkStorageLocation, milkLabel: milkLabel.trim() || undefined }); setMilkLabel(""); }} /></> : null}
             {feedType === "solid" ? <><Field label="Yiyecekler" value={foods} onChangeText={setFoods} placeholder="Örn. yoğurt, muz" /><Text style={styles.inputLabel}>Takip edilen alerjen içerikleri (isteğe bağlı)</Text><View style={styles.choiceRow}>{TRACKED_ALLERGENS.map((allergen) => <Pill key={allergen} label={allergen} active={selectedAllergens.includes(allergen)} onPress={() => toggleAllergen(allergen)} />)}</View><Text style={styles.hint}>Bunlar yalnızca öğün kaydına eklenen etiketlerdir; güvenli gıda veya alerji önerisi değildir.</Text><Field label="Gözlenen tepki (isteğe bağlı)" value={reaction} onChangeText={setReaction} placeholder="Gözleminizi yazın" /><PrimaryButton label="Öğünü kaydet" onPress={saveSolidMeal} /></> : null}
           </>}
         </> : null}
@@ -1000,6 +1045,9 @@ const styles = StyleSheet.create({
   compactInput: { height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: "white", paddingHorizontal: 12, marginTop: 6, color: colors.ink },
   dangerButton: { minHeight: 48, borderRadius: 16, borderWidth: 1, borderColor: "#E8C7C7", alignItems: "center", justifyContent: "center" },
   dangerText: { color: colors.danger, fontSize: 14, fontWeight: "700" },
+  linkText: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 8 },
+  deleteButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "#F7EEEE" },
+  deleteText: { color: colors.danger, fontSize: 23, lineHeight: 25 },
   caregiverRow: { minHeight: 64, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.line, gap: 12 },
   caregiverAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.paper, alignItems: "center", justifyContent: "center" },
   caregiverAvatarActive: { backgroundColor: colors.sageDark },
