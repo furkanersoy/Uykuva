@@ -436,7 +436,7 @@ function TimelineScreen({ events, onDelete, onEditSleep, onEditRecord, onAddSlee
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Günün akışı</Text>
-      <Text style={styles.pageIntro}>Kayıtları türüne veya bakım veren adına göre bulun. Kayda dokunup saatini düzenleyin; silmek için basılı tutun.</Text>
+      <Text style={styles.pageIntro}>Kayıtları türüne veya bakım veren adına göre bulun. Kayda dokunup saatini düzenleyin; silmek için basılı tutup onaylayın.</Text>
       <TextInput value={query} onChangeText={setQuery} style={styles.input} placeholder="Kayıt veya bakım veren ara" placeholderTextColor="#93A09C" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>{timelineFilters.map((item) => <Pill key={item.id} label={item.label} active={filter === item.id} onPress={() => setFilter(item.id)} />)}</ScrollView>
       <PrimaryButton label="Geçmiş uyku ekle" quiet onPress={onAddSleep} />
@@ -1203,8 +1203,12 @@ function QuickAction({ glyph, label, onPress, active }: { glyph: string; label: 
 }
 
 function EventRow({ event, onPress, onDelete }: { event: CareEvent; onPress?: () => void; onDelete?: () => void }) {
+  const confirmDelete = () => Alert.alert("Bakım kaydını sil?", `${eventTitle(event)} kaydı zaman çizelgesinden kalıcı olarak silinecek.`, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Sil", style: "destructive", onPress: onDelete }
+  ]);
   return (
-    <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `${eventTitle(event)} · saatleri düzenle` : undefined} onPress={onPress} onLongPress={onDelete} style={styles.eventRow}>
+    <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `${eventTitle(event)} · saatleri düzenle` : undefined} accessibilityHint={onDelete ? "Silmek için basılı tutun ve onaylayın." : undefined} onPress={onPress} onLongPress={onDelete ? confirmDelete : undefined} style={styles.eventRow}>
       <View style={[styles.eventDot, { backgroundColor: event.kind === "sleep" ? colors.lavender : event.kind === "feed" ? colors.peach : colors.mint }]} />
       <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "health" && event.medicationReminderAt ? ` · plan hatırlatması ${new Date(event.medicationReminderAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}` : ""}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text></View>
       <Text style={styles.eventTime}>{time(event.startedAt)}</Text>
