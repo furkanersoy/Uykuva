@@ -220,6 +220,8 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
 - [x] Aşı ve doktor randevuları için sessiz saatleri gözeten yerel hatırlatmalar eklendi.
+- [x] Uyku koçluğu yaş aşamasına göre ritim temellerine geçiyor; plan yaklaşımları hazırlık listesi tamamlanana kadar açılmıyor.
+- [x] Sabah değerlendirmesinde gece uyanmaları kaydediliyor ve son yedi check-in ortalaması gösteriliyor.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
