@@ -1,0 +1,51 @@
+export type VaccineMilestone = {
+  id: string;
+  ageMonths: number;
+  title: string;
+};
+
+// Suggested tracking dates based on the Ministry's 2025 national schedule.
+// The second varicella dose at 48 months was added from 1 September 2026.
+export const TURKEY_CHILDHOOD_VACCINE_MILESTONES: VaccineMilestone[] = [
+  { id: "bcg-2m", ageMonths: 2, title: "BCG (Verem)" },
+  { id: "kpa-2m", ageMonths: 2, title: "KPA · 1. doz" },
+  { id: "hexavalent-2m", ageMonths: 2, title: "DaBT-İPA-Hib-HepB · 1. doz" },
+  { id: "kpa-4m", ageMonths: 4, title: "KPA · 2. doz" },
+  { id: "hexavalent-4m", ageMonths: 4, title: "DaBT-İPA-Hib-HepB · 2. doz" },
+  { id: "hexavalent-6m", ageMonths: 6, title: "DaBT-İPA-Hib-HepB · 3. doz" },
+  { id: "opa-6m", ageMonths: 6, title: "OPA · 1. doz" },
+  { id: "kkk-extra-9m", ageMonths: 9, title: "KKK · ek doz" },
+  { id: "kpa-booster-12m", ageMonths: 12, title: "KPA · rapel" },
+  { id: "varicella-12m", ageMonths: 12, title: "Suçiçeği · 1. doz" },
+  { id: "kkk-12m", ageMonths: 12, title: "KKK · 1. doz" },
+  { id: "hexa-booster-18m", ageMonths: 18, title: "DaBT-İPA-Hib-HepB · rapel" },
+  { id: "opa-18m", ageMonths: 18, title: "OPA · 2. doz" },
+  { id: "hepa-18m", ageMonths: 18, title: "Hepatit A · 1. doz" },
+  { id: "hepa-24m", ageMonths: 24, title: "Hepatit A · 2. doz" },
+  { id: "kkk-booster-48m", ageMonths: 48, title: "KKK · 2. doz" },
+  { id: "dtap-ipv-booster-48m", ageMonths: 48, title: "DaBT-İPA · rapel" },
+  { id: "varicella-48m", ageMonths: 48, title: "Suçiçeği · 2. doz" },
+  { id: "td-13y", ageMonths: 156, title: "Td · rapel" }
+];
+
+function addMonths(date: Date, months: number) {
+  const result = new Date(date);
+  const day = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(day, lastDay));
+  return result;
+}
+
+export function suggestedVaccineTasks(birthDate: string, existingTitles: string[], now = new Date()) {
+  const birth = new Date(`${birthDate}T12:00:00`);
+  if (Number.isNaN(birth.getTime())) return [];
+  const normalizedExisting = existingTitles.map((title) => title.trim().toLocaleLowerCase("tr-TR"));
+  return TURKEY_CHILDHOOD_VACCINE_MILESTONES.flatMap((milestone) => {
+    const dueAt = addMonths(birth, milestone.ageMonths);
+    const normalizedTitle = milestone.title.toLocaleLowerCase("tr-TR");
+    if (dueAt.getTime() < now.getTime() || normalizedExisting.includes(normalizedTitle)) return [];
+    return [{ ...milestone, dueAt }];
+  });
+}
