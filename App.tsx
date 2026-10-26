@@ -785,6 +785,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
   const milestones = detectRecordedMilestones(events, now);
   const solidHistory = summarizeSolidFoodHistory(events);
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+  const completedCareTasks = [...state.careTasks].filter((task) => task.completedAt).sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>{newbornSummary ? "Son 24 saatin özeti" : "Günlük özet"}</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
@@ -869,6 +870,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
       {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
+      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />)}<Text style={styles.hint}>Bir kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
     </ScrollView>
@@ -876,7 +878,10 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
 }
 
 function CareTaskRow({ task, onToggle, onDelete }: { task: CareTask; onToggle: () => void; onDelete: () => void }) {
-  return <Pressable onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{task.type === "vaccine" ? "Aşı" : "Randevu"} · dokununca tamamla</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</View><Text style={styles.taskDate}>{new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" })}</Text></Pressable>;
+  const taskType = task.type === "vaccine" ? "Aşı" : "Randevu";
+  const taskDate = new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
+  const completedDate = task.completedAt ? new Date(task.completedAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }) : undefined;
+  return <Pressable accessibilityRole="button" accessibilityLabel={`${task.title}, ${taskType}, ${task.completedAt ? `uygulamada tamamlandı ${completedDate}; yeniden aç` : `${taskDate}; tamamla`}. Silmek için basılı tutun.`} onPress={onToggle} onLongPress={onDelete} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{taskType} · {task.completedAt ? `uygulamada tamamlandı ${completedDate} · dokununca yeniden aç` : "dokununca tamamla"}</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</View><Text style={styles.taskDate}>{taskDate}</Text></Pressable>;
 }
 
 function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
