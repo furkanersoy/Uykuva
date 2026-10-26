@@ -8,6 +8,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Son 14 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi
 - Son 14 günde tekrar eden gündüz uykularından kişisel günlük taslak çıkarma
 - Devam eden uykunun canlı süresini gösterme
+- Düşük parlaklıklı arayüzle uyku sayacı, beslenme ve bez kayıtlarına hızlı erişim sağlayan gece modu
 - Yeterli benzer kayıt varsa devam eden uyku için geçmiş sürelerden uyanma aralığı gösterme
 - Uyku, beslenme, bez ve bakım notu kaydı
 - İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
