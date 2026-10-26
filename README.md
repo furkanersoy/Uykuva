@@ -38,6 +38,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Sessiz saatlere uyan uyku bildirimleri
 - JSON veri dışa aktarma, doğrulanmış yedek geri yükleme ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
+- Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü
 - Biberon ve katı gıda ayrıntıları
 - Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
