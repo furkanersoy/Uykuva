@@ -32,7 +32,7 @@ import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
 type Tab = "today" | "timeline" | "coach" | "insights" | "family";
-type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | null;
+type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | "memory" | null;
 type TaskMode = "vaccine" | "appointment" | null;
 
 const tabs: { id: Tab; label: string; glyph: string }[] = [
@@ -42,6 +42,8 @@ const tabs: { id: Tab; label: string; glyph: string }[] = [
   { id: "insights", label: "Özet", glyph: "⌁" },
   { id: "family", label: "Aile", glyph: "♧" }
 ];
+
+const memoryPrompts = ["İlk gülüş", "İlk yuvarlanma", "İlk katı gıda", "İlk diş", "İlk kelime", "İlk adım"];
 
 function time(value?: string | Date) {
   if (!value) return "—";
@@ -71,6 +73,7 @@ function eventTitle(event: CareEvent) {
     return `Belirti · ${event.note || "not"}`;
   }
   if (event.kind === "growth") return `Ölçüm · ${event.weightG ? `${event.weightG} g` : ""}${event.lengthCm ? ` · ${event.lengthCm} cm` : ""}`;
+  if (event.kind === "memory") return `Anı · ${event.memoryTitle || event.note || "Kayıt"}`;
   return event.note || "Not";
 }
 
@@ -264,6 +267,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: Re
         <QuickAction glyph="＋" label="Sağlık" onPress={() => openLog("health")} />
         <QuickAction glyph="↗" label="Büyüme" onPress={() => openLog("growth")} />
         <QuickAction glyph="＋" label="Not" onPress={() => openLog("note")} />
+        <QuickAction glyph="♡" label="Anı" onPress={() => openLog("memory")} />
       </View>
 
       <SectionTitle title="Bakım devri" action="Son 4 saat" />
@@ -724,7 +728,7 @@ function EventRow({ event, onPress, onDelete }: { event: CareEvent; onPress?: ()
   return (
     <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `${eventTitle(event)} · saatleri düzenle` : undefined} onPress={onPress} onLongPress={onDelete} style={styles.eventRow}>
       <View style={[styles.eventDot, { backgroundColor: event.kind === "sleep" ? colors.lavender : event.kind === "feed" ? colors.peach : colors.mint }]} />
-      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}</Text></View>
+      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text></View>
       <Text style={styles.eventTime}>{time(event.startedAt)}</Text>
     </Pressable>
   );
@@ -881,9 +885,10 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
   const [weight, setWeight] = useState("");
   const [length, setLength] = useState("");
   const [head, setHead] = useState("");
+  const [memoryTitle, setMemoryTitle] = useState("");
   if (!mode) return null;
   const save = (details: Partial<CareEvent>) => { add(mode, details); setNote(""); close(); };
-  const title = { feed: "Beslenme kaydı", diaper: "Bez kaydı", note: "Bakım notu", health: "Sağlık kaydı", growth: "Büyüme ölçümü" }[mode];
+  const title = { feed: "Beslenme kaydı", diaper: "Bez kaydı", note: "Bakım notu", health: "Sağlık kaydı", growth: "Büyüme ölçümü", memory: "Anı günlüğü" }[mode];
   const suggestedSide = nextBreastSide(app.state.events);
   const milkInventory = createMilkInventory(app.state.events);
   const saveHealth = () => {
@@ -908,6 +913,11 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
     save({ feedType: "solid", foods: list, allergens: selectedAllergens, reactionNote: reaction.trim() || undefined });
     setFoods(""); setReaction(""); setSelectedAllergens([]);
   };
+  const saveMemory = () => {
+    if (!memoryTitle.trim() && !note.trim()) return Alert.alert("Anıyı yazın", "Bir başlık veya kısa not girin.");
+    add("memory", { memoryTitle: memoryTitle.trim() || "Anı", note: note.trim() || undefined });
+    setMemoryTitle(""); setNote(""); close();
+  };
   const toggleAllergen = (allergen: string) => setSelectedAllergens((current) => current.includes(allergen) ? current.filter((item) => item !== allergen) : [...current, allergen]);
   return (
     <Modal visible transparent animationType="slide" onRequestClose={close}>
@@ -926,6 +936,7 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
         </> : null}
         {mode === "diaper" ? <View style={styles.choiceRow}><Pill label="Islak" active onPress={() => save({ diaperType: "wet" })} /><Pill label="Kirli" onPress={() => save({ diaperType: "dirty" })} /><Pill label="İkisi" onPress={() => save({ diaperType: "both" })} /></View> : null}
         {mode === "note" ? <><Text style={styles.inputLabel}>Not</Text><TextInput value={note} onChangeText={setNote} multiline placeholder="Bakımı devralan kişinin bilmesi gereken…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Notu kaydet" onPress={() => save({ note })} /></> : null}
+        {mode === "memory" ? <><Text style={styles.inputLabel}>Bir anı seçin (isteğe bağlı)</Text><View style={styles.choiceRow}>{memoryPrompts.map((prompt) => <Pill key={prompt} label={prompt} active={memoryTitle === prompt} onPress={() => setMemoryTitle(prompt)} />)}</View><Field label="Anı başlığı" value={memoryTitle} onChangeText={setMemoryTitle} placeholder="İlk kez parkta uyudu" /><Text style={styles.inputLabel}>Detay (isteğe bağlı)</Text><TextInput value={note} onChangeText={setNote} multiline maxLength={1000} placeholder="Bu günü hatırlamak için kısa bir not…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Anıyı kaydet" onPress={saveMemory} /></> : null}
         {mode === "health" ? <>
           <View style={styles.choiceRow}><Pill label="Ateş" active={healthType === "temperature"} onPress={() => setHealthType("temperature")} /><Pill label="İlaç" active={healthType === "medicine"} onPress={() => setHealthType("medicine")} /><Pill label="Belirti" active={healthType === "symptom"} onPress={() => setHealthType("symptom")} /></View>
           {healthType === "temperature" ? <Field label="Ölçülen sıcaklık (°C)" value={temperature} onChangeText={setTemperature} keyboardType="decimal-pad" /> : null}
