@@ -101,6 +101,15 @@ export function useUykuvaState() {
     });
   }, []);
 
+  const toggleReadiness = useCallback((item: string) => {
+    setState((current) => {
+      const items = current.sleepPlan.readinessCompleted.includes(item)
+        ? current.sleepPlan.readinessCompleted.filter((value) => value !== item)
+        : [...current.sleepPlan.readinessCompleted, item];
+      return { ...current, sleepPlan: { ...current.sleepPlan, readinessCompleted: items } };
+    });
+  }, []);
+
   const advancePlan = useCallback(() => {
     setState((current) => ({
       ...current,
@@ -145,6 +154,7 @@ export function useUykuvaState() {
     deleteEvent,
     setMethod,
     toggleTask,
+    toggleReadiness,
     advancePlan,
     saveCheckIn
   };

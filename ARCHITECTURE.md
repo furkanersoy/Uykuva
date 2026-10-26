@@ -102,7 +102,7 @@ Ana fonksiyonlar:
 Mevcut sürümde tüm durum SQLite destekli anahtar-değer deposunda sürümlü bir anahtarla tutulur:
 
 ```text
-uykuva:state:v2
+uykuva:state:v3
 ```
 
 Eski `v1` AsyncStorage kaydı ilk açılışta okunur, yeni şemayla birleştirilir ve SQLite deposuna taşınır. Gerçek çoklu cihaz senkronizasyonundan önce her bakım kaydı ayrı bir SQLite satırı/değiştirilemez olay olarak modellenmelidir.
@@ -189,6 +189,11 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] İsteğe bağlı yerel uyku penceresi bildirimi eklendi.
 - [x] Bildirim süresi seçimi (5–30 dakika) eklendi.
 - [x] Uyku planı sabah kolaylık değerlendirmesi eklendi.
+- [x] Yaşa göre ritim temelleri / nazik hazırlık / kişisel plan ayrımı eklendi.
+- [x] Uyku planı hazır oluş ve güvenli uyku kontrol listesi eklendi.
+- [x] Ateş, ilaç ve belirti kayıtları eklendi; doz önerisi verilmez.
+- [x] Kilo, boy ve baş çevresi ölçüm kayıtları eklendi.
+- [x] Yedi günlük paylaşılabilir doktor özeti eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -202,8 +207,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] WHO büyüme grafikleri
 - [ ] Türkiye aşı takvimi
 - [ ] Ek gıda ve alerjen günlüğü
-- [ ] Ateş/ilaç geçmişi; doz önerisi olmadan
-- [ ] Doktor görüşmesi için PDF raporu
+- [ ] Doktor özeti için PDF dosyası üretme (metin paylaşımı hazır)
 - [ ] Sesli Türkçe kayıt
 - [ ] İkiz ve çoklu bebek desteği
 - [ ] Erişilebilirlik testi, ekran okuyucu etiketleri ve dinamik yazı boyutu
@@ -249,7 +253,7 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 26 Ekim 2026 tarihinde:
 
 - `npm.cmd run typecheck`: başarılı
-- `npm.cmd test`: 6/6 test başarılı
+- `npm.cmd test`: 8/8 test başarılı
 - `npx.cmd expo-doctor`: 20/20 kontrol başarılı
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 

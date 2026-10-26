@@ -16,14 +16,15 @@ import {
 } from "react-native";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, createSleepForecast, handoffSummary, methodDescription } from "./src/domain/sleep";
-import { CareEvent, SleepMethod } from "./src/domain/types";
+import { coachingDay, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage } from "./src/domain/sleep";
+import { createDoctorSummary } from "./src/domain/reports";
+import { AppState, CareEvent, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
 type Tab = "today" | "timeline" | "coach" | "insights" | "family";
-type LogMode = "feed" | "diaper" | "note" | null;
+type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | null;
 
 const tabs: { id: Tab; label: string; glyph: string }[] = [
   { id: "today", label: "Bugün", glyph: "⌂" },
@@ -48,6 +49,12 @@ function eventTitle(event: CareEvent) {
   if (event.kind === "sleep") return `Uyku · ${duration(event)}`;
   if (event.kind === "feed") return event.amountMl ? `Biberon · ${event.amountMl} ml` : "Emzirme";
   if (event.kind === "diaper") return `Bez · ${{ wet: "ıslak", dirty: "kirli", both: "ıslak + kirli" }[event.diaperType ?? "wet"]}`;
+  if (event.kind === "health") {
+    if (event.healthType === "temperature") return `Ateş · ${event.temperatureC ?? "—"} °C`;
+    if (event.healthType === "medicine") return `${event.medicineName || "İlaç"}${event.doseAsEntered ? ` · ${event.doseAsEntered}` : ""}`;
+    return `Belirti · ${event.note || "not"}`;
+  }
+  if (event.kind === "growth") return `Ölçüm · ${event.weightG ? `${event.weightG} g` : ""}${event.lengthCm ? ` · ${event.lengthCm} cm` : ""}`;
   return event.note || "Not";
 }
 
@@ -90,7 +97,7 @@ export default function App() {
         {tab === "today" && <TodayScreen app={app} forecast={forecast} openLog={setLogMode} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} />}
         {tab === "coach" && <CoachScreen app={app} />}
-        {tab === "insights" && <InsightsScreen events={app.state.events} />}
+        {tab === "insights" && <InsightsScreen state={app.state} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} />}
 
         <View style={styles.nav}>
@@ -178,6 +185,8 @@ function TodayScreen({ app, forecast, openLog }: { app: ReturnType<typeof useUyk
         <QuickAction glyph={app.runningSleep ? "■" : "☾"} label={app.runningSleep ? "Uyandı" : "Uyku"} onPress={app.toggleSleep} active={Boolean(app.runningSleep)} />
         <QuickAction glyph="◒" label="Beslenme" onPress={() => openLog("feed")} />
         <QuickAction glyph="◇" label="Bez" onPress={() => openLog("diaper")} />
+        <QuickAction glyph="＋" label="Sağlık" onPress={() => openLog("health")} />
+        <QuickAction glyph="↗" label="Büyüme" onPress={() => openLog("growth")} />
         <QuickAction glyph="＋" label="Not" onPress={() => openLog("note")} />
       </View>
 
@@ -208,6 +217,7 @@ function TimelineScreen({ events, onDelete }: { events: CareEvent[]; onDelete: (
 
 function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const plan = coachingDay(app.state.sleepPlan.day, app.state.sleepPlan.method);
+  const stage = sleepProgramStage(app.state.baby);
   const methods: SleepMethod[] = ["responsive", "gradual", "camping"];
   const today = new Date().toISOString().slice(0, 10);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
@@ -215,6 +225,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Uyku planı</Text>
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
+      <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
         {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={app.state.sleepPlan.method === method} onPress={() => app.setMethod(method)} />)}
       </ScrollView>
@@ -222,6 +233,14 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <Text style={styles.eyebrow}>{plan.title.toUpperCase()}</Text>
         <Text style={styles.heroSmall}>{plan.focus}</Text>
         <Text style={styles.body}>{methodDescription(app.state.sleepPlan.method).support}</Text>
+      </Card>
+      <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
+      <Card>
+        {SLEEP_READINESS_ITEMS.map((item) => {
+          const done = app.state.sleepPlan.readinessCompleted.includes(item);
+          return <Pressable key={item} onPress={() => app.toggleReadiness(item)} style={styles.taskRow}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><Text style={styles.taskText}>{item}</Text></Pressable>;
+        })}
+        {!stage.canReduceSupport ? <Text style={styles.readinessNote}>Bu yaş aşamasında tüm maddeler tamamlansa bile desteği azaltma hedefi yoktur; rutin ve duyarlı bakım önceliklidir.</Text> : null}
       </Card>
       <SectionTitle title="Bugünün adımları" />
       <Card>
@@ -248,13 +267,16 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   );
 }
 
-function InsightsScreen({ events }: { events: CareEvent[] }) {
+function InsightsScreen({ state }: { state: AppState }) {
+  const events = state.events;
   const today = new Date().toDateString();
   const recent = events.filter((event) => new Date(event.startedAt).toDateString() === today);
   const sleeps = recent.filter((event) => event.kind === "sleep" && event.endedAt);
   const sleepMinutes = sleeps.reduce((sum, event) => sum + (new Date(event.endedAt!).getTime() - new Date(event.startedAt).getTime()) / 60_000, 0);
   const feeds = recent.filter((event) => event.kind === "feed");
   const diapers = recent.filter((event) => event.kind === "diaper");
+  const health = recent.filter((event) => event.kind === "health");
+  const latestGrowth = events.find((event) => event.kind === "growth");
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Günlük özet</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
@@ -262,12 +284,17 @@ function InsightsScreen({ events }: { events: CareEvent[] }) {
         <Stat value={`${Math.floor(sleepMinutes / 60)}s ${Math.round(sleepMinutes % 60)}d`} label="Toplam uyku" tone="mint" />
         <Stat value={`${feeds.length}`} label="Beslenme" tone="peach" />
         <Stat value={`${diapers.length}`} label="Bez" tone="lavender" />
-        <Stat value={`${recent.length}`} label="Tüm kayıtlar" tone="white" />
+        <Stat value={`${health.length}`} label="Sağlık kaydı" tone="white" />
       </View>
+      {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
       <SectionTitle title="Doktor görüşmesi" />
-      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Uyku, beslenme ve bez kayıtlarını tarihleriyle hazırlayan PDF raporu sonraki sürümde eklenecek.</Text></Card>
+      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><PrimaryButton label="Doktor özetini paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></Card>
     </ScrollView>
   );
+}
+
+function Measure({ value, label }: { value: string; label: string }) {
+  return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
 }
 
 function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void }) {
@@ -357,19 +384,52 @@ function Stat({ value, label, tone }: { value: string; label: string; tone: "whi
 function QuickLogModal({ mode, close, add }: { mode: LogMode; close: () => void; add: ReturnType<typeof useUykuvaState>["addSimpleEvent"] }) {
   const [amount, setAmount] = useState("90");
   const [note, setNote] = useState("");
+  const [healthType, setHealthType] = useState<"temperature" | "medicine" | "symptom">("temperature");
+  const [temperature, setTemperature] = useState("37.0");
+  const [medicineName, setMedicineName] = useState("");
+  const [dose, setDose] = useState("");
+  const [weight, setWeight] = useState("");
+  const [length, setLength] = useState("");
+  const [head, setHead] = useState("");
   if (!mode) return null;
   const save = (details: Partial<CareEvent>) => { add(mode, details); setNote(""); close(); };
+  const title = { feed: "Beslenme kaydı", diaper: "Bez kaydı", note: "Bakım notu", health: "Sağlık kaydı", growth: "Büyüme ölçümü" }[mode];
+  const saveHealth = () => {
+    if (healthType === "temperature") {
+      const value = Number(temperature.replace(",", "."));
+      if (!Number.isFinite(value) || value < 30 || value > 45) return Alert.alert("Değeri kontrol edin", "Sıcaklığı 30–45 °C arasında yazın.");
+      return save({ healthType, temperatureC: value, note });
+    }
+    if (healthType === "medicine" && !medicineName.trim()) return Alert.alert("İlaç adını yazın", "Bu alan yalnızca verdiğiniz bilgiyi kaydeder; doz önermez.");
+    save({ healthType, medicineName: medicineName.trim() || undefined, doseAsEntered: dose.trim() || undefined, note: note.trim() || undefined });
+  };
+  const saveGrowth = () => {
+    const weightG = Number(weight.replace(",", "."));
+    const lengthCm = Number(length.replace(",", "."));
+    const headCm = Number(head.replace(",", "."));
+    if (![weightG, lengthCm, headCm].some((value) => Number.isFinite(value) && value > 0)) return Alert.alert("En az bir ölçüm yazın", "Kilo, boy veya baş çevresinden en az biri gerekli.");
+    save({ weightG: weightG > 0 ? weightG : undefined, lengthCm: lengthCm > 0 ? lengthCm : undefined, headCm: headCm > 0 ? headCm : undefined });
+  };
   return (
     <Modal visible transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} />
-      <View style={styles.sheet}>
+      <ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled">
         <View style={styles.sheetHandle} />
-        <Text style={styles.pageTitle}>{mode === "feed" ? "Beslenme kaydı" : mode === "diaper" ? "Bez kaydı" : "Bakım notu"}</Text>
+        <Text style={styles.pageTitle}>{title}</Text>
         {mode === "feed" ? <><Text style={styles.inputLabel}>Miktar (ml)</Text><TextInput value={amount} onChangeText={setAmount} keyboardType="number-pad" style={styles.input} /><View style={styles.choiceRow}><Pill label="Biberon" active onPress={() => save({ feedType: "bottle", amountMl: Number(amount) || 0 })} /><Pill label="Emzirme" onPress={() => save({ feedType: "breast" })} /><Pill label="Katı gıda" onPress={() => save({ feedType: "solid" })} /></View></> : null}
         {mode === "diaper" ? <View style={styles.choiceRow}><Pill label="Islak" active onPress={() => save({ diaperType: "wet" })} /><Pill label="Kirli" onPress={() => save({ diaperType: "dirty" })} /><Pill label="İkisi" onPress={() => save({ diaperType: "both" })} /></View> : null}
         {mode === "note" ? <><Text style={styles.inputLabel}>Not</Text><TextInput value={note} onChangeText={setNote} multiline placeholder="Bakımı devralan kişinin bilmesi gereken…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Notu kaydet" onPress={() => save({ note })} /></> : null}
+        {mode === "health" ? <>
+          <View style={styles.choiceRow}><Pill label="Ateş" active={healthType === "temperature"} onPress={() => setHealthType("temperature")} /><Pill label="İlaç" active={healthType === "medicine"} onPress={() => setHealthType("medicine")} /><Pill label="Belirti" active={healthType === "symptom"} onPress={() => setHealthType("symptom")} /></View>
+          {healthType === "temperature" ? <Field label="Ölçülen sıcaklık (°C)" value={temperature} onChangeText={setTemperature} keyboardType="decimal-pad" /> : null}
+          {healthType === "medicine" ? <><Field label="İlaç adı" value={medicineName} onChangeText={setMedicineName} placeholder="Kutudaki adıyla" /><Field label="Verdiğiniz miktar (isteğe bağlı)" value={dose} onChangeText={setDose} placeholder="Örn. 2 ml — öneri değildir" /></> : null}
+          <Text style={styles.inputLabel}>{healthType === "symptom" ? "Belirti notu" : "Not (isteğe bağlı)"}</Text><TextInput value={note} onChangeText={setNote} multiline style={[styles.input, styles.noteInput]} placeholder="Gözleminizi yazın" />
+          <PrimaryButton label="Sağlık kaydını ekle" onPress={saveHealth} />
+          <Text style={styles.disclaimer}>Uykuva miktar veya tekrar zamanı önermez; yalnızca yazdığınız bilgiyi saklar.</Text>
+        </> : null}
+        {mode === "growth" ? <><Field label="Kilo (gram)" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholder="Örn. 6450" /><Field label="Boy (cm)" value={length} onChangeText={setLength} keyboardType="decimal-pad" placeholder="Örn. 63,5" /><Field label="Baş çevresi (cm)" value={head} onChangeText={setHead} keyboardType="decimal-pad" placeholder="Örn. 41" /><PrimaryButton label="Ölçümü kaydet" onPress={saveGrowth} /></> : null}
         <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} />
-      </View>
+      </ScrollView>
     </Modal>
   );
 }
@@ -402,8 +462,8 @@ const styles = StyleSheet.create({
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
   awake: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 14 },
-  quickRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },
-  quick: { width: "23%", aspectRatio: 0.92, borderRadius: 20, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" },
+  quickRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 4, rowGap: 10 },
+  quick: { width: "31.5%", minHeight: 82, borderRadius: 20, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" },
   quickActive: { backgroundColor: colors.peachSoft },
   quickGlyph: { color: colors.sageDark, fontSize: 25, marginBottom: 8 },
   quickLabel: { color: colors.ink, fontSize: 11, fontWeight: "700" },
@@ -426,6 +486,7 @@ const styles = StyleSheet.create({
   check: { color: "white", fontWeight: "800" },
   taskText: { flex: 1, color: colors.ink, fontSize: 14, lineHeight: 20 },
   taskTextDone: { color: colors.inkSoft, textDecorationLine: "line-through" },
+  readinessNote: { color: colors.sageDark, fontSize: 12, lineHeight: 18, marginTop: 14 },
   routineRow: { flexDirection: "row", alignItems: "center", minHeight: 48 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
   easeRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
@@ -437,6 +498,9 @@ const styles = StyleSheet.create({
   statGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
   stat: { width: "50%", paddingHorizontal: 5 },
   statValue: { color: colors.ink, fontSize: 24, fontWeight: "800", letterSpacing: -0.7 },
+  measureRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
+  measure: { flex: 1 },
+  measureValue: { color: colors.ink, fontSize: 18, fontWeight: "800" },
   nav: { position: "absolute", left: 12, right: 12, bottom: 10, height: 72, borderRadius: 24, backgroundColor: "#FFFFFFF2", flexDirection: "row", alignItems: "center", justifyContent: "space-around", borderWidth: 1, borderColor: colors.line },
   navItem: { alignItems: "center", justifyContent: "center", minWidth: 54 },
   navGlyph: { color: colors.inkSoft, fontSize: 20, fontWeight: "600" },
@@ -444,6 +508,7 @@ const styles = StyleSheet.create({
   navActive: { color: colors.sageDark, fontWeight: "800" },
   backdrop: { flex: 1, backgroundColor: "rgba(18,31,27,.34)" },
   sheet: { backgroundColor: colors.paper, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
+  quickSheet: { maxHeight: "78%" },
   sheetHandle: { width: 42, height: 5, borderRadius: 3, backgroundColor: colors.line, alignSelf: "center", marginBottom: 4 },
   inputLabel: { color: colors.inkSoft, fontSize: 12, fontWeight: "700", marginTop: 20, marginBottom: 7 },
   field: { marginBottom: 2 },

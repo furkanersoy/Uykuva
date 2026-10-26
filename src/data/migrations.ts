@@ -8,7 +8,7 @@ export function migrateState(value: unknown): AppState {
   return {
     ...initial,
     ...candidate,
-    schemaVersion: 2,
+    schemaVersion: 3,
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: { ...initial.baby, ...candidate.baby },
     events: Array.isArray(candidate.events) ? candidate.events : initial.events,
@@ -17,6 +17,7 @@ export function migrateState(value: unknown): AppState {
       ...candidate.sleepPlan,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
+      readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
       checkIns: candidate.sleepPlan?.checkIns ?? []
     },
     preferences: { ...initial.preferences, ...candidate.preferences }

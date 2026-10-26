@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, createSleepForecast, median } from "./sleep";
+import { coachingDay, correctedAgeDays, createSleepForecast, median, sleepProgramStage } from "./sleep";
 import { Baby, CareEvent } from "./types";
 
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
@@ -37,4 +37,11 @@ test("forecast returns an explainable range after a completed sleep", () => {
 
 test("coaching plan is bounded to fourteen days", () => {
   assert.match(coachingDay(99, "gradual").title, /^14\. gün/);
+});
+
+test("sleep support stays foundational before six months", () => {
+  const baby: Baby = { ...termBaby, birthDate: "2026-07-20" };
+  const stage = sleepProgramStage(baby, new Date("2026-10-26T12:00:00"));
+  assert.equal(stage.id, "newborn");
+  assert.equal(stage.canReduceSupport, false);
 });

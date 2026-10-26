@@ -108,6 +108,46 @@ export type CoachingDay = {
   checkIn: string;
 };
 
+export type SleepProgramStage = {
+  id: "newborn" | "foundations" | "plan";
+  label: string;
+  guidance: string;
+  canReduceSupport: boolean;
+};
+
+export const SLEEP_READINESS_ITEMS = [
+  "Bebek bugün hasta görünmüyor ve belirgin ağrı belirtisi yok",
+  "Beslenme veya kilo alımıyla ilgili çözümlenmemiş bir endişe yok",
+  "Uyku alanı güvenli, düz ve boş; bebek sırtüstü yatırılıyor",
+  "Bakım verenler aynı nazik yaklaşımı uygulamayı kabul ediyor"
+] as const;
+
+export function sleepProgramStage(baby: Baby, now = new Date()): SleepProgramStage {
+  const age = correctedAgeDays(baby, now);
+  if (age < 112) {
+    return {
+      id: "newborn",
+      label: "Ritim temelleri",
+      guidance: "Bu dönemde uyku eğitimi uygulamıyoruz. Gündüz–gece ayrımı, güvenli uyku ve bebeğin sinyallerine hızlı yanıt öncelikli.",
+      canReduceSupport: false
+    };
+  }
+  if (age < 183) {
+    return {
+      id: "foundations",
+      label: "Nazik hazırlık",
+      guidance: "Tutarlı bir akşam sırası oluşturun; yardımı azaltmak zorunda değilsiniz. Yoğun huzursuzlukta her zaman yanıt verin.",
+      canReduceSupport: false
+    };
+  }
+  return {
+    id: "plan",
+    label: "Kişisel uyku planı",
+    guidance: "Hazır oluş koşulları uygunsa seçtiğiniz desteği küçük adımlarla ve bebeğin tepkisine göre ayarlayabilirsiniz.",
+    canReduceSupport: true
+  };
+}
+
 const METHOD_COPY: Record<SleepMethod, { name: string; support: string }> = {
   responsive: { name: "Duyarlı rutin", support: "Ağlamaya hızlı yanıt vererek uyku işaretlerini ve tutarlı rutini güçlendirir." },
   gradual: { name: "Kademeli destek", support: "Her birkaç gecede yardımı küçük adımlarla azaltır; katı bir süre tutmaz." },

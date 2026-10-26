@@ -1,4 +1,4 @@
-export type EventKind = "sleep" | "feed" | "diaper" | "note";
+export type EventKind = "sleep" | "feed" | "diaper" | "note" | "health" | "growth";
 
 export type Baby = {
   id: string;
@@ -15,6 +15,13 @@ export type CareEvent = {
   amountMl?: number;
   feedType?: "breast" | "bottle" | "solid";
   diaperType?: "wet" | "dirty" | "both";
+  healthType?: "temperature" | "medicine" | "symptom";
+  temperatureC?: number;
+  medicineName?: string;
+  doseAsEntered?: string;
+  weightG?: number;
+  lengthCm?: number;
+  headCm?: number;
   note?: string;
   caregiver: string;
 };
@@ -36,6 +43,7 @@ export type SleepPlan = {
   wakeTime: string;
   routine: RoutineStep[];
   completedToday: string[];
+  readinessCompleted: string[];
   checkIns: SleepCheckIn[];
 };
 
@@ -54,7 +62,7 @@ export type AppPreferences = {
 };
 
 export type AppState = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;

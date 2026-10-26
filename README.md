@@ -15,6 +15,10 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - SQLite tabanlı çevrimdışı cihaz içi saklama
 - İsteğe bağlı uyku penceresi bildirimleri
 - Uyku planı için günlük kolaylık değerlendirmesi
+- Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
+- Uyku planı hazır oluş kontrol listesi
+- Ateş, ilaç/belirti ve büyüme ölçümü kaydı
+- Paylaşılabilir yedi günlük doktor özeti
 
 Uygulama tıbbi tanı veya tedavi önermez.
 

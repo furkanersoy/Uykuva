@@ -14,7 +14,7 @@ export function createInitialState(): AppState {
   const sleep3 = iso(7.1, 48);
   const sleep4 = iso(10.4, 55);
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
@@ -40,6 +40,7 @@ export function createInitialState(): AppState {
         { id: "r5", label: "Yatağa geçiş", minutes: 5, enabled: true }
       ],
       completedToday: [],
+      readinessCompleted: [],
       checkIns: []
     },
     preferences: {
