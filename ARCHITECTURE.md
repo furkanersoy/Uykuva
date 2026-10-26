@@ -170,11 +170,16 @@ Bu motor bir tıbbi model değildir. Yayına çıkmadan önce referans aralıkla
 
 ## 7. Uyku eğitimi mimarisi
 
-İlk çalışan sürüm üç baskısız yaklaşım sunar:
+Uyku planı altı aile merkezli yaklaşım sunar. Altı aydan küçük düzeltilmiş yaşta veya dört hazırlık maddesi tamamlanmadan yöntem seçimi açılmaz; bu aşamalarda duyarlı bakım ve rutin rehberi gösterilir:
 
 - **Duyarlı rutin:** Huzursuzluğa hızlı yanıt ve tutarlı uyku öncesi sıra.
 - **Kademeli destek:** Bakım yardımını küçük adımlarla azaltma.
 - **Yakında kalma:** Bakım verenin odada kalıp mesafeyi zamanla artırması.
+- **Yatma saatini ayarlama:** Kayıtları gözden geçirerek yatış hedefini küçük adımlarla ayarlama.
+- **Al, sakinleştir, tekrar yatır:** Belirgin huzursuzlukta kucak desteği verip sakinleşince güvenli uyku alanına geri yatırma.
+- **Önce tutarlı rutin:** Desteği azaltma hedefi olmadan kısa, sakin ve tekrarlanabilir sıraya odaklanma.
+
+Her yöntemin kendine ait günlük uygulama adımları ve gece uyanma rehberi vardır. Yöntem seçimi uyku planında ve dışa aktarılan veride saklanır; eski yedeklerdeki mevcut üç yöntem korunur, tanınmayan değerler duyarlı rutine döner. Sabit ağlama aralıkları veya temel ihtiyaçları erteleme yönergeleri sunulmaz. AAP'nin davranışsal uyku müdahaleleri özetinde yatma saatini ayarlama ve ebeveyn yakınlığını kademeli azaltma farklı yaklaşımlar olarak listelenir: [Pediatrics, Table 8](https://publications.aap.org/pediatrics/article-pdf/150/6/e2022060055/1563635/peds_2022060055.pdf).
 
 Her yaklaşım için:
 
@@ -231,7 +236,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Son dört saat için bakım devri özeti eklendi.
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
 - [x] 14 günlük uyku eğitimi/alışkanlık planı eklendi.
-- [x] Üç nazik uyku yaklaşımı eklendi.
+- [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
 - [x] Günlük görev tamamlama ve plan ilerletme eklendi.
 - [x] Akşam rutini veri modeli ve görünümü eklendi.
 - [x] Günlük uyku, beslenme ve bez özeti eklendi.

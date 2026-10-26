@@ -53,7 +53,7 @@ export type RoutineStep = {
   enabled: boolean;
 };
 
-export type SleepMethod = "responsive" | "gradual" | "camping";
+export type SleepMethod = "responsive" | "gradual" | "camping" | "bedtimeFading" | "pickUpPutDown" | "routineFirst";
 
 export type SleepPlan = {
   method: SleepMethod;
@@ -135,4 +135,3 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
-

@@ -378,7 +378,10 @@ export function sleepProgramStage(baby: Baby, now = new Date()): SleepProgramSta
 const METHOD_COPY: Record<SleepMethod, { name: string; support: string }> = {
   responsive: { name: "Duyarlı rutin", support: "Ağlamaya hızlı yanıt vererek uyku işaretlerini ve tutarlı rutini güçlendirir." },
   gradual: { name: "Kademeli destek", support: "Her birkaç gecede yardımı küçük adımlarla azaltır; katı bir süre tutmaz." },
-  camping: { name: "Yakında kalma", support: "Bakım veren odada kalır ve desteğini günler içinde yavaşça azaltır." }
+  camping: { name: "Yakında kalma", support: "Bakım veren odada kalır ve desteğini günler içinde yavaşça azaltır." },
+  bedtimeFading: { name: "Yatma saatini ayarlama", support: "Yatma saatini kayıtlı uykuya dalma örüntüsüne yaklaştırıp, rahat ilerledikçe küçük adımlarla erkene alır." },
+  pickUpPutDown: { name: "Al, sakinleştir, tekrar yatır", support: "Huzursuzlukta bebeği sakinleştirir; rahatlayınca güvenli uyku alanına geri yatırıp gerektiğinde tekrar destek verirsiniz." },
+  routineFirst: { name: "Önce tutarlı rutin", support: "Uyku öncesi kısa ve tekrarlanabilir sakin adımlara odaklanır; desteği azaltma hedefi koymaz." }
 };
 
 export function methodDescription(method: SleepMethod) {
@@ -435,7 +438,10 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
   const methodTask: Record<SleepMethod, string[]> = {
     responsive: ["İlk huzursuzlukta sesinle veya yakınlığınla yanıt ver", "Gerekirse kucağa alıp bebeğin sakinleşince yatağa geri dön"],
     gradual: ["Alışılmış desteğin yalnızca tek küçük bölümünü azaltmayı seç; süre tutma", "Bebek belirgin biçimde huzursuzsa önceki desteğe dön ve denemeyi bırak"],
-    camping: ["Bebeğin yanında kalıp sesinle veya nazik dokunuşla destek ver", "Bebek rahat ve aile hazır değilse mesafeyi artırma; değişikliği ancak birkaç rahat geceden sonra değerlendir"]
+    camping: ["Bebeğin yanında kalıp sesinle veya nazik dokunuşla destek ver", "Bebek rahat ve aile hazır değilse mesafeyi artırma; değişikliği ancak birkaç rahat geceden sonra değerlendir"],
+    bedtimeFading: ["Son gecelerdeki yatış saatlerini gözden geçir; yeterli kayıt yoksa mevcut hedefi koru", "Yatma saatini yalnızca küçük bir adımla değiştir ve bebeğin tepkisini birkaç gece izle"],
+    pickUpPutDown: ["Huzursuzluk belirginleşirse bebeğini kucağa alıp sakinleşmesine yardım et", "Rahatlayınca sırtüstü ve güvenli uyku alanına geri yatır; gerekirse döngüyü tekrarla"],
+    routineFirst: ["Akşam rutininden iki veya üç sakin adımı benzer sırayla uygula", "Uykuya geçişte ihtiyaç duyduğu desteği ver; azaltma hedefi koyma"]
   };
   return {
     title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,
@@ -636,4 +642,3 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   return `${parts.join(" · ")}.`;
 }
-

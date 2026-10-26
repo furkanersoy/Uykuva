@@ -424,7 +424,10 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
   const steps: Record<SleepMethod, string[]> = {
     responsive: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yakınında kalıp sesinizle ve nazik dokunuşla sakinleştirin.", "Huzursuzluğu artarsa kucağa alıp sakinleştirin; hazır olduğunda tekrar yatırın."],
     gradual: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Bu gece için seçtiğiniz küçük destek adımını yalnızca bebek sakinse deneyin.", "Huzursuzluk artarsa önceki desteğe dönüp sakinleştirin; adım azaltmak zorunlu değildir."],
-    camping: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yatağın yanında kalıp sesinizle ve nazik dokunuşla destek verin.", "Mesafeyi yalnızca aile ve bebek hazır olduğunda, küçük adımlarla artırın."]
+    camping: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yatağın yanında kalıp sesinizle ve nazik dokunuşla destek verin.", "Mesafeyi yalnızca aile ve bebek hazır olduğunda, küçük adımlarla artırın."],
+    bedtimeFading: ["Son günlerdeki uyku başlangıçlarını ve bebeğinizin işaretlerini gözden geçirin.", "Hedef yatışı yalnızca küçük bir adımla ayarlayın; çok yorgunluk veya huzursuzluk varsa önceki düzene dönün.", "Beslenme ve gece bakımını saate göre ertelemeyin."],
+    pickUpPutDown: ["Açlık, rahatsızlık, bez ve sağlık gibi temel ihtiyaçları önce kontrol edin.", "Bebeğiniz belirgin huzursuzsa kucağa alıp sakinleşene kadar destek olun.", "Rahatlayınca güvenli uyku alanına sırtüstü geri yatırın; ihtiyaç duyarsa yeniden destek verin."],
+    routineFirst: ["Kısa, sakin ve tekrarlanabilir bir akşam sırası uygulayın.", "Bebeğinizin uyku işaretlerine göre rutini kısaltın veya ara verin.", "Uykuya geçişte ihtiyaç duyduğu desteği verin; desteği azaltmak zorunlu değildir."]
   };
   return { title: `${methodDescription(method).name} yaklaşımı · gece uyanması`, steps: steps[method] };
 }
@@ -439,7 +442,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
-  const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping"] : ["responsive"];
+  const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
   const today = localDateValue(new Date());
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
@@ -1458,4 +1461,3 @@ const styles = StyleSheet.create({
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.sage },
   radioActive: { borderWidth: 6, borderColor: colors.sageDark }
 });
-

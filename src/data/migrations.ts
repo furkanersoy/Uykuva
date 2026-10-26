@@ -30,6 +30,7 @@ export function migrateState(value: unknown): AppState {
     sleepPlan: {
       ...initial.sleepPlan,
       ...candidate.sleepPlan,
+      method: ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(candidate.sleepPlan?.method)) ? candidate.sleepPlan!.method! : initial.sleepPlan.method,
       paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
@@ -47,4 +48,3 @@ export function migrateState(value: unknown): AppState {
     }
   };
 }
-
