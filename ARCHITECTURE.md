@@ -122,13 +122,11 @@ Ana fonksiyonlar:
 
 ### Veri katmanı
 
-Mevcut sürümde tüm durum SQLite destekli anahtar-değer deposunda sürümlü bir anahtarla tutulur:
+Durum `uykuva.db` dosyasında tutulur. Profil, tercih, görev ve uyku planı JSON olarak `app_state` satırında saklanır; bakım kayıtları ayrı `care_events` tablosundadır. `care_events` tablosu kayıt türü, başlangıç zamanı, bitiş zamanı ve bakım veren sütunlarını indeksleyerek taşır; geri kalan ayrıntılar olay JSON yükünde korunur. `saveState` olay tablosunu ve durum satırını aynı SQLite işlemi içinde günceller.
 
-```text
-uykuva:state:v3
-```
+İlk açılışta depolama göçü eski `ExpoSQLiteStorage` anahtar deposundaki `uykuva:state:v3` / v2 veya önceki `uykvua:state:v1` AsyncStorage kaydını okur; durum ve olayları yeni veritabanına yazdıktan sonra eski anahtarları temizler. Göç tamamlanamazsa kayıt kurtarma ekranı yeniden deneme sunar; uygulama boş başlangıç durumunu eski verinin üzerine yazmaz.
 
-Eski `v1` AsyncStorage kaydı ilk açılışta okunur, yeni şemayla birleştirilir ve SQLite deposuna taşınır. Gerçek çoklu cihaz senkronizasyonundan önce her bakım kaydı ayrı bir SQLite satırı/değiştirilemez olay olarak modellenmelidir.
+JSON dışa aktarımı, `app_state` ile `care_events` satırlarını tam `AppState` olarak birleştirir. Böylece yedek şeması uygulama içi SQLite tablolarından bağımsız kalır.
 
 Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema sürümü taşıyan JSON'a dönüştürür. `parseDataExport` boyutu, biçimi ve temel profil/kayıt yapılarını doğrular; `migrateState` veriyi geçerli şemaya birleştirir. Kullanıcı mevcut verinin yerini alacağını onayladıktan sonra durum SQLite anahtarına kaydedilir. JSON yedeği `expo-file-system` ile yerel cache'e yazılır ve `expo-sharing` üzerinden dosya olarak paylaşılır. İçe aktarmada `expo-document-picker` dosyayı seçer; içerik mevcut JSON doğrulama ve kullanıcı onayı akışına girer. Metin yapıştırma seçeneği de korunur. Aile ekranındaki tek seferlik cihaz aktarımı aynı JSON dosyasını paylaşır; otomatik cihaz senkronizasyonu sağlamaz. Yedekler otomatik olarak sunucuya gönderilmez.
 
