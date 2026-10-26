@@ -401,14 +401,20 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <Text style={styles.pageTitle}>Uyku planı</Text>
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
+      <Card tone={app.state.sleepPlan.paused ? "peach" : "white"}>
+        <Text style={styles.cardTitle}>{app.state.sleepPlan.paused ? "Uyku planı duraklatıldı" : "Planı istediğiniz zaman duraklatabilirsiniz"}</Text>
+        <Text style={styles.body}>{app.state.sleepPlan.paused ? "Koçluk adımları ve plan günü beklemede. Uyku, beslenme ve bakım kayıtlarınız normal şekilde devam eder." : "Hastalık, seyahat veya ailenizin ihtiyaçları değiştiğinde planı durdurup daha sonra kaldığınız günden sürdürebilirsiniz."}</Text>
+        <View style={styles.spacer12} />
+        <PrimaryButton label={app.state.sleepPlan.paused ? "Kaldığım yerden devam et" : "Uyku planını duraklat"} quiet={!app.state.sleepPlan.paused} onPress={app.toggleSleepPlanPaused} />
+      </Card>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
         {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={coachingMethod === method} onPress={() => app.setMethod(method)} />)}
       </ScrollView>
       {!trainingReady ? <Text style={styles.readinessNote}>{stage.canReduceSupport ? "Kademeli yaklaşım seçenekleri dört hazırlık maddesi tamamlandığında açılır. O zamana kadar duyarlı rutin gösterilir." : stage.guidance}</Text> : null}
       <Card tone="lavender">
-        <Text style={styles.eyebrow}>{plan.title.toUpperCase()}</Text>
-        <Text style={styles.heroSmall}>{plan.focus}</Text>
-        <Text style={styles.body}>{methodDescription(app.state.sleepPlan.method).support}</Text>
+        <Text style={styles.eyebrow}>{(app.state.sleepPlan.paused ? "PLAN BEKLEMEDE · " : "") + plan.title.toUpperCase()}</Text>
+        <Text style={styles.heroSmall}>{app.state.sleepPlan.paused ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>
+        <Text style={styles.body}>{app.state.sleepPlan.paused ? "Bu sırada günlük bakım kayıtlarını tutabilir, akşam rutininizi kullanabilirsiniz. Plan günü ilerlemez." : methodDescription(coachingMethod).support}</Text>
       </Card>
       <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
       <SectionTitle title="Kayıtlarına göre gün taslağı" action="Son 14 gün" />
@@ -436,7 +442,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         {plan.tasks.map((task) => {
           const done = app.state.sleepPlan.completedToday.includes(task);
           return (
-            <Pressable key={task} onPress={() => app.toggleTask(task)} style={styles.taskRow}>
+            <Pressable key={task} disabled={app.state.sleepPlan.paused} onPress={() => app.toggleTask(task)} style={[styles.taskRow, app.state.sleepPlan.paused && styles.pausedTask]}>
               <View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View>
               <Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>
             </Pressable>
@@ -465,7 +471,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <TextInput value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
       </Card>
-      <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />
+      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />}
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
       <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
     </ScrollView>
@@ -1102,6 +1108,8 @@ const styles = StyleSheet.create({
   routineMove: { width: 32, height: 32, borderRadius: 11, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
   routineMoveDisabled: { opacity: 0.3 },
   routineMoveText: { color: colors.sageDark, fontSize: 17, fontWeight: "800" },
+  pausedTask: { opacity: 0.5 },
+  pausedMessage: { color: colors.inkSoft, fontSize: 13, textAlign: "center", paddingVertical: 14 },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
