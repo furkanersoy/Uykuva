@@ -11,6 +11,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
 - Akşam rutini ve günlük görevler
 - Günlük bakım özeti
+- Gece yarısını aşan kayıtları günlere dağıtan yedi günlük uyku süresi grafiği
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
 - SQLite tabanlı çevrimdışı cihaz içi saklama
 - İsteğe bağlı uyku penceresi bildirimleri
