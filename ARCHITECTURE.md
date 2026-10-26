@@ -131,6 +131,8 @@ Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts
 
 Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir; gelişim zamanlaması veya değerlendirmesi sunulmaz.
 
+Büyüme geçmişi, kaydedilen son sekiz kilo/boy/baş çevresi ölçümünü tarihle listeler; persentil hesabı veya normatif yorum yapmaz.
+
 ## 6. Uyku tahmin motoru
 
 Tahmin motorunun mevcut davranışı:
