@@ -470,6 +470,39 @@ export type SleepCoachInsights = {
   nightsUsed: number;
 };
 
+export type NightSleepSummary = { minutes: number; segments: number; hasExactWindow: boolean };
+
+export function summarizeNightSleep(events: CareEvent[], checkIn?: Pick<SleepCheckIn, "date" | "bedtime" | "wakeTime">, now = new Date()): NightSleepSummary {
+  const date = checkIn?.date && /^\d{4}-\d{2}-\d{2}$/.test(checkIn.date) ? checkIn.date : localDayKey(now);
+  const morning = new Date(`${date}T12:00:00`);
+  if (!Number.isFinite(morning.getTime())) return { minutes: 0, segments: 0, hasExactWindow: false };
+  const startMinutes = checkIn?.bedtime ? clockMinutes(checkIn.bedtime) : null;
+  const endMinutes = checkIn?.wakeTime ? clockMinutes(checkIn.wakeTime) : null;
+  const start = new Date(morning);
+  start.setDate(start.getDate() - 1);
+  start.setHours(Math.floor((startMinutes ?? 18 * 60) / 60), (startMinutes ?? 18 * 60) % 60, 0, 0);
+  const end = new Date(morning);
+  end.setHours(Math.floor((endMinutes ?? 12 * 60) / 60), (endMinutes ?? 12 * 60) % 60, 0, 0);
+  const endMs = Math.min(end.getTime(), now.getTime());
+  if (endMs <= start.getTime()) return { minutes: 0, segments: 0, hasExactWindow: Boolean(startMinutes !== null && endMinutes !== null) };
+  const intervals = events.flatMap((event) => {
+    if (event.kind !== "sleep") return [];
+    const sleepStart = new Date(event.startedAt).getTime();
+    const sleepEnd = event.endedAt ? new Date(event.endedAt).getTime() : now.getTime();
+    const from = Math.max(start.getTime(), sleepStart);
+    const to = Math.min(endMs, sleepEnd);
+    return Number.isFinite(from) && Number.isFinite(to) && to > from ? [{ from, to }] : [];
+  }).sort((a, b) => a.from - b.from);
+  const merged: { from: number; to: number }[] = [];
+  for (const interval of intervals) {
+    const last = merged[merged.length - 1];
+    if (last && interval.from <= last.to) last.to = Math.max(last.to, interval.to);
+    else merged.push({ ...interval });
+  }
+  const minutes = Math.round(merged.reduce((sum, interval) => sum + interval.to - interval.from, 0) / 60_000);
+  return { minutes, segments: merged.length, hasExactWindow: startMinutes !== null && endMinutes !== null };
+}
+
 export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: { date?: string; ease?: number; nightWakings?: number; bedtime?: string }[], now = new Date()): SleepCoachInsights {
   const target = clockMinutes(targetBedtime) ?? 20 * 60;
   const cutoff = now.getTime() - 30 * DAY;

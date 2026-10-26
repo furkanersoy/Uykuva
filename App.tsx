@@ -22,7 +22,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, correctedAgeDays, createDailyNapOutline, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, correctedAgeDays, createDailyNapOutline, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
@@ -216,7 +216,7 @@ export default function App() {
 
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
-        {tab === "coach" && <CoachScreen app={app} />}
+        {tab === "coach" && <CoachScreen app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
 
@@ -424,7 +424,7 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
   return { title: `${methodDescription(method).name} yaklaşımı · gece uyanması`, steps: steps[method] };
 }
 
-function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
+function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
   const stage = sleepProgramStage(app.state.baby);
   const readyItems = app.state.sleepPlan.readinessCompleted;
   const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
@@ -440,6 +440,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
   const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
+  const nightSummary = summarizeNightSleep(app.state.events, todayCheckIn, now);
   const [nightBedtime, setNightBedtime] = useState(todayCheckIn?.bedtime ?? "");
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => {
@@ -587,6 +588,12 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={setBedtime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={setWakeTime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
       <Card tone="peach">
         <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
+        <Text style={styles.inputLabel}>Dün gece özeti</Text>
+        <View style={styles.measureRow}>
+          <Measure value={nightSummary.minutes ? `${Math.floor(nightSummary.minutes / 60)} sa ${nightSummary.minutes % 60} dk` : "—"} label="Kaydedilen uyku" />
+          <Measure value={todayCheckIn?.nightWakings === undefined ? "—" : todayCheckIn.nightWakings === 5 ? "5+" : String(todayCheckIn.nightWakings)} label="Bildirilen uyanma" />
+        </View>
+        <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={setNightBedtime} style={styles.compactInput} placeholder="20:30" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" value={morningWake} onChangeText={setMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="numbers-and-punctuation" /></View></View>
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
