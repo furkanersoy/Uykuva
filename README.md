@@ -16,7 +16,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama/filtreleme
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
-- Aile nöbetine göre 2, 4, 6 veya 8 saat seçilebilen bakım devri özeti; devam eden uykuyu ve pencereyle kesişen uyku süresini gösterme
+- Aile nöbetine göre 2, 4, 6 veya 8 saat seçilebilen bakım devri özeti; uyku, devam eden emzirme, sağlık kayıtları, notlar ve yaklaşan görevleri gösterme
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
