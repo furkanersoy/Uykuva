@@ -24,7 +24,7 @@ import { createDataExport } from "./src/domain/export";
 import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
-import { CareEvent, CareTask, Caregiver, SleepMethod } from "./src/domain/types";
+import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
@@ -300,6 +300,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const [wakeTime, setWakeTime] = useState(app.state.sleepPlan.wakeTime);
   const [routineLabel, setRoutineLabel] = useState("");
   const [routineMinutes, setRoutineMinutes] = useState("5");
+  const [routineRunnerOpen, setRoutineRunnerOpen] = useState(false);
   const saveSchedule = () => {
     if (!isValidClock(bedtime) || !isValidClock(wakeTime)) return Alert.alert("Saatleri kontrol edin", "Saatleri 20:00 gibi SS:DD biçiminde yazın.");
     app.updateSleepSchedule(bedtime, wakeTime);
@@ -323,6 +324,10 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
     void Share.share({ title: `${app.state.baby.name} için uyku planı`, message });
+  };
+  const startRoutine = () => {
+    if (!app.state.sleepPlan.routine.some((item) => item.enabled)) return Alert.alert("Etkin adım yok", "Önce akşam rutininize en az bir adım ekleyip etkinleştirin.");
+    setRoutineRunnerOpen(true);
   };
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
@@ -368,6 +373,8 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       </Card>
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
       <Card>
+        <PrimaryButton label="Akşam rutinine başla" onPress={startRoutine} />
+        <View style={styles.spacer12} />
         {app.state.sleepPlan.routine.map((item, index) => <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable>)}
         <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
         <Text style={styles.hint}>Bir adımı kapatmak için dokunun, silmek için basılı tutun.</Text>
@@ -385,8 +392,48 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       </Card>
       <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
+      <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
     </ScrollView>
   );
+}
+
+function BedtimeRoutineModal({ visible, steps, close, addEvent }: { visible: boolean; steps: RoutineStep[]; close: () => void; addEvent: ReturnType<typeof useUykuvaState>["addEvent"] }) {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [startedAt, setStartedAt] = useState("");
+  useEffect(() => {
+    if (!visible) return;
+    setStepIndex(0);
+    setCompletedIds([]);
+    setStartedAt(new Date().toISOString());
+  }, [visible]);
+  if (!visible) return null;
+  const step = steps[Math.min(stepIndex, steps.length - 1)];
+  const finish = (finishedIds: string[]) => {
+    const elapsed = startedAt ? Math.max(1, Math.round((Date.now() - new Date(startedAt).getTime()) / 60_000)) : 0;
+    addEvent({ kind: "note", note: `Akşam rutini tamamlandı · ${finishedIds.length}/${steps.length} adım · ${elapsed} dk`, startedAt: startedAt || new Date().toISOString(), endedAt: new Date().toISOString() });
+    Alert.alert("Rutin kaydedildi", `${finishedIds.length}/${steps.length} adım tamamlandı. Kayıt zaman çizelgenize eklendi.`);
+    close();
+  };
+  const advance = (markDone: boolean) => {
+    const nextCompleted = markDone && step && !completedIds.includes(step.id) ? [...completedIds, step.id] : completedIds;
+    if (stepIndex >= steps.length - 1) return finish(nextCompleted);
+    setCompletedIds(nextCompleted);
+    setStepIndex((current) => current + 1);
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><View style={[styles.sheet, styles.quickSheet]}>
+    <View style={styles.sheetHandle} /><Text style={styles.eyebrow}>AKŞAM RUTİNİ</Text>
+    <Text style={styles.pageTitle}>{step ? `${stepIndex + 1}. adım` : "Rutin adımı kalmadı"}</Text>
+    {step ? <>
+      <Text style={styles.heroSmall}>{step.label}</Text>
+      <Text style={styles.body}>Bu adım için yaklaşık {step.minutes} dakika ayırabilirsiniz. Süre bir hedef değil, planlama kolaylığıdır.</Text>
+      <View style={styles.spacer12} /><Text style={styles.muted}>Adım {stepIndex + 1} / {steps.length} · {completedIds.length} tamamlandı</Text>
+      <View style={styles.spacer24} />
+      <PrimaryButton label={stepIndex === steps.length - 1 ? "Adımı tamamla ve bitir" : "Adımı tamamla · sonraki"} onPress={() => advance(true)} />
+      {stepIndex < steps.length - 1 ? <><View style={styles.spacer12} /><PrimaryButton label="Bu adımı atla" quiet onPress={() => advance(false)} /></> : null}
+    </> : <Text style={styles.body}>Etkin akşam rutini adımı bulunamadı.</Text>}
+    <View style={styles.spacer12} /><PrimaryButton label="Rutini kapat" quiet onPress={close} />
+  </View></Modal>;
 }
 
 async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
