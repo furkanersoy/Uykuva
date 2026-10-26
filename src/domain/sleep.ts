@@ -540,7 +540,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const pumping = recent.filter((event) => event.kind === "feed" && event.feedType === "pump");
   const solidMeals = feeds.filter((event) => event.feedType === "solid");
   const amount = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
-  const breastfeedingOngoing = feeds.some((event) => event.feedType === "breast" && !event.endedAt);
+  const breastfeedingOngoing = state.events.find((event) => event.kind === "feed" && event.feedType === "breast" && !event.endedAt);
   const diapers = recent.filter((event) => event.kind === "diaper").length;
   const healthEvents = recent.filter((event) => event.kind === "health");
   const notes = recent.filter((event) => event.kind === "note" && event.note?.trim());
@@ -557,8 +557,24 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const sleepMinutes = sleepSegments.reduce((sum, segment) => sum + segment.minutes, 0);
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
-  if (feeds.length) parts.push(amount ? `${amount} ml beslenme` : `${feeds.length} beslenme`);
-  if (breastfeedingOngoing) parts.push("emzirme sürüyor");
+  if (feeds.length) parts.push(`${feeds.length} beslenme kaydı${amount ? ` · ${amount} ml kayıtlı biberon` : ""}`);
+  if (breastfeedingOngoing) {
+    const nowMs = now.getTime();
+    const sessions = breastfeedingOngoing.breastSessions?.length
+      ? breastfeedingOngoing.breastSessions
+      : [{ side: breastfeedingOngoing.breastSide === "right" ? "right" as const : "left" as const, startedAt: breastfeedingOngoing.startedAt }];
+    const bySide = { left: 0, right: 0 };
+    let totalMinutes = 0;
+    for (const session of sessions) {
+      const start = new Date(session.startedAt).getTime();
+      const end = Math.min(session.endedAt ? new Date(session.endedAt).getTime() : nowMs, nowMs);
+      const minutes = Number.isFinite(start) && Number.isFinite(end) ? Math.max(0, Math.round((end - start) / 60_000)) : 0;
+      totalMinutes += minutes;
+      bySide[session.side] += minutes;
+    }
+    const sideDetails = [bySide.left ? `sol ${bySide.left} dk` : "", bySide.right ? `sağ ${bySide.right} dk` : ""].filter(Boolean).join(", ");
+    parts.push(`emzirme sürüyor · ${totalMinutes} dk${sideDetails ? ` (${sideDetails})` : ""}`);
+  }
   if (pumping.length) parts.push(`${pumping.length} sağım · ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml stoğa eklendi`);
   if (solidMeals.length) {
     const tagged = [...new Set(solidMeals.flatMap((event) => event.allergens ?? []))];
