@@ -18,7 +18,7 @@ import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, correctedAgeDays, createDailyNapOutline, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
@@ -296,6 +296,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
   const coachingMethod = trainingReady ? app.state.sleepPlan.method : "responsive";
   const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady);
+  const napOutline = createDailyNapOutline(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping"] : ["responsive"];
   const today = localDateValue(new Date());
@@ -348,6 +349,11 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <Text style={styles.body}>{methodDescription(app.state.sleepPlan.method).support}</Text>
       </Card>
       <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
+      <SectionTitle title="Kayıtlarına göre gün taslağı" action="Son 14 gün" />
+      <Card>
+        {napOutline.length ? napOutline.map((nap) => <View key={nap.order} style={styles.eventRow}><View style={styles.flex}><Text style={styles.eventTitle}>{nap.order}. gündüz uykusu</Text><Text style={styles.muted}>{nap.actualStart ? `${nap.inProgress ? "Şu an uyuyor" : "Bugün kaydedildi"} · ${time(nap.actualStart)}` : `${time(nap.from)}–${time(nap.to)} · ortanca ${time(nap.typical)}`}</Text></View><Text style={styles.taskDate}>{nap.sampleCount} gün</Text></View>) : <Text style={styles.body}>Kişisel gündüz uykusu taslağı için son 14 günde en az üç farklı günde kayıt gerekir.</Text>}
+        <Text style={styles.hint}>Bu aralıklar bebeğinizin önceki kayıtlarının özeti; bugünün kesin programı değildir. Uyku işaretleri ve sıradaki uyku penceresi önceliklidir.</Text>
+      </Card>
       <SectionTitle title="Kayıtlardan öneri" action={`${insights.nightsUsed} gece`} />
       <Card>
         <View style={styles.measureRow}><Measure value={insights.actualBedtime ?? "—"} label="Gerçek medyan" /><Measure value={insights.targetBedtime} label="Hedef" /><Measure value={insights.suggestedBedtime} label="Bu gece" /></View>
