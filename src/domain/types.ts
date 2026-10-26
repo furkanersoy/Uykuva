@@ -16,6 +16,7 @@ export type CareEvent = {
   feedType?: "breast" | "bottle" | "solid";
   breastSide?: "left" | "right" | "both";
   foods?: string[];
+  allergens?: string[];
   reactionNote?: string;
   diaperType?: "wet" | "dirty" | "both";
   healthType?: "temperature" | "medicine" | "symptom";
