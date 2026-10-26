@@ -116,7 +116,7 @@ Tahmin motorunun mevcut davranışı:
 1. Düzeltilmiş yaş 9 haftadan küçükse tahmin göstermez.
 2. Bitmiş son uyku kaydını bulur.
 3. Yaşa uygun genel uyanıklık aralığını seçer.
-4. Son 15 uyku içindeki geçerli uyanıklık sürelerini çıkarır.
+4. Son 14 takvim günündeki geçerli uyanıklık sürelerini çıkarır; eski dönemlerin ritmi yeni tahmini etkilemez.
 5. En az üç kişisel örnek varsa yaş referansı ile kişisel medyanı harmanlar.
 6. Tek saat yerine başlangıç ve bitiş aralığı üretir.
 7. Veri miktarına göre düşük, orta veya yüksek güven etiketi verir.
@@ -225,6 +225,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Katı öğünlerde takip etiketleri ve ebeveyn gözlemi zaman çizelgesi, devir özeti ve doktor özetinde saklanıyor.
 - [x] Son yedi günün uyku süreleri, gece yarısını aşan dönemler günlere dağıtılarak grafikte gösteriliyor.
 - [x] Zaman çizelgesinden geçmiş uyku ekleme ve kayıt saatlerini düzenleme eklendi.
+- [x] Uyku tahmini kişisel uyanıklık örneklerini son 14 günle sınırlar ve aktif uyku süresini canlı gösterir.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
