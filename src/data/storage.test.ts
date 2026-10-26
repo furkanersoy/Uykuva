@@ -14,6 +14,23 @@ test("legacy state receives schema two defaults without losing events", () => {
   assert.equal(migrated.events.length, 1);
   assert.deepEqual(migrated.careTasks, []);
   assert.equal(migrated.preferences.sleepReminderMinutes, 15);
+  assert.equal(migrated.caregivers[0]?.name, "Baba");
+  assert.equal(migrated.activeCaregiverId, "caregiver-1");
   assert.deepEqual(migrated.sleepPlan.checkIns, []);
   assert.deepEqual(migrated.sleepPlan.readinessCompleted, []);
 });
+
+test("caregiver migration preserves the active identity", () => {
+  const migrated = migrateState({
+    caregiverName: "Eski ad",
+    caregivers: [
+      { id: "p1", name: "Anne", role: "parent" },
+      { id: "c1", name: "Ece", role: "caregiver" }
+    ],
+    activeCaregiverId: "c1"
+  });
+  assert.equal(migrated.caregiverName, "Ece");
+  assert.equal(migrated.activeCaregiverId, "c1");
+  assert.equal(migrated.caregivers.length, 2);
+});
+
