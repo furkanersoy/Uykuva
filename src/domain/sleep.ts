@@ -39,6 +39,38 @@ export function median(values: number[]): number {
   return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
 }
 
+export type DailySleepTotal = { date: string; label: string; totalMinutes: number; sleepCount: number };
+
+export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailySleepTotal[] {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const start = new Date(today);
+    start.setDate(today.getDate() - (6 - index));
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end, totalMinutes: 0, sleepCount: 0 };
+  });
+  for (const event of events) {
+    if (event.kind !== "sleep") continue;
+    const start = new Date(event.startedAt).getTime();
+    const end = event.endedAt ? Math.min(new Date(event.endedAt).getTime(), now.getTime()) : now.getTime();
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+    for (const day of days) {
+      const overlap = Math.min(end, day.end.getTime()) - Math.max(start, day.start.getTime());
+      if (overlap <= 0) continue;
+      day.totalMinutes += overlap / 60_000;
+      day.sleepCount += 1;
+    }
+  }
+  return days.map((day) => ({
+    date: `${day.start.getFullYear()}-${String(day.start.getMonth() + 1).padStart(2, "0")}-${String(day.start.getDate()).padStart(2, "0")}`,
+    label: day.start.toLocaleDateString("tr-TR", { weekday: "short" }).replace(".", ""),
+    totalMinutes: Math.round(day.totalMinutes),
+    sleepCount: day.sleepCount
+  }));
+}
+
 function recentAwakeWindows(events: CareEvent[]): number[] {
   const sleeps = events
     .filter((event) => event.kind === "sleep" && event.endedAt)
