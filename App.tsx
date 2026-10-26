@@ -18,7 +18,7 @@ import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, createSleepCoachInsights, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage } from "./src/domain/sleep";
+import { coachingDay, createSleepCoachInsights, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport } from "./src/domain/export";
 import { isValidClock } from "./src/domain/time";
@@ -359,6 +359,10 @@ function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaSta
   const feedingTotals = todayFeedingTotals(events);
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
+  const weeklySleep = weeklySleepTotals(events);
+  const maxDailySleep = Math.max(0, ...weeklySleep.map((day) => day.totalMinutes));
+  const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
+  const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
   const latestGrowth = events.find((event) => event.kind === "growth");
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   return (
@@ -370,6 +374,15 @@ function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaSta
         <Stat value={`${diapers.length}`} label="Bez" tone="lavender" />
         <Stat value={`${health.length}`} label="Sağlık kaydı" tone="white" />
       </View>
+      <SectionTitle title="Son 7 gün · uyku süreleri" action={recordedSleepDays.length ? `Kayıtlı gün ort. ${Math.floor(averageWeeklySleep / 60)} sa ${averageWeeklySleep % 60} dk` : "Kayıt yok"} />
+      <Card>
+        {maxDailySleep ? <View style={styles.weeklyChart}>{weeklySleep.map((day) => {
+          const hours = Math.floor(day.totalMinutes / 60);
+          const minutes = day.totalMinutes % 60;
+          return <View key={day.date} style={styles.weeklyColumn} accessibilityLabel={day.sleepCount ? `${day.label}: ${hours} saat ${minutes} dakika uyku, ${day.sleepCount} dönem` : `${day.label}: uyku kaydı yok`}><View style={styles.weeklyTrack}><View style={[styles.weeklyBar, { height: day.totalMinutes ? `${Math.max(3, day.totalMinutes / maxDailySleep * 100)}%` : "0%" }]} /></View><Text style={styles.weeklyValue}>{day.sleepCount ? hours ? `${hours}s` : `${minutes}d` : "—"}</Text><Text style={styles.weeklyLabel}>{day.label}</Text></View>;
+        })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
+        <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
+      </Card>
       <SectionTitle title="Bugünkü beslenme" />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
       {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
@@ -698,6 +711,12 @@ const styles = StyleSheet.create({
   statGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
   stat: { width: "50%", paddingHorizontal: 5 },
   statValue: { color: colors.ink, fontSize: 24, fontWeight: "800", letterSpacing: -0.7 },
+  weeklyChart: { flexDirection: "row", alignItems: "flex-end", minHeight: 126, gap: 6 },
+  weeklyColumn: { flex: 1, alignItems: "center", justifyContent: "flex-end" },
+  weeklyTrack: { width: 26, height: 92, backgroundColor: "#F0F2ED", borderRadius: 10, overflow: "hidden", justifyContent: "flex-end" },
+  weeklyBar: { width: "100%", backgroundColor: colors.sageDark, borderRadius: 10 },
+  weeklyValue: { color: colors.inkSoft, fontSize: 9, fontWeight: "700", marginTop: 5 },
+  weeklyLabel: { color: colors.inkSoft, fontSize: 10, marginTop: 2 },
   measureRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   measure: { flex: 1 },
   measureValue: { color: colors.ink, fontSize: 18, fontWeight: "800" },
