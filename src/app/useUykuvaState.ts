@@ -84,6 +84,19 @@ export function useUykuvaState() {
     });
   }, []);
 
+  const toggleBreastfeed = useCallback((side: "left" | "right" | "both") => {
+    setState((current) => {
+      const running = current.events.find((event) => event.kind === "feed" && event.feedType === "breast" && !event.endedAt);
+      if (running) {
+        return { ...current, events: current.events.map((event) => event.id === running.id ? { ...event, endedAt: new Date().toISOString() } : event) };
+      }
+      return {
+        ...current,
+        events: [{ id: id("feed"), kind: "feed", feedType: "breast", breastSide: side, startedAt: new Date().toISOString(), caregiver: current.caregiverName }, ...current.events]
+      };
+    });
+  }, []);
+
   const deleteEvent = useCallback((eventId: string) => {
     setState((current) => ({ ...current, events: current.events.filter((event) => event.id !== eventId) }));
   }, []);
@@ -158,6 +171,10 @@ export function useUykuvaState() {
     () => state.events.find((event) => event.kind === "sleep" && !event.endedAt),
     [state.events]
   );
+  const runningFeed = useMemo(
+    () => state.events.find((event) => event.kind === "feed" && event.feedType === "breast" && !event.endedAt),
+    [state.events]
+  );
 
   const addSimpleEvent = useCallback((kind: Exclude<EventKind, "sleep">, details: Partial<CareEvent> = {}) => {
     addEvent({ kind, ...details });
@@ -168,12 +185,14 @@ export function useUykuvaState() {
     hydrated,
     storageError,
     runningSleep,
+    runningFeed,
     completeOnboarding,
     updateProfile,
     updatePreferences,
     addEvent,
     addSimpleEvent,
     toggleSleep,
+    toggleBreastfeed,
     deleteEvent,
     setMethod,
     toggleTask,

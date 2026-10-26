@@ -94,6 +94,7 @@ Ana fonksiyonlar:
 - `correctedAgeDays`: Prematüre bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar.
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
 - `createSleepForecast`: Yaş aralığı ile son kullanılabilir uyanıklık sürelerini harmanlar.
+- `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir.
 - `coachingDay`: Seçilen yaklaşıma göre 14 günlük planın günlük görevlerini üretir.
 - `handoffSummary`: Son dört saati bakım veren için kısa bir özete dönüştürür.
 
@@ -198,6 +199,11 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Gece yarısını aşabilen sessiz saatler eklendi.
 - [x] Tüm kullanıcı verisini JSON olarak dışa aktarma eklendi.
 - [x] Onaylı cihaz verisi silme akışı eklendi.
+- [x] Sağ/sol/iki taraf emzirme zamanlayıcısı eklendi.
+- [x] Son kayda göre sıradaki emzirme tarafı önerisi eklendi.
+- [x] Biberon miktarı ve katı gıda/tepki kaydı eklendi.
+- [x] Açıklanabilir sıradaki beslenme aralığı eklendi.
+- [x] Günlük emzirme süresi, biberon ve katı öğün toplamları eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -257,7 +263,7 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 26 Ekim 2026 tarihinde:
 
 - `npm.cmd run typecheck`: başarılı
-- `npm.cmd test`: 10/10 test başarılı
+- `npm.cmd test`: 12/12 test başarılı
 - `npx.cmd expo-doctor`: 20/20 kontrol başarılı
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 

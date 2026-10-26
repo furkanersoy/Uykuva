@@ -14,6 +14,9 @@ export type CareEvent = {
   endedAt?: string;
   amountMl?: number;
   feedType?: "breast" | "bottle" | "solid";
+  breastSide?: "left" | "right" | "both";
+  foods?: string[];
+  reactionNote?: string;
   diaperType?: "wet" | "dirty" | "both";
   healthType?: "temperature" | "medicine" | "symptom";
   temperatureC?: number;
@@ -88,4 +91,12 @@ export type SleepForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
   awakeMinutes?: number;
+};
+
+export type FeedingForecast = {
+  available: boolean;
+  start?: Date;
+  end?: Date;
+  confidence: "low" | "medium" | "high";
+  explanation: string;
 };

@@ -22,6 +22,9 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Sessiz saatlere uyan uyku bildirimleri
 - JSON veri dışa aktarma ve kontrollü cihaz verisi silme
+- Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
+- Biberon ve katı gıda ayrıntıları
+- Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
 
 Uygulama tıbbi tanı veya tedavi önermez.
 

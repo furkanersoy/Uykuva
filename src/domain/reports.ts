@@ -1,4 +1,5 @@
 import { ageInDays } from "./sleep";
+import { completedFeedMinutes } from "./feeding";
 import { AppState, CareEvent } from "./types";
 
 function minutesBetween(event: CareEvent) {
@@ -20,13 +21,15 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const growth = state.events.find((event) => event.kind === "growth");
   const totalSleepHours = sleeps.reduce((sum, event) => sum + minutesBetween(event), 0) / 60;
   const bottleMl = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const breastMinutes = feeds.reduce((sum, event) => sum + completedFeedMinutes(event), 0);
+  const solidMeals = feeds.filter((event) => event.feedType === "solid").length;
   const lines = [
     `UYKUVA · 7 GÜNLÜK BAKIM ÖZETİ`,
     `${state.baby.name} · ${ageInDays(state.baby.birthDate, now)} günlük · ${state.baby.gestationalWeek}. gebelik haftasında doğdu`,
     `Hazırlanma: ${trDate(now)}`,
     "",
     `Uyku: ${sleeps.length} tamamlanmış kayıt · toplam ${totalSleepHours.toFixed(1)} saat`,
-    `Beslenme: ${feeds.length} kayıt${bottleMl ? ` · kayıtlı biberon toplamı ${bottleMl} ml` : ""}`,
+    `Beslenme: ${feeds.length} kayıt${breastMinutes ? ` · ${breastMinutes} dk emzirme` : ""}${bottleMl ? ` · kayıtlı biberon toplamı ${bottleMl} ml` : ""}${solidMeals ? ` · ${solidMeals} katı öğün` : ""}`,
     `Bez: ${diapers.length} kayıt`,
     `Sağlık: ${health.length} kullanıcı kaydı`
   ];
