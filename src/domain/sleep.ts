@@ -1,0 +1,157 @@
+import { AppState, Baby, CareEvent, SleepForecast, SleepMethod } from "./types";
+
+const DAY = 86_400_000;
+
+type WakeBand = { maxAgeDays: number; min: number; max: number };
+
+// Product reference ranges only. These are not a diagnosis or medical advice.
+const WAKE_BANDS: WakeBand[] = [
+  { maxAgeDays: 62, min: 45, max: 90 },
+  { maxAgeDays: 92, min: 60, max: 110 },
+  { maxAgeDays: 122, min: 75, max: 120 },
+  { maxAgeDays: 183, min: 90, max: 150 },
+  { maxAgeDays: 274, min: 120, max: 210 },
+  { maxAgeDays: 365, min: 150, max: 240 },
+  { maxAgeDays: 548, min: 180, max: 300 },
+  { maxAgeDays: Number.POSITIVE_INFINITY, min: 240, max: 360 }
+];
+
+export function ageInDays(birthDate: string, now = new Date()): number {
+  const born = new Date(`${birthDate}T12:00:00`);
+  return Math.max(0, Math.floor((now.getTime() - born.getTime()) / DAY));
+}
+
+export function correctedAgeDays(baby: Baby, now = new Date()): number {
+  const chronological = ageInDays(baby.birthDate, now);
+  const prematureDays = Math.max(0, 40 - baby.gestationalWeek) * 7;
+  return chronological < 730 ? Math.max(0, chronological - prematureDays) : chronological;
+}
+
+export function wakeBandFor(baby: Baby, now = new Date()): WakeBand {
+  const age = correctedAgeDays(baby, now);
+  return WAKE_BANDS.find((band) => age <= band.maxAgeDays) ?? WAKE_BANDS[WAKE_BANDS.length - 1]!;
+}
+
+export function median(values: number[]): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+}
+
+function recentAwakeWindows(events: CareEvent[]): number[] {
+  const sleeps = events
+    .filter((event) => event.kind === "sleep" && event.endedAt)
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
+    .slice(-15);
+
+  const windows: number[] = [];
+  for (let index = 1; index < sleeps.length; index += 1) {
+    const previous = sleeps[index - 1]!;
+    const current = sleeps[index]!;
+    const minutes = (new Date(current.startedAt).getTime() - new Date(previous.endedAt!).getTime()) / 60_000;
+    if (minutes >= 25 && minutes <= 480) windows.push(minutes);
+  }
+  return windows;
+}
+
+export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date()): SleepForecast {
+  const age = correctedAgeDays(baby, now);
+  if (age < 63) {
+    return {
+      available: false,
+      confidence: "low",
+      explanation: "İlk 9 haftada kesin bir pencere önermiyoruz; yalnızca bebeğinizin sinyallerini ve günlük toplamları gösteriyoruz."
+    };
+  }
+
+  const lastSleep = events
+    .filter((event) => event.kind === "sleep" && event.endedAt)
+    .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime())[0];
+
+  if (!lastSleep?.endedAt) {
+    return {
+      available: false,
+      confidence: "low",
+      explanation: "İlk tahmin için bitmiş bir uyku kaydı gerekiyor."
+    };
+  }
+
+  const band = wakeBandFor(baby, now);
+  const personal = recentAwakeWindows(events);
+  const personalMedian = median(personal);
+  const baseline = (band.min + band.max) / 2;
+  const target = personal.length >= 3 ? baseline * 0.35 + personalMedian * 0.65 : baseline;
+  const spread = personal.length >= 7 ? 12 : personal.length >= 3 ? 18 : Math.max(20, (band.max - band.min) / 2);
+  const wakeAt = new Date(lastSleep.endedAt);
+  const start = new Date(wakeAt.getTime() + Math.max(band.min, target - spread) * 60_000);
+  const end = new Date(wakeAt.getTime() + Math.min(band.max, target + spread) * 60_000);
+  const awakeMinutes = Math.max(0, Math.floor((now.getTime() - wakeAt.getTime()) / 60_000));
+
+  return {
+    available: true,
+    start,
+    end,
+    awakeMinutes,
+    confidence: personal.length >= 7 ? "high" : personal.length >= 3 ? "medium" : "low",
+    explanation:
+      personal.length >= 3
+        ? `Yaş aralığı ve son ${personal.length} kullanılabilir uyanıklık süresi birlikte değerlendirildi.`
+        : "Şimdilik yaşa göre genel aralık kullanılıyor; üç düzenli kayıttan sonra kişiselleşecek."
+  };
+}
+
+export type CoachingDay = {
+  title: string;
+  focus: string;
+  tasks: string[];
+  checkIn: string;
+};
+
+const METHOD_COPY: Record<SleepMethod, { name: string; support: string }> = {
+  responsive: { name: "Duyarlı rutin", support: "Ağlamaya hızlı yanıt vererek uyku işaretlerini ve tutarlı rutini güçlendirir." },
+  gradual: { name: "Kademeli destek", support: "Her birkaç gecede yardımı küçük adımlarla azaltır; katı bir süre tutmaz." },
+  camping: { name: "Yakında kalma", support: "Bakım veren odada kalır ve desteğini günler içinde yavaşça azaltır." }
+};
+
+export function methodDescription(method: SleepMethod) {
+  return METHOD_COPY[method];
+}
+
+export function coachingDay(day: number, method: SleepMethod): CoachingDay {
+  const safeDay = Math.min(14, Math.max(1, day));
+  const phase = safeDay <= 3 ? 0 : safeDay <= 7 ? 1 : safeDay <= 10 ? 2 : 3;
+  const shared = [
+    ["Sabah başlangıcını aynı 30 dakikalık aralıkta tut", "Gündüz gün ışığı ve yaşa uygun hareket zamanı sun", "Akşam rutinini aynı sırayla uygula"],
+    ["Son uykunun bitişini kaydet", "Uyku penceresinden 20 dakika önce ortamı sakinleştir", "Bebeği uykulu ama mümkünse uyanık yatır"],
+    ["Gece desteğinde seçtiğin yaklaşımı tutarlı uygula", "Zor bir geceyi başarısızlık sayma", "Sabah kısa check-in doldur"],
+    ["İşe yarayan adımları sabitle", "Yatma saatini gerekirse yalnızca 10–15 dakika değiştir", "Planı ailedeki diğer bakım verenle paylaş"]
+  ];
+  const methodTask: Record<SleepMethod, string[]> = {
+    responsive: ["İlk huzursuzlukta ses ve dokunuşla yanıt ver", "Sakinleşmezse kucağa al; sakinleşince yeniden yatağa koy"],
+    gradual: ["Bu gece alışılmış desteği yalnızca küçük bir adım azalt", "Yoğun huzursuzlukta geri dönüp sakinleştir"],
+    camping: ["Yatağın yanında sakin ve görünür biçimde kal", "Her üç gecede mesafeyi küçük bir adım artır"]
+  };
+  return {
+    title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,
+    focus: ["Ritmi gözlemle", "Tutarlı başlangıç", "Desteği ayarla", "Yeni rutini koru"][phase]!,
+    tasks: [...shared[phase]!, ...methodTask[method]],
+    checkIn: "Bu sabah uykuya geçiş dünden daha kolay mıydı?"
+  };
+}
+
+export function handoffSummary(state: AppState, now = new Date()): string {
+  const since = now.getTime() - 4 * 60 * 60 * 1000;
+  const recent = state.events.filter((event) => new Date(event.startedAt).getTime() >= since);
+  const feeds = recent.filter((event) => event.kind === "feed");
+  const amount = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const diapers = recent.filter((event) => event.kind === "diaper").length;
+  const sleepMinutes = recent
+    .filter((event) => event.kind === "sleep" && event.endedAt)
+    .reduce((sum, event) => sum + (new Date(event.endedAt!).getTime() - new Date(event.startedAt).getTime()) / 60_000, 0);
+  const parts = [`Son 4 saatte ${recent.length} kayıt`];
+  if (feeds.length) parts.push(amount ? `${amount} ml beslenme` : `${feeds.length} beslenme`);
+  if (sleepMinutes) parts.push(`${Math.round(sleepMinutes)} dk uyku`);
+  if (diapers) parts.push(`${diapers} bez`);
+  return `${parts.join(" · ")}.`;
+}

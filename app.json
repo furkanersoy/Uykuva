@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Uykvua",
+    "slug": "uykvua",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.uykvua.app"
+    },
+    "android": {
+      "package": "com.uykvua.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F7F5F1"
+      }
+    }
+  }
+}
