@@ -31,6 +31,7 @@ export function createInitialState(): AppState {
     careTasks: [],
     sleepPlan: {
       method: "responsive",
+      paused: false,
       startDate: new Date().toISOString(),
       day: 1,
       bedtime: "20:00",
