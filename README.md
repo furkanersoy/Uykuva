@@ -47,6 +47,8 @@ Uygulama tıbbi tanı veya tedavi önermez.
 
 ## Kurulum
 
+Ulusal çocukluk dönemi aşı takvimi için bebeğin doğum tarihine göre yaklaşan yaş dönüm noktaları önerilebilir. Öneriler ayrı ayrı ebeveyn onayıyla yerel aşı/randevu takvimine eklenir; geçmiş dozlar için otomatik telafi planı üretilmez.
+
 ```powershell
 npm.cmd install
 npm.cmd start
