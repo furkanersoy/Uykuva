@@ -31,6 +31,7 @@ import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, 
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
+import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -711,6 +712,8 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
   const weeklySleep = weeklySleepTotals(events);
+  const weeklyDiapers = weeklyDiaperTotals(events, now);
+  const maxDailyDiapers = Math.max(0, ...weeklyDiapers.map((day) => day.total));
   const maxDailySleep = Math.max(0, ...weeklySleep.map((day) => day.totalMinutes));
   const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
@@ -734,6 +737,27 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
           return <View key={day.date} style={styles.weeklyColumn} accessibilityLabel={day.sleepCount ? `${day.label}: ${hours} saat ${minutes} dakika uyku, ${day.sleepCount} dönem` : `${day.label}: uyku kaydı yok`}><View style={styles.weeklyTrack}><View style={[styles.weeklyBar, { height: day.totalMinutes ? `${Math.max(3, day.totalMinutes / maxDailySleep * 100)}%` : "0%" }]} /></View><Text style={styles.weeklyValue}>{day.sleepCount ? hours ? `${hours}s` : `${minutes}d` : "—"}</Text><Text style={styles.weeklyLabel}>{day.label}</Text></View>;
         })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
         <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
+      </Card>
+      <SectionTitle title="Son 7 gün · bez kayıtları" action={maxDailyDiapers ? `${weeklyDiapers.reduce((sum, day) => sum + day.total, 0)} kayıt` : "Kayıt yok"} />
+      <Card>
+        {maxDailyDiapers ? <>
+          <View style={styles.diaperLegend}>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperWet]} /><Text style={styles.muted}>Islak</Text></View>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperDirty]} /><Text style={styles.muted}>Kirli</Text></View>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperMixed]} /><Text style={styles.muted}>İkisi</Text></View>
+          </View>
+          {weeklyDiapers.map((day) => <View key={day.date} style={styles.diaperTrendRow} accessibilityLabel={`${day.label}: ${day.wet} ıslak, ${day.dirty} kirli, ${day.mixed} ikisi, toplam ${day.total} bez kaydı`}>
+            <Text style={styles.diaperTrendLabel}>{day.label}</Text>
+            <View style={styles.diaperTrendTrack}>
+              {day.wet ? <View style={[styles.diaperSegment, styles.diaperWet, { flex: day.wet / maxDailyDiapers }]} /> : null}
+              {day.dirty ? <View style={[styles.diaperSegment, styles.diaperDirty, { flex: day.dirty / maxDailyDiapers }]} /> : null}
+              {day.mixed ? <View style={[styles.diaperSegment, styles.diaperMixed, { flex: day.mixed / maxDailyDiapers }]} /> : null}
+              {day.total < maxDailyDiapers ? <View style={{ flex: (maxDailyDiapers - day.total) / maxDailyDiapers }} /> : null}
+            </View>
+            <Text style={styles.diaperTrendCount}>{day.total || "—"}</Text>
+          </View>)}
+        </> : <Text style={styles.body}>Günlük bez değişimlerini ekledikçe son yedi gün burada görünür.</Text>}
+        <Text style={styles.hint}>Çubuklar kaydedilen ıslak, kirli ve ikili bez sayılarını gösterir. Kayıt eksik olabilir; bu grafik sağlık değerlendirmesi değildir.</Text>
       </Card>
       <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
@@ -1429,6 +1453,17 @@ const styles = StyleSheet.create({
   weeklyBar: { width: "100%", backgroundColor: colors.sageDark, borderRadius: 10 },
   weeklyValue: { color: colors.inkSoft, fontSize: 9, fontWeight: "700", marginTop: 5 },
   weeklyLabel: { color: colors.inkSoft, fontSize: 10, marginTop: 2 },
+  diaperLegend: { flexDirection: "row", gap: 14, marginBottom: 10 },
+  diaperLegendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+  diaperLegendDot: { width: 8, height: 8, borderRadius: 4 },
+  diaperTrendRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 5 },
+  diaperTrendLabel: { color: colors.inkSoft, width: 34, fontSize: 11, textTransform: "capitalize" },
+  diaperTrendTrack: { flex: 1, flexDirection: "row", height: 10, borderRadius: 6, overflow: "hidden", backgroundColor: "#F0F2ED", gap: 1 },
+  diaperSegment: { height: "100%" },
+  diaperWet: { backgroundColor: colors.sageDark },
+  diaperDirty: { backgroundColor: colors.peach },
+  diaperMixed: { backgroundColor: colors.lavender },
+  diaperTrendCount: { color: colors.inkSoft, width: 24, textAlign: "right", fontSize: 11, fontWeight: "700" },
   measureRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   measure: { flex: 1 },
   measureValue: { color: colors.ink, fontSize: 18, fontWeight: "800" },
