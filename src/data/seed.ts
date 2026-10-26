@@ -48,6 +48,7 @@ export function createInitialState(): AppState {
       checkIns: []
     },
     preferences: {
+      handoffHours: 4,
       notificationsEnabled: false,
       sleepReminderMinutes: 15,
       careTaskRemindersEnabled: false,
