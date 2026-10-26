@@ -55,6 +55,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İsteğe bağlı WHO 0–5 yaş kilo, boy ve baş çevresi eğrileri; z-skoru/persentil özeti ve ölçüm konumu düzeltmesi
 - Paylaşılabilir yedi günlük doktor özeti
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
+- Aşı ve randevu kaydının tarih, saat ve notunu geçmişi koruyarak düzenleme
 - Tamamlanan aşı ve randevular için tarihli geçmiş; aşı geçmişi doktor özetine eklenir ve işaretleme tarihi açıkça belirtilir. Silme işlemi ayrıca onay ister
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
 - Aşı önerilerinde kaynak sürümü ve resmi Sağlık Bakanlığı bağlantısı; 49–72 ay suçiçeği yakalama dönemi için aile hekimiyle teyit hatırlatması
