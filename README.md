@@ -18,6 +18,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Son dört saat için bakım devri özeti
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
+- Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
 - Uyku planında günde bir kez ilerleme ve 14 günlük plan tamamlandığında ilerlemenin durması
 - Akşam rutini ve günlük görevler
