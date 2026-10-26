@@ -129,6 +129,8 @@ Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema
 
 Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
 
+Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir; gelişim zamanlaması veya değerlendirmesi sunulmaz.
+
 ## 6. Uyku tahmin motoru
 
 Tahmin motorunun mevcut davranışı:
