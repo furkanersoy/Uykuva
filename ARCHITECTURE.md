@@ -52,6 +52,7 @@ SleepWell/
 │   ├── domain/
 │   │   ├── types.ts                # Bebek, kayıt ve uyku planı veri modelleri
 │   │   ├── vaccineSchedule.ts      # Ulusal aşı takvimi öneri tarihleri
+│   │   ├── milk.ts                 # Sağım stoğu ve saklama süreleri
 │   │   ├── sleep.ts                # Tahmin, koçluk ve devir özeti kuralları
 │   │   └── sleep.test.ts           # Saf iş kuralları testleri
 │   └── ui/
@@ -125,6 +126,8 @@ uykuva:state:v3
 Eski `v1` AsyncStorage kaydı ilk açılışta okunur, yeni şemayla birleştirilir ve SQLite deposuna taşınır. Gerçek çoklu cihaz senkronizasyonundan önce her bakım kaydı ayrı bir SQLite satırı/değiştirilemez olay olarak modellenmelidir.
 
 Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema sürümü taşıyan JSON'a dönüştürür. `parseDataExport` boyutu, biçimi ve temel profil/kayıt yapılarını doğrular; `migrateState` veriyi geçerli şemaya birleştirir. Kullanıcı mevcut verinin yerini alacağını onayladıktan sonra durum SQLite anahtarına kaydedilir. Yedekler otomatik olarak sunucuya gönderilmez.
+
+Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
 
 ## 6. Uyku tahmin motoru
 
