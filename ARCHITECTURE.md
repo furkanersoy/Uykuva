@@ -80,6 +80,8 @@ SleepWell/
 
 Takvim verisi Sağlık Bakanlığının 2025 ulusal takvimine dayanır. 1 Eylül 2026 tarihli güncelleme suçiçeği aşısının ikinci dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri sağlık profesyoneliyle doğrulanmalıdır.
 
+Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını ve o günün rehberini yerel paylaşım menüsüyle metin olarak diğer bakım verenlere gönderebilir. Paylaşım sunucuya yüklenmez.
+
 ### Uygulama durumu
 
 `useUykuvaState`, ekranların doğrudan depolama sistemiyle konuşmasını engeller. Şu eylemleri sağlar:
