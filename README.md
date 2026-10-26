@@ -19,6 +19,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Son dört saat için bakım devri özeti
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
+- Uyku planında günde bir kez ilerleme ve 14 günlük plan tamamlandığında ilerlemenin durması
 - Akşam rutini ve günlük görevler
 - Kişisel akşam rutini adımlarını etkinleştirme ve sıraya koyma
 - Etkin akşam rutini adımlarını sırayla uygulama ve tamamlanma özetini zaman çizelgesine kaydetme
