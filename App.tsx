@@ -94,6 +94,7 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [nightMode, setNightMode] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
   const [eventEditor, setEventEditor] = useState<CareEvent | null>(null);
@@ -155,31 +156,31 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" />
-      <ExpoStatusBar style="dark" />
+      <StatusBar barStyle={nightMode ? "light-content" : "dark-content"} />
+      <ExpoStatusBar style={nightMode ? "light" : "dark"} />
       <View style={styles.shell}>
-        <View style={styles.header}>
+        {!nightMode ? <View style={styles.header}>
           <View>
             <Text style={styles.brand}>uykuva</Text>
             <Text style={styles.headerSub}>{app.state.baby.name} · bugün</Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
-        </View>
+        </View> : null}
 
-        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} />}
+        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
 
-        <View style={styles.nav}>
+        {!nightMode ? <View style={styles.nav}>
           {tabs.map((item) => (
             <Pressable key={item.id} onPress={() => setTab(item.id)} style={styles.navItem}>
               <Text style={[styles.navGlyph, tab === item.id && styles.navActive]}>{item.glyph}</Text>
               <Text style={[styles.navLabel, tab === item.id && styles.navActive]}>{item.label}</Text>
             </Pressable>
           ))}
-        </View>
+        </View> : null}
       </View>
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} />
       <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
@@ -247,10 +248,11 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
   return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} style={styles.input} placeholderTextColor="#93A09C" /></View>;
 }
 
-function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date }) {
+function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void }) {
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[forecast.confidence];
   const sleepElapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   const wakeEstimate = estimateSleepWakeWindow(app.state.events, app.runningSleep, now);
+  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
@@ -267,6 +269,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: Re
       </Card>
 
       <SectionTitle title="Hızlı kayıt" />
+      <Pressable accessibilityRole="button" onPress={onToggleNightMode} style={styles.nightEntry}><Text style={styles.nightEntryText}>Gece moduna geç  ☾</Text></Pressable>
       <View style={styles.quickRow}>
         <QuickAction glyph={app.runningSleep ? "■" : "☾"} label={app.runningSleep ? "Uyandı" : "Uyku"} onPress={app.toggleSleep} active={Boolean(app.runningSleep)} />
         <QuickAction glyph="◒" label={app.runningFeed ? "Emzirme sürüyor" : "Beslenme"} onPress={() => openLog("feed")} active={Boolean(app.runningFeed)} />
@@ -289,6 +292,31 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: Re
       <Card>{app.state.events.slice(0, 4).map((event) => <EventRow key={event.id} event={event} />)}</Card>
       <Text style={styles.disclaimer}>Uykuva tıbbi tanı veya tedavi önermez. Endişeniz varsa sağlık uzmanınıza başvurun.</Text>
     </ScrollView>
+  );
+}
+
+function NightModeScreen({ app, now, onExit, openLog }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void }) {
+  const elapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
+  return (
+    <View style={styles.nightScreen}>
+      <View style={styles.nightTop}>
+        <View><Text style={styles.nightEyebrow}>UYKUVA · GECE MODU</Text><Text style={styles.nightBaby}>{app.state.baby.name}</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Gece modundan çık" onPress={onExit} style={styles.nightExit}><Text style={styles.nightExitText}>Çık</Text></Pressable>
+      </View>
+      <View style={styles.nightTimerCard}>
+        <Text style={styles.nightEyebrow}>{app.runningSleep ? "UYKU SÜRESİ" : "GECE KAYDI"}</Text>
+        <Text style={styles.nightTimer}>{app.runningSleep ? `${Math.floor(elapsed / 60)} sa ${elapsed % 60} dk` : "Hazır"}</Text>
+        <Text style={styles.nightHint}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı` : "Gece bakım kaydını buradan yönetebilirsin."}</Text>
+      </View>
+      <View style={styles.nightActions}>
+        <Pressable accessibilityRole="button" onPress={app.toggleSleep} style={[styles.nightAction, styles.nightActionPrimary]}>
+          <Text style={styles.nightActionGlyph}>{app.runningSleep ? "■" : "☾"}</Text><Text style={styles.nightActionTitle}>{app.runningSleep ? "Uykuyu bitir" : "Uykuyu başlat"}</Text><Text style={styles.nightActionHint}>{app.runningSleep ? "Uyanma kaydı ekle" : "Uyku sayacını başlat"}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => openLog("feed")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Beslenme</Text><Text style={styles.nightActionHint}>Beslenme kaydı aç</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => openLog("diaper")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◇</Text><Text style={styles.nightActionTitle}>Bez</Text><Text style={styles.nightActionHint}>Bez kaydı aç</Text></Pressable>
+      </View>
+      <Text style={styles.nightFootnote}>Kısık renkli ekran · Gece modundan çıkmak için üstteki düğmeyi kullan.</Text>
+    </View>
   );
 }
 
@@ -1024,6 +1052,24 @@ const styles = StyleSheet.create({
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
   awake: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 14 },
+  nightEntry: { minHeight: 42, borderRadius: 15, backgroundColor: "#E7ECE6", alignItems: "center", justifyContent: "center", marginBottom: 14 },
+  nightEntryText: { color: colors.sageDark, fontSize: 13, fontWeight: "800" },
+  nightScreen: { flex: 1, backgroundColor: "#101715", paddingHorizontal: 22, paddingTop: 24, paddingBottom: 22, justifyContent: "space-between" },
+  nightTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  nightEyebrow: { color: "#91A79B", fontSize: 11, fontWeight: "800", letterSpacing: 1.3 },
+  nightBaby: { color: "#E5ECE7", fontSize: 25, fontWeight: "700", marginTop: 5 },
+  nightExit: { minWidth: 64, minHeight: 42, borderRadius: 15, backgroundColor: "#25332D", alignItems: "center", justifyContent: "center" },
+  nightExitText: { color: "#DCE7DF", fontSize: 14, fontWeight: "700" },
+  nightTimerCard: { borderRadius: 28, backgroundColor: "#19231F", padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#28362F" },
+  nightTimer: { color: "#E8EFE9", fontSize: 42, fontWeight: "700", letterSpacing: -1.4, marginVertical: 12 },
+  nightHint: { color: "#9CAC9F", fontSize: 13, textAlign: "center" },
+  nightActions: { gap: 12 },
+  nightAction: { minHeight: 86, borderRadius: 21, backgroundColor: "#1B2621", paddingHorizontal: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
+  nightActionPrimary: { backgroundColor: "#26382F", borderColor: "#3A5144" },
+  nightActionGlyph: { color: "#B6CBB9", fontSize: 25, width: 42 },
+  nightActionTitle: { color: "#E2EAE4", fontSize: 16, fontWeight: "700", flex: 1 },
+  nightActionHint: { color: "#91A197", fontSize: 11 },
+  nightFootnote: { color: "#77877D", fontSize: 11, lineHeight: 16, textAlign: "center", paddingHorizontal: 10 },
   quickRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 4, rowGap: 10 },
   quick: { width: "31.5%", minHeight: 82, borderRadius: 20, backgroundColor: colors.card, alignItems: "center", justifyContent: "center" },
   quickActive: { backgroundColor: colors.peachSoft },
