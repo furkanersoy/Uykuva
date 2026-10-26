@@ -185,6 +185,8 @@ Uyku planı altı aile merkezli yaklaşım sunar. Altı aydan küçük düzeltil
 
 Her yöntemin kendine ait günlük uygulama adımları ve gece uyanma rehberi vardır. Yöntem seçimi uyku planında ve dışa aktarılan veride saklanır; eski yedeklerdeki mevcut üç yöntem korunur, tanınmayan değerler duyarlı rutine döner. Sabit ağlama aralıkları veya temel ihtiyaçları erteleme yönergeleri sunulmaz. AAP'nin davranışsal uyku müdahaleleri özetinde yatma saatini ayarlama ve ebeveyn yakınlığını kademeli azaltma farklı yaklaşımlar olarak listelenir: [Pediatrics, Table 8](https://publications.aap.org/pediatrics/article-pdf/150/6/e2022060055/1563635/peds_2022060055.pdf).
 
+Hazırlık kontrolü tamamlandıktan sonra aile planın odağını yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini olarak seçebilir. Seçilen odak, yöntemin o günkü görevlerine ve sabah check-in sorusuna ek bağlam sağlar; odağı değiştirmek o günün tamamlanma işaretlerini temizler. `SleepPlan.focus` eski kayıt ve yedeklerde yoksa akşam rutini varsayılır.
+
 Her yaklaşım için:
 
 - 14 günlük aşamalı plan
@@ -241,6 +243,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
 - [x] 14 günlük uyku eğitimi/alışkanlık planı eklendi.
 - [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
+- [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
 - [x] Günlük görev tamamlama ve plan ilerletme eklendi.
 - [x] Akşam rutini veri modeli ve görünümü eklendi.
 - [x] Günlük uyku, beslenme ve bez özeti eklendi.

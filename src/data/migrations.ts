@@ -31,6 +31,7 @@ export function migrateState(value: unknown): AppState {
       ...initial.sleepPlan,
       ...candidate.sleepPlan,
       method: ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(candidate.sleepPlan?.method)) ? candidate.sleepPlan!.method! : initial.sleepPlan.method,
+      focus: ["bedtime", "nightWakings", "naps", "routine"].includes(String(candidate.sleepPlan?.focus)) ? candidate.sleepPlan!.focus! : initial.sleepPlan.focus,
       paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],

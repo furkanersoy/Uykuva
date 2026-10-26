@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepMethod } from "./types";
+import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod } from "./types";
 
 const DAY = 86_400_000;
 
@@ -388,7 +388,7 @@ export function methodDescription(method: SleepMethod) {
   return METHOD_COPY[method];
 }
 
-export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true, correctedAge = 183): CoachingDay {
+export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true, correctedAge = 183, focus: SleepFocus = "routine"): CoachingDay {
   const safeDay = Math.min(14, Math.max(1, day));
   if (!canReduceSupport) {
     const isYoungInfant = correctedAge < 112;
@@ -473,11 +473,43 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
       consolidate: ["Aileniz için uygulanabilir rutin adımlarını seçin", "Desteği azaltma hedefi koymadan bu sırayı sürdürün"]
     }
   };
+  const focusTasks: Record<SleepFocus, Record<typeof phase, string>> = {
+    bedtime: {
+      observe: "Yatma zamanında zorlayan adımı not edin; saati hemen değiştirmeyin.",
+      routine: "Akşam rutinini bebeğinizin uyku işaretlerine göre başlatın.",
+      practice: "Uykuya geçiş sürekli zor geliyorsa hedef saati küçük bir adımla ayarlamayı değerlendirin.",
+      consolidate: "Rahat geçen yatış saatlerini birkaç gece izleyip sürdürülebilir hedefi seçin."
+    },
+    nightWakings: {
+      observe: "Gece uyanmalarını ve verdiğiniz yanıtları not edin; beslenme ihtiyacını plana göre ertelemeyin.",
+      routine: "Gece bakımını sakin ve loş tutun; her uyanmada temel ihtiyaçları değerlendirin.",
+      practice: "Bebeğiniz uyandığında önce ihtiyacını kontrol edip seçtiğiniz nazik destekle yanıt verin.",
+      consolidate: "İşe yarayan gece yanıtını koruyun; beslenme ve sağlık ihtiyaçlarını ayrı değerlendirin."
+    },
+    naps: {
+      observe: "Gündüz uykularının başlangıç ve bitişlerini, eksik kayıtları da hesaba katarak izleyin.",
+      routine: "Gündüz uykusundan önce kısa ve tanıdık bir sakinleşme ipucu deneyin.",
+      practice: "Bir gündüz uykusunda seçtiğiniz desteği deneyin; huzursuzlukta daha fazla destek verin.",
+      consolidate: "Bebeğiniz için kolay geçen gündüz uykusu adımlarını sürdürün."
+    },
+    routine: {
+      observe: "Akşamın kolay ve zor adımlarını kaydedin; henüz değişiklik yapmak zorunda değilsiniz.",
+      routine: "İki veya üç sakin adımı benzer sırayla tekrarlayın.",
+      practice: "Bebeğinizin işaretlerine göre rutini kısaltın, tekrarlayın veya ara verin.",
+      consolidate: "Aileniz için uygulanabilir olan rutin sırasını koruyun."
+    }
+  };
+  const focusQuestions: Record<SleepFocus, string> = {
+    bedtime: "Yatma saatine geçiş bugün nasıl hissettirdi?",
+    nightWakings: "Gece uyanmalarında bebeğiniz hangi desteğe yanıt verdi?",
+    naps: "Gündüz uykularından hangisinde bebeğinizin işaretleri yol gösterdi?",
+    routine: "Akşam rutininin hangi adımı ailenize daha uygun geldi?"
+  };
   return {
     title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,
     focus: phaseNames[phase],
-    tasks: [...shared[phase], ...methodTasks[method][phase]],
-    checkIn: safeDay <= 3 ? "Son 24 saatte uyku ve uyanma örüntüsünde ne fark ettiniz?" : safeDay <= 7 ? "Rutinin hangi bölümü daha öngörülebilir oldu?" : safeDay <= 10 ? "Denediğiniz küçük adım bebeğiniz ve sizin için nasıl hissettirdi?" : "Bu yaklaşım aile için sürdürülebilir mi; aynı şekilde devam etmek ister misiniz?"
+    tasks: [...shared[phase], ...methodTasks[method][phase], focusTasks[focus][phase]],
+    checkIn: focusQuestions[focus]
   };
 }
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, EventKind, SleepCheckIn, SleepMethod } from "../domain/types";
+import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, EventKind, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
 
@@ -162,7 +162,15 @@ export function useUykuvaState() {
   }, []);
 
   const setMethod = useCallback((method: SleepMethod) => {
-    setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, method } }));
+    setState((current) => current.sleepPlan.method === method
+      ? current
+      : { ...current, sleepPlan: { ...current.sleepPlan, method, completedToday: [] } });
+  }, []);
+
+  const setSleepFocus = useCallback((focus: SleepFocus) => {
+    setState((current) => current.sleepPlan.focus === focus
+      ? current
+      : { ...current, sleepPlan: { ...current.sleepPlan, focus, completedToday: [] } });
   }, []);
 
   const toggleSleepPlanPaused = useCallback(() => {
@@ -306,6 +314,7 @@ export function useUykuvaState() {
     deleteEvent,
     updateEvent,
     setMethod,
+    setSleepFocus,
     toggleSleepPlanPaused,
     toggleTask,
     toggleReadiness,
@@ -323,4 +332,3 @@ export function useUykuvaState() {
     clearAllData
   };
 }
-

@@ -32,7 +32,7 @@ import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
-import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
+import { CareEvent, CareTask, Caregiver, RoutineStep, SleepFocus, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
@@ -57,6 +57,12 @@ const tabs: { id: Tab; label: string; glyph: string }[] = [
 ];
 
 const memoryPrompts = ["İlk gülüş", "İlk yuvarlanma", "İlk katı gıda", "İlk diş", "İlk kelime", "İlk adım"];
+const sleepFocusOptions: { id: SleepFocus; label: string }[] = [
+  { id: "bedtime", label: "Yatma zamanı" },
+  { id: "nightWakings", label: "Gece uyanmaları" },
+  { id: "naps", label: "Gündüz uykuları" },
+  { id: "routine", label: "Akşam rutini" }
+];
 
 function time(value?: string | Date) {
   if (!value) return "—";
@@ -459,7 +465,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const readyItems = app.state.sleepPlan.readinessCompleted;
   const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
   const coachingMethod = trainingReady ? app.state.sleepPlan.method : "responsive";
-  const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady, correctedAgeDays(app.state.baby));
+  const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady, correctedAgeDays(app.state.baby), app.state.sleepPlan.focus);
   const completedTodayCount = plan.tasks.filter((task) => app.state.sleepPlan.completedToday.includes(task)).length;
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
@@ -521,6 +527,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       `Uykuva · ${app.state.baby.name} için uyku planı`,
       `Yaş aşaması: ${stage.label}`,
       `Yaklaşım: ${methodDescription(coachingMethod).name}`,
+      `Plan odağı: ${sleepFocusOptions.find((item) => item.id === app.state.sleepPlan.focus)?.label ?? "Akşam rutini"}`,
       `Program durumu: ${app.state.sleepPlan.paused ? "Duraklatıldı; günlük plan adımları beklemede." : programCompleted ? "14 günlük rehber tamamlandı." : `${app.state.sleepPlan.day}/14. gün`}`,
       `Günlük rehber: ${plan.title}`,
       `Hedef yatış: ${app.state.sleepPlan.bedtime} · Sabah başlangıcı: ${app.state.sleepPlan.wakeTime}`,
@@ -567,6 +574,13 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={coachingMethod === method} onPress={() => app.setMethod(method)} />)}
       </ScrollView>
       {!trainingReady ? <Text style={styles.readinessNote}>{stage.canReduceSupport ? "Kademeli yaklaşım seçenekleri dört hazırlık maddesi tamamlandığında açılır. O zamana kadar duyarlı rutin gösterilir." : stage.guidance}</Text> : null}
+      {trainingReady ? <>
+        <SectionTitle title="Planın odağı" action="Günlük rehber kişiselleşir" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
+          {sleepFocusOptions.map((item) => <Pill key={item.id} label={item.label} active={app.state.sleepPlan.focus === item.id} onPress={() => app.setSleepFocus(item.id)} />)}
+        </ScrollView>
+        <Text style={styles.readinessNote}>Odağı değiştirdiğinizde günün görev işaretleri temizlenir; böylece yeni adımları ayrı takip edebilirsiniz.</Text>
+      </> : null}
       <Card tone="lavender">
         <Text style={styles.eyebrow}>{(app.state.sleepPlan.paused ? "PLAN BEKLEMEDE · " : "") + plan.title.toUpperCase()}</Text>
         <Text style={styles.heroSmall}>{app.state.sleepPlan.paused ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>

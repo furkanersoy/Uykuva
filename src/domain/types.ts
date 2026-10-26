@@ -55,9 +55,11 @@ export type RoutineStep = {
 };
 
 export type SleepMethod = "responsive" | "gradual" | "camping" | "bedtimeFading" | "pickUpPutDown" | "routineFirst";
+export type SleepFocus = "bedtime" | "nightWakings" | "naps" | "routine";
 
 export type SleepPlan = {
   method: SleepMethod;
+  focus: SleepFocus;
   paused: boolean;
   lastAdvancedDate?: string;
   completedDate?: string;
