@@ -49,6 +49,7 @@ export type SleepPlan = {
   method: SleepMethod;
   paused: boolean;
   lastAdvancedDate?: string;
+  completedDate?: string;
   startDate: string;
   day: number;
   bedtime: string;
