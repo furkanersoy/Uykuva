@@ -21,7 +21,7 @@ import { createDoctorSummary } from "./src/domain/reports";
 import { createDataExport } from "./src/domain/export";
 import { isValidClock } from "./src/domain/time";
 import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals } from "./src/domain/feeding";
-import { CareEvent, CareTask, SleepMethod } from "./src/domain/types";
+import { CareEvent, CareTask, Caregiver, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
@@ -74,6 +74,7 @@ export default function App() {
   const [logMode, setLogMode] = useState<LogMode>(null);
   const [taskMode, setTaskMode] = useState<TaskMode>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [caregiverOpen, setCaregiverOpen] = useState(false);
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events), [app.state.baby, app.state.events]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
 
@@ -112,7 +113,7 @@ export default function App() {
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} />}
-        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} />}
+        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} />}
 
         <View style={styles.nav}>
           {tabs.map((item) => (
@@ -126,6 +127,7 @@ export default function App() {
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} />
       <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
+      <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
     </SafeAreaView>
   );
 }
@@ -355,7 +357,7 @@ function Measure({ value, label }: { value: string; label: string }) {
   return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
 }
 
-function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void }) {
+function FamilyScreen({ app, onEditProfile, onAddCaregiver }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void }) {
   const summary = handoffSummary(app.state);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
   const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
@@ -382,11 +384,16 @@ function FamilyScreen({ app, onEditProfile }: { app: ReturnType<typeof useUykuva
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
-      <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.caregiverName} · bu cihaz</Text><Text style={styles.body}>{app.state.baby.name} profilinin kayıtlarını yönetiyor.</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Düzenle</Text></Pressable></View></Card>
-      <Card><Text style={styles.cardTitle}>Baba · bakım veren</Text><Text style={styles.body}>Kayıt ekleyebilir ve ortak akışı görebilir.</Text></Card>
+      <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.baby.name} profili</Text><Text style={styles.body}>Aktif bakım veren: {app.state.caregiverName}</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Profili düzenle</Text></Pressable></View></Card>
+      <SectionTitle title="Bu cihazdaki bakım verenler" action={`${app.state.caregivers.length} kişi`} />
+      <Card>{app.state.caregivers.map((caregiver) => {
+        const active = caregiver.id === app.state.activeCaregiverId;
+        const role = { parent: "Ebeveyn", family: "Aile", caregiver: "Bakıcı" }[caregiver.role];
+        return <Pressable accessibilityRole="radio" accessibilityState={{ selected: active }} key={caregiver.id} onPress={() => app.setActiveCaregiver(caregiver.id)} onLongPress={() => { if (app.state.caregivers.length > 1) Alert.alert("Bakım vereni sil", `${caregiver.name} bu cihazdan kaldırılsın mı?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Sil", style: "destructive", onPress: () => app.deleteCaregiver(caregiver.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{caregiver.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{caregiver.name}</Text><Text style={styles.muted}>{role}{active ? " · aktif" : ""}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
+      })}<View style={styles.spacer12} /><PrimaryButton label="Bu cihaza bakım veren ekle" quiet onPress={onAddCaregiver} /><Text style={styles.hint}>Kişiyi seçtiğinizde yeni kayıtlar onun adına yazılır. Silmek için basılı tutun.</Text></Card>
       <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
       <View style={styles.spacer12} />
-      <PrimaryButton label="Bakım veren davet et" quiet onPress={() => Alert.alert("Yakında", "Güvenli davet bağlantıları bulut senkronizasyonuyla birlikte eklenecek.")} />
+      <PrimaryButton label="Başka telefona davet et" quiet onPress={() => Alert.alert("Bulut paylaşımı yakında", "Bu cihazda birden fazla bakım veren kullanılabilir. Telefonlar arası güvenli davet, hesap senkronizasyonuyla eklenecek.")} />
       <SectionTitle title="Hatırlatmalar" />
       <Card>
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
@@ -431,6 +438,38 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
         <Field label="Gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} keyboardType="number-pad" />
         <Field label="Bakım veren" value={caregiverName} onChangeText={setCaregiverName} />
         <PrimaryButton label="Değişiklikleri kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
+      </ScrollView>
+    </Modal>
+  );
+}
+
+function CaregiverModal({ visible, close, add }: { visible: boolean; close: () => void; add: (caregiver: Omit<Caregiver, "id">) => void }) {
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<Caregiver["role"]>("parent");
+  useEffect(() => {
+    if (visible) { setName(""); setRole("parent"); }
+  }, [visible]);
+  const save = () => {
+    const cleanName = name.trim();
+    if (!cleanName) return Alert.alert("İsim gerekli", "Bakım verenin adını veya aile içindeki rolünü yazın.");
+    add({ name: cleanName, role });
+    close();
+  };
+  const roles: { value: Caregiver["role"]; label: string }[] = [
+    { value: "parent", label: "Ebeveyn" },
+    { value: "family", label: "Aile" },
+    { value: "caregiver", label: "Bakıcı" }
+  ];
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+      <Pressable style={styles.backdrop} onPress={close} />
+      <ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled">
+        <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Bakım veren ekle</Text>
+        <Text style={styles.pageIntro}>Bu kişi bu cihazdaki profilde seçilebilir ve yaptığı yeni kayıtlar kendi adıyla görünür.</Text>
+        <Field label="İsim veya rol" value={name} onChangeText={setName} placeholder="Örn. Baba, Anneanne, Ece" />
+        <Text style={styles.inputLabel}>Rol</Text>
+        <View style={styles.choiceRow}>{roles.map((item) => <Pill key={item.value} label={item.label} active={role === item.value} onPress={() => setRole(item.value)} />)}</View>
+        <View style={styles.spacer24} /><PrimaryButton label="Bakım vereni ekle" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
       </ScrollView>
     </Modal>
   );
@@ -633,5 +672,12 @@ const styles = StyleSheet.create({
   timeField: { flex: 1 },
   compactInput: { height: 44, borderRadius: 14, borderWidth: 1, borderColor: colors.line, backgroundColor: "white", paddingHorizontal: 12, marginTop: 6, color: colors.ink },
   dangerButton: { minHeight: 48, borderRadius: 16, borderWidth: 1, borderColor: "#E8C7C7", alignItems: "center", justifyContent: "center" },
-  dangerText: { color: colors.danger, fontSize: 14, fontWeight: "700" }
+  dangerText: { color: colors.danger, fontSize: 14, fontWeight: "700" },
+  caregiverRow: { minHeight: 64, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.line, gap: 12 },
+  caregiverAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.paper, alignItems: "center", justifyContent: "center" },
+  caregiverAvatarActive: { backgroundColor: colors.sageDark },
+  activeAvatarText: { color: "white" },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.sage },
+  radioActive: { borderWidth: 6, borderColor: colors.sageDark }
 });
+
