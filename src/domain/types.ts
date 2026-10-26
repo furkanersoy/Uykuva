@@ -67,6 +67,7 @@ export type SleepCheckIn = {
 };
 
 export type AppPreferences = {
+  handoffHours: 2 | 4 | 6 | 8;
   notificationsEnabled: boolean;
   sleepReminderMinutes: 5 | 10 | 15 | 20 | 30;
   careTaskRemindersEnabled: boolean;
