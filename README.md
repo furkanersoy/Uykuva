@@ -18,6 +18,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
 - SQLite tabanlı çevrimdışı cihaz içi saklama
 - İsteğe bağlı uyku penceresi bildirimleri
+- Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
 - Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Günlük gece uyanma kaydı ve son yedi check-in ortalaması
