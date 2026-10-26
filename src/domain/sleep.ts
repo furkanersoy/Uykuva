@@ -158,8 +158,22 @@ export function methodDescription(method: SleepMethod) {
   return METHOD_COPY[method];
 }
 
-export function coachingDay(day: number, method: SleepMethod): CoachingDay {
+export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true): CoachingDay {
   const safeDay = Math.min(14, Math.max(1, day));
+  if (!canReduceSupport) {
+    return {
+      title: `${safeDay}. gün · Ritim temelleri`,
+      focus: "Duyarlı bakım ve güvenli ritim",
+      tasks: [
+        "Sabah başlangıcını mümkün olduğunca tutarlı tut",
+        "Gündüz doğal ışık ve yaşa uygun etkileşim sun",
+        "Akşam rutinini sakin ve esnek biçimde uygula",
+        "Uyku işaretlerine erken ve duyarlı yanıt ver",
+        "Gece bakımını bebeğin sinyallerine ve beslenme ihtiyacına göre sürdür"
+      ],
+      checkIn: "Bu sabah bebeğinizin uyku işaretlerini ve gece uyanmalarını kısaca kaydedin."
+    };
+  }
   const phase = safeDay <= 3 ? 0 : safeDay <= 7 ? 1 : safeDay <= 10 ? 2 : 3;
   const shared = [
     ["Sabah başlangıcını aynı 30 dakikalık aralıkta tut", "Gündüz gün ışığı ve yaşa uygun hareket zamanı sun", "Akşam rutinini aynı sırayla uygula"],
@@ -199,10 +213,11 @@ export type SleepCoachInsights = {
   suggestedBedtime: string;
   adjustmentMinutes: number;
   checkInAverage?: number;
+  nightWakingsAverage?: number;
   nightsUsed: number;
 };
 
-export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: { ease: number }[]): SleepCoachInsights {
+export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: { ease?: number; nightWakings?: number }[]): SleepCoachInsights {
   const target = clockMinutes(targetBedtime) ?? 20 * 60;
   const nightStarts = events
     .filter((event) => {
@@ -222,15 +237,18 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
   if (delta > 720) delta -= 1440;
   if (delta < -720) delta += 1440;
   const adjustment = Math.max(-15, Math.min(15, Math.round(delta)));
-  const checkInAverage = checkIns.length
-    ? checkIns.slice(0, 7).reduce((sum, item) => sum + item.ease, 0) / Math.min(7, checkIns.length)
-    : undefined;
+  const recentCheckIns = checkIns.slice(0, 7);
+  const easeRatings = recentCheckIns.flatMap((item) => item.ease === undefined ? [] : [item.ease]);
+  const recordedWakings = recentCheckIns.flatMap((item) => item.nightWakings === undefined ? [] : [item.nightWakings]);
+  const checkInAverage = easeRatings.length ? easeRatings.reduce((sum, value) => sum + value, 0) / easeRatings.length : undefined;
+  const nightWakingsAverage = recordedWakings.length ? recordedWakings.reduce((sum, value) => sum + value, 0) / recordedWakings.length : undefined;
   return {
     actualBedtime: actual === undefined ? undefined : formatClock(actual),
     targetBedtime: formatClock(target),
     suggestedBedtime: formatClock((actual ?? target) + adjustment),
     adjustmentMinutes: adjustment,
     checkInAverage,
+    nightWakingsAverage,
     nightsUsed: nightStarts.length
   };
 }
