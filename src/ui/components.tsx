@@ -10,7 +10,7 @@ export function Card({ children, tone = "white" }: PropsWithChildren<{ tone?: "w
 export function SectionTitle({ title, action }: { title: string; action?: string }) {
   return (
     <View style={styles.sectionRow}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>
       {action ? <Text style={styles.sectionAction}>{action}</Text> : null}
     </View>
   );
@@ -18,7 +18,7 @@ export function SectionTitle({ title, action }: { title: string; action?: string
 
 export function Pill({ label, active = false, onPress }: { label: string; active?: boolean; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[styles.pill, active && styles.pillActive]}>
+    <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={label} accessibilityState={onPress ? { selected: active } : undefined} onPress={onPress} style={[styles.pill, active && styles.pillActive]}>
       <Text style={[styles.pillText, active && styles.pillTextActive]}>{label}</Text>
     </Pressable>
   );
@@ -26,7 +26,7 @@ export function Pill({ label, active = false, onPress }: { label: string; active
 
 export function PrimaryButton({ label, onPress, quiet = false }: { label: string; onPress: () => void; quiet?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={[styles.button, quiet && styles.buttonQuiet]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={[styles.button, quiet && styles.buttonQuiet]}>
       <Text style={[styles.buttonText, quiet && styles.buttonQuietText]}>{label}</Text>
     </Pressable>
   );

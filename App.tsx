@@ -398,11 +398,11 @@ function NightModeScreen({ app, now, onExit, openLog }: { app: ReturnType<typeof
         <Text style={styles.nightHint}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı` : "Gece bakım kaydını buradan yönetebilirsin."}</Text>
       </View>
       <View style={styles.nightActions}>
-        <Pressable accessibilityRole="button" onPress={app.toggleSleep} style={[styles.nightAction, styles.nightActionPrimary]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={app.runningSleep ? "Uykuyu bitir ve uyanma kaydı oluştur" : "Uyku zamanlayıcısını başlat"} accessibilityHint={app.runningSleep ? "Gerçek uyanış saatini şimdi kaydeder." : "Uyku başlangıç saatini kaydeder."} onPress={app.toggleSleep} style={[styles.nightAction, styles.nightActionPrimary]}>
           <Text style={styles.nightActionGlyph}>{app.runningSleep ? "■" : "☾"}</Text><Text style={styles.nightActionTitle}>{app.runningSleep ? "Uykuyu bitir" : "Uykuyu başlat"}</Text><Text style={styles.nightActionHint}>{app.runningSleep ? "Uyanma kaydı ekle" : "Uyku sayacını başlat"}</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => openLog("feed")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Beslenme</Text><Text style={styles.nightActionHint}>Beslenme kaydı aç</Text></Pressable>
-        <Pressable accessibilityRole="button" onPress={() => openLog("diaper")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◇</Text><Text style={styles.nightActionTitle}>Bez</Text><Text style={styles.nightActionHint}>Bez kaydı aç</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Beslenme kaydı aç" onPress={() => openLog("feed")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Beslenme</Text><Text style={styles.nightActionHint}>Beslenme kaydı aç</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Bez kaydı aç" onPress={() => openLog("diaper")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◇</Text><Text style={styles.nightActionTitle}>Bez</Text><Text style={styles.nightActionHint}>Bez kaydı aç</Text></Pressable>
       </View>
       <Text style={styles.nightFootnote}>Kısık renkli ekran · Gece modundan çıkmak için üstteki düğmeyi kullan.</Text>
     </View>
@@ -614,7 +614,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       <Card>
         {SLEEP_READINESS_ITEMS.map((item) => {
           const done = app.state.sleepPlan.readinessCompleted.includes(item);
-          return <Pressable key={item} onPress={() => app.toggleReadiness(item)} style={styles.taskRow}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><Text style={styles.taskText}>{item}</Text></Pressable>;
+          return <Pressable key={item} accessibilityRole="checkbox" accessibilityLabel={item} accessibilityState={{ checked: done }} onPress={() => app.toggleReadiness(item)} style={styles.taskRow}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><Text style={styles.taskText}>{item}</Text></Pressable>;
         })}
         {!stage.canReduceSupport ? <Text style={styles.readinessNote}>Bu yaş aşamasında tüm maddeler tamamlansa bile desteği azaltma hedefi yoktur; rutin ve duyarlı bakım önceliklidir.</Text> : null}
       </Card>
@@ -623,7 +623,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {plan.tasks.map((task) => {
           const done = app.state.sleepPlan.completedToday.includes(task);
           return (
-            <Pressable key={task} disabled={app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
+            <Pressable key={task} accessibilityRole="checkbox" accessibilityLabel={task} accessibilityState={{ checked: done, disabled: app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted }} disabled={app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
               <View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View>
               <Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>
             </Pressable>
@@ -1175,7 +1175,7 @@ function CaregiverModal({ visible, close, add }: { visible: boolean; close: () =
 }
 
 function QuickAction({ glyph, label, onPress, active }: { glyph: string; label: string; onPress: () => void; active?: boolean }) {
-  return <Pressable onPress={onPress} style={[styles.quick, active && styles.quickActive]}><Text style={styles.quickGlyph}>{glyph}</Text><Text style={styles.quickLabel}>{label}</Text></Pressable>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={active ? "Devam eden kaydı yönetir." : "İlgili kayıt formunu açar."} accessibilityState={{ checked: Boolean(active) }} onPress={onPress} style={[styles.quick, active && styles.quickActive]}><Text style={styles.quickGlyph}>{glyph}</Text><Text style={styles.quickLabel}>{label}</Text></Pressable>;
 }
 
 function EventRow({ event, onPress, onDelete }: { event: CareEvent; onPress?: () => void; onDelete?: () => void }) {
