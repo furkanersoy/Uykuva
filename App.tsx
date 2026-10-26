@@ -30,6 +30,7 @@ import { isValidClock } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
+import { detectRecordedMilestones } from "./src/domain/milestones";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -714,6 +715,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
   const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
   const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const milestones = detectRecordedMilestones(events, now);
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
@@ -737,6 +739,17 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
       <MilkStockCard events={events} now={now} update={app.updateEvent} />
       <GrowthHistoryCard measurements={growthMeasurements} baby={app.state.baby} />
+      <SectionTitle title="Kayıtlardan anılar" action="İsteğe bağlı" />
+      <Card>
+        {milestones.length ? milestones.slice(0, 8).map((milestone) => <View key={milestone.id} style={styles.eventRow}>
+          <View style={styles.flex}>
+            <Text style={styles.eventTitle}>{milestone.title}</Text>
+            <Text style={styles.muted}>{new Date(milestone.occurredAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} · {milestone.detail}</Text>
+          </View>
+          {milestone.saved ? <Text style={styles.taskDate}>Anılarda</Text> : <PrimaryButton label="Anılara ekle" quiet onPress={() => app.addEvent({ kind: "memory", memoryTitle: milestone.title, note: `${milestone.detail} Bu an, uygulamada kayıtlı etkinliklerden bulundu.`, milestoneId: milestone.id, startedAt: milestone.occurredAt })} />}
+        </View>) : <Text style={styles.body}>Uyku, beslenme veya ölçüm kaydı ekledikçe burada kayıtlara dayalı anlar görünür.</Text>}
+        <Text style={styles.hint}>Bunlar yalnızca uygulamadaki kayıtlardan çıkarılır; gelişim basamağı veya sağlık değerlendirmesi değildir. Anı eklemek isteğe bağlıdır.</Text>
+      </Card>
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />

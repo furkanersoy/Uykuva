@@ -56,6 +56,7 @@ SleepWell/
 │   │   ├── vaccineSchedule.ts      # Ulusal aşı takvimi öneri tarihleri
 │   │   ├── milk.ts                 # Sağım stoğu ve saklama süreleri
 │   │   ├── sleep.ts                # Tahmin, koçluk ve devir özeti kuralları
+│   │   ├── milestones.ts           # Kayıt etkinliklerinden isteğe bağlı anı bulma
 │   │   └── sleep.test.ts           # Saf iş kuralları testleri
 │   └── ui/
 │       ├── components.tsx          # Ortak kart, buton ve etiket bileşenleri
@@ -141,7 +142,7 @@ Uyku planı duraklatma durumu `SleepPlan.paused` alanında saklanır. Duraklatı
 
 Akşam rutini adımları ebeveyn tarafından etkinleştirilip devre dışı bırakılabilir, süreleriyle birlikte saklanır ve uygulama içi yukarı/aşağı kontrolleriyle sıralanır. Rutin çalıştırıcısı bu sırayı kullanarak tamamlanma özetini zaman çizelgesine yazar.
 
-Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir; gelişim zamanlaması veya değerlendirmesi sunulmaz.
+Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir. `detectRecordedMilestones`, ilk uyku/beslenme/ek gıda/ölçüm kayıtlarını, ilk dört saatlik uyku kaydını ve 100. beslenme kaydını yalnızca mevcut olaylardan bulur; gelişim basamağı veya klinik değerlendirme çıkarmaz. Ebeveyn isterse bulunan anı tek dokunuşla günlüğe ekler. `milestoneId` tekrar öneriyi önler ve JSON yedeğinde korunur.
 
 Büyüme geçmişi son sekiz kilo/boy/baş çevresi ölçümünü tarihle gösterir. İsteğe bağlı WHO eğrisi seçimiyle `src/domain/whoGrowth.ts`, WHO Anthro'nun resmî deposundaki günlük LMS tablolarından (0–1826 gün) z-skoru ve persentil hesaplar; küçük grafikler P10/P50/P90 referans çizgileri ve ölçüm noktalarını gösterir. Boy ölçümünde yatış/ayakta bilgisi saklanır ve yaşa uymayan ölçüm konumunda WHO'nun 0,7 cm düzeltmesi uygulanır. WHO verileri `src/data/{weianthro,lenanthro,hcanthro}.json` dosyalarında tutulur. Kaynak: [WHO Anthro büyüme standartları hesaplama deposu](https://github.com/WorldHealthOrganization/anthro). Eğriler bilgilendirme amaçlıdır; tıbbi yorum veya tanı oluşturmaz.
 
@@ -287,6 +288,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Tahmin aralığı geçtikten sonra kaydı olmayan bakım verene bir kez sorar ve gözden geçirilebilir tarihli kayıt açar.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
+- [x] Kayıtlardan ilk uyku/beslenme/ek gıda/ölçüm, dört saatlik uyku ve 100. beslenme anı isteğe bağlı tespit edilip anı günlüğüne eklenebiliyor.
 
 ## 10. Henüz tamamlanmayanlar
 
