@@ -2,7 +2,7 @@
 
 Son güncelleme: 26 Ekim 2026
 
-Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
+Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
 Randevu gorevleri istege bagli note alaninda hazirlik notlarini saklar. Notlar gorev kartinda gorunur ve paylasilan doktor ozetine en yakin bes gelecek randevuyla birlikte eklenir; tamamlanmis veya gecmis randevular ozete alinmaz.
 
@@ -119,7 +119,7 @@ Ana fonksiyonlar:
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
 - `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Yaş aralığı ile tahmini saat dilimine ait yakın dönem uyanıklık sürelerini harmanlar.
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
-- `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir.
+- `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir. Bugünkü planda henüz kaydedilmemiş, gelecekteki uyku taslakları sonraki uyku tahminiyle çakışmıyorsa listelenir.
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir; hesaplanan aralık tamamen geçmişse bayat tahmini göstermez.
 - `coachingDay`: Düzeltilmiş yaş aşaması ve seçilen yaklaşıma göre birbirinden farklı günlük görev ve check-in sorularını üretir; 6 aydan küçük bebeklerde destek azaltma görevi vermez.
@@ -305,6 +305,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Uyku tahmini kişisel uyanıklık örneklerini son 14 günle sınırlar ve aktif uyku süresini canlı gösterir.
 - [x] Son tamamlanmış uyku seçimi de son 14 gün ve şu ana kadar olan geçerli kayıtlarla sınırlanır; uzun kayıt aralarında eski bir uykudan tahmin üretilmez.
 - [x] Uyku/beslenme tahminleri, hedef yatış ve bakım görevleri Bugün ekranında saat sıralı tek 24 saat planında birleştirildi; yatış hedefi geçmişse ertesi güne taşınır.
+- [x] Yeterli kayıt bulunan sonraki gündüz uykuları 24 saatlik plana tarihsel, yaklaşık aralık olarak eklenir; tamamlanan uykular ve sıradaki uyku tahminiyle çakışan taslaklar tekrarlanmaz.
 - [x] Tamamı geçmiş beslenme tahmin aralığı gösterilmez; yeni kayıt beklenir.
 - [x] 12 saati aşan açık uyku sayacı uygulama açıkken zamanlayıcı güncellemesiyle veya uygulamaya dönüldüğünde teyit edilir; süre otomatik tamamlanmaz, kullanıcı gerçek uyanış saatini düzenleyebilir.
 - [x] 9 haftadan küçük bebeklerde uyku, beslenme, bez ve sağlık özeti takvim günü yerine son 24 saati kapsar.
