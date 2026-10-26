@@ -1,4 +1,4 @@
-export type EventKind = "sleep" | "feed" | "diaper" | "note" | "health" | "growth";
+export type EventKind = "sleep" | "feed" | "diaper" | "note" | "health" | "growth" | "memory";
 
 export type Baby = {
   id: string;
@@ -32,6 +32,7 @@ export type CareEvent = {
   lengthCm?: number;
   headCm?: number;
   note?: string;
+  memoryTitle?: string;
   caregiver: string;
 };
 
