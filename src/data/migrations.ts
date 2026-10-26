@@ -31,7 +31,11 @@ export function migrateState(value: unknown): AppState {
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
       checkIns: candidate.sleepPlan?.checkIns ?? []
     },
-    preferences: { ...initial.preferences, ...candidate.preferences }
+    preferences: {
+      ...initial.preferences,
+      ...candidate.preferences,
+      careTaskRemindersEnabled: candidate.preferences?.careTaskRemindersEnabled ?? false,
+      careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120
+    }
   };
 }
-
