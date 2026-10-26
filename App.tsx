@@ -168,7 +168,7 @@ export default function App() {
         { text: "Uyanış saatini düzelt", onPress: () => { const current = app.state.events.find((item) => item.id === running.id); if (current) setSleepEditor(current); } }
       ]
     );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, logMode, taskMode, sleepEditor, eventEditor]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
