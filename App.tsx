@@ -24,7 +24,7 @@ import { createDataExport } from "./src/domain/export";
 import { isValidClock } from "./src/domain/time";
 import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals } from "./src/domain/feeding";
 import { CareEvent, CareTask, Caregiver, SleepMethod } from "./src/domain/types";
-import { cancelSleepReminders, requestNotificationPermission, scheduleSleepReminder } from "./src/services/notifications";
+import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -94,6 +94,17 @@ export default function App() {
       app.state.preferences.quietEnd
     );
   }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, forecast]);
+
+  useEffect(() => {
+    if (!app.hydrated || !app.state.onboardingComplete) return;
+    void scheduleCareTaskReminders(
+      app.state.careTasks,
+      app.state.preferences.careTaskRemindersEnabled,
+      app.state.preferences.careTaskReminderMinutes,
+      app.state.preferences.quietStart,
+      app.state.preferences.quietEnd
+    );
+  }, [app.hydrated, app.state.onboardingComplete, app.state.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   if (!app.hydrated) return <LoadingScreen />;
   if (!app.state.onboardingComplete) return <OnboardingScreen onComplete={app.completeOnboarding} />;
@@ -384,6 +395,15 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver }: { app: ReturnType<
     if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
     app.updatePreferences({ notificationsEnabled: true });
   };
+  const toggleCareTaskNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ careTaskRemindersEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Aşı ve randevu hatırlatmaları için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ careTaskRemindersEnabled: true });
+  };
   const saveQuietHours = () => {
     if (!isValidClock(quietStart) || !isValidClock(quietEnd)) return Alert.alert("Saatleri kontrol edin", "Saatleri 21:00 gibi SS:DD biçiminde yazın.");
     app.updatePreferences({ quietStart, quietEnd });
@@ -412,6 +432,8 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver }: { app: ReturnType<
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
         {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Aşı ve randevu hatırlatmaları</Text><Text style={styles.muted}>Yaklaşan görevleri seçtiğiniz zamanda hatırlatır.</Text></View><Switch accessibilityLabel="Aşı ve randevu hatırlatmaları" value={app.state.preferences.careTaskRemindersEnabled} onValueChange={(value) => void toggleCareTaskNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.careTaskRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.careTaskRemindersEnabled ? <><Text style={styles.inputLabel}>Ne zaman hatırlatılsın?</Text><View style={styles.choiceRow}>{([{ minutes: 30, label: "30 dk" }, { minutes: 120, label: "2 saat" }, { minutes: 1440, label: "1 gün" }] as const).map(({ minutes, label }) => <Pill key={minutes} label={label} active={app.state.preferences.careTaskReminderMinutes === minutes} onPress={() => app.updatePreferences({ careTaskReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Hatırlatmalar sessiz saatlere denk gelirse sessiz dönem bitiminde, görev saatinden önce gönderilir.</Text></> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
       <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini okunabilir JSON biçiminde paylaşabilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Verilerimi dışa aktar" quiet onPress={() => void Share.share({ title: "Uykuva veri dışa aktarımı", message: createDataExport(app.state) })} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
