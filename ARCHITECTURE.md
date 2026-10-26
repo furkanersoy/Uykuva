@@ -87,7 +87,7 @@ Zaman çizelgesi, kayıt türüne göre filtreleri ve içerik/bakım veren adın
 
 ### Ulusal aşı takvimi önerileri
 
-`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır; doğum günündeki öneri gün sonuna kadar görünür kalır. `App.tsx` içindeki aşı öneri penceresi kullanıcı her birini ayrıca takvime eklemeden kayıt oluşturmaz. Bu kayıtlar aşı yapıldığını göstermez. Geçmiş dozlar ve 49–72 ay suçiçeği yakalama dozu için plan üretmez; kullanıcı aile hekimine yönlendirilir.
+`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır; doğum günündeki öneri gün sonuna kadar görünür kalır. `TURKEY_VACCINE_SCHEDULE_BASE_VERSION`, `TURKEY_VACCINE_SCHEDULE_UPDATE_DATE` ve `TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE` önerinin temel sürümünü ve 1 Eylül 2026 güncelleme kaynağını gösterir. Öneri penceresi resmi duyuruya bağlantı verir; 49–72 ayda ikinci suçiçeği dozu kaydı yoksa aile hekimiyle kayıtları teyit etme uyarısı gösterir. Uygulama geçmiş dozları veya eksik doz gerekliliğini kendisi belirlemez; öneriler kullanıcı ayrıca takvime eklemeden kayıt oluşturmaz.
 
 Takvim verisi Sağlık Bakanlığının [2025 ulusal çocukluk dönemi aşı kartına](https://hsgm.saglik.gov.tr/depo/birimler/asi-ile-onlenebilir-hastaliklar-db/dokumanlar/2025/asi_haftasi/50X30_asi_karti.pdf) dayanır; Hepatit B doğum dozunu içerir. Bakanlığın [1 Eylül 2026 güncellemesi](https://iskilipdh.saglik.gov.tr/TR-1590795/cocukluk-donemi-asilama-takvimi-guncellendi-sucicegi-asisinda-ikinci-doz-uygulamasi-basladi.html) ikinci suçiçeği dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri aile hekimiyle doğrulanmalıdır.
 
@@ -326,7 +326,8 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [ ] Gelişmiş bildirim tercihleri (tekrarlayan görevler ve ayrıntılı zamanlama seçenekleri)
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [x] WHO 0–5 yaş kilo, boy ve baş çevresi z-skor tablolarıyla persentil eğrileri; kız/erkek eğrisi profilde isteğe bağlı seçilir
-- [ ] Aşı takvimi kaynak sürümleme ve hekim yönlendirmeli eksik doz/49–72 ay yakalama akışı
+- [x] Aşı önerisinde kaynak sürümü, resmi duyuru bağlantısı ve 49–72 ay suçiçeği yakalama dönemi için hekimle teyit uyarısı gösteriliyor.
+- [ ] Aşı kartı/e-Nabızdan doğrulanan doz geçmişiyle kişiye özel, hekim onaylı eksik doz akışı
 - [x] Ek gıda/alerjen etiket geçmişi ve gözlem notlarının Özet ekranında listelenmesi; tıbbi yorum yapılmaması
 - [ ] Sesli Türkçe kayıt
 - [ ] İkiz ve çoklu bebek desteği
