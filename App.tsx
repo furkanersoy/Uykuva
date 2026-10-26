@@ -18,7 +18,7 @@ import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, createSleepCoachInsights, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport } from "./src/domain/export";
 import { isValidClock } from "./src/domain/time";
@@ -152,7 +152,7 @@ export default function App() {
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} />}
-        {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} />}
+        {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} />}
 
         <View style={styles.nav}>
@@ -379,15 +379,23 @@ async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"])
   }
 }
 
-function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void }) {
+function InsightsScreen({ app, openTask, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; now: Date }) {
   const state = app.state;
   const events = state.events;
-  const today = new Date().toDateString();
-  const recent = events.filter((event) => new Date(event.startedAt).toDateString() === today);
-  const sleeps = recent.filter((event) => event.kind === "sleep" && event.endedAt);
-  const sleepMinutes = sleeps.reduce((sum, event) => sum + (new Date(event.endedAt!).getTime() - new Date(event.startedAt).getTime()) / 60_000, 0);
+  const newbornSummary = correctedAgeDays(state.baby, now) < 63;
+  const periodStart = new Date(now);
+  if (newbornSummary) periodStart.setTime(now.getTime() - 24 * 60 * 60 * 1000);
+  else periodStart.setHours(0, 0, 0, 0);
+  const recent = events.filter((event) => new Date(event.startedAt).getTime() >= periodStart.getTime() && new Date(event.startedAt).getTime() <= now.getTime());
+  const periodEnd = now.getTime();
+  const sleeps = events.filter((event) => event.kind === "sleep" && new Date(event.startedAt).getTime() < periodEnd && (event.endedAt ? new Date(event.endedAt).getTime() : periodEnd) > periodStart.getTime());
+  const sleepMinutes = sleeps.reduce((sum, event) => {
+    const start = Math.max(new Date(event.startedAt).getTime(), periodStart.getTime());
+    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : periodEnd, periodEnd);
+    return sum + Math.max(0, end - start) / 60_000;
+  }, 0);
   const feeds = recent.filter((event) => event.kind === "feed");
-  const feedingTotals = todayFeedingTotals(events);
+  const feedingTotals = todayFeedingTotals(events, now, newbornSummary);
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
   const weeklySleep = weeklySleepTotals(events);
@@ -398,9 +406,9 @@ function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaSta
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
-      <Text style={styles.pageTitle}>Günlük özet</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
+      <Text style={styles.pageTitle}>{newbornSummary ? "Son 24 saatin özeti" : "Günlük özet"}</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
       <View style={styles.statGrid}>
-        <Stat value={`${Math.floor(sleepMinutes / 60)}s ${Math.round(sleepMinutes % 60)}d`} label="Toplam uyku" tone="mint" />
+        <Stat value={`${Math.floor(sleepMinutes / 60)}s ${Math.round(sleepMinutes % 60)}d`} label={newbornSummary ? "Uyku · son 24 sa" : "Toplam uyku"} tone="mint" />
         <Stat value={`${feeds.length}`} label="Beslenme" tone="peach" />
         <Stat value={`${diapers.length}`} label="Bez" tone="lavender" />
         <Stat value={`${health.length}`} label="Sağlık kaydı" tone="white" />
@@ -414,7 +422,7 @@ function InsightsScreen({ app, openTask }: { app: ReturnType<typeof useUykuvaSta
         })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
         <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
       </Card>
-      <SectionTitle title="Bugünkü beslenme" />
+      <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
       {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
