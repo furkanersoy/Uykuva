@@ -218,6 +218,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri eklendi.
 - [x] Aktif bakım veren değiştirme ve seçilen kişi adına kayıt ekleme eklendi.
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
+- [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -231,7 +232,6 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] WHO büyüme grafikleri
 - [ ] Türkiye aşı takvimi
 - [ ] Ek gıda ve alerjen günlüğü
-- [ ] Doktor özeti için PDF dosyası üretme (metin paylaşımı hazır)
 - [ ] Sesli Türkçe kayıt
 - [ ] İkiz ve çoklu bebek desteği
 - [ ] Erişilebilirlik testi, ekran okuyucu etiketleri ve dinamik yazı boyutu
