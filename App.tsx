@@ -251,10 +251,13 @@ function TimelineScreen({ events, onDelete }: { events: CareEvent[]; onDelete: (
 }
 
 function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
-  const plan = coachingDay(app.state.sleepPlan.day, app.state.sleepPlan.method);
   const stage = sleepProgramStage(app.state.baby);
+  const readyItems = app.state.sleepPlan.readinessCompleted;
+  const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
+  const coachingMethod = trainingReady ? app.state.sleepPlan.method : "responsive";
+  const plan = coachingDay(app.state.sleepPlan.day, coachingMethod, trainingReady);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
-  const methods: SleepMethod[] = ["responsive", "gradual", "camping"];
+  const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping"] : ["responsive"];
   const today = new Date().toISOString().slice(0, 10);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const [bedtime, setBedtime] = useState(app.state.sleepPlan.bedtime);
@@ -276,8 +279,9 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
-        {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={app.state.sleepPlan.method === method} onPress={() => app.setMethod(method)} />)}
+        {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={coachingMethod === method} onPress={() => app.setMethod(method)} />)}
       </ScrollView>
+      {!trainingReady ? <Text style={styles.readinessNote}>{stage.canReduceSupport ? "Kademeli yaklaşım seçenekleri dört hazırlık maddesi tamamlandığında açılır. O zamana kadar duyarlı rutin gösterilir." : stage.guidance}</Text> : null}
       <Card tone="lavender">
         <Text style={styles.eyebrow}>{plan.title.toUpperCase()}</Text>
         <Text style={styles.heroSmall}>{plan.focus}</Text>
@@ -288,6 +292,7 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
         <View style={styles.measureRow}><Measure value={insights.actualBedtime ?? "—"} label="Gerçek medyan" /><Measure value={insights.targetBedtime} label="Hedef" /><Measure value={insights.suggestedBedtime} label="Bu gece" /></View>
         <Text style={styles.body}>{insights.nightsUsed ? insights.adjustmentMinutes === 0 ? "Kayıtlı yatış saati hedefle uyumlu görünüyor." : `Hedefe doğru bu gece yalnızca ${Math.abs(insights.adjustmentMinutes)} dakikalık küçük bir değişim öneriliyor.` : "En az bir uzun gece uykusu kaydedildiğinde hedefle karşılaştırma yapılacak."}</Text>
         {insights.checkInAverage ? <Text style={styles.awake}>Son check-in ortalaması: {insights.checkInAverage.toFixed(1)}/5</Text> : null}
+        {insights.nightWakingsAverage !== undefined ? <Text style={styles.awake}>Son değerlendirmelerde gece uyanma ortalaması: {insights.nightWakingsAverage.toFixed(1)}</Text> : null}
       </Card>
       <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
       <Card>
@@ -319,8 +324,12 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={setBedtime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={setWakeTime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
       <Card tone="peach">
         <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
-        <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
+        <Text style={styles.inputLabel}>Uykuya geçişin kolaylığı</Text>
+        <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
         <Text style={styles.easeLabels}><Text>Zordu</Text><Text>                                      Kolaydı</Text></Text>
+        <Text style={styles.inputLabel}>Gece uyanma sayısı</Text>
+        <View style={styles.easeRow}>{([0, 1, 2, 3, 4, 5] as const).map((count) => <Pressable accessibilityRole="button" accessibilityLabel={count === 5 ? "5 veya daha fazla uyanma" : `${count} gece uyanması`} key={count} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, nightWakings: count })} style={[styles.easeButton, todayCheckIn?.nightWakings === count && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.nightWakings === count && styles.easeTextActive]}>{count === 5 ? "5+" : count}</Text></Pressable>)}</View>
+        <Text style={styles.hint}>Uyanma sayısı isteğe bağlıdır; son yedi değerlendirmenin ortalaması koçluk özetinde görünür.</Text>
       </Card>
       <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "Plan tamamlandı" : "Günü tamamla"} onPress={app.advancePlan} />
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
