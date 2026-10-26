@@ -54,7 +54,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İsteğe bağlı WHO 0–5 yaş kilo, boy ve baş çevresi eğrileri; z-skoru/persentil özeti ve ölçüm konumu düzeltmesi
 - Paylaşılabilir yedi günlük doktor özeti
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
-- Tamamlanan aşı ve randevular için tarihli geçmiş; aşı geçmişi doktor özetine eklenir ve işaretleme tarihi açıkça belirtilir
+- Tamamlanan aşı ve randevular için tarihli geçmiş; aşı geçmişi doktor özetine eklenir ve işaretleme tarihi açıkça belirtilir. Silme işlemi ayrıca onay ister
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
 - Sessiz saatlere uyan uyku bildirimleri
 - JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden geri yükleme; metin yapıştırma yedeği, tek seferlik telefonlar arası aktarım, doğrulama ve kontrollü cihaz verisi silme
