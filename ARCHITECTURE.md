@@ -219,6 +219,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Aktif bakım veren değiştirme ve seçilen kişi adına kayıt ekleme eklendi.
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
+- [x] Aşı ve doktor randevuları için sessiz saatleri gözeten yerel hatırlatmalar eklendi.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
 
@@ -227,7 +228,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] Bakım kayıtlarını ayrı SQLite tablolarına taşıma ve ayrıntılı veri göçleri
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
 - [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
-- [ ] Gelişmiş bildirim tercihleri ve görev hatırlatmaları
+- [ ] Gelişmiş bildirim tercihleri ve görev hatırlatmaları (tekrarlayan görevler ve zamanlama seçenekleri)
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [ ] WHO büyüme grafikleri
 - [ ] Türkiye aşı takvimi
@@ -282,4 +283,3 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
-
