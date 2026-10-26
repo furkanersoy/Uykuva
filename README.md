@@ -27,6 +27,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
 - Uyku planında günlük ilerleme göstergesi, her gün tek adım ve 14. gün için ayrı tamamlanma onayı
+- Son check-in'lere göre desteği artırmayı veya mevcut rutini korumayı öneren, planı otomatik değiştirmeyen uyku koçu rehberi
+- Tamamlanan 14 günlük plan döngülerinin görev toplamlarıyla arşivi (en çok 10 döngü)
 - Akşam rutini ve günlük görevler
 - Kişisel akşam rutini adımlarını etkinleştirme ve sıraya koyma
 - Etkin akşam rutini adımlarını sırayla uygulama ve tamamlanma özetini zaman çizelgesine kaydetme
