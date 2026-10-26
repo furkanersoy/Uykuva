@@ -352,6 +352,23 @@ function TimelineScreen({ events, onDelete, onEditSleep, onEditRecord, onAddSlee
   );
 }
 
+function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: SleepMethod) {
+  if (stage === "newborn") return {
+    title: "Yeni doğanda uyku eğitimi yok; ihtiyaçlara yanıt öncelikli.",
+    steps: ["Açlık, bez, yakınlık veya rahatsızlık işaretlerini kontrol edin.", "Beslenme ve sakinleşme ihtiyacına gecikmeden yanıt verin; gece ortamını sakin ve loş tutun.", "Bu aşamada kendi kendine uyumayı hedefleyen plan uygulamayın."]
+  };
+  if (stage === "foundations") return {
+    title: "Şimdilik odak tutarlı rutin ve bebeğin işaretleri.",
+    steps: ["Önce beslenme, bez, ağrı ve hastalık gibi temel ihtiyaçları değerlendirin.", "Sakin ses ve yakınlıkla destek verin; bebeğinizin işaretlerine göre kucağa alın.", "Desteği azaltmak zorunda değilsiniz; öngörülebilir akşam sırasını koruyun."]
+  };
+  const steps: Record<SleepMethod, string[]> = {
+    responsive: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yakınında kalıp sesinizle ve nazik dokunuşla sakinleştirin.", "Huzursuzluğu artarsa kucağa alıp sakinleştirin; hazır olduğunda tekrar yatırın."],
+    gradual: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Bu gece için seçtiğiniz küçük destek adımını yalnızca bebek sakinse deneyin.", "Huzursuzluk artarsa önceki desteğe dönüp sakinleştirin; adım azaltmak zorunlu değildir."],
+    camping: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yatağın yanında kalıp sesinizle ve nazik dokunuşla destek verin.", "Mesafeyi yalnızca aile ve bebek hazır olduğunda, küçük adımlarla artırın."]
+  };
+  return { title: `${methodDescription(method).name} yaklaşımı · gece uyanması`, steps: steps[method] };
+}
+
 function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const stage = sleepProgramStage(app.state.baby);
   const readyItems = app.state.sleepPlan.readinessCompleted;
@@ -369,6 +386,8 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const [routineLabel, setRoutineLabel] = useState("");
   const [routineMinutes, setRoutineMinutes] = useState("5");
   const [routineRunnerOpen, setRoutineRunnerOpen] = useState(false);
+  const [nightGuideOpen, setNightGuideOpen] = useState(false);
+  const nightGuide = nightWakingGuide(stage.id, coachingMethod);
   const saveSchedule = () => {
     if (!isValidClock(bedtime) || !isValidClock(wakeTime)) return Alert.alert("Saatleri kontrol edin", "Saatleri 20:00 gibi SS:DD biçiminde yazın.");
     app.updateSleepSchedule(bedtime, wakeTime);
@@ -401,6 +420,17 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Uyku planı</Text>
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: nightGuideOpen }} onPress={() => setNightGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.flex}><Text style={styles.cardTitle}>Gece uyanırsa ne yapmalı?</Text><Text style={styles.body}>{nightGuide.title}</Text></View>
+          <Text style={styles.nightGuideChevron}>{nightGuideOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {nightGuideOpen ? <View style={styles.nightGuideContent}>
+          {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={styles.body}>{step}</Text></View>)}
+          {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz bir yüzey; uyku alanında yalnızca gergin çarşaf bulundurun.</Text> : null}
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx")}><Text style={styles.linkText}>AAP güvenli uyku rehberini aç</Text></Pressable>
+        </View> : null}
+      </Card>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
       <Card tone={app.state.sleepPlan.paused ? "peach" : "white"}>
         <Text style={styles.cardTitle}>{app.state.sleepPlan.paused ? "Uyku planı duraklatıldı" : "Planı istediğiniz zaman duraklatabilirsiniz"}</Text>
@@ -1111,6 +1141,11 @@ const styles = StyleSheet.create({
   routineMoveText: { color: colors.sageDark, fontSize: 17, fontWeight: "800" },
   pausedTask: { opacity: 0.5 },
   pausedMessage: { color: colors.inkSoft, fontSize: 13, textAlign: "center", paddingVertical: 14 },
+  nightGuideHeader: { flexDirection: "row", alignItems: "center" },
+  nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
+  nightGuideContent: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
+  nightGuideStep: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8 },
+  nightGuideNumber: { width: 24, height: 24, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
