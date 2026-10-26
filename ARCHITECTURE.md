@@ -84,6 +84,8 @@ Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlar�
 
 Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamamlamayı veya atlamayı takip eder. Rutin bitirildiğinde tamamlanan adım sayısı ve yaklaşık süre, etkin bakım veren adına zaman çizelgesine bir not olarak eklenir.
 
+Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak isteğe bağlı kısa bağlam notu saklar. Bu check-in notları günlük doktor özetine dahil edilmez; cihaz verisi dışa aktarımında yer alır.
+
 ### Uygulama durumu
 
 `useUykuvaState`, ekranların doğrudan depolama sistemiyle konuşmasını engeller. Şu eylemleri sağlar:
