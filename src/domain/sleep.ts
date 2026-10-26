@@ -159,6 +159,9 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   const start = new Date(wakeAt.getTime() + Math.max(band.min, target - spread) * 60_000);
   const end = new Date(wakeAt.getTime() + Math.min(band.max, target + spread) * 60_000);
   const awakeMinutes = Math.max(0, Math.floor((now.getTime() - wakeAt.getTime()) / 60_000));
+  if (awakeMinutes >= 20 * 60) {
+    return { available: false, confidence: "low", awakeMinutes, explanation: "Son 20 saatte tamamlanmış uyku kaydı yok; yeni bir uyku kaydı olmadan tahmin yenilenemez." };
+  }
 
   return {
     available: true,
