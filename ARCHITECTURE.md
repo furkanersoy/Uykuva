@@ -106,7 +106,7 @@ Ana fonksiyonlar:
 
 - `correctedAgeDays`: Prematüre bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar.
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
-- `createSleepForecast`: Yaş aralığı ile son kullanılabilir uyanıklık sürelerini harmanlar.
+- `createSleepForecast`: Yaş aralığı ile tahmini saat dilimine ait son kullanılabilir uyanıklık sürelerini harmanlar.
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir.
 - `coachingDay`: Seçilen yaklaşıma göre 14 günlük planın günlük görevlerini üretir.
 - `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir.
@@ -129,8 +129,8 @@ Tahmin motorunun mevcut davranışı:
 1. Düzeltilmiş yaş 9 haftadan küçükse tahmin göstermez.
 2. Bitmiş son uyku kaydını bulur.
 3. Yaşa uygun genel uyanıklık aralığını seçer.
-4. Son 14 takvim günündeki geçerli uyanıklık sürelerini çıkarır; eski dönemlerin ritmi yeni tahmini etkilemez.
-5. En az üç kişisel örnek varsa yaş referansı ile kişisel medyanı harmanlar.
+4. Son 14 takvim günündeki geçerli uyanıklık sürelerini altı yerel saat dilimine ayırır; her dilimde en fazla son 10 örneği tutar.
+5. Gece diliminde en az iki, diğer dilimlerde en az beş örnek varsa ilgili dilimin medyanını yaş aralığıyla harmanlar; veri yetmezse yaş aralığını kullanır.
 6. Tek saat yerine başlangıç ve bitiş aralığı üretir.
 7. Veri miktarına göre düşük, orta veya yüksek güven etiketi verir.
 8. Sonucun nedenini kullanıcıya düz metinle açıklar.
