@@ -1,12 +1,12 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
-import { SleepForecast } from "../domain/types";
-import { CareTask } from "../domain/types";
+import { CareEvent, CareTask, SleepForecast } from "../domain/types";
 import { isInQuietHours } from "../domain/time";
 
 const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
 const CARE_TASK_NOTIFICATION_KIND = "uykuva-care-task";
+const DIAPER_NOTIFICATION_KIND = "uykuva-diaper-check";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -31,6 +31,16 @@ async function ensureCareTaskChannel() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync("care-task-reminders", {
     name: "Aşı ve randevu hatırlatmaları",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+    lightColor: "#A8C7B5"
+  });
+}
+
+async function ensureDiaperChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("diaper-reminders", {
+    name: "Bez kontrol hatırlatmaları",
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 180],
     lightColor: "#A8C7B5"
@@ -123,4 +133,48 @@ export async function scheduleCareTaskReminders(
     count += 1;
   }
   return count;
+}
+
+export async function scheduleDiaperReminder(
+  events: CareEvent[],
+  enabled: boolean,
+  afterHours: 2 | 3 | 4,
+  quietStart: string,
+  quietEnd: string,
+  now = new Date()
+): Promise<boolean> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter((item) => String(item.content.data?.kind) === DIAPER_NOTIFICATION_KIND)
+    .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+  if (!enabled) return false;
+
+  const lastDiaper = events
+    .filter((event) => event.kind === "diaper" && new Date(event.startedAt).getTime() <= now.getTime())
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
+  if (!lastDiaper) return false;
+
+  const reminderAt = new Date(new Date(lastDiaper.startedAt).getTime() + afterHours * 60 * 60_000);
+  if (reminderAt.getTime() <= now.getTime()) return false;
+  if (isInQuietHours(reminderAt, quietStart, quietEnd)) {
+    const originalReminderAt = reminderAt.getTime();
+    const [hour, minute] = quietEnd.split(":").map(Number);
+    reminderAt.setHours(hour ?? 0, minute ?? 0, 0, 0);
+    if (reminderAt.getTime() <= originalReminderAt) reminderAt.setDate(reminderAt.getDate() + 1);
+  }
+
+  await ensureDiaperChannel();
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Bez kontrolü",
+      body: `${afterHours} saat geçti. İsterseniz bebeğinizin bezini kontrol edin.`,
+      data: { kind: DIAPER_NOTIFICATION_KIND, eventId: lastDiaper.id }
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: reminderAt,
+      channelId: Platform.OS === "android" ? "diaper-reminders" : undefined
+    }
+  });
+  return true;
 }

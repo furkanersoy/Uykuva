@@ -53,6 +53,8 @@ export function createInitialState(): AppState {
       sleepReminderMinutes: 15,
       careTaskRemindersEnabled: false,
       careTaskReminderMinutes: 120,
+      diaperRemindersEnabled: false,
+      diaperReminderHours: 3,
       quietStart: "21:00",
       quietEnd: "07:00"
     }

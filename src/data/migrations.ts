@@ -37,7 +37,9 @@ export function migrateState(value: unknown): AppState {
       ...candidate.preferences,
       handoffHours: [2, 4, 6, 8].includes(Number(candidate.preferences?.handoffHours)) ? Number(candidate.preferences?.handoffHours) as 2 | 4 | 6 | 8 : 4,
       careTaskRemindersEnabled: candidate.preferences?.careTaskRemindersEnabled ?? false,
-      careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120
+      careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120,
+      diaperRemindersEnabled: candidate.preferences?.diaperRemindersEnabled ?? false,
+      diaperReminderHours: [2, 3, 4].includes(Number(candidate.preferences?.diaperReminderHours)) ? Number(candidate.preferences?.diaperReminderHours) as 2 | 3 | 4 : 3
     }
   };
 }

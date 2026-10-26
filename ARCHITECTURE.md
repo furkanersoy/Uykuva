@@ -61,7 +61,7 @@ SleepWell/
 │       ├── components.tsx          # Ortak kart, buton ve etiket bileşenleri
 │       └── theme.ts                # Renkler ve görsel token'lar
 │   └── services/
-│       └── notifications.ts        # İzin ve uyku hatırlatması planlama
+│       └── notifications.ts        # Uyku, bez kontrolü ve görev hatırlatmaları
 └── ARCHITECTURE.md                 # Bu doküman
 ```
 
@@ -256,6 +256,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
 - [x] Aşı ve doktor randevuları için sessiz saatleri gözeten yerel hatırlatmalar eklendi.
+- [x] Son bez kaydına göre 2/3/4 saat seçenekli, sessiz saatleri gözeten tek seferlik kontrol hatırlatması eklendi.
 - [x] Uyku koçluğu yaş aşamasına göre ritim temellerine geçiyor; plan yaklaşımları hazırlık listesi tamamlanana kadar açılmıyor.
 - [x] Sabah değerlendirmesinde gece uyanmaları kaydediliyor ve son yedi check-in ortalaması gösteriliyor.
 - [x] Katı öğünlerde takip etiketleri ve ebeveyn gözlemi zaman çizelgesi, devir özeti ve doktor özetinde saklanıyor.
@@ -274,7 +275,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] Bakım görevleri ve diğer büyüyen veri kümelerini normalize tablolara ayırma
 - [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
 - [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
-- [ ] Gelişmiş bildirim tercihleri ve görev hatırlatmaları (tekrarlayan görevler ve zamanlama seçenekleri)
+- [ ] Gelişmiş bildirim tercihleri (tekrarlayan görevler ve ayrıntılı zamanlama seçenekleri)
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [ ] WHO büyüme grafikleri
 - [ ] Türkiye aşı takvimi

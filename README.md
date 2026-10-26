@@ -34,6 +34,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İsteğe bağlı uyku penceresi bildirimleri
 - Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
 - Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
+- Son bez kaydından 2, 3 veya 4 saat sonra isteğe bağlı tek seferlik bez kontrol bildirimi
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Günlük gece uyanma kaydı ve son yedi check-in ortalaması
 - Sabah check-in'ine isteğe bağlı bağlam notu ekleme
