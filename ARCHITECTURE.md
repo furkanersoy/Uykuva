@@ -273,6 +273,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Yedi günlük paylaşılabilir doktor özeti eklendi.
 - [x] Manuel aşı ve doktor randevusu görevleri eklendi.
 - [x] Aşı/randevu görevleri, tamamlama geçmişi korunarak tarih, saat ve notlarıyla düzenlenebilir.
+- [x] Aşı/randevu tarihi doğrulaması takvimde olmayan günlerin sonraki aya yuvarlanmasını engeller; yeni görev varsayılanı yerel takvimde yarındır.
 - [x] Ulusal çocukluk takvimi yaş dönümü önerileri eklendi; Hepatit B doğum dozu ve 48. ay suçiçeği ikinci dozu dahil.
 - [x] Gece yarısını aşabilen sessiz saatler eklendi.
 - [x] Tüm kullanıcı verisini JSON olarak dışa aktarma eklendi.
