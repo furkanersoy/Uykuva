@@ -134,7 +134,7 @@ Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema
 
 Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
 
-Uyku koçluğu günü yerel takvim gününde en fazla bir kez ilerler. `SleepPlan.lastAdvancedDate` bu günü saklar; 14. günde ilerleme durur. Yedek doğrulaması yeni alanı varsa tarih olarak doğrular, yoksa eski yedek uyumluluğunu korur.
+Uyku koçluğu günü yerel takvim gününde en fazla bir kez ilerler. `SleepPlan.lastAdvancedDate` bu günü saklar; gün 14'e ulaştığında son gün ayrıca tamamlanır ve `completedDate` kaydedilir. Arayüz 14 günlük ilerlemeyi gösterir, aynı gün tekrar ilerlemeyi engeller. Yedek doğrulaması yeni tarih alanlarını varsa doğrular, yoksa eski yedek uyumluluğunu korur.
 
 Uyku planı duraklatma durumu `SleepPlan.paused` alanında saklanır. Duraklatılmış planda günlük koçluk adımları etkileşime kapanır ve gün ilerlemez; bakım kayıtları ile rutin çalıştırıcısı kullanılmaya devam eder. Migrasyon eski verilerde bu alanı `false` yapar; JSON yedek doğrulaması alan yoksa eski yedekleri kabul eder.
 
