@@ -45,7 +45,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
 - Sessiz saatlere uyan uyku bildirimleri
-- JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden geri yükleme; metin yapıştırma yedeği, doğrulama ve kontrollü cihaz verisi silme
+- JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden geri yükleme; metin yapıştırma yedeği, tek seferlik telefonlar arası aktarım, doğrulama ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü
 - Biberon ve katı gıda ayrıntıları
