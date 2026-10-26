@@ -220,6 +220,76 @@ export function estimateSleepWakeWindow(events: CareEvent[], runningSleep?: Care
   };
 }
 
+export type DailyNapOutlineRow = {
+  order: number;
+  from: Date;
+  typical: Date;
+  to: Date;
+  sampleCount: number;
+  actualStart?: Date;
+  inProgress: boolean;
+};
+
+function localDayKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function isDaytimeNap(event: CareEvent, now: Date) {
+  if (event.kind !== "sleep") return false;
+  const start = new Date(event.startedAt);
+  if (!Number.isFinite(start.getTime()) || start.getHours() < 6 || start.getHours() >= 18) return false;
+  const end = event.endedAt ? new Date(event.endedAt) : now;
+  const duration = (end.getTime() - start.getTime()) / 60_000;
+  return duration >= 15 && duration <= 240;
+}
+
+function atLocalClock(reference: Date, minutes: number) {
+  const value = new Date(reference);
+  value.setHours(0, 0, 0, 0);
+  value.setMinutes(minutes);
+  return value;
+}
+
+export function createDailyNapOutline(events: CareEvent[], now = new Date()): DailyNapOutlineRow[] {
+  const cutoff = now.getTime() - 14 * DAY;
+  const completedByDay = new Map<string, CareEvent[]>();
+  for (const event of events) {
+    const start = new Date(event.startedAt);
+    if (!event.endedAt || start.getTime() < cutoff || start.getTime() > now.getTime() || !isDaytimeNap(event, now)) continue;
+    const key = localDayKey(start);
+    const group = completedByDay.get(key) ?? [];
+    group.push(event);
+    completedByDay.set(key, group);
+  }
+  const todayKey = localDayKey(now);
+  const history = [...completedByDay.entries()].filter(([day]) => day !== todayKey).map(([, group]) => group.sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()));
+  const todayNaps = events
+    .filter((event) => localDayKey(new Date(event.startedAt)) === todayKey && isDaytimeNap(event, now))
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+  const maxNaps = Math.min(4, Math.max(0, ...history.map((group) => group.length)));
+  const rows: DailyNapOutlineRow[] = [];
+  for (let index = 0; index < maxNaps; index += 1) {
+    const starts = history.flatMap((group) => {
+      const event = group[index];
+      if (!event) return [];
+      const date = new Date(event.startedAt);
+      return [date.getHours() * 60 + date.getMinutes()];
+    }).sort((a, b) => a - b);
+    if (starts.length < 3) break;
+    const actual = todayNaps[index];
+    rows.push({
+      order: index + 1,
+      from: atLocalClock(now, percentile(starts, 0.25)),
+      typical: atLocalClock(now, percentile(starts, 0.5)),
+      to: atLocalClock(now, percentile(starts, 0.75)),
+      sampleCount: starts.length,
+      actualStart: actual ? new Date(actual.startedAt) : undefined,
+      inProgress: Boolean(actual && !actual.endedAt)
+    });
+  }
+  return rows;
+}
+
 export type CoachingDay = {
   title: string;
   focus: string;
