@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod } from "./types";
+import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord } from "./types";
 
 const DAY = 86_400_000;
 
@@ -510,6 +510,75 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
     focus: phaseNames[phase],
     tasks: [...shared[phase], ...methodTasks[method][phase], focusTasks[focus][phase]],
     checkIn: focusQuestions[focus]
+  };
+}
+
+export type SleepPlanCheckInComparison = {
+  available: boolean;
+  firstDays: number;
+  recentDays: number;
+  firstEaseAverage?: number;
+  recentEaseAverage?: number;
+  firstEaseCount: number;
+  recentEaseCount: number;
+  firstWakingsAverage?: number;
+  recentWakingsAverage?: number;
+  firstWakingsCount: number;
+  recentWakingsCount: number;
+  firstCappedWakings: number;
+  recentCappedWakings: number;
+};
+
+export function compareSleepPlanCheckIns(records: SleepPlanDayRecord[], checkIns: SleepCheckIn[], method: SleepMethod, focus: SleepFocus): SleepPlanCheckInComparison {
+  const matchingDays = records
+    .filter((record) => record.method === method && record.focus === focus)
+    .sort((a, b) => a.day - b.day || a.date.localeCompare(b.date));
+  if (matchingDays.length < 6) {
+    return {
+      available: false,
+      firstDays: Math.min(3, matchingDays.length),
+      recentDays: Math.min(3, matchingDays.length),
+      firstEaseCount: 0,
+      recentEaseCount: 0,
+      firstWakingsCount: 0,
+      recentWakingsCount: 0,
+      firstCappedWakings: 0,
+      recentCappedWakings: 0
+    };
+  }
+
+  const firstRecords = matchingDays.slice(0, 3);
+  const recentRecords = matchingDays.slice(-3);
+  const checkInsByDate = new Map(checkIns.map((checkIn) => [checkIn.date, checkIn]));
+  const summarize = (days: SleepPlanDayRecord[]) => {
+    const logs = days.map((day) => checkInsByDate.get(day.date)).filter((item): item is SleepCheckIn => Boolean(item));
+    const easeValues = logs.flatMap((item) => item.ease === undefined ? [] : [item.ease]);
+    const uncappedWakingValues = logs.flatMap((item) => item.nightWakings === undefined || item.nightWakings >= 5 ? [] : [item.nightWakings]);
+    const cappedWakings = logs.filter((item) => item.nightWakings === 5).length;
+    return {
+      easeAverage: easeValues.length >= 2 ? easeValues.reduce((sum, value) => sum + value, 0) / easeValues.length : undefined,
+      easeCount: easeValues.length,
+      wakingsAverage: uncappedWakingValues.length >= 2 ? uncappedWakingValues.reduce((sum, value) => sum + value, 0) / uncappedWakingValues.length : undefined,
+      wakingsCount: uncappedWakingValues.length,
+      cappedWakings
+    };
+  };
+  const first = summarize(firstRecords);
+  const recent = summarize(recentRecords);
+  return {
+    available: true,
+    firstDays: firstRecords.length,
+    recentDays: recentRecords.length,
+    firstEaseAverage: first.easeAverage,
+    recentEaseAverage: recent.easeAverage,
+    firstEaseCount: first.easeCount,
+    recentEaseCount: recent.easeCount,
+    firstWakingsAverage: first.wakingsAverage,
+    recentWakingsAverage: recent.wakingsAverage,
+    firstWakingsCount: first.wakingsCount,
+    recentWakingsCount: recent.wakingsCount,
+    firstCappedWakings: first.cappedWakings,
+    recentCappedWakings: recent.cappedWakings
   };
 }
 
