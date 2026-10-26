@@ -149,6 +149,8 @@ Sabah check-in'i, zamanlayıcı kullanılmayan geceler için yatış ve sabah uy
 
 `summarizeNightSleep`, check-in'deki yatış/uyanış aralığını kullanır; saatler girilmemişse 18:00–12:00 penceresindeki uyku kayıtlarını toplar. Üst üste binen uyku olaylarını çift saymaz. Sabah kartı yalnızca kaydedilmiş uyku dakikalarını ve bakım verenin bildirdiği uyanma sayısını ayrı gösterir; eksik aralıkları tahmin etmez.
 
+Koç ekranında son yedi yerel tarih içindeki check-in'ler gecelik geçmiş olarak sıralanır. Gece aralığı verisi yoksa uyku süresi için çizgi/varsayılan sayı üretilmez; yalnızca kullanıcının bildirdiği uyanma sayısı gösterilir.
+
 ## 6. Uyku tahmin motoru
 
 Tahmin motorunun mevcut davranışı:
@@ -266,6 +268,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Sabah değerlendirmesinde gece uyanmaları kaydediliyor ve son yedi check-in ortalaması gösteriliyor.
 - [x] Zamanlayıcı kullanılmayan geceler için manuel yatış/sabah uyanış özeti ve koçun yatış medyanına veri kaynağı eklendi.
 - [x] Sabah check-in'inde gece uyku kayıtları toplamı ve ebeveynin bildirdiği uyanma sayısı bir arada gösteriliyor.
+- [x] Son yedi check-in gecesinin kayıtlı uyku ve uyanma özeti listeleniyor.
 - [x] Katı öğünlerde takip etiketleri ve ebeveyn gözlemi zaman çizelgesi, devir özeti ve doktor özetinde saklanıyor.
 - [x] Son yedi günün uyku süreleri, gece yarısını aşan dönemler günlere dağıtılarak grafikte gösteriliyor.
 - [x] Zaman çizelgesinden geçmiş uyku ekleme ve kayıt saatlerini düzenleme eklendi.

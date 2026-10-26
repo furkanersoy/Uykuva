@@ -441,6 +441,14 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const nightSummary = summarizeNightSleep(app.state.events, todayCheckIn, now);
+  const oldestNight = new Date(now);
+  oldestNight.setDate(oldestNight.getDate() - 6);
+  const recentNightSummaries = app.state.sleepPlan.checkIns
+    .filter((item) => item.date >= localDateValue(oldestNight) && item.date <= today)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 7)
+    .map((checkIn) => ({ checkIn, summary: summarizeNightSleep(app.state.events, checkIn, now) }))
+    .filter((item) => item.summary.minutes > 0 || item.checkIn.nightWakings !== undefined);
   const [nightBedtime, setNightBedtime] = useState(todayCheckIn?.bedtime ?? "");
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => {
@@ -608,6 +616,14 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.inputLabel}>Dünden farklı olan neydi? (isteğe bağlı)</Text>
         <TextInput value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
+      </Card>
+      <SectionTitle title="Son geceler" action="7 günlük görünüm" />
+      <Card>
+        {recentNightSummaries.length ? recentNightSummaries.map(({ checkIn, summary }) => <View key={checkIn.date} style={styles.eventRow}>
+          <View style={styles.flex}><Text style={styles.eventTitle}>{new Date(`${checkIn.date}T12:00:00`).toLocaleDateString("tr-TR", { weekday: "short", day: "numeric", month: "short" })}</Text><Text style={styles.muted}>{summary.minutes ? `${Math.floor(summary.minutes / 60)} sa ${summary.minutes % 60} dk kaydedilen uyku` : "Uyku süresi kaydedilmemiş"}</Text></View>
+          <Text style={styles.taskDate}>{checkIn.nightWakings === undefined ? "Uyanma —" : `Uyanma ${checkIn.nightWakings === 5 ? "5+" : checkIn.nightWakings}`}</Text>
+        </View>) : <Text style={styles.body}>Gece özeti veya uyanma sayısı eklendikçe son yedi gün burada görünür.</Text>}
+        <Text style={styles.hint}>Uyku süreleri yalnızca uygulamaya kaydedilmiş uyku aralıklarının toplamıdır.</Text>
       </Card>
       {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={app.advancePlan} />}
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
