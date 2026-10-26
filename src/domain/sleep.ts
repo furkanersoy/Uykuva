@@ -71,11 +71,16 @@ export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailyS
   }));
 }
 
-function recentAwakeWindows(events: CareEvent[]): number[] {
+function recentAwakeWindows(events: CareEvent[], now = new Date()): number[] {
+  const cutoff = now.getTime() - 14 * DAY;
   const sleeps = events
-    .filter((event) => event.kind === "sleep" && event.endedAt)
-    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
-    .slice(-15);
+    .filter((event) => {
+      if (event.kind !== "sleep" || !event.endedAt) return false;
+      const start = new Date(event.startedAt).getTime();
+      const end = new Date(event.endedAt).getTime();
+      return Number.isFinite(start) && Number.isFinite(end) && start >= cutoff && end <= now.getTime() && end > start;
+    })
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
   const windows: number[] = [];
   for (let index = 1; index < sleeps.length; index += 1) {
@@ -110,7 +115,7 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   }
 
   const band = wakeBandFor(baby, now);
-  const personal = recentAwakeWindows(events);
+  const personal = recentAwakeWindows(events, now);
   const personalMedian = median(personal);
   const baseline = (band.min + band.max) / 2;
   const target = personal.length >= 3 ? baseline * 0.35 + personalMedian * 0.65 : baseline;
