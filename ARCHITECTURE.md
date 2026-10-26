@@ -117,7 +117,7 @@ Ana fonksiyonlar:
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir.
 - `coachingDay`: Seçilen yaklaşıma göre 14 günlük planın günlük görevlerini üretir.
-- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir.
+- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla eşleşme kurup rutin–uyku başlangıç aralığının ortancasını verir.
 - `handoffSummary`: Kullanıcının seçtiği 2/4/6/8 saatlik aralıktaki beslenme, pompa, bez, sağlık ve not kayıtlarını özetler; devam eden emzirmeyi işaretler, pencereyle kesişen uyku süresini hesaplar ve devam eden uykuyu belirtir. Ayrıca sonraki 24 saatin en yakın üç bakım görevini ekler. Tercih varsayılanı 4 saattir; eski yedeklerde alan yoksa migrasyon bu değeri kullanır.
 
 ### Veri katmanı
