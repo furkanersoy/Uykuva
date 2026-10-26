@@ -143,6 +143,8 @@ Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. �
 
 Büyüme geçmişi, kaydedilen son sekiz kilo/boy/baş çevresi ölçümünü tarihle listeler; persentil hesabı veya normatif yorum yapmaz.
 
+Gece uyanması rehberi yaş aşamasına göre ayrılır: yeni doğanda destek ve ihtiyaçlara yanıt, hazırlık döneminde tutarlı rutin, hazır oluş koşulları tamamlandığında ise seçili yaklaşımın adımları gösterilir. Beslenme ihtiyacını ertelemeyi veya ağlamayı görmezden gelmeyi önermeyen kısa yol gösterimi sunar. Bir yaş altı için güvenli uyku notu, [AAP HealthyChildren rehberindeki](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx) sırtüstü, sert/düz yüzey ve boş uyku alanı ilkelerine bağlanır. Bebeğin farklı bireysel ihtiyaçları için metin klinik değerlendirme yerine geçmez.
+
 ## 6. Uyku tahmin motoru
 
 Tahmin motorunun mevcut davranışı:
