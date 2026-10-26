@@ -128,6 +128,10 @@ export function useUykuvaState() {
     setState((current) => ({ ...current, events: current.events.filter((event) => event.id !== eventId) }));
   }, []);
 
+  const updateEvent = useCallback((eventId: string, patch: Partial<CareEvent>) => {
+    setState((current) => ({ ...current, events: current.events.map((event) => event.id === eventId ? { ...event, ...patch, id: event.id, caregiver: event.caregiver } : event) }));
+  }, []);
+
   const setMethod = useCallback((method: SleepMethod) => {
     setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, method } }));
   }, []);
@@ -246,6 +250,7 @@ export function useUykuvaState() {
     toggleSleep,
     toggleBreastfeed,
     deleteEvent,
+    updateEvent,
     setMethod,
     toggleTask,
     toggleReadiness,
@@ -261,4 +266,3 @@ export function useUykuvaState() {
     clearAllData
   };
 }
-
