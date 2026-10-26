@@ -14,20 +14,29 @@ function localDateKey(date = new Date()) {
 export function useUykuvaState() {
   const [state, setState] = useState<AppState>(createInitialState);
   const [hydrated, setHydrated] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
   const [storageError, setStorageError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadState()
-      .then((saved) => setState(saved))
-      .catch(() => setStorageError("Kayıtlar bu açılışta yüklenemedi."))
-      .finally(() => setHydrated(true));
+  const retryStorage = useCallback(async () => {
+    setStorageError(null);
+    try {
+      const saved = await loadState();
+      setState(saved);
+      setStorageReady(true);
+    } catch {
+      setStorageError("Kayıtlar yüklenemedi. Mevcut verileri korumak için boş durum kaydedilmedi.");
+    }
   }, []);
 
   useEffect(() => {
-    if (hydrated) {
+    void retryStorage().finally(() => setHydrated(true));
+  }, [retryStorage]);
+
+  useEffect(() => {
+    if (hydrated && storageReady) {
       void saveState(state).catch(() => setStorageError("Değişiklik cihazınıza kaydedilemedi."));
     }
-  }, [hydrated, state]);
+  }, [hydrated, storageReady, state]);
 
   const completeOnboarding = useCallback((profile: { babyName: string; birthDate: string; gestationalWeek: number; caregiverName: string }) => {
     setState((current) => ({
@@ -243,6 +252,7 @@ export function useUykuvaState() {
   const clearAllData = useCallback(async () => {
     await resetState();
     setState(createInitialState());
+    setStorageReady(true);
     setStorageError(null);
   }, []);
 
@@ -262,7 +272,9 @@ export function useUykuvaState() {
   return {
     state,
     hydrated,
+    storageReady,
     storageError,
+    retryStorage,
     runningSleep,
     runningFeed,
     completeOnboarding,
