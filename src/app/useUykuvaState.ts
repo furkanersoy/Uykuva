@@ -218,6 +218,13 @@ export function useUykuvaState() {
     });
   }, []);
 
+  const restartSleepPlan = useCallback(() => {
+    const today = localDateKey();
+    setState((current) => current.sleepPlan.completedDate
+      ? { ...current, sleepPlan: { ...current.sleepPlan, paused: false, startDate: today, day: 1, completedToday: [], lastAdvancedDate: undefined, completedDate: undefined } }
+      : current);
+  }, []);
+
   const saveCheckIn = useCallback((checkIn: SleepCheckIn) => {
     setState((current) => ({
       ...current,
@@ -335,6 +342,7 @@ export function useUykuvaState() {
     toggleTask,
     toggleReadiness,
     advancePlan,
+    restartSleepPlan,
     saveCheckIn,
     updateSleepSchedule,
     toggleRoutineStep,
