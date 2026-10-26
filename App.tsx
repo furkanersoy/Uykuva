@@ -154,6 +154,7 @@ export default function App() {
   }, [app.hydrated, app.state.onboardingComplete, app.state.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   if (!app.hydrated) return <LoadingScreen />;
+  if (!app.storageReady) return <StorageRecoveryScreen message={app.storageError ?? "Kayıtlar yüklenemedi. Mevcut veriler korunuyor."} onRetry={app.retryStorage} />;
   if (!app.state.onboardingComplete) return <OnboardingScreen onComplete={app.completeOnboarding} />;
 
   return (
@@ -198,6 +199,10 @@ export default function App() {
 
 function LoadingScreen() {
   return <SafeAreaView style={[styles.safe, styles.center]}><ActivityIndicator color={colors.sageDark} /><Text style={styles.loadingText}>Uykuva hazırlanıyor…</Text></SafeAreaView>;
+}
+
+function StorageRecoveryScreen({ message, onRetry }: { message: string; onRetry: () => Promise<void> }) {
+  return <SafeAreaView style={[styles.safe, styles.storageRecovery]}><Text style={styles.onboardingBrand}>uykuva</Text><Text style={styles.pageTitle}>Kayıtlar açılamadı</Text><Text style={styles.pageIntro}>{message}</Text><Text style={styles.body}>Yükleme başarılı olana kadar boş bir profil kaydetmeyeceğiz. İnternet gerekmez; cihaz depolamasını kontrol edip yeniden deneyin.</Text><View style={styles.spacer24} /><PrimaryButton label="Yeniden dene" onPress={() => void onRetry()} /></SafeAreaView>;
 }
 
 function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUykuvaState>["completeOnboarding"] }) {
@@ -1120,6 +1125,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper, paddingTop: StatusBar.currentHeight ?? 0 },
   center: { alignItems: "center", justifyContent: "center" },
   loadingText: { color: colors.inkSoft, fontSize: 13, marginTop: 12 },
+  storageRecovery: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 24, paddingTop: 80 },
   onboarding: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 26, paddingTop: 80 },
   onboardingMark: { width: 74, height: 74, borderRadius: 26, backgroundColor: colors.mint, alignItems: "center", justifyContent: "center" },
   onboardingMoon: { color: colors.sageDark, fontSize: 38 },
