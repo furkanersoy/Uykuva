@@ -538,6 +538,45 @@ export type SleepPlanCheckInComparison = {
   recentCappedWakings: number;
 };
 
+export type SleepCoachGuidance = {
+  title: string;
+  body: string;
+  tone: "peach" | "mint";
+};
+
+export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Date()): SleepCoachGuidance | undefined {
+  const today = localDayKey(now);
+  const recent = checkIns
+    .filter((item) => item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 3);
+  const latest = recent[0];
+  if (!latest) return undefined;
+  if (latest.nightWakings === 5) return {
+    title: "Sık uyanma bildirildi",
+    body: "Önce açlık, bez, rahatsızlık ve yakınlık ihtiyacını değerlendirin; beslenmeyi plana göre ertelemeyin. Bu gece destek azaltma adımını atlamakta özgürsünüz.",
+    tone: "peach"
+  };
+  const difficultNights = recent.filter((item) => item.ease !== undefined && item.ease <= 2).length;
+  if (difficultNights >= 2) return {
+    title: "Bu gece adımları yumuşatabilirsiniz",
+    body: `Son ${recent.length} check-in'in ${difficultNights} tanesi zor olarak işaretlendi. Yeni bir destek azaltma adımı denemek zorunda değilsiniz; işe yarayan desteği sürdürün veya planı duraklatın.`,
+    tone: "peach"
+  };
+  if (latest.ease !== undefined && latest.ease <= 2) return {
+    title: "Son gece zor geçmiş",
+    body: "Bu gece rutini sadeleştirin ve bebeğinizin ihtiyacına göre daha fazla destek verin. Tek bir zor gece planı hızlandırmak veya bebeği daha az desteklemek gerektiği anlamına gelmez.",
+    tone: "peach"
+  };
+  const easierNights = recent.filter((item) => item.ease !== undefined && item.ease >= 4).length;
+  if (easierNights >= 2) return {
+    title: "İşe yarayan rutini koruyun",
+    body: `Son ${recent.length} check-in'in ${easierNights} tanesi daha kolay olarak işaretlendi. Aynı yaklaşımı sürdürün; daha az destek vermek zorunlu değildir.`,
+    tone: "mint"
+  };
+  return undefined;
+}
+
 export function compareSleepPlanCheckIns(records: SleepPlanDayRecord[], checkIns: SleepCheckIn[], method: SleepMethod, focus: SleepFocus): SleepPlanCheckInComparison {
   const matchingDays = records
     .filter((record) => record.method === method && record.focus === focus)
