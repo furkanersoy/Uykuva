@@ -20,6 +20,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; pencere dışında başlamış açık emzirmeyi ve sol/sağ sürelerini de gösterme
 - Altı yaklaşım içeren 14 günlük nazik uyku planı
+- Hazır oluş koşulları tamamlandığında uyku yaklaşımlarını açıklamalarıyla karşılaştırıp doğrudan seçim yapma
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
