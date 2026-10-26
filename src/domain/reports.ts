@@ -60,6 +60,15 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
       lines.push(`- ${trDate(event.startedAt)} · ${details}`);
     });
   }
+  const completedVaccines = state.careTasks
+    .filter((task) => task.type === "vaccine" && task.completedAt)
+    .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
+  if (completedVaccines.length) {
+    lines.push("", "Uygulamada tamamlandı olarak işaretlenen aşılar:");
+    completedVaccines.slice(0, 20).forEach((task) => {
+      lines.push(`- ${task.title} · işaretleme tarihi ${trDate(task.completedAt!)} · planlanan tarih ${trDate(task.dueAt)}`);
+    });
+  }
   const appointments = state.careTasks
     .filter((task) => task.type === "appointment" && new Date(task.dueAt).getTime() >= now.getTime())
     .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
