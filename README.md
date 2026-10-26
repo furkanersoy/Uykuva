@@ -21,7 +21,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Üç yaklaşım içeren 14 günlük nazik uyku planı
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
-- Uyku planında günde bir kez ilerleme ve 14 günlük plan tamamlandığında ilerlemenin durması
+- Uyku planında günlük ilerleme göstergesi, her gün tek adım ve 14. gün için ayrı tamamlanma onayı
 - Akşam rutini ve günlük görevler
 - Kişisel akşam rutini adımlarını etkinleştirme ve sıraya koyma
 - Etkin akşam rutini adımlarını sırayla uygulama ve tamamlanma özetini zaman çizelgesine kaydetme
