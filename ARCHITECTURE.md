@@ -31,7 +31,7 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | --- | --- | --- |
 | Mobil | Expo SDK 58, React Native 0.88 | iOS ve Android için ortak kod tabanı |
 | Dil | TypeScript | Veri modeli ve özelliklerde tip güvenliği |
-| Yerel saklama | Expo SQLite KV Store | Cihaz içi kalıcılık ve sürümlü veri geçişi |
+| Yerel saklama | Expo SQLite (`uykuva.db`) | `app_state` ve indeksli `care_events` tabloları; eski SQLite KV/AsyncStorage verisinden güvenli geçiş |
 | Test | TypeScript derleyicisi + Node test runner | Uyku motorunu arayüzden bağımsız test etme |
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
@@ -228,7 +228,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Günlük uyku, beslenme ve bez özeti eklendi.
 - [x] Cihaz içinde otomatik veri saklama eklendi.
 - [x] Gerçek ilk kurulum ve profil düzenleme akışı eklendi.
-- [x] SQLite KV Store'a geçiş ve eski veri migrasyonu eklendi.
+- [x] SQLite KV Store'dan `uykuva.db` yapısına geçiş ve eski veri migrasyonu eklendi.
 - [x] İsteğe bağlı yerel uyku penceresi bildirimi eklendi.
 - [x] Bildirim süresi seçimi (5–30 dakika) eklendi.
 - [x] Uyku planı sabah kolaylık değerlendirmesi eklendi.
