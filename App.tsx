@@ -72,13 +72,18 @@ function eventTitle(event: CareEvent) {
 
 export default function App() {
   const app = useUykuvaState();
+  const [clockNow, setClockNow] = useState(() => new Date());
   const [tab, setTab] = useState<Tab>("today");
   const [logMode, setLogMode] = useState<LogMode>(null);
   const [taskMode, setTaskMode] = useState<TaskMode>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
-  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events), [app.state.baby, app.state.events]);
+  useEffect(() => {
+    const timer = setInterval(() => setClockNow(new Date()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow), [app.state.baby, app.state.events, clockNow]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
 
   useEffect(() => {
@@ -94,7 +99,7 @@ export default function App() {
       app.state.preferences.quietStart,
       app.state.preferences.quietEnd
     );
-  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, forecast]);
+  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, forecast.start?.getTime(), forecast.end?.getTime()]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -123,7 +128,7 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
         </View>
 
-        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} />}
+        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => setSleepEditor(event)} onAddSleep={() => setSleepEditor("new")} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} />}
@@ -201,15 +206,16 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
   return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} style={styles.input} placeholderTextColor="#93A09C" /></View>;
 }
 
-function TodayScreen({ app, forecast, feedingForecast, openLog }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void }) {
+function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date }) {
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[forecast.confidence];
+  const sleepElapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
-        <View style={styles.cardTopline}><Text style={styles.eyebrow}>SIRADAKİ UYKU</Text><Text style={styles.confidence}>{confidence}</Text></View>
-        <Text style={styles.heroTime}>{forecast.available ? `${time(forecast.start)}–${time(forecast.end)}` : "Henüz hazır değil"}</Text>
-        <Text style={styles.body}>{forecast.explanation}</Text>
-        {forecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{forecast.awakeMinutes} dakikadır uyanık</Text> : null}
+        <View style={styles.cardTopline}><Text style={styles.eyebrow}>{app.runningSleep ? "UYKU DEVAM EDİYOR" : "SIRADAKİ UYKU"}</Text><Text style={styles.confidence}>{app.runningSleep ? "Canlı süre" : confidence}</Text></View>
+        <Text style={styles.heroTime}>{app.runningSleep ? `${Math.floor(sleepElapsed / 60) ? `${Math.floor(sleepElapsed / 60)} sa ` : ""}${sleepElapsed % 60} dk` : forecast.available ? `${time(forecast.start)}–${time(forecast.end)}` : "Henüz hazır değil"}</Text>
+        <Text style={styles.body}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı. Bitirmek için aşağıdaki “Uyandı” kaydını kullanın.` : forecast.explanation}</Text>
+        {!app.runningSleep && forecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{forecast.awakeMinutes} dakikadır uyanık</Text> : null}
       </Card>
       <Card>
         <View style={styles.cardTopline}><Text style={styles.eyebrow}>SIRADAKİ BESLENME</Text><Text style={styles.confidence}>{feedingForecast.confidence === "high" ? "Kişisel ritim" : "Kayıtlardan"}</Text></View>
