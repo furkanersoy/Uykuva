@@ -60,7 +60,8 @@ const memoryPrompts = ["İlk gülüş", "İlk yuvarlanma", "İlk katı gıda", "
 
 function time(value?: string | Date) {
   if (!value) return "—";
-  return new Date(value).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : "—";
 }
 
 function duration(event: CareEvent) {
@@ -314,6 +315,15 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[forecast.confidence];
   const sleepElapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   const wakeEstimate = estimateSleepWakeWindow(app.state.events, app.runningSleep, now);
+  const careWindowEnd = now.getTime() + 24 * 60 * 60 * 1000;
+  const nextCareTasks = app.state.careTasks
+    .filter((task) => !task.completedAt && new Date(task.dueAt).getTime() >= now.getTime() && new Date(task.dueAt).getTime() <= careWindowEnd)
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const bedtimeTarget = isValidClock(app.state.sleepPlan.bedtime) ? new Date(now) : undefined;
+  if (bedtimeTarget) {
+    const [bedtimeHour, bedtimeMinute] = app.state.sleepPlan.bedtime.split(":").map(Number);
+    bedtimeTarget.setHours(bedtimeHour!, bedtimeMinute!, 0, 0);
+  }
   if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
@@ -328,6 +338,16 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <View style={styles.cardTopline}><Text style={styles.eyebrow}>SIRADAKİ BESLENME</Text><Text style={styles.confidence}>{feedingForecast.confidence === "high" ? "Kişisel ritim" : "Kayıtlardan"}</Text></View>
         <Text style={styles.feedForecast}>{feedingForecast.available ? `${time(feedingForecast.start)}–${time(feedingForecast.end)}` : "Ritim öğreniliyor"}</Text>
         <Text style={styles.body}>{feedingForecast.explanation}</Text>
+      </Card>
+      <SectionTitle title="Önümüzdeki 24 saat" action={`${nextCareTasks.length} bakım işi`} />
+      <Card>
+        <View style={styles.eventRow}>
+          <View style={[styles.eventDot, { backgroundColor: colors.lavender }]} />
+          <View style={styles.flex}><Text style={styles.eventTitle}>Bu akşam hedef yatış</Text><Text style={styles.muted}>Uyku planınızdaki hedef saat · değiştirilebilir</Text></View>
+          <Text style={styles.taskDate}>{time(bedtimeTarget)}</Text>
+        </View>
+        {nextCareTasks.length ? nextCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} />) : <Text style={styles.body}>Bu aralıkta yaklaşan aşı veya randevu kaydı yok.</Text>}
+        <Text style={styles.hint}>Aşı ve randevu tarihlerini hekiminizle belirleyin. Yatış saati bir hedeftir; bebeğinizin işaretlerine göre esnetebilirsiniz.</Text>
       </Card>
 
       <SectionTitle title="Hızlı kayıt" />
