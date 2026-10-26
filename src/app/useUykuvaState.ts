@@ -7,6 +7,10 @@ function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function localDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export function useUykuvaState() {
   const [state, setState] = useState<AppState>(createInitialState);
   const [hydrated, setHydrated] = useState(false);
@@ -159,11 +163,13 @@ export function useUykuvaState() {
   }, []);
 
   const advancePlan = useCallback(() => {
-    setState((current) => current.sleepPlan.paused ? current : ({
+    const today = localDateKey();
+    setState((current) => current.sleepPlan.paused || current.sleepPlan.day >= 14 || current.sleepPlan.lastAdvancedDate === today ? current : ({
       ...current,
       sleepPlan: {
         ...current.sleepPlan,
         day: Math.min(14, current.sleepPlan.day + 1),
+        lastAdvancedDate: today,
         completedToday: []
       }
     }));
