@@ -35,6 +35,7 @@ export function migrateState(value: unknown): AppState {
     preferences: {
       ...initial.preferences,
       ...candidate.preferences,
+      handoffHours: [2, 4, 6, 8].includes(Number(candidate.preferences?.handoffHours)) ? Number(candidate.preferences?.handoffHours) as 2 | 4 | 6 | 8 : 4,
       careTaskRemindersEnabled: candidate.preferences?.careTaskRemindersEnabled ?? false,
       careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120
     }
