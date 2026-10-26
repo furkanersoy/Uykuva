@@ -32,6 +32,7 @@ import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
+import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepFocus, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -753,6 +754,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
   const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
   const milestones = detectRecordedMilestones(events, now);
+  const solidHistory = summarizeSolidFoodHistory(events);
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
@@ -795,6 +797,32 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       </Card>
       <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
+      <SectionTitle title="Ek gıda günlüğü" action={`${solidHistory.mealCount} öğün`} />
+      <Card>
+        {solidHistory.foods.length || solidHistory.allergens.length ? <>
+          {solidHistory.foods.length ? <>
+            <Text style={styles.inputLabel}>Kaydedilen yiyecekler</Text>
+            {solidHistory.foods.slice(0, 8).map((food) => <View key={food.name.toLocaleLowerCase("tr-TR")} style={styles.eventRow}>
+              <View style={styles.flex}><Text style={styles.eventTitle}>{food.name}</Text><Text style={styles.muted}>İlk uygulama kaydı · {new Date(food.firstRecordedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</Text></View>
+              <Text style={styles.taskDate}>{food.mealCount} öğün</Text>
+            </View>)}
+            {solidHistory.foods.length > 8 ? <Text style={styles.hint}>Diğer yiyecek kayıtları Akış sekmesinde bulunabilir.</Text> : null}
+          </> : null}
+          {solidHistory.allergens.length ? <>
+            <Text style={styles.inputLabel}>Öğünlere eklenen alerjen etiketleri</Text>
+            <Text style={styles.body}>{solidHistory.allergens.map((item) => `${item.name} (${item.taggedMealCount})`).join(" · ")}</Text>
+          </> : null}
+          {solidHistory.observations.length ? <>
+            <Text style={styles.inputLabel}>Yazılı tepki gözlemleri</Text>
+            {solidHistory.observations.map((item) => <View key={`${item.startedAt}-${item.note}`} style={styles.growthHistoryRow}>
+              <Text style={styles.muted}>{new Date(item.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}{item.foods.length ? ` · ${item.foods.join(", ")}` : ""}</Text>
+              <Text style={styles.body}>{item.note}</Text>
+              {item.allergens.length ? <Text style={styles.hint}>Öğün etiketleri: {item.allergens.join(", ")}</Text> : null}
+            </View>)}
+          </> : null}
+        </> : <Text style={styles.body}>Katı gıda öğünleri kaydedildikçe yiyecek ve etiket geçmişi burada görünür.</Text>}
+        <Text style={styles.hint}>Bu bölüm yalnızca kaydedilen öğünleri ve ebeveyn gözlemlerini listeler; alerji tanısı, güvenli gıda önerisi veya tepki değerlendirmesi sunmaz.</Text>
+      </Card>
       <MilkStockCard events={events} now={now} update={app.updateEvent} />
       <GrowthHistoryCard measurements={growthMeasurements} baby={app.state.baby} />
       <SectionTitle title="Kayıtlardan anılar" action="İsteğe bağlı" />

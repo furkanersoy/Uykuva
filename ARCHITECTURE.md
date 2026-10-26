@@ -55,6 +55,7 @@ SleepWell/
 │   │   ├── types.ts                # Bebek, kayıt ve uyku planı veri modelleri
 │   │   ├── vaccineSchedule.ts      # Ulusal aşı takvimi öneri tarihleri
 │   │   ├── diapers.ts              # Son yedi günün ıslak/kirli/ikili bez toplamları
+│   │   ├── solids.ts               # Ek gıda ve alerjen etiket geçmişi
 │   │   ├── milk.ts                 # Sağım stoğu ve saklama süreleri
 │   │   ├── sleep.ts                # Tahmin, koçluk ve devir özeti kuralları
 │   │   ├── milestones.ts           # Kayıt etkinliklerinden isteğe bağlı anı bulma
@@ -136,6 +137,8 @@ JSON dışa aktarımı, `app_state` ile `care_events` satırlarını tam `AppSta
 Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema sürümü taşıyan JSON'a dönüştürür. `parseDataExport` boyutu, biçimi ve temel profil/kayıt yapılarını doğrular; `migrateState` veriyi geçerli şemaya birleştirir. Kullanıcı mevcut verinin yerini alacağını onayladıktan sonra durum SQLite anahtarına kaydedilir. JSON yedeği `expo-file-system` ile yerel cache'e yazılır ve `expo-sharing` üzerinden dosya olarak paylaşılır. İçe aktarmada `expo-document-picker` dosyayı seçer; içerik mevcut JSON doğrulama ve kullanıcı onayı akışına girer. Metin yapıştırma seçeneği de korunur. Aile ekranındaki tek seferlik cihaz aktarımı aynı JSON dosyasını paylaşır; otomatik cihaz senkronizasyonu sağlamaz. Yedekler otomatik olarak sunucuya gönderilmez.
 
 Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
+
+Katı gıda günlüğü, `src/domain/solids.ts` içinde kaydedilen yiyecek adlarını, ilk uygulama kayıt tarihini, öğün sayısını ve seçilen alerjen etiketlerini özetler. Tepki gözlemleri öğün notuyla birlikte tarih sırasıyla gösterilir; etiketlerden veya notlardan alerji durumu çıkarılmaz.
 
 Uyku koçluğu günü yerel takvim gününde en fazla bir kez ilerler. `SleepPlan.lastAdvancedDate` bu günü saklar; gün 14'e ulaştığında son gün ayrıca tamamlanır ve `completedDate` kaydedilir. Arayüz 14 günlük ilerlemeyi gösterir, aynı gün tekrar ilerlemeyi engeller. Yedek doğrulaması yeni tarih alanlarını varsa doğrular, yoksa eski yedek uyumluluğunu korur.
 
@@ -308,7 +311,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [ ] Widget, iOS Live Activity ve saat uygulamaları
 - [x] WHO 0–5 yaş kilo, boy ve baş çevresi z-skor tablolarıyla persentil eğrileri; kız/erkek eğrisi profilde isteğe bağlı seçilir
 - [ ] Aşı takvimi kaynak sürümleme ve hekim yönlendirmeli eksik doz/49–72 ay yakalama akışı
-- [ ] Ek gıda ve alerjen günlüğü
+- [x] Ek gıda/alerjen etiket geçmişi ve gözlem notlarının Özet ekranında listelenmesi; tıbbi yorum yapılmaması
 - [ ] Sesli Türkçe kayıt
 - [ ] İkiz ve çoklu bebek desteği
 - [ ] Erişilebilirlik testi, ekran okuyucu etiketleri ve dinamik yazı boyutu
