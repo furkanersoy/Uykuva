@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppPreferences, AppState, Baby, CareEvent, CareTask, EventKind, SleepCheckIn, SleepMethod } from "../domain/types";
+import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, EventKind, SleepCheckIn, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
 
@@ -36,12 +36,39 @@ export function useUykuvaState() {
         gestationalWeek: profile.gestationalWeek
       },
       caregiverName: profile.caregiverName.trim(),
+      caregivers: [{ id: "caregiver-1", name: profile.caregiverName.trim(), role: "parent" }],
+      activeCaregiverId: "caregiver-1",
       events: []
     }));
   }, []);
 
   const updateProfile = useCallback((baby: Baby, caregiverName: string) => {
-    setState((current) => ({ ...current, baby, caregiverName: caregiverName.trim() }));
+    setState((current) => ({
+      ...current,
+      baby,
+      caregiverName: caregiverName.trim(),
+      caregivers: current.caregivers.map((item) => item.id === current.activeCaregiverId ? { ...item, name: caregiverName.trim() } : item)
+    }));
+  }, []);
+
+  const addCaregiver = useCallback((caregiver: Omit<Caregiver, "id">) => {
+    setState((current) => ({ ...current, caregivers: [...current.caregivers, { ...caregiver, id: id("caregiver") }] }));
+  }, []);
+
+  const setActiveCaregiver = useCallback((caregiverId: string) => {
+    setState((current) => {
+      const selected = current.caregivers.find((item) => item.id === caregiverId);
+      return selected ? { ...current, activeCaregiverId: selected.id, caregiverName: selected.name } : current;
+    });
+  }, []);
+
+  const deleteCaregiver = useCallback((caregiverId: string) => {
+    setState((current) => {
+      if (current.caregivers.length <= 1) return current;
+      const caregivers = current.caregivers.filter((item) => item.id !== caregiverId);
+      const active = caregiverId === current.activeCaregiverId ? caregivers[0]! : caregivers.find((item) => item.id === current.activeCaregiverId)!;
+      return { ...current, caregivers, activeCaregiverId: active.id, caregiverName: active.name };
+    });
   }, []);
 
   const updatePreferences = useCallback((patch: Partial<AppPreferences>) => {
@@ -210,6 +237,9 @@ export function useUykuvaState() {
     runningFeed,
     completeOnboarding,
     updateProfile,
+    addCaregiver,
+    setActiveCaregiver,
+    deleteCaregiver,
     updatePreferences,
     addEvent,
     addSimpleEvent,
@@ -231,3 +261,4 @@ export function useUykuvaState() {
     clearAllData
   };
 }
+
