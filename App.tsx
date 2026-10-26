@@ -490,7 +490,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
   const maxDailySleep = Math.max(0, ...weeklySleep.map((day) => day.totalMinutes));
   const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
-  const latestGrowth = events.find((event) => event.kind === "growth");
+  const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
@@ -513,7 +513,7 @@ function InsightsScreen({ app, openTask, openVaccineSuggestions, now }: { app: R
       <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
       <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
       <MilkStockCard events={events} now={now} update={app.updateEvent} />
-      {latestGrowth ? <><SectionTitle title="Son büyüme ölçümü" /><Card tone="mint"><View style={styles.measureRow}><Measure value={latestGrowth.weightG ? `${latestGrowth.weightG} g` : "—"} label="Kilo" /><Measure value={latestGrowth.lengthCm ? `${latestGrowth.lengthCm} cm` : "—"} label="Boy" /><Measure value={latestGrowth.headCm ? `${latestGrowth.headCm} cm` : "—"} label="Baş" /></View><Text style={styles.muted}>{new Date(latestGrowth.startedAt).toLocaleDateString("tr-TR")}</Text></Card></> : null}
+      <GrowthHistoryCard measurements={growthMeasurements} />
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
@@ -566,6 +566,22 @@ function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date
 
 function Measure({ value, label }: { value: string; label: string }) {
   return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
+}
+
+function GrowthHistoryCard({ measurements }: { measurements: CareEvent[] }) {
+  if (!measurements.length) return null;
+  const rows = measurements.slice(0, 8);
+  return <>
+    <SectionTitle title="Büyüme geçmişi" action={`${measurements.length} ölçüm`} />
+    <Card tone="mint">
+      {rows.map((event) => <View key={event.id} style={styles.growthHistoryRow}>
+        <Text style={styles.muted}>{new Date(event.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}</Text>
+        <View style={styles.measureRow}><Measure value={event.weightG ? `${event.weightG} g` : "—"} label="Kilo" /><Measure value={event.lengthCm ? `${event.lengthCm} cm` : "—"} label="Boy" /><Measure value={event.headCm ? `${event.headCm} cm` : "—"} label="Baş" /></View>
+      </View>)}
+      {measurements.length > rows.length ? <Text style={styles.hint}>Son 8 ölçüm gösteriliyor.</Text> : null}
+      <Text style={styles.hint}>Yalnızca sizin girdiğiniz değerlerdir; persentil veya büyüme değerlendirmesi değildir.</Text>
+    </Card>
+  </>;
 }
 
 function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onRestoreData: () => void }) {
@@ -1032,6 +1048,7 @@ const styles = StyleSheet.create({
   measureRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 12 },
   measure: { flex: 1 },
   measureValue: { color: colors.ink, fontSize: 18, fontWeight: "800" },
+  growthHistoryRow: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.line },
   dualButtons: { flexDirection: "row", gap: 10, marginBottom: 14 },
   dualButton: { flex: 1 },
   taskDate: { color: colors.ink, fontSize: 12, fontWeight: "700" },
