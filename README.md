@@ -57,6 +57,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Tamamlanan aşı ve randevular için tarihli geçmiş; aşı geçmişi doktor özetine eklenir ve işaretleme tarihi açıkça belirtilir. Silme işlemi ayrıca onay ister
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
+- Aşı önerilerinde kaynak sürümü ve resmi Sağlık Bakanlığı bağlantısı; 49–72 ay suçiçeği yakalama dönemi için aile hekimiyle teyit hatırlatması
 - Sessiz saatlere uyan uyku bildirimleri
 - JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden geri yükleme; metin yapıştırma yedeği, tek seferlik telefonlar arası aktarım, doğrulama ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
