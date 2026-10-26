@@ -79,12 +79,33 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
+  const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
+  const [promptedSleepWindow, setPromptedSleepWindow] = useState<number | null>(null);
   useEffect(() => {
     const timer = setInterval(() => setClockNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow), [app.state.baby, app.state.events, clockNow]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
+
+  useEffect(() => {
+    if (!app.hydrated || !app.state.onboardingComplete || app.runningSleep || sleepEditor || !forecast.available || !forecast.start || !forecast.end) return;
+    const start = forecast.start.getTime();
+    const end = forecast.end.getTime();
+    if (clockNow.getTime() < end || promptedSleepWindow === start) return;
+    const alreadyLogged = app.state.events.some((event) => event.kind === "sleep" && new Date(event.startedAt).getTime() >= start - 15 * 60_000 && new Date(event.startedAt).getTime() <= end + 30 * 60_000);
+    if (alreadyLogged) return;
+    setPromptedSleepWindow(start);
+    const suggestedStart = new Date((start + end) / 2).toISOString();
+    Alert.alert(
+      "Uyku aralığı geçti",
+      `Bebeğiniz tahmini ${time(forecast.start)}–${time(forecast.end)} aralığında uykuya daldı mı? Evet derseniz orta saat forma eklenir; kaydetmeden önce düzeltebilirsiniz.`,
+      [
+        { text: "Henüz değil", style: "cancel" },
+        { text: "Uyudu", onPress: () => { setSleepEditorSuggestedStart(suggestedStart); setSleepEditor("new"); } }
+      ]
+    );
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, clockNow, forecast.available, forecast.start?.getTime(), forecast.end?.getTime(), sleepEditor, promptedSleepWindow]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -129,7 +150,7 @@ export default function App() {
         </View>
 
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} />}
-        {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => setSleepEditor(event)} onAddSleep={() => setSleepEditor("new")} />}
+        {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} />}
@@ -147,7 +168,7 @@ export default function App() {
       <CareTaskModal mode={taskMode} close={() => setTaskMode(null)} add={app.addCareTask} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
-      <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} visible={sleepEditor !== null} close={() => setSleepEditor(null)} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
+      <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
     </SafeAreaView>
   );
 }
@@ -581,7 +602,7 @@ function localDateValue(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function SleepEntryModal({ event, visible, close, add, update, bedtime, wakeTime }: { event: CareEvent | null; visible: boolean; close: () => void; add: ReturnType<typeof useUykuvaState>["addEvent"]; update: ReturnType<typeof useUykuvaState>["updateEvent"]; bedtime: string; wakeTime: string }) {
+function SleepEntryModal({ event, initialStartAt, visible, close, add, update, bedtime, wakeTime }: { event: CareEvent | null; initialStartAt?: string; visible: boolean; close: () => void; add: ReturnType<typeof useUykuvaState>["addEvent"]; update: ReturnType<typeof useUykuvaState>["updateEvent"]; bedtime: string; wakeTime: string }) {
   const [startDate, setStartDate] = useState("");
   const [startClock, setStartClock] = useState("");
   const [endClock, setEndClock] = useState("");
@@ -597,13 +618,21 @@ function SleepEntryModal({ event, visible, close, add, update, bedtime, wakeTime
       setOngoing(!event.endedAt);
       return;
     }
+    if (initialStartAt) {
+      const suggestedStart = new Date(initialStartAt);
+      setStartDate(localDateValue(suggestedStart));
+      setStartClock(time(suggestedStart));
+      setEndClock("");
+      setOngoing(false);
+      return;
+    }
     const start = new Date();
     start.setDate(start.getDate() - 1);
     setStartDate(localDateValue(start));
     setStartClock(isValidClock(bedtime) ? bedtime : "20:00");
     setEndClock(isValidClock(wakeTime) ? wakeTime : "07:00");
     setOngoing(false);
-  }, [visible, event, bedtime, wakeTime]);
+  }, [visible, event, initialStartAt, bedtime, wakeTime]);
 
   const save = () => {
     const start = new Date(`${startDate}T${startClock}:00`);
@@ -627,7 +656,7 @@ function SleepEntryModal({ event, visible, close, add, update, bedtime, wakeTime
     close();
   };
 
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir.</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>{initialStartAt ? "Tahmin aralığının orta saati dolduruldu. Gerçek yatış ve uyanış saatlerini kontrol edip gerekirse düzeltin." : "Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir."}</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
