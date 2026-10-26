@@ -22,7 +22,7 @@ import { coachingDay, createSleepCoachInsights, createSleepForecast, handoffSumm
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport } from "./src/domain/export";
 import { isValidClock } from "./src/domain/time";
-import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals } from "./src/domain/feeding";
+import { completedFeedMinutes, createFeedingForecast, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { CareEvent, CareTask, Caregiver, SleepMethod } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -527,7 +527,7 @@ function EventRow({ event, onDelete }: { event: CareEvent; onDelete?: () => void
   return (
     <Pressable onLongPress={onDelete} style={styles.eventRow}>
       <View style={[styles.eventDot, { backgroundColor: event.kind === "sleep" ? colors.lavender : event.kind === "feed" ? colors.peach : colors.mint }]} />
-      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}</Text></View>
+      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}</Text></View>
       <Text style={styles.eventTime}>{time(event.startedAt)}</Text>
     </Pressable>
   );
@@ -559,6 +559,7 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
   const [amount, setAmount] = useState("90");
   const [feedType, setFeedType] = useState<"breast" | "bottle" | "solid">("breast");
   const [foods, setFoods] = useState("");
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [reaction, setReaction] = useState("");
   const [note, setNote] = useState("");
   const [healthType, setHealthType] = useState<"temperature" | "medicine" | "symptom">("temperature");
@@ -588,6 +589,13 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
     if (![weightG, lengthCm, headCm].some((value) => Number.isFinite(value) && value > 0)) return Alert.alert("En az bir ölçüm yazın", "Kilo, boy veya baş çevresinden en az biri gerekli.");
     save({ weightG: weightG > 0 ? weightG : undefined, lengthCm: lengthCm > 0 ? lengthCm : undefined, headCm: headCm > 0 ? headCm : undefined });
   };
+  const saveSolidMeal = () => {
+    const list = foods.split(",").map((item) => item.trim()).filter(Boolean);
+    if (!list.length) return Alert.alert("Yiyecekleri yazın", "En az bir yiyecek adı gerekli.");
+    save({ feedType: "solid", foods: list, allergens: selectedAllergens, reactionNote: reaction.trim() || undefined });
+    setFoods(""); setReaction(""); setSelectedAllergens([]);
+  };
+  const toggleAllergen = (allergen: string) => setSelectedAllergens((current) => current.includes(allergen) ? current.filter((item) => item !== allergen) : [...current, allergen]);
   return (
     <Modal visible transparent animationType="slide" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} />
@@ -599,7 +607,7 @@ function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void;
             <View style={styles.choiceRow}><Pill label="Emzirme" active={feedType === "breast"} onPress={() => setFeedType("breast")} /><Pill label="Biberon" active={feedType === "bottle"} onPress={() => setFeedType("bottle")} /><Pill label="Katı gıda" active={feedType === "solid"} onPress={() => setFeedType("solid")} /></View>
             {feedType === "breast" ? <><Text style={styles.inputLabel}>Hangi taraf?</Text>{suggestedSide ? <Text style={styles.suggestion}>Sıradaki öneri: {suggestedSide === "left" ? "sol" : "sağ"} taraf</Text> : null}<View style={styles.choiceRow}><Pill label="Sol" active={suggestedSide === "left"} onPress={() => { app.toggleBreastfeed("left"); close(); }} /><Pill label="Sağ" active={suggestedSide === "right"} onPress={() => { app.toggleBreastfeed("right"); close(); }} /><Pill label="İki taraf" onPress={() => { app.toggleBreastfeed("both"); close(); }} /></View></> : null}
             {feedType === "bottle" ? <><Field label="Miktar (ml)" value={amount} onChangeText={setAmount} keyboardType="number-pad" /><PrimaryButton label="Biberonu kaydet" onPress={() => { const value = Number(amount); if (!Number.isFinite(value) || value <= 0 || value > 1000) return Alert.alert("Miktarı kontrol edin", "Pozitif bir ml değeri yazın."); save({ feedType: "bottle", amountMl: value }); }} /></> : null}
-            {feedType === "solid" ? <><Field label="Yiyecekler" value={foods} onChangeText={setFoods} placeholder="Örn. yoğurt, muz" /><Field label="Gözlenen tepki (isteğe bağlı)" value={reaction} onChangeText={setReaction} placeholder="Yalnızca gözleminizi yazın" /><PrimaryButton label="Öğünü kaydet" onPress={() => { const list = foods.split(",").map((item) => item.trim()).filter(Boolean); if (!list.length) return Alert.alert("Yiyecekleri yazın", "En az bir yiyecek adı gerekli."); save({ feedType: "solid", foods: list, reactionNote: reaction.trim() || undefined }); }} /></> : null}
+            {feedType === "solid" ? <><Field label="Yiyecekler" value={foods} onChangeText={setFoods} placeholder="Örn. yoğurt, muz" /><Text style={styles.inputLabel}>Takip edilen alerjen içerikleri (isteğe bağlı)</Text><View style={styles.choiceRow}>{TRACKED_ALLERGENS.map((allergen) => <Pill key={allergen} label={allergen} active={selectedAllergens.includes(allergen)} onPress={() => toggleAllergen(allergen)} />)}</View><Text style={styles.hint}>Bunlar yalnızca öğün kaydına eklenen etiketlerdir; güvenli gıda veya alerji önerisi değildir.</Text><Field label="Gözlenen tepki (isteğe bağlı)" value={reaction} onChangeText={setReaction} placeholder="Gözleminizi yazın" /><PrimaryButton label="Öğünü kaydet" onPress={saveSolidMeal} /></> : null}
           </>}
         </> : null}
         {mode === "diaper" ? <View style={styles.choiceRow}><Pill label="Islak" active onPress={() => save({ diaperType: "wet" })} /><Pill label="Kirli" onPress={() => save({ diaperType: "dirty" })} /><Pill label="İkisi" onPress={() => save({ diaperType: "both" })} /></View> : null}
