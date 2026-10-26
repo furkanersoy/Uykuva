@@ -80,6 +80,7 @@ export default function App() {
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
+  const [eventEditor, setEventEditor] = useState<CareEvent | null>(null);
   const [promptedSleepWindow, setPromptedSleepWindow] = useState<number | null>(null);
   useEffect(() => {
     const timer = setInterval(() => setClockNow(new Date()), 30_000);
@@ -150,7 +151,7 @@ export default function App() {
         </View>
 
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} />}
-        {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
+        {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={setTaskMode} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} />}
@@ -169,6 +170,7 @@ export default function App() {
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
+      <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
     </SafeAreaView>
   );
 }
@@ -269,14 +271,14 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: Re
   );
 }
 
-function TimelineScreen({ events, onDelete, onEditSleep, onAddSleep }: { events: CareEvent[]; onDelete: (id: string) => void; onEditSleep: (event: CareEvent) => void; onAddSleep: () => void }) {
+function TimelineScreen({ events, onDelete, onEditSleep, onEditRecord, onAddSleep }: { events: CareEvent[]; onDelete: (id: string) => void; onEditSleep: (event: CareEvent) => void; onEditRecord: (event: CareEvent) => void; onAddSleep: () => void }) {
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Günün akışı</Text>
-      <Text style={styles.pageIntro}>Uyku kaydına dokunarak saatleri düzeltin; silmek için basılı tutun.</Text>
+      <Text style={styles.pageIntro}>Kayda dokunarak tarih ve saatini düzeltin; silmek için basılı tutun.</Text>
       <PrimaryButton label="Geçmiş uyku ekle" quiet onPress={onAddSleep} />
       <View style={styles.spacer12} />
-      <Card>{events.map((event) => <EventRow key={event.id} event={event} onPress={event.kind === "sleep" ? () => onEditSleep(event) : undefined} onDelete={() => onDelete(event.id)} />)}</Card>
+      <Card>{events.map((event) => <EventRow key={event.id} event={event} onPress={() => event.kind === "sleep" ? onEditSleep(event) : onEditRecord(event)} onDelete={() => onDelete(event.id)} />)}</Card>
     </ScrollView>
   );
 }
@@ -665,6 +667,40 @@ function SleepEntryModal({ event, initialStartAt, visible, close, add, update, b
   };
 
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>{initialStartAt ? "Tahmin aralığının orta saati dolduruldu. Gerçek yatış ve uyanış saatlerini kontrol edip gerekirse düzeltin." : "Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir."}</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+}
+
+function RecordTimeModal({ event, close, update }: { event: CareEvent | null; close: () => void; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
+  const [date, setDate] = useState("");
+  const [startClock, setStartClock] = useState("");
+  const [endClock, setEndClock] = useState("");
+
+  useEffect(() => {
+    if (!event) return;
+    const start = new Date(event.startedAt);
+    setDate(localDateValue(start));
+    setStartClock(time(start));
+    setEndClock(event.endedAt ? time(event.endedAt) : "");
+  }, [event]);
+
+  const save = () => {
+    if (!event) return;
+    const start = new Date(`${date}T${startClock}:00`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(start.getTime()) || localDateValue(start) !== date || !isValidClock(startClock)) {
+      return Alert.alert("Tarih ve saati kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
+    }
+    if (start.getTime() > Date.now()) return Alert.alert("Gelecek bir saat seçildi", "Kayıt zamanı şu andan sonra olamaz.");
+    let end: Date | undefined;
+    if (event.endedAt) {
+      if (!isValidClock(endClock)) return Alert.alert("Bitiş saatini kontrol edin", "Saati SS:DD biçiminde yazın.");
+      end = new Date(`${date}T${endClock}:00`);
+      if (end.getTime() <= start.getTime()) end.setDate(end.getDate() + 1);
+      if (end.getTime() > Date.now() || end.getTime() - start.getTime() > 24 * 60 * 60 * 1000) return Alert.alert("Bitiş saatini kontrol edin", "Bitiş, başlangıçtan sonra ve 24 saat içinde olmalı.");
+    }
+    update(event.id, { startedAt: start.toISOString(), ...(event.endedAt ? { endedAt: end?.toISOString() } : {}) });
+    close();
+  };
+
+  return <Modal visible={Boolean(event)} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Kayıt saatini düzelt</Text><Text style={styles.pageIntro}>{event ? eventTitle(event) : ""} · Kayıt içeriği ve bakım veren bilgisi korunur.</Text><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Başlangıç saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="10:00" />{event?.endedAt ? <Field label="Bitiş saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="10:20" /> : null}<Text style={styles.hint}>Bitiş saati başlangıçtan erkense ertesi gün kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Değişikliği kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function QuickLogModal({ mode, close, app }: { mode: LogMode; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
