@@ -34,6 +34,13 @@ import { colors } from "./src/ui/theme";
 type Tab = "today" | "timeline" | "coach" | "insights" | "family";
 type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | "memory" | null;
 type TaskMode = "vaccine" | "appointment" | null;
+type TimelineFilter = "all" | "sleep" | "feeding" | "pumping" | "diaper" | "health" | "growth" | "notes" | "memories";
+
+const timelineFilters: { id: TimelineFilter; label: string }[] = [
+  { id: "all", label: "Tümü" }, { id: "sleep", label: "Uyku" }, { id: "feeding", label: "Beslenme" },
+  { id: "pumping", label: "Sağım" }, { id: "diaper", label: "Bez" }, { id: "health", label: "Sağlık" },
+  { id: "growth", label: "Ölçüm" }, { id: "notes", label: "Not" }, { id: "memories", label: "Anı" }
+];
 
 const tabs: { id: Tab; label: string; glyph: string }[] = [
   { id: "today", label: "Bugün", glyph: "⌂" },
@@ -286,13 +293,33 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now }: { app: Re
 }
 
 function TimelineScreen({ events, onDelete, onEditSleep, onEditRecord, onAddSleep }: { events: CareEvent[]; onDelete: (id: string) => void; onEditSleep: (event: CareEvent) => void; onEditRecord: (event: CareEvent) => void; onAddSleep: () => void }) {
+  const [filter, setFilter] = useState<TimelineFilter>("all");
+  const [query, setQuery] = useState("");
+  const filtered = events.filter((event) => {
+    const matchesFilter = filter === "all"
+      || filter === "sleep" && event.kind === "sleep"
+      || filter === "feeding" && event.kind === "feed" && event.feedType !== "pump"
+      || filter === "pumping" && event.kind === "feed" && event.feedType === "pump"
+      || filter === "diaper" && event.kind === "diaper"
+      || filter === "health" && event.kind === "health"
+      || filter === "growth" && event.kind === "growth"
+      || filter === "notes" && event.kind === "note"
+      || filter === "memories" && event.kind === "memory";
+    if (!matchesFilter) return false;
+    const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
+    if (!normalizedQuery) return true;
+    const searchable = [eventTitle(event), event.caregiver, event.note, event.medicineName, event.memoryTitle, event.foods?.join(" ")].filter(Boolean).join(" ").toLocaleLowerCase("tr-TR");
+    return searchable.includes(normalizedQuery);
+  });
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Günün akışı</Text>
-      <Text style={styles.pageIntro}>Kayda dokunarak tarih ve saatini düzeltin; silmek için basılı tutun.</Text>
+      <Text style={styles.pageIntro}>Kayıtları türüne veya bakım veren adına göre bulun. Kayda dokunup saatini düzenleyin; silmek için basılı tutun.</Text>
+      <TextInput value={query} onChangeText={setQuery} style={styles.input} placeholder="Kayıt veya bakım veren ara" placeholderTextColor="#93A09C" />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>{timelineFilters.map((item) => <Pill key={item.id} label={item.label} active={filter === item.id} onPress={() => setFilter(item.id)} />)}</ScrollView>
       <PrimaryButton label="Geçmiş uyku ekle" quiet onPress={onAddSleep} />
       <View style={styles.spacer12} />
-      <Card>{events.map((event) => <EventRow key={event.id} event={event} onPress={() => event.kind === "sleep" ? onEditSleep(event) : onEditRecord(event)} onDelete={() => onDelete(event.id)} />)}</Card>
+      <Card>{filtered.length ? filtered.map((event) => <EventRow key={event.id} event={event} onPress={() => event.kind === "sleep" ? onEditSleep(event) : onEditRecord(event)} onDelete={() => onDelete(event.id)} />) : <Text style={styles.body}>Bu arama ve filtreyle eşleşen kayıt yok.</Text>}</Card>
     </ScrollView>
   );
 }
