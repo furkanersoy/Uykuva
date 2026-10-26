@@ -17,6 +17,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
 - Ortak bakım zaman çizelgesi
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama/filtreleme
+- Bakım kaydını zaman çizelgesinden silerken ikinci onay
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; pencere dışında başlamış açık emzirmeyi ve sol/sağ sürelerini de gösterme
