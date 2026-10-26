@@ -15,6 +15,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Akşam rutini ve günlük görevler
 - Günlük bakım özeti
 - Gece yarısını aşan kayıtları günlere dağıtan yedi günlük uyku süresi grafiği
+- Düzeltilmiş yaşı 9 haftadan küçük bebekler için kayan son 24 saat özeti
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
 - SQLite tabanlı çevrimdışı cihaz içi saklama
 - İsteğe bağlı uyku penceresi bildirimleri
