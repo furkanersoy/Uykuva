@@ -442,8 +442,8 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
   };
 }
 
-export function handoffSummary(state: AppState, now = new Date()): string {
-  const since = now.getTime() - 4 * 60 * 60 * 1000;
+export function handoffSummary(state: AppState, now = new Date(), windowHours: 2 | 4 | 6 | 8 = 4): string {
+  const since = now.getTime() - windowHours * 60 * 60 * 1000;
   const recent = state.events.filter((event) => new Date(event.startedAt).getTime() >= since && new Date(event.startedAt).getTime() <= now.getTime());
   const feeds = recent.filter((event) => event.kind === "feed" && event.feedType !== "pump");
   const pumping = recent.filter((event) => event.kind === "feed" && event.feedType === "pump");
@@ -458,14 +458,14 @@ export function handoffSummary(state: AppState, now = new Date()): string {
   });
   const sleepMinutes = sleepSegments.reduce((sum, segment) => sum + segment.minutes, 0);
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
-  const parts = [`Son 4 saatte ${recent.length} kayıt`];
+  const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
   if (feeds.length) parts.push(amount ? `${amount} ml beslenme` : `${feeds.length} beslenme`);
   if (pumping.length) parts.push(`${pumping.length} sağım · ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml stoğa eklendi`);
   if (solidMeals.length) {
     const tagged = [...new Set(solidMeals.flatMap((event) => event.allergens ?? []))];
     parts.push(`${solidMeals.length} katı öğün${tagged.length ? ` · etiketlenen: ${tagged.join(", ")}` : ""}`);
   }
-  if (sleepMinutes) parts.push(`Son 4 saatte ${Math.round(sleepMinutes)} dk uyku${sleepOngoing ? " · şu anda uyuyor" : ""}`);
+  if (sleepMinutes) parts.push(`Son ${windowHours} saatte ${Math.round(sleepMinutes)} dk uyku${sleepOngoing ? " · şu anda uyuyor" : ""}`);
   if (diapers) parts.push(`${diapers} bez`);
   return `${parts.join(" · ")}.`;
 }
