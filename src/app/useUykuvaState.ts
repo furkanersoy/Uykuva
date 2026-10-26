@@ -214,6 +214,10 @@ export function useUykuvaState() {
     setState((current) => ({ ...current, careTasks: current.careTasks.filter((task) => task.id !== taskId) }));
   }, []);
 
+  const restoreData = useCallback((restored: AppState) => {
+    setState(restored);
+  }, []);
+
   const clearAllData = useCallback(async () => {
     await resetState();
     setState(createInitialState());
@@ -263,6 +267,7 @@ export function useUykuvaState() {
     addCareTask,
     toggleCareTask,
     deleteCareTask,
+    restoreData,
     clearAllData
   };
 }
