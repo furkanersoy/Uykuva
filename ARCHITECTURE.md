@@ -236,6 +236,8 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - Günlük tamamlanan görevler
 - İlerletilen günlerin yöntem, odak ve görev sayısı geçmişi (en çok 14 gün)
 
+Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekten gösterilen yaklaşımı kaydeder. Hazır oluş maddelerinden biri kaldırılırsa koçluk duyarlı rutine döner; karşılaştırma yalnızca o yaklaşımla kaydedilmiş günleri kullanır.
+
 ## 9. Şu ana kadar yapılanlar
 
 - [x] Expo/React Native TypeScript projesi oluşturuldu.
@@ -249,6 +251,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
 - [x] 14 günlük uyku eğitimi/alışkanlık planı eklendi.
 - [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
+- [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
 - [x] Plan günü ilerletildiğinde yaklaşım/odak ve tamamlanan görev sayısı 14 günlük geçmişte korunuyor.
 - [x] Aynı yaklaşım/odakta ilk ve son üç plan gününün check-in kolaylığı ve sayısal gece uyanması kayıtları karşılaştırılabiliyor.
@@ -285,6 +288,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Aktif bakım veren değiştirme ve seçilen kişi adına kayıt ekleme eklendi.
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
+- [x] Yaklaşan doktor randevuları ve hazırlık notları paylaşılabilir doktor özetine ekleniyor.
 - [x] Aşı ve doktor randevuları için sessiz saatleri gözeten yerel hatırlatmalar eklendi.
 - [x] Son bez kaydına göre 2/3/4 saat seçenekli, sessiz saatleri gözeten tek seferlik kontrol hatırlatması eklendi.
 - [x] Uyku koçluğu yaş aşamasına göre ritim temellerine geçiyor; plan yaklaşımları hazırlık listesi tamamlanana kadar açılmıyor.
