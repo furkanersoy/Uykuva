@@ -705,7 +705,10 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
       const date = new Date(event.startedAt);
       return date.getHours() * 60 + date.getMinutes();
     });
-  const recentCheckIns = checkIns.filter((item) => !item.date || item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now)).slice(0, 7);
+  const recentCheckIns = checkIns
+    .filter((item) => typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now))
+    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
+    .slice(0, 7);
   const checkInBedtimes = recentCheckIns.flatMap((item) => {
     if (!item.bedtime || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.bedtime)) return [];
     const [hour, minute] = item.bedtime.split(":").map(Number);
