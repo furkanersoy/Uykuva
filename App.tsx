@@ -413,6 +413,20 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
   const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
+  const [nightBedtime, setNightBedtime] = useState(todayCheckIn?.bedtime ?? "");
+  const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
+  useEffect(() => {
+    setNightBedtime(todayCheckIn?.bedtime ?? "");
+    setMorningWake(todayCheckIn?.wakeTime ?? "");
+  }, [today, todayCheckIn?.bedtime, todayCheckIn?.wakeTime]);
+  const nightSpanMinutes = isValidClock(nightBedtime) && isValidClock(morningWake)
+    ? (() => {
+      const [bedHour, bedMinute] = nightBedtime.split(":").map(Number);
+      const [wakeHour, wakeMinute] = morningWake.split(":").map(Number);
+      const span = (wakeHour! * 60 + wakeMinute! - bedHour! * 60 - bedMinute! + 1440) % 1440;
+      return span > 0 ? span : undefined;
+    })()
+    : undefined;
   const [bedtime, setBedtime] = useState(app.state.sleepPlan.bedtime);
   const [wakeTime, setWakeTime] = useState(app.state.sleepPlan.wakeTime);
   const [routineLabel, setRoutineLabel] = useState("");
@@ -423,6 +437,12 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
   const saveSchedule = () => {
     if (!isValidClock(bedtime) || !isValidClock(wakeTime)) return Alert.alert("Saatleri kontrol edin", "Saatleri 20:00 gibi SS:DD biçiminde yazın.");
     app.updateSleepSchedule(bedtime, wakeTime);
+  };
+  const saveNightSummary = () => {
+    if (!nightBedtime.trim() && !morningWake.trim()) return Alert.alert("Saatleri girin", "İsterseniz yalnızca yatış veya sabah uyanış saatini de kaydedebilirsiniz.");
+    if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWake))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
+    if (nightBedtime && morningWake && nightBedtime === morningWake) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
+    app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() || undefined });
   };
   const addRoutine = () => {
     const minutes = Number(routineMinutes);
@@ -540,6 +560,11 @@ function CoachScreen({ app }: { app: ReturnType<typeof useUykuvaState> }) {
       <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={setBedtime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={setWakeTime} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
       <Card tone="peach">
         <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
+        <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
+        <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={setNightBedtime} style={styles.compactInput} placeholder="20:30" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" value={morningWake} onChangeText={setMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="numbers-and-punctuation" /></View></View>
+        {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
+        <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() || undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
+        <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
         <Text style={styles.inputLabel}>Uykuya geçişin kolaylığı</Text>
         <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
         <Text style={styles.easeLabels}><Text>Zordu</Text><Text>                                      Kolaydı</Text></Text>

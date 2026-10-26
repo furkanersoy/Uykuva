@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, SleepForecast, SleepMethod } from "./types";
+import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepMethod } from "./types";
 
 const DAY = 86_400_000;
 
@@ -470,7 +470,7 @@ export type SleepCoachInsights = {
   nightsUsed: number;
 };
 
-export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: { ease?: number; nightWakings?: number }[]): SleepCoachInsights {
+export function createSleepCoachInsights(events: CareEvent[], targetBedtime: string, checkIns: Pick<SleepCheckIn, "ease" | "nightWakings" | "bedtime">[]): SleepCoachInsights {
   const target = clockMinutes(targetBedtime) ?? 20 * 60;
   const nightStarts = events
     .filter((event) => {
@@ -485,7 +485,13 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
       const date = new Date(event.startedAt);
       return date.getHours() * 60 + date.getMinutes();
     });
-  const actual = nightStarts.length ? median(nightStarts) : undefined;
+  const checkInBedtimes = checkIns.flatMap((item) => {
+    if (!item.bedtime || !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.bedtime)) return [];
+    const [hour, minute] = item.bedtime.split(":").map(Number);
+    return [hour! * 60 + minute!];
+  });
+  const bedtimeSample = nightStarts.length >= 3 || !checkInBedtimes.length ? nightStarts : checkInBedtimes;
+  const actual = bedtimeSample.length ? median(bedtimeSample) : undefined;
   const routineEvents = events
     .filter((event) => event.kind === "note" && event.endedAt && event.note?.startsWith("Akşam rutini tamamlandı"))
     .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime());
@@ -529,7 +535,7 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     nightWakingsAverage,
     routineToSleepMedianMinutes: routineLatencies.length ? median(routineLatencies) : undefined,
     routineToSleepSamples: routineLatencies.length,
-    nightsUsed: nightStarts.length
+    nightsUsed: bedtimeSample.length
   };
 }
 
@@ -594,3 +600,4 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   return `${parts.join(" · ")}.`;
 }
+

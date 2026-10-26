@@ -90,7 +90,7 @@ Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlar�
 
 Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamamlamayı veya atlamayı takip eder. Rutin bitirildiğinde tamamlanan adım sayısı ve yaklaşık süre, etkin bakım veren adına zaman çizelgesine bir not olarak eklenir.
 
-Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak isteğe bağlı kısa bağlam notu saklar. Bu check-in notları günlük doktor özetine dahil edilmez; cihaz verisi dışa aktarımında yer alır.
+Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak isteğe bağlı yatış/uyanış saatleri ve kısa bağlam notu saklar. Bu check-in notları günlük doktor özetine dahil edilmez; cihaz verisi dışa aktarımında yer alır.
 
 ### Uygulama durumu
 
@@ -144,6 +144,8 @@ Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. �
 Büyüme geçmişi son sekiz kilo/boy/baş çevresi ölçümünü tarihle gösterir. İsteğe bağlı WHO eğrisi seçimiyle `src/domain/whoGrowth.ts`, WHO Anthro'nun resmî deposundaki günlük LMS tablolarından (0–1826 gün) z-skoru ve persentil hesaplar; küçük grafikler P10/P50/P90 referans çizgileri ve ölçüm noktalarını gösterir. Boy ölçümünde yatış/ayakta bilgisi saklanır ve yaşa uymayan ölçüm konumunda WHO'nun 0,7 cm düzeltmesi uygulanır. WHO verileri `src/data/{weianthro,lenanthro,hcanthro}.json` dosyalarında tutulur. Kaynak: [WHO Anthro büyüme standartları hesaplama deposu](https://github.com/WorldHealthOrganization/anthro). Eğriler bilgilendirme amaçlıdır; tıbbi yorum veya tanı oluşturmaz.
 
 Gece uyanması rehberi yaş aşamasına göre ayrılır: yeni doğanda destek ve ihtiyaçlara yanıt, hazırlık döneminde tutarlı rutin, hazır oluş koşulları tamamlandığında ise seçili yaklaşımın adımları gösterilir. Beslenme ihtiyacını ertelemeyi veya ağlamayı görmezden gelmeyi önermeyen kısa yol gösterimi sunar. Bir yaş altı için güvenli uyku notu, [AAP HealthyChildren rehberindeki](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx) sırtüstü, sert/düz yüzey ve boş uyku alanı ilkelerine bağlanır. Bebeğin farklı bireysel ihtiyaçları için metin klinik değerlendirme yerine geçmez.
+
+Sabah check-in'i, zamanlayıcı kullanılmayan geceler için yatış ve sabah uyanış saatlerini isteğe bağlı kaydedebilir. `SleepCheckIn` bu değerleri yerel tarihle saklar; koçun gerçek yatış medyanında en az üç zamanlayıcılı gece varsa onlar, daha azı varsa kullanıcının manuel yatış özetleri kullanılır. Gece aralığı uyanık kalınan süreyi içerir ve toplam uyku süresi diye sunulmaz. Yedek doğrulaması isteğe bağlı saat alanlarını doğrular.
 
 ## 6. Uyku tahmin motoru
 
@@ -260,6 +262,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Son bez kaydına göre 2/3/4 saat seçenekli, sessiz saatleri gözeten tek seferlik kontrol hatırlatması eklendi.
 - [x] Uyku koçluğu yaş aşamasına göre ritim temellerine geçiyor; plan yaklaşımları hazırlık listesi tamamlanana kadar açılmıyor.
 - [x] Sabah değerlendirmesinde gece uyanmaları kaydediliyor ve son yedi check-in ortalaması gösteriliyor.
+- [x] Zamanlayıcı kullanılmayan geceler için manuel yatış/sabah uyanış özeti ve koçun yatış medyanına veri kaynağı eklendi.
 - [x] Katı öğünlerde takip etiketleri ve ebeveyn gözlemi zaman çizelgesi, devir özeti ve doktor özetinde saklanıyor.
 - [x] Son yedi günün uyku süreleri, gece yarısını aşan dönemler günlere dağıtılarak grafikte gösteriliyor.
 - [x] Zaman çizelgesinden geçmiş uyku ekleme ve kayıt saatlerini düzenleme eklendi.

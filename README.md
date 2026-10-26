@@ -39,6 +39,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Günlük gece uyanma kaydı ve son yedi check-in ortalaması
 - Sabah check-in'ine isteğe bağlı bağlam notu ekleme
+- Zamanlayıcı kullanılmayan geceler için isteğe bağlı yatış/sabah uyanış özeti; seyrek gece kayıtlarında yatış medyanını uyku koçuna katma
 - Uyku planı yaklaşımını yaş aşaması ve hazırlık listesine göre gösterme
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi
