@@ -94,7 +94,7 @@ function dayPartFor(date: Date): DayPart {
 }
 
 function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Record<DayPart, number[]> {
-  const cutoff = now.getTime() - 14 * DAY;
+  const cutoff = now.getTime() - 30 * DAY;
   const sleeps = events
     .filter((event) => {
       if (event.kind !== "sleep" || !event.endedAt) return false;
@@ -171,7 +171,7 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
     awakeMinutes,
     confidence: hasPersonalPattern ? personal.length >= 8 ? "high" : "medium" : "low",
     explanation: hasPersonalPattern
-      ? `${DAY_PART_LABELS[dayPart]} saat dilimindeki son ${personal.length} uyanıklık kaydı ve yaş aralığı birlikte değerlendirildi.`
+      ? `Son 30 gündeki ${DAY_PART_LABELS[dayPart]} uyanıklık kayıtlarının son ${personal.length} örneği yaş aralığıyla birlikte değerlendirildi.`
       : `${DAY_PART_LABELS[dayPart]} saat diliminde kişisel tahmin için yeterli kayıt yok (${personal.length}/${requiredSamples}); yaş aralığı kullanılıyor.`
   };
 }
