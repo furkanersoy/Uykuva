@@ -25,7 +25,7 @@ import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, createDailyNapOutline, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
-import { suggestedVaccineTasks } from "./src/domain/vaccineSchedule";
+import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
@@ -1240,6 +1240,13 @@ function CareTaskModal({ mode, close, add }: { mode: TaskMode; close: () => void
 function VaccineSuggestionsModal({ visible, close, birthDate, tasks, add, now }: { visible: boolean; close: () => void; birthDate: string; tasks: CareTask[]; add: ReturnType<typeof useUykuvaState>["addCareTask"]; now: Date }) {
   const suggestions = useMemo(() => suggestedVaccineTasks(birthDate, tasks.map((task) => task.title), now), [birthDate, tasks, now]);
   if (!visible) return null;
+  const babyAgeMonths = completedAgeMonths(birthDate, now);
+  const hasVaricellaSecondDose = tasks.some((task) => {
+    const title = task.title.toLocaleLowerCase("tr-TR");
+    return task.type === "vaccine" && title.includes("suçiçeği") && (title.includes("2. doz") || title.includes("ikinci doz"));
+  });
+  const showVaricellaCatchUpInfo = babyAgeMonths >= 49 && babyAgeMonths <= 72 && !hasVaricellaSecondDose;
+  const openOfficialSource = () => void Linking.openURL(TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE).catch(() => Alert.alert("Kaynak açılamadı", "T.C. Sağlık Bakanlığı duyurusuna şu anda erişilemiyor."));
   const addSuggestion = (suggestion: (typeof suggestions)[number]) => {
     add({ type: "vaccine", title: suggestion.title, dueAt: suggestion.dueAt.toISOString(), note: "Öneri: Türkiye Ulusal Çocukluk Dönemi Aşılama Takvimi. Uygulama zamanını aile hekiminizle teyit edin." });
     Alert.alert("Takvime eklendi", `${suggestion.title} için öneri tarihi eklendi.`);
@@ -1249,7 +1256,8 @@ function VaccineSuggestionsModal({ visible, close, birthDate, tasks, add, now }:
     <Text style={styles.pageIntro}>Doğum tarihine göre yaklaşan yaş dönüm noktaları. Her öneriyi ayrı ayrı takvime ekleyebilirsiniz; uygulama aşı yapıldığını varsaymaz.</Text>
     <Card tone="peach"><Text style={styles.body}>Bu liste takip kolaylığı içindir. Aşı kartınızı ve aile hekiminizin önerisini esas alın. Geçmiş dozlar için telafi planını aile hekiminizle belirleyin.</Text></Card>
     {suggestions.length ? suggestions.map((suggestion) => <Card key={suggestion.id}><View style={styles.measureRow}><View style={styles.flex}><Text style={styles.eventTitle}>{suggestion.title}</Text><Text style={styles.muted}>{suggestion.ageMonths === 156 ? "13 yaş" : `${suggestion.ageMonths}. ay`} · {suggestion.dueAt.toLocaleDateString("tr-TR")}</Text></View><PrimaryButton label="Ekle" quiet onPress={() => addSuggestion(suggestion)} /></View></Card>) : <Card><Text style={styles.body}>Eklenebilecek ileri tarihli öneri kalmadı. Aşı kayıtlarınızı ve sıradaki adımları aile hekiminizle gözden geçirin.</Text></Card>}
-    <Text style={styles.hint}>Suçiçeği ikinci doz önerisi, 1 Eylül 2026 itibarıyla 48. ay güncellemesini içerir.</Text>
+    <Card><Text style={styles.eventTitle}>Kaynak sürümü: {TURKEY_VACCINE_SCHEDULE_BASE_VERSION} takvimi · güncelleme {new Date(`${TURKEY_VACCINE_SCHEDULE_UPDATE_DATE}T12:00:00`).toLocaleDateString("tr-TR")}</Text><Text style={styles.muted}>Ulusal takvim önerileri yalnızca takip kolaylığı içindir; uygulama çocuğun aşı uygunluğunu veya eksik dozunu belirlemez.</Text><View style={styles.spacer12} /><PrimaryButton label="Resmi Sağlık Bakanlığı duyurusunu aç" quiet onPress={openOfficialSource} /></Card>
+    {showVaricellaCatchUpInfo ? <Card tone="peach"><Text style={styles.cardTitle}>49–72 ay için suçiçeği ikinci dozunu teyit edin</Text><Text style={styles.body}>Resmi duyuruda, ikinci dozu almamış 49–72 aylık çocuklar için yakalama uygulaması belirtiliyor. Aşı kartı ve e-Nabız kayıtlarını aile hekiminizle gözden geçirin; bu uygulama doz gerekliliğine karar vermez.</Text><View style={styles.spacer12} /><PrimaryButton label="Resmi yakalama duyurusunu aç" quiet onPress={openOfficialSource} /></Card> : null}
     <PrimaryButton label="Kapat" quiet onPress={close} /><View style={styles.spacer24} />
   </ScrollView></Modal>;
 }
