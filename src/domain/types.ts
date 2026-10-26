@@ -47,6 +47,7 @@ export type SleepMethod = "responsive" | "gradual" | "camping";
 
 export type SleepPlan = {
   method: SleepMethod;
+  paused: boolean;
   startDate: string;
   day: number;
   bedtime: string;
