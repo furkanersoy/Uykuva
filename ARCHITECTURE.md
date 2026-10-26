@@ -330,6 +330,8 @@ Randevular tek seferlik, haftalık veya aylık olarak ayarlanabilir. Tekrarlanan
 
 Gece modu girişinde ekran okuyucu etiketi ve eylem ipucu bulunur. Gece modu giriş/çıkış hedefleri en az 48 dp, uyku/beslenme/bez hızlı eylemleri en az 88 dp yüksekliğindedir. Metinler sistemin varsayılan yazı ölçeklendirmesini kullanır; bu düzenleme tam erişilebilirlik denetiminin yerini almaz.
 
+Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrarlayan zor gecelerde daha fazla destek ve temel ihtiyaç kontrolü önerir; daha kolay gecelerde mevcut rutini korumayı söyler. Bu rehber plan yöntemini otomatik değiştirmez, beslenmeyi ertelemez ve uyku başarısı/sağlık sonucu iddiasında bulunmaz.
+
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
 - [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
 - [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
