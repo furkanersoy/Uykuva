@@ -26,7 +26,11 @@ export function migrateState(value: unknown): AppState {
     caregivers,
     activeCaregiverId: caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id,
     events: Array.isArray(candidate.events) ? candidate.events : initial.events,
-    careTasks: Array.isArray(candidate.careTasks) ? candidate.careTasks : [],
+    careTasks: Array.isArray(candidate.careTasks) ? candidate.careTasks.map((task) => {
+      const repeat = task.type === "appointment" && ["weekly", "monthly"].includes(String(task.repeat)) ? task.repeat : undefined;
+      const date = new Date(task.dueAt);
+      return { ...task, repeat, recurrenceId: repeat ? task.recurrenceId || `recurrence-${task.id}` : undefined, recurrenceDay: repeat ? Number.isInteger(task.recurrenceDay) && task.recurrenceDay! >= 1 && task.recurrenceDay! <= 31 ? task.recurrenceDay : date.getDate() : undefined, generated: repeat ? task.generated === true : undefined };
+    }) : [],
     sleepPlan: {
       ...initial.sleepPlan,
       ...candidate.sleepPlan,
