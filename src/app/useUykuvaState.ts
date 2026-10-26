@@ -195,7 +195,7 @@ export function useUykuvaState() {
     });
   }, []);
 
-  const advancePlan = useCallback((completedTaskCount: number, totalTaskCount: number) => {
+  const advancePlan = useCallback((completedTaskCount: number, totalTaskCount: number, appliedMethod?: SleepMethod) => {
     const today = localDateKey();
     setState((current) => {
       const plan = current.sleepPlan;
@@ -203,7 +203,7 @@ export function useUykuvaState() {
       const dayRecord = {
         date: today,
         day: plan.day,
-        method: plan.method,
+        method: appliedMethod ?? plan.method,
         focus: plan.focus,
         completedTasks: Math.max(0, Math.min(totalTaskCount, completedTaskCount)),
         totalTasks: Math.max(0, totalTaskCount)
