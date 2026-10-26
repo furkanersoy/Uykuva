@@ -225,6 +225,7 @@ Uygulamada kontrollü ağlatma sayacı, kesin başarı vaadi veya bebeği görme
 - [x] Katı öğünlerde takip etiketleri ve ebeveyn gözlemi zaman çizelgesi, devir özeti ve doktor özetinde saklanıyor.
 - [x] Son yedi günün uyku süreleri, gece yarısını aşan dönemler günlere dağıtılarak grafikte gösteriliyor.
 - [x] Zaman çizelgesinden geçmiş uyku ekleme ve kayıt saatlerini düzenleme eklendi.
+- [x] Zaman çizelgesinden tüm bakım kayıtlarının tarih ve saatini içeriği koruyarak düzeltme eklendi.
 - [x] Uyku tahmini kişisel uyanıklık örneklerini son 14 günle sınırlar ve aktif uyku süresini canlı gösterir.
 - [x] 9 haftadan küçük bebeklerde uyku, beslenme, bez ve sağlık özeti takvim günü yerine son 24 saati kapsar.
 - [x] Tahmin aralığı geçtikten sonra kaydı olmayan bakım verene bir kez sorar ve gözden geçirilebilir tarihli kayıt açar.
