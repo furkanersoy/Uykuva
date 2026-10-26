@@ -49,9 +49,10 @@ export function createInitialState(): AppState {
     preferences: {
       notificationsEnabled: false,
       sleepReminderMinutes: 15,
+      careTaskRemindersEnabled: false,
+      careTaskReminderMinutes: 120,
       quietStart: "21:00",
       quietEnd: "07:00"
     }
   };
 }
-
