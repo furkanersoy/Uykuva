@@ -328,6 +328,8 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 
 Randevular tek seferlik, haftalık veya aylık olarak ayarlanabilir. Tekrarlanan sonraki randevu, mevcut kayıt tamamlandığında oluşturulur; geçmişteki tamamlanmış kayıt silinmez. Aşı kayıtları tekrarlama seçeneği almaz. Bildirim tercihi açıksa sıradaki örnek mevcut randevu hatırlatma zamanlamasına girer.
 
+Gece modu girişinde ekran okuyucu etiketi ve eylem ipucu bulunur. Gece modu giriş/çıkış hedefleri en az 48 dp, uyku/beslenme/bez hızlı eylemleri en az 88 dp yüksekliğindedir. Metinler sistemin varsayılan yazı ölçeklendirmesini kullanır; bu düzenleme tam erişilebilirlik denetiminin yerini almaz.
+
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
 - [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
 - [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
