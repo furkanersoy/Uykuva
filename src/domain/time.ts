@@ -7,8 +7,12 @@ function minutesOfDay(value: string): number | null {
   return hour * 60 + minute;
 }
 
+export function clockInputDigits(value: string): string {
+  return value.replace(/\D/g, "").slice(0, 4);
+}
+
 export function normalizeClockInput(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 4);
+  const digits = clockInputDigits(value);
   if (digits.length < 3) return digits;
   if (digits.length === 3) return `0${digits[0]}:${digits.slice(1)}`;
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
