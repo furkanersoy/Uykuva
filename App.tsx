@@ -524,7 +524,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     // Keep digits raw while typing so four-digit times remain easy to enter.
     setMorningWake(value.replace(/\D/g, "").slice(0, 4));
   };
-  const morningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWakeClock)
+  const morningWakeInputError = morningWake.length === 4 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
     : undefined;
   const morningWakeForecast = (() => {
@@ -811,9 +811,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   }, [today, todayCheckIn?.bedtime, todayCheckIn?.wakeTime]);
   const morningWakeClock = normalizeClockInput(morningWake);
   const updateCoachMorningWake = (value: string) => {
-    setMorningWake(normalizeClockInput(value));
+    // Keep digits raw while typing so four-digit times remain easy to enter.
+    setMorningWake(value.replace(/\D/g, "").slice(0, 4));
   };
-  const coachMorningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWakeClock)
+  const coachMorningWakeInputError = morningWake.length === 4 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
     : undefined;
   const morningWakeHasSleep = isValidClock(morningWakeClock) && (() => {
