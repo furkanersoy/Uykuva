@@ -5,6 +5,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
+- Bugün ekranında kaydedilen uyku, beslenme, bez ve sağlık kayıtlarının hızlı özeti; ilk dokuz haftada kayan 24 saat, sonrasında yerel gün
 - Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve durum; widget'a dokununca Uykuva açılır
 - İsteğe bağlı hastalık, seyahat, diş çıkarma ve düzen değişikliği günü işareti; bu günlerde olağan uyku penceresi ve hatırlatmalar duraklatılır
 - Olağan dışı gün işaretlendiğinde uyku koçluğu görevlerini ve günlük plan ilerlemesini de duraklatma; günlük bakım kayıtları kullanılmaya devam eder
