@@ -176,3 +176,15 @@ test("care handoff includes the next sleep window based on today's wake time or 
   const expectedWindow = `${expected.start.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}–${expected.end.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
   assert.match(summary, new RegExp(`Tahmini sonraki uyku penceresi ${expectedWindow}`));
 });
+
+test("care handoff says how much expressed milk is usable and which batch to use first", () => {
+  const state = createInitialState();
+  state.events = [
+    { id: "warmed", kind: "feed", feedType: "pump", amountMl: 60, milkStorageLocation: "fridge", milkWarmedAt: "2026-10-27T11:00:00", startedAt: "2026-10-27T08:00:00", caregiver: "Anne" },
+    { id: "fresh", kind: "feed", feedType: "pump", amountMl: 90, milkStorageLocation: "fridge", startedAt: "2026-10-27T09:00:00", caregiver: "Baba" }
+  ];
+  const summary = handoffSummary(state, new Date("2026-10-27T11:30:00"), 4);
+
+  assert.match(summary, /Kullanılabilir süt stoğu 150 ml/);
+  assert.match(summary, /önce 60 ml Isıtılmış \/ oda sıcaklığında · 2 sa, 13:00 saatine kadar kullanın/);
+});
