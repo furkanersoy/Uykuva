@@ -101,6 +101,8 @@ Bugün ekranındaki `Uyanma` kısayolu, her gece uyanmasında tarih/saat ve veri
 
 Bugün ekranındaki sabah uyanış alanı, dört rakamlı girişi otomatik olarak `SS:DD` biçimine getirir ve saat tamamlanınca ilk uyku penceresini hemen gösterir; kaydetme isteğe bağlıdır. Uyku koçluğundaki sabah check-in alanı da aynı önizlemeyi sunar. Check-in kaydedilince sabah saati Bugün ekranındaki ilk pencere için başlangıç noktası olur; bu uyanıştan sonraki ilk uyku kaydedilince tahmin son uykunun bitişinden devam eder. Dokuz haftadan küçük düzeltilmiş yaşta girilmiş uyanış saati varsa düşük güvenli yaş aralığı gösterilir; saat girilmediyse yalnızca açıklama sunulur.
 
+Günün isteğe bağlı bağlamı (`illness`, `travel`, `teething`, `routineChange`) check-in'de saklanır ve yedeklerde doğrulanır. Bağlam işaretliyken uyku penceresi ile uyku hatırlatmaları duraklatılır; “Olağan gün” seçilince yeniden hesaplanır. Bu işaret yalnızca tahminleri sınırlar; sağlık değerlendirmesi üretmez.
+
 ### Uygulama durumu
 
 `useUykuvaState`, ekranların doğrudan depolama sistemiyle konuşmasını engeller. Şu eylemleri sağlar:
@@ -127,8 +129,7 @@ Ana fonksiyonlar:
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir; hesaplanan aralık tamamen geçmişse bayat tahmini göstermez.
 - `coachingDay`: Düzeltilmiş yaş aşaması ve seçilen yaklaşıma göre birbirinden farklı günlük görev ve check-in sorularını üretir; 6 aydan küçük bebeklerde destek azaltma görevi vermez.
-- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. En güncel yedi tarihli check-in'i kullanır; tarihsiz, bozuk tarihli ve gelecekteki check-in'leri dışarıda bırakır. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla eşleşme kurup rutin–uyku başlangıç aralığının ortancasını verir.
-- Uyku kaydındaki isteğe bağlı geçiş desteği geçmişi zaman çizelgesinde gösterilir; en yeni yedi işaretli kaydın dağılımı Özet ekranında tarafsız biçimde sayılır ve bakım devrine eklenir. Eski yedekler bu alan olmadan da açılır.
+- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. En güncel yedi tarihli check-in'i kullanır; tarihsiz, bozuk tarihli ve gelecekteki check-in'leri dışarıda bırakır. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla eşleşme kurup rutin–uyku başlangıç aralığının ortancasını verir; son 30 gündeki en yeni yedi işaretli uyku kaydının kullanılan geçiş desteği dağılımını tıbbi veya başarı değerlendirmesi yapmadan gösterir.
 - `handoffSummary`: Seçili 2/4/6/8 saatlik aralıktaki kayıtları, en son beslenme/bez/uyku saatlerini ve biberon miktarını özetler; son beslenme ve bez kaydında bakım verenin adını da gösterir. Pencere dışında başlamış olsa da açık emzirmeyi toplam ve taraf süreleriyle gösterir. Pencereyle kesişen uyku süresini, devam eden uykuyu ve sonraki 24 saatin en yakın üç görevini ekler. Tercih varsayılanı 4 saattir; eski yedeklerde alan yoksa migrasyon bu değeri kullanır.
 - `careInstructions`: Ailenin bakım verene bırakmak istediği notları cihazda saklar; yalnızca bakım veren paylaşımı açıkça başlatıldığında devir özetine ekler. Yedeklerde taşınır ve eski veriler boş notla açılır.
 
