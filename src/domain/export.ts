@@ -9,6 +9,7 @@ export function createDataExport(state: AppState) {
     baby: state.baby,
     caregiverName: state.caregiverName,
     careInstructions: state.careInstructions ?? "",
+    developmentCheckIns: state.developmentCheckIns ?? [],
     caregivers: state.caregivers,
     activeCaregiverId: state.activeCaregiverId,
     events: state.events,
@@ -87,8 +88,13 @@ export function parseDataExport(raw: string): AppState {
     throw new Error("Uyku planı veya check-in kayıtları geçersiz.");
   }
   const preferences = parsed.preferences;
+  const developmentCheckIns = parsed.developmentCheckIns;
+  if (developmentCheckIns !== undefined && (!Array.isArray(developmentCheckIns) || developmentCheckIns.length > 7 || !developmentCheckIns.every((item) => isRecord(item) && [2, 4, 6, 9, 12, 15, 18].includes(Number(item.ageMonths)) && isDateString(item.checkedAt) && isRecord(item.answers) && Object.values(item.answers).every((answer) => ["yes", "notSure", "notYet"].includes(String(answer))) && (item.note === undefined || typeof item.note === "string" && item.note.length <= 500)))) {
+    throw new Error("Gelişim gözlemi yedek kaydı geçersiz.");
+  }
   if (!isRecord(preferences) || (preferences.handoffHours !== undefined && ![2, 4, 6, 8].includes(Number(preferences.handoffHours))) || typeof preferences.notificationsEnabled !== "boolean" || ![5, 10, 15, 20, 30].includes(Number(preferences.sleepReminderMinutes)) || typeof preferences.careTaskRemindersEnabled !== "boolean" || ![30, 120, 1440].includes(Number(preferences.careTaskReminderMinutes)) || (preferences.diaperRemindersEnabled !== undefined && typeof preferences.diaperRemindersEnabled !== "boolean") || (preferences.diaperReminderHours !== undefined && ![2, 3, 4].includes(Number(preferences.diaperReminderHours))) || !isClockString(preferences.quietStart) || !isClockString(preferences.quietEnd) || typeof parsed.caregiverName !== "string" || (parsed.careInstructions !== undefined && (typeof parsed.careInstructions !== "string" || parsed.careInstructions.length > 1000)) || !Array.isArray(parsed.caregivers) || !parsed.caregivers.length || !parsed.caregivers.every((caregiver) => isRecord(caregiver) && typeof caregiver.id === "string" && typeof caregiver.name === "string" && ["parent", "family", "caregiver"].includes(String(caregiver.role)))) {
     throw new Error("Uyku planı veya tercih bilgileri eksik.");
   }
   return migrateState({ ...parsed, onboardingComplete: true });
 }
+
