@@ -29,7 +29,7 @@ import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/repor
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
-import { isValidClock, normalizeClockInput } from "./src/domain/time";
+import { clockInputDigits, isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { notificationDestination } from "./src/domain/notificationRouting";
@@ -522,7 +522,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const morningWakeClock = normalizeClockInput(morningWake);
   const updateMorningWake = (value: string) => {
     // Keep digits raw while typing so four-digit times remain easy to enter.
-    setMorningWake(value.replace(/\D/g, "").slice(0, 4));
+    setMorningWake(clockInputDigits(value));
   };
   const morningWakeInputError = morningWake.length === 4 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
@@ -812,7 +812,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const morningWakeClock = normalizeClockInput(morningWake);
   const updateCoachMorningWake = (value: string) => {
     // Keep digits raw while typing so four-digit times remain easy to enter.
-    setMorningWake(value.replace(/\D/g, "").slice(0, 4));
+    setMorningWake(clockInputDigits(value));
   };
   const coachMorningWakeInputError = morningWake.length === 4 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
