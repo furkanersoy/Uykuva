@@ -117,7 +117,7 @@ function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Rec
   return windows;
 }
 
-export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date()): SleepForecast {
+export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date(), wakeAtOverride?: Date): SleepForecast {
   const age = correctedAgeDays(baby, now);
   if (age < 63) {
     return {
@@ -136,7 +136,7 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
     })
     .sort((a, b) => new Date(b.endedAt!).getTime() - new Date(a.endedAt!).getTime())[0];
 
-  if (!lastSleep?.endedAt) {
+  if (!wakeAtOverride && !lastSleep?.endedAt) {
     return {
       available: false,
       confidence: "low",
@@ -147,7 +147,7 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   const band = wakeBandFor(baby, now);
   const personalByPart = recentAwakeWindowsByDayPart(events, now);
   const baseline = (band.min + band.max) / 2;
-  const wakeAt = new Date(lastSleep.endedAt);
+  const wakeAt = wakeAtOverride ?? new Date(lastSleep!.endedAt!);
   const expectedSleepBlock = new Date(wakeAt.getTime() + baseline * 60_000);
   const dayPart = dayPartFor(expectedSleepBlock);
   const personal = personalByPart[dayPart];
@@ -384,13 +384,13 @@ export function sleepProgramStage(baby: Baby, now = new Date()): SleepProgramSta
   };
 }
 
-const METHOD_COPY: Record<SleepMethod, { name: string; support: string }> = {
-  responsive: { name: "Duyarlı rutin", support: "Ağlamaya hızlı yanıt vererek uyku işaretlerini ve tutarlı rutini güçlendirir." },
-  gradual: { name: "Kademeli destek", support: "Her birkaç gecede yardımı küçük adımlarla azaltır; katı bir süre tutmaz." },
-  camping: { name: "Yakında kalma", support: "Bakım veren odada kalır ve desteğini günler içinde yavaşça azaltır." },
-  bedtimeFading: { name: "Yatma saatini ayarlama", support: "Yatma saatini kayıtlı uykuya dalma örüntüsüne yaklaştırıp, rahat ilerledikçe küçük adımlarla erkene alır." },
-  pickUpPutDown: { name: "Al, sakinleştir, tekrar yatır", support: "Huzursuzlukta bebeği sakinleştirir; rahatlayınca güvenli uyku alanına geri yatırıp gerektiğinde tekrar destek verirsiniz." },
-  routineFirst: { name: "Önce tutarlı rutin", support: "Uyku öncesi kısa ve tekrarlanabilir sakin adımlara odaklanır; desteği azaltma hedefi koymaz." }
+const METHOD_COPY: Record<SleepMethod, { name: string; support: string; caregiverRole: string; nightResponse: string }> = {
+  responsive: { name: "Duyarlı rutin", support: "Ağlamaya hızlı yanıt vererek uyku işaretlerini ve tutarlı rutini güçlendirir.", caregiverRole: "Bebeğinizin yanında kalın; ses, dokunuş veya kucak desteğini ihtiyacına göre kullanın.", nightResponse: "Uyanınca açlık, bez, rahatsızlık ve yakınlık ihtiyacını kontrol edip gecikmeden yanıt verin." },
+  gradual: { name: "Kademeli destek", support: "Her birkaç gecede yardımı küçük adımlarla azaltır; katı bir süre tutmaz.", caregiverRole: "Yalnızca tek bir desteği, bebek ve aile rahat olduğunda daha az yoğun sunmayı deneyin.", nightResponse: "Huzursuzluk belirgin artarsa denemeyi bırakın, önceki desteğe dönüp sakinleştirin." },
+  camping: { name: "Yakında kalma", support: "Bakım veren odada kalır ve desteğini günler içinde yavaşça azaltır.", caregiverRole: "Uyku alanının yanında kalıp sesinizle veya nazik dokunuşla destek olun; mesafeyi artırmak zorunlu değildir.", nightResponse: "Bebeğiniz sizi aradığında yakınlığınızı sürdürün ve ihtiyacına yanıt verin." },
+  bedtimeFading: { name: "Yatma saatini ayarlama", support: "Yatma saatini kayıtlı uykuya dalma örüntüsüne yaklaştırıp, rahat ilerledikçe küçük adımlarla erkene alır.", caregiverRole: "Uyku ve yatış saatlerini kaydedin; önerilen değişim küçük ve ailece sürdürülebilir olsun.", nightResponse: "Gece bakımında beslenme veya rahatlatma ihtiyacını saat ayarından bağımsız karşılayın." },
+  pickUpPutDown: { name: "Al, sakinleştir, tekrar yatır", support: "Huzursuzlukta bebeği sakinleştirir; rahatlayınca güvenli uyku alanına geri yatırıp gerektiğinde tekrar destek verirsiniz.", caregiverRole: "Sakinleşene kadar kucağınızda destek olun; rahatlayınca bebeği güvenli uyku alanına sırtüstü yatırın.", nightResponse: "Ağlama sürerse tekrar destek verin; bu yaklaşımda tekrar tekrar yanıt vermek beklenir." },
+  routineFirst: { name: "Önce tutarlı rutin", support: "Uyku öncesi kısa ve tekrarlanabilir sakin adımlara odaklanır; desteği azaltma hedefi koymaz.", caregiverRole: "Ailenize uyan birkaç sakin adımı benzer sırayla uygulayın ve ihtiyaç duyulan desteği koruyun.", nightResponse: "Gece uyanmalarında temel ihtiyaçlara ve bebeğinizin işaretlerine göre olağan desteği sürdürün." }
 };
 
 export function methodDescription(method: SleepMethod) {
