@@ -76,7 +76,10 @@ export function migrateState(value: unknown): AppState {
       completedDays,
       completedRuns: completedRuns.slice(-10),
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
-      checkIns: candidate.sleepPlan?.checkIns ?? []
+      checkIns: Array.isArray(candidate.sleepPlan?.checkIns) ? candidate.sleepPlan.checkIns.map((item) => ({
+        ...item,
+        dayContext: ["illness", "travel", "teething", "routineChange"].includes(String(item.dayContext)) ? item.dayContext : undefined
+      })) : []
     },
     preferences: {
       ...initial.preferences,
