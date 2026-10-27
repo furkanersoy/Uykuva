@@ -16,6 +16,7 @@ test("legacy state receives schema two defaults without losing events", () => {
   assert.equal(migrated.events.length, 1);
   assert.deepEqual(migrated.careTasks, []);
   assert.equal(migrated.preferences.sleepReminderMinutes, 15);
+  assert.equal(migrated.preferences.routineRemindersEnabled, false);
   assert.equal(migrated.caregivers[0]?.name, "Baba");
   assert.equal(migrated.activeCaregiverId, "caregiver-1");
   assert.deepEqual(migrated.sleepPlan.checkIns, []);
@@ -61,3 +62,4 @@ test("sleep and night-wake details survive export and invalid values are rejecte
   invalidMilk.events.find((event) => event.id === "milk")!.milkWarmedAt = "yesterday";
   assert.throws(() => parseDataExport(JSON.stringify(invalidMilk)), /bakım kayıtları/i);
 });
+
