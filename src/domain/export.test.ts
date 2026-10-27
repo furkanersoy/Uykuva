@@ -1,4 +1,3 @@
-Warning: fsu was declared with const; use let for reassignable variables.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createInitialState } from "../data/seed";
@@ -43,4 +42,20 @@ test("backup merge rejects a different child profile", () => {
   const incoming = createInitialState();
   incoming.baby.birthDate = "2025-01-01";
   assert.throws(() => mergeDataStates(current, incoming), /farklı bir bebek profiline ait/i);
+});
+
+test("backup merge unions children and keeps each child's records separate", () => {
+  const current = createInitialState();
+  const incoming = createInitialState();
+  const currentChild = { baby: { id: "child-2", name: "Mina", birthDate: "2025-03-01", gestationalWeek: 39 }, careInstructions: "Mina notu", developmentCheckIns: [], events: [{ id: "mina-current", kind: "note" as const, startedAt: "2026-10-27T08:00:00Z", caregiver: "Anne", note: "Evde" }], careTasks: [], sleepPlan: createInitialState().sleepPlan };
+  const importedChild = { ...currentChild, careInstructions: "Yedekten gelen not", events: [{ id: "mina-backup", kind: "note" as const, startedAt: "2026-10-27T09:00:00Z", caregiver: "Baba", note: "Dışarıda" }] };
+  current.children.push(currentChild);
+  incoming.children.push(importedChild);
+  const merged = mergeDataStates(current, incoming);
+  const mina = merged.children.find((child) => child.baby.id === "child-2");
+  assert.equal(merged.children.length, 2);
+  assert.deepEqual(mina?.events.map((event) => event.id).sort(), ["mina-backup", "mina-current"]);
+  assert.match(mina?.careInstructions ?? "", /Mina notu/);
+  assert.match(mina?.careInstructions ?? "", /Yedekten gelen not/);
+  assert.equal(merged.activeChildId, current.activeChildId);
 });
