@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, EventKind, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
+import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, DevelopmentAnswer, EventKind, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
 
@@ -259,6 +259,34 @@ export function useUykuvaState() {
     }));
   }, []);
 
+  const saveDevelopmentAnswer = useCallback((ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18, milestoneId: string, answer: DevelopmentAnswer) => {
+    setState((current) => {
+      const records = current.developmentCheckIns ?? [];
+      const previous = records.find((item) => item.ageMonths === ageMonths);
+      const next = {
+        ageMonths,
+        checkedAt: new Date().toISOString(),
+        answers: { ...(previous?.answers ?? {}), [milestoneId]: answer },
+        note: previous?.note
+      };
+      return { ...current, developmentCheckIns: [next, ...records.filter((item) => item.ageMonths !== ageMonths)].slice(0, 7) };
+    });
+  }, []);
+
+  const saveDevelopmentNote = useCallback((ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18, note: string) => {
+    setState((current) => {
+      const records = current.developmentCheckIns ?? [];
+      const previous = records.find((item) => item.ageMonths === ageMonths);
+      const next = {
+        ageMonths,
+        checkedAt: new Date().toISOString(),
+        answers: previous?.answers ?? {},
+        note: note.slice(0, 500)
+      };
+      return { ...current, developmentCheckIns: [next, ...records.filter((item) => item.ageMonths !== ageMonths)].slice(0, 7) };
+    });
+  }, []);
+
   const updateSleepSchedule = useCallback((bedtime: string, wakeTime: string) => {
     setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, bedtime, wakeTime } }));
   }, []);
@@ -382,6 +410,8 @@ export function useUykuvaState() {
     advancePlan,
     restartSleepPlan,
     saveCheckIn,
+    saveDevelopmentAnswer,
+    saveDevelopmentNote,
     updateSleepSchedule,
     toggleRoutineStep,
     moveRoutineStep,
@@ -395,3 +425,4 @@ export function useUykuvaState() {
     clearAllData
   };
 }
+
