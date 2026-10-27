@@ -7,11 +7,17 @@ import { mergeDataStates } from "./export";
 test("backup merge combines records and check-ins while preserving current device settings", () => {
   const current = createInitialState();
   const incoming = createInitialState();
-  current.events = [{ id: "shared", kind: "sleep", startedAt: "2026-10-27T08:00:00", caregiver: "Anne" }];
+  current.events = [
+    { id: "shared", kind: "sleep", startedAt: "2026-10-27T08:00:00", caregiver: "Anne" },
+    { id: "already-ended", kind: "sleep", startedAt: "2026-10-27T07:00:00", endedAt: "2026-10-27T07:30:00", caregiver: "Anne" }
+  ];
   incoming.events = [
     { id: "shared", kind: "sleep", startedAt: "2026-10-27T08:00:00", endedAt: "2026-10-27T08:45:00", caregiver: "Anne" },
+    { id: "already-ended", kind: "sleep", startedAt: "2026-10-27T07:00:00", caregiver: "Anne" },
     { id: "new-feed", kind: "feed", feedType: "bottle", amountMl: 90, startedAt: "2026-10-27T09:00:00", caregiver: "Baba" }
   ];
+  current.careTasks = [{ id: "task", type: "appointment", title: "Doktor", dueAt: "2026-10-28T10:00:00", completedAt: "2026-10-27T12:00:00" }];
+  incoming.careTasks = [{ id: "task", type: "appointment", title: "Doktor", dueAt: "2026-10-28T10:00:00" }];
   current.careInstructions = "Biberonu ısıtmayın.";
   incoming.careInstructions = "Uyku öncesi kısa ninni.";
   current.sleepPlan.checkIns = [{ date: "2026-10-27", note: "Gece sakindi.", nightWakeLogs: [{ id: "wake-1", at: "2026-10-27T02:00:00", response: "comfort", caregiver: "Anne" }] }];
@@ -21,8 +27,10 @@ test("backup merge combines records and check-ins while preserving current devic
 
   const merged = mergeDataStates(current, incoming);
 
-  assert.equal(merged.events.length, 2);
+  assert.equal(merged.events.length, 3);
   assert.equal(merged.events.find((event) => event.id === "shared")?.endedAt, "2026-10-27T08:45:00");
+  assert.equal(merged.events.find((event) => event.id === "already-ended")?.endedAt, "2026-10-27T07:30:00");
+  assert.equal(merged.careTasks[0]?.completedAt, "2026-10-27T12:00:00");
   assert.equal(merged.careInstructions, "Biberonu ısıtmayın.\nUyku öncesi kısa ninni.");
   assert.equal(merged.sleepPlan.checkIns[0]?.wakeTime, "07:00");
   assert.deepEqual(merged.sleepPlan.checkIns[0]?.nightWakeLogs?.map((log) => log.id), ["wake-1", "wake-2"]);
