@@ -1,7 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createInitialState } from "../data/seed";
-import { mergeDataStates } from "./export";
+import { createDataExport, mergeDataStates, parseDataExport } from "./export";
+
+test("backup validation accepts the expanded appointment reminder options", () => {
+  const state = createInitialState();
+  for (const minutes of [15, 30, 60, 120, 180, 1440] as const) {
+    state.preferences.careTaskReminderMinutes = minutes;
+    const restored = parseDataExport(createDataExport(state));
+    assert.equal(restored.preferences.careTaskReminderMinutes, minutes);
+  }
+  state.preferences.careTaskReminderMinutes = 45 as never;
+  assert.throws(() => parseDataExport(createDataExport(state)), /tercih bilgileri eksik/i);
+});
 
 test("backup merge combines records and check-ins while preserving current device settings", () => {
   const current = createInitialState();
