@@ -1,4 +1,5 @@
 import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord, SleepSupport } from "./types";
+import { createMilkInventory, milkStorageLabel } from "./milk";
 
 const DAY = 86_400_000;
 
@@ -861,6 +862,8 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const feeds = recent.filter((event) => event.kind === "feed" && event.feedType !== "pump");
   const lastFeed = [...feeds].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
   const pumping = recent.filter((event) => event.kind === "feed" && event.feedType === "pump");
+  const hasPumpingHistory = state.events.some((event) => event.kind === "feed" && event.feedType === "pump");
+  const milkInventory = hasPumpingHistory ? createMilkInventory(state.events, now) : undefined;
   const solidMeals = feeds.filter((event) => event.feedType === "solid");
   const amount = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
   const breastfeedingOngoing = state.events.find((event) => event.kind === "feed" && event.feedType === "breast" && !event.endedAt);
@@ -924,6 +927,12 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     parts.push(`emzirme sürüyor · ${totalMinutes} dk${sideDetails ? ` (${sideDetails})` : ""}`);
   }
   if (pumping.length) parts.push(`${pumping.length} sağım · ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml stoğa eklendi`);
+  if (milkInventory) {
+    const nextMilk = milkInventory.batches.find((batch) => batch.remainingMl > 0 && !batch.isExpired);
+    parts.push(nextMilk
+      ? `Kullanılabilir süt stoğu ${milkInventory.availableMl} ml · önce ${nextMilk.remainingMl} ml ${milkStorageLabel(nextMilk.event)}, ${eventTime(nextMilk.useBy.toISOString())} saatine kadar kullanın`
+      : "Sağılan süt stoğunda kullanılabilir kayıt yok");
+  }
   if (solidMeals.length) {
     const tagged = [...new Set(solidMeals.flatMap((event) => event.allergens ?? []))];
     parts.push(`${solidMeals.length} katı öğün${tagged.length ? ` · etiketlenen: ${tagged.join(", ")}` : ""}`);
