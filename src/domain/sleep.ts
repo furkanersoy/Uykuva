@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord, SleepSupport } from "./types";
+import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlan, SleepPlanDayRecord, SleepSupport } from "./types";
 import { createMilkInventory, milkStorageLabel } from "./milk";
 
 const DAY = 86_400_000;
@@ -436,6 +436,10 @@ export function sleepProgramStage(baby: Baby, now = new Date()): SleepProgramSta
     guidance: "Hazır oluş koşulları uygunsa seçtiğiniz desteği küçük adımlarla ve bebeğin tepkisine göre ayarlayabilirsiniz.",
     canReduceSupport: true
   };
+}
+
+export function isSleepPlanPausedToday(plan: Pick<SleepPlan, "paused" | "checkIns">, date: string): boolean {
+  return plan.paused || Boolean(plan.checkIns.find((checkIn) => checkIn.date === date)?.dayContext);
 }
 
 const METHOD_COPY: Record<SleepMethod, { name: string; support: string; caregiverRole: string; nightResponse: string }> = {
