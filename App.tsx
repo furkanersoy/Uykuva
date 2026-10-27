@@ -22,7 +22,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -114,6 +114,7 @@ export default function App() {
   const [vaccineSuggestionsOpen, setVaccineSuggestionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
+  const [nightWakeOpen, setNightWakeOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [nightMode, setNightMode] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
@@ -230,21 +231,14 @@ export default function App() {
     void scheduleMedicationReminders(app.state.onboardingComplete ? app.state.events : []);
   }, [app.hydrated, app.state.onboardingComplete, app.state.events]);
 
-  const promptNightWake = () => {
+  const promptNightWake = () => setNightWakeOpen(true);
+  const saveNightWake = (response: NightWakeResponse) => {
     const now = new Date();
     const date = localDateValue(now);
     const checkIn = app.state.sleepPlan.checkIns.find((item) => item.date === date);
-    const saveWake = (response: NightWakeResponse) => {
-      const log = { id: `wake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, at: new Date().toISOString(), response, caregiver: app.state.caregiverName };
-      app.saveCheckIn({ ...checkIn, date, nightWakeLogs: [...(checkIn?.nightWakeLogs ?? []), log].slice(-30) });
-    };
-    Alert.alert("Gece uyanması", "Saati ve o sırada verdiğiniz desteği kaydedin.", [
-      { text: "Beslenme", onPress: () => saveWake("feeding") },
-      { text: "Sakinleştirme / yakınlık", onPress: () => saveWake("comfort") },
-      { text: "Bez / temel ihtiyaç", onPress: () => saveWake("diaper") },
-      { text: "Diğer", onPress: () => saveWake("other") },
-      { text: "Vazgeç", style: "cancel" }
-    ]);
+    const log = { id: `wake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, at: now.toISOString(), response, caregiver: app.state.caregiverName };
+    app.saveCheckIn({ ...checkIn, date, nightWakeLogs: [...(checkIn?.nightWakeLogs ?? []), log].slice(-30) });
+    setNightWakeOpen(false);
   };
 
   if (!app.hydrated) return <LoadingScreen />;
@@ -287,6 +281,7 @@ export default function App() {
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentBabyName={app.state.baby.name} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
+      <NightWakeModal visible={nightWakeOpen} close={() => setNightWakeOpen(false)} save={saveNightWake} />
     </SafeAreaView>
   );
 }
@@ -1302,6 +1297,21 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
       </ScrollView>
     </Modal>
   );
+}
+
+function NightWakeModal({ visible, close, save }: { visible: boolean; close: () => void; save: (response: NightWakeResponse) => void }) {
+  if (!visible) return null;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}>
+    <Pressable style={styles.backdrop} onPress={close} />
+    <ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset}>
+      <View style={styles.sheetHandle} />
+      <Text style={styles.pageTitle}>Gece uyanması</Text>
+      <Text style={styles.pageIntro}>Saat şu an olarak kaydedilir. O sırada verdiğiniz desteği seçin.</Text>
+      <View style={styles.choiceRow}>{NIGHT_WAKE_RESPONSE_OPTIONS.map((item) => <Pill key={item.id} label={item.label} onPress={() => save(item.id)} />)}</View>
+      <Text style={styles.hint}>Bu kayıt toplam uyanma sayısından ayrıdır; son 30 kayıt saklanır.</Text>
+      <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
+    </ScrollView>
+  </Modal>;
 }
 
 function CaregiverModal({ visible, close, add }: { visible: boolean; close: () => void; add: (caregiver: Omit<Caregiver, "id">) => void }) {
