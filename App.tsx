@@ -22,7 +22,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -34,7 +34,7 @@ import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
-import { CareEvent, CareTask, Caregiver, RoutineStep, SleepFocus, SleepMethod } from "./src/domain/types";
+import { CareEvent, CareTask, Caregiver, RoutineStep, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
@@ -79,7 +79,7 @@ function duration(event: CareEvent) {
 }
 
 function eventTitle(event: CareEvent) {
-  if (event.kind === "sleep") return `Uyku · ${duration(event)}`;
+  if (event.kind === "sleep") return `Uyku · ${duration(event)}${event.sleepSupport ? ` · ${sleepSupportLabel(event.sleepSupport)}` : ""}`;
   if (event.kind === "feed") {
     if (event.feedType === "pump") return `Sağım · ${event.amountMl ?? 0} ml`;
     if (event.feedType === "bottle") return `Biberon · ${event.amountMl ?? 0} ml${event.bottleSource === "expressed" ? " · sağılan süt" : ""}`;
@@ -655,6 +655,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.body}>{insights.nightsUsed ? insights.adjustmentMinutes === 0 ? "Kayıtlı yatış saati hedefle uyumlu görünüyor." : `Hedefe doğru bu gece yalnızca ${Math.abs(insights.adjustmentMinutes)} dakikalık küçük bir değişim öneriliyor.` : "En az bir uzun gece uykusu kaydedildiğinde hedefle karşılaştırma yapılacak."}</Text>
         {insights.checkInAverage ? <Text style={styles.awake}>Son check-in ortalaması: {insights.checkInAverage.toFixed(1)}/5</Text> : null}
         {insights.nightWakingsAverage !== undefined ? <Text style={styles.awake}>Son değerlendirmelerde gece uyanma ortalaması: {insights.nightWakingsAverage.toFixed(1)}</Text> : null}
+        {insights.sleepSupportSummary ? <Text style={styles.awake}>Son {insights.sleepSupportSamples} işaretli uyku kaydında geçiş desteği: {insights.sleepSupportSummary}</Text> : <Text style={styles.hint}>Uyku kayıtlarına geçiş desteği eklediğinizde son 7 işaretli kaydın dağılımı burada görünür.</Text>}
         {insights.routineToSleepMedianMinutes !== undefined ? <Text style={styles.awake}>Rutin bitişinden uyku başlangıcına ortanca {Math.round(insights.routineToSleepMedianMinutes)} dk · {insights.routineToSleepSamples} eşleşen gece</Text> : <Text style={styles.hint}>Rutin çalıştırıcısı tamamlanıp ardından gece uykusu kaydedildiğinde rutin–uyku aralığı burada görünür.</Text>}
       </Card>
       <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
@@ -1401,6 +1402,7 @@ function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visibl
   const [startClock, setStartClock] = useState("");
   const [endClock, setEndClock] = useState("");
   const [ongoing, setOngoing] = useState(false);
+  const [sleepSupport, setSleepSupport] = useState<SleepSupport | "">("");
 
   useEffect(() => {
     if (!visible) return;
@@ -1410,6 +1412,7 @@ function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visibl
       setStartClock(time(start));
       setEndClock(event.endedAt ? time(event.endedAt) : "");
       setOngoing(!event.endedAt);
+      setSleepSupport(event.sleepSupport ?? "");
       return;
     }
     if (initialStartAt) {
@@ -1418,6 +1421,7 @@ function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visibl
       setStartClock(time(suggestedStart));
       setEndClock("");
       setOngoing(false);
+      setSleepSupport("");
       return;
     }
     const start = new Date();
@@ -1426,6 +1430,7 @@ function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visibl
     setStartClock(isValidClock(bedtime) ? bedtime : "20:00");
     setEndClock(isValidClock(wakeTime) ? wakeTime : "07:00");
     setOngoing(false);
+    setSleepSupport("");
   }, [visible, event, initialStartAt, bedtime, wakeTime]);
 
   const save = () => {
@@ -1444,13 +1449,13 @@ function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visibl
     } else if (Date.now() - start.getTime() > 24 * 60 * 60 * 1000) {
       return Alert.alert("Süreyi kontrol edin", "Devam eden bir uyku kaydı 24 saatten uzun olamaz.");
     }
-    const patch = { startedAt: start.toISOString(), endedAt: end?.toISOString() };
+    const patch = { startedAt: start.toISOString(), endedAt: end?.toISOString(), sleepSupport: sleepSupport || undefined };
     if (event) update(event.id, patch);
     else add({ kind: "sleep", ...patch, ...(initialSuggestedWindow ? { suggestedSleepWindowStartAt: initialSuggestedWindow.start, suggestedSleepWindowEndAt: initialSuggestedWindow.end } : {}) });
     close();
   };
 
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>{initialStartAt ? "Tahmin aralığının orta saati dolduruldu. Gerçek yatış ve uyanış saatlerini kontrol edip gerekirse düzeltin." : "Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir."}</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>{initialStartAt ? "Tahmin aralığının orta saati dolduruldu. Gerçek yatış ve uyanış saatlerini kontrol edip gerekirse düzeltin." : "Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir."}</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.inputLabel}>Uykuya geçişte kullanılan destek · isteğe bağlı</Text><Text style={styles.hint}>Birini seçin; bu bilgi uyku geçmişinizde görünür.</Text><View style={styles.choiceRow}><Pill label="Belirtme" active={!sleepSupport} onPress={() => setSleepSupport("")} />{SLEEP_SUPPORT_OPTIONS.map((item) => <Pill key={item.id} label={item.label} active={sleepSupport === item.id} onPress={() => setSleepSupport(item.id)} />)}</View><Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function RecordTimeModal({ event, close, update }: { event: CareEvent | null; close: () => void; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
