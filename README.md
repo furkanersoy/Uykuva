@@ -91,7 +91,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Varsayılan parola korumalı yedek aktarımı (PBKDF2-SHA256 ve AES-256-GCM); parola unutulursa yedek açılamaz. Şifresiz JSON aktarımı ayrıca uyarı onayı ister.
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü; çözündürme için 24 saat, ısıtma/oda sıcaklığına gelme için iki saatlik kullanım penceresi
-- İsteğe bağlı yerel bildirimle stokta kalan sağılan süt partisinin kullanım süresi yaklaşınca hatırlatma; dondurulmuş sütte en iyi kalite tarihi ile tavsiye edilen son tarihi ayrı gösterme ve sessiz saatlere uyum
+- İsteğe bağlı yerel bildirimle stokta kalan sağılan süt partisinin kullanım süresi yaklaşınca hatırlatma; otomatik zamanlama veya 2/6/12/24/48 saat önceden seçim, dondurulmuş sütte en iyi kalite ve tavsiye edilen son tarih bildirimleri, sessiz saatlere uyum
 - Biberon ve katı gıda ayrıntıları
 - Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
