@@ -1,4 +1,4 @@
-Warning: fsx was declared with const; use let for reassignable variables.
+Warning: fsu was declared with const; use let for reassignable variables.
 # Uykuva
 
 Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
@@ -73,7 +73,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Aşı önerilerinde kaynak sürümü ve resmi Sağlık Bakanlığı bağlantısı; 49–72 ay suçiçeği yakalama dönemi için aile hekimiyle teyit hatırlatması
 - Sessiz saatlere uyan uyku bildirimleri
 - Bebek uyurken bekleyen sonraki uyku hatırlatmasını iptal etme; sayaç bitince yeni tahmine göre tekrar planlama
-- JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden geri yükleme; metin yapıştırma yedeği, tek seferlik telefonlar arası aktarım, doğrulama ve kontrollü cihaz verisi silme (silme uygulamanın önbellekteki yedeklerini ve planlı hatırlatmaları da kaldırır)
+- JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden içe aktarma; aynı bebeğe ait cihaz kayıtlarını kimlik tekrarlarını ayıklayarak birleştirme veya mevcut verilerin yerine tamamen geri yükleme, metin yapıştırma ve kontrollü cihaz verisi silme (silme uygulamanın önbellekteki yedeklerini ve planlı hatırlatmaları da kaldırır)
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü
 - Biberon ve katı gıda ayrıntıları
