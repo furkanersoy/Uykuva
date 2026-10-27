@@ -127,6 +127,7 @@ export type AppPreferences = {
   diaperRemindersEnabled: boolean;
   diaperReminderHours: 2 | 3 | 4;
   milkExpiryRemindersEnabled: boolean;
+  routineRemindersEnabled: boolean;
   quietStart: string;
   quietEnd: string;
 };
@@ -190,3 +191,4 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
+
