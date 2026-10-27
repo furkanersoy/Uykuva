@@ -28,6 +28,17 @@ export function correctedAgeDays(baby: Baby, now = new Date()): number {
   return chronological < 730 ? Math.max(0, chronological - prematureDays) : chronological;
 }
 
+export function correctedAgeMonths(baby: Baby, now = new Date()): number {
+  const birthDate = new Date(`${baby.birthDate}T12:00:00`);
+  if (!Number.isFinite(birthDate.getTime())) return 0;
+  if (baby.gestationalWeek < 37 && ageInDays(baby.birthDate, now) < 730) {
+    birthDate.setDate(birthDate.getDate() - Math.max(0, 40 - baby.gestationalWeek) * 7);
+  }
+  let months = (now.getFullYear() - birthDate.getFullYear()) * 12 + now.getMonth() - birthDate.getMonth();
+  if (now.getDate() < birthDate.getDate()) months -= 1;
+  return Math.max(0, months);
+}
+
 export function wakeBandFor(baby: Baby, now = new Date()): WakeBand {
   const age = correctedAgeDays(baby, now);
   return WAKE_BANDS.find((band) => age <= band.maxAgeDays) ?? WAKE_BANDS[WAKE_BANDS.length - 1]!;
@@ -828,3 +839,4 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   return `${parts.join(" · ")}.`;
 }
+
