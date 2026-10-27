@@ -235,6 +235,7 @@ test("care handoff includes the active sleep approach and evening routine", () =
   ];
   const now = new Date("2026-10-27T12:00:00");
   const active = handoffSummary(state, now);
+  assert.match(active, /Hedef yatış: 20:00/);
   assert.match(active, /Uyku yaklaşımı: Kademeli destek/);
   assert.match(active, /Etkin akşam rutini: Işıkları azalt → Ninni/);
   assert.doesNotMatch(active, /Devre dışı/);
