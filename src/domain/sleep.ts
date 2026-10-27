@@ -97,6 +97,17 @@ const DAY_PART_LABELS: Record<DayPart, string> = {
   evening: "akşam"
 };
 
+const SLEEP_DAY_CONTEXT_LABELS: Record<SleepDayContext, string> = {
+  illness: "Hastalık veya rahatsızlık",
+  travel: "Seyahat",
+  teething: "Diş çıkarma",
+  routineChange: "Düzen değişikliği"
+};
+
+export function sleepDayContextLabel(context: SleepDayContext): string {
+  return SLEEP_DAY_CONTEXT_LABELS[context];
+}
+
 function dayPartFor(date: Date): DayPart {
   const hour = date.getHours();
   if (hour < 5 || hour >= 22) return "night";
@@ -899,6 +910,9 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const forecastWakeAt = wakeAt && !hasSleepSinceWake(state.events, wakeAt) ? wakeAt : undefined;
   const nextSleepForecast = sleepOngoing ? undefined : createSleepForecast(state.baby, state.events, now, forecastWakeAt, todayCheckIn?.dayContext);
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
+  if (todayCheckIn?.dayContext) {
+    parts.push(`Bugün ${sleepDayContextLabel(todayCheckIn.dayContext)} işaretlendi · uyku tahmini ve koçluk planı beklemede`);
+  }
   if (nextSleepForecast?.available && nextSleepForecast.start && nextSleepForecast.end && nextSleepForecast.end > now) {
     parts.push(`Tahmini sonraki uyku penceresi ${eventTime(nextSleepForecast.start.toISOString())}–${eventTime(nextSleepForecast.end.toISOString())}`);
   }
