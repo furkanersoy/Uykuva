@@ -471,6 +471,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const nextCareTasks = app.state.careTasks
     .filter((task) => !task.completedAt && new Date(task.dueAt).getTime() >= now.getTime() && new Date(task.dueAt).getTime() <= careWindowEnd)
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const latestMedicationByName = new Map<string, CareEvent>();
+  for (const event of app.state.events) {
+    if (event.kind !== "health" || event.healthType !== "medicine" || !event.medicineName?.trim()) continue;
+    const key = event.medicineName.trim().toLocaleLowerCase("tr-TR");
+    const existing = latestMedicationByName.get(key);
+    if (!existing || new Date(event.startedAt).getTime() > new Date(existing.startedAt).getTime()) latestMedicationByName.set(key, event);
+  }
   const bedtimeTarget = isValidClock(app.state.sleepPlan.bedtime) ? new Date(now) : undefined;
   if (bedtimeTarget) {
     const [bedtimeHour, bedtimeMinute] = app.state.sleepPlan.bedtime.split(":").map(Number);
@@ -478,10 +485,15 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     if (bedtimeTarget.getTime() <= now.getTime()) bedtimeTarget.setDate(bedtimeTarget.getDate() + 1);
   }
   const napOutline = createDailyNapOutline(app.state.events, now);
-  const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
+  const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care" | "medication"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
   if (displayedForecast.available && displayedForecast.start && displayedForecast.end) agenda.push({ id: "next-sleep", at: displayedForecast.start, endAt: displayedForecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Sabah uyanış saati ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
   if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı beslenme aralığı", detail: "Açlık işaretleri ve bebeğinizin ihtiyacı her zaman önceliklidir." });
   if (bedtimeTarget && bedtimeTarget.getTime() <= careWindowEnd) agenda.push({ id: "bedtime", at: bedtimeTarget, kind: "bedtime", label: "Hedef yatış", detail: "Uyku planınızdaki esnek hedef saat." });
+  for (const event of latestMedicationByName.values()) {
+    const reminderAt = event.medicationReminderAt ? new Date(event.medicationReminderAt) : undefined;
+    if (!reminderAt || !Number.isFinite(reminderAt.getTime()) || reminderAt.getTime() < now.getTime() || reminderAt.getTime() > careWindowEnd) continue;
+    agenda.push({ id: `medication-${event.id}`, at: reminderAt, kind: "medication", label: `İlaç planını kontrol et · ${event.medicineName}`, detail: "Bu saati siz girdiniz; doz veya tekrar aralığı önerisi değildir." });
+  }
   nextCareTasks.forEach((task) => agenda.push({ id: task.id, at: new Date(task.dueAt), kind: "care", label: task.title, detail: task.type === "vaccine" ? "Aşı" : "Randevu", task }));
   napOutline.forEach((nap) => {
     if (nap.actualStart || nap.typical.getTime() <= now.getTime() || nap.typical.getTime() > careWindowEnd) return;
