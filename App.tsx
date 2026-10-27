@@ -719,8 +719,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     setMorningWake(todayCheckIn?.wakeTime ?? "");
   }, [today, todayCheckIn?.bedtime, todayCheckIn?.wakeTime]);
   const updateCoachMorningWake = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 4);
-    setMorningWake(digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits);
+    setMorningWake(normalizeClockInput(value));
   };
   const morningWakeHasSleep = isValidClock(morningWake) && (() => {
     const [hour, minute] = morningWake.split(":").map(Number);
