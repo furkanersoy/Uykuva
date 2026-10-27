@@ -349,6 +349,21 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
 }
 
 function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void }) {
+  const today = localDateValue(now);
+  const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
+  const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
+  useEffect(() => setMorningWake(todayCheckIn?.wakeTime ?? ""), [todayCheckIn?.wakeTime, today]);
+  const morningWakeForecast = (() => {
+    if (!isValidClock(morningWake)) return undefined;
+    const [hour, minute] = morningWake.split(":").map(Number);
+    const wakeAt = new Date(now);
+    wakeAt.setHours(hour!, minute!, 0, 0);
+    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt);
+  })();
+  const saveMorningWake = () => {
+    if (!isValidClock(morningWake)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
+    app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWake });
+  };
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[forecast.confidence];
   const sleepElapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   const wakeEstimate = estimateSleepWakeWindow(app.state.events, app.runningSleep, now);
@@ -383,6 +398,21 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <Text style={styles.body}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı. Bitirmek için aşağıdaki “Uyandı” kaydını kullanın.` : forecast.explanation}</Text>
         {app.runningSleep ? <Text style={styles.awake}>{wakeEstimate.available && wakeEstimate.from && wakeEstimate.typical && wakeEstimate.to ? `Benzer uykulara göre olası uyanma ${time(wakeEstimate.from)}–${time(wakeEstimate.to)} (ortanca ${time(wakeEstimate.typical)}). ${wakeEstimate.sampleCount} kayıt.` : wakeEstimate.explanation}</Text> : null}
         {!app.runningSleep && forecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{forecast.awakeMinutes} dakikadır uyanık</Text> : null}
+      </Card>
+      <Card>
+        <Text style={styles.cardTitle}>Sabah uyanışına göre uyku penceresi</Text>
+        <Text style={styles.body}>Uyanış saatini yazın; ilk gündüz uykusu aralığını hemen hesaplayalım.</Text>
+        <View style={styles.timeFields}>
+          <View style={styles.timeField}>
+            <Text style={styles.inputLabel}>Bugün uyandığı saat</Text>
+            <TextInput accessibilityLabel="Bugün sabah uyanış saati" value={morningWake} onChangeText={setMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="numbers-and-punctuation" maxLength={5} />
+          </View>
+          <View style={[styles.timeField, { justifyContent: "flex-end" }]}>
+            <PrimaryButton label={todayCheckIn?.wakeTime === morningWake ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
+          </View>
+        </View>
+        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : <Text style={styles.hint}>Saati SS:DD biçiminde yazın. Örnek: 07:00.</Text>}
+        <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
       <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
       <Card>
