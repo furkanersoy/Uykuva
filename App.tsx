@@ -920,7 +920,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </Pressable>
         {nightGuideOpen ? <View style={styles.nightGuideContent}>
           {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={[styles.body, styles.nightGuideStepText]}>{step}</Text></View>)}
-          {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz bir yüzey; uyku alanında yalnızca gergin çarşaf bulundurun.</Text> : null}
+          {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz, ayrı bir uyku yüzeyi kullanın. İlk 6 ay aynı odada ama ayrı uyku alanında uyuması önerilir; yetişkin yatağını paylaşmayın.</Text> : null}
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx")}><Text style={styles.linkText}>AAP güvenli uyku rehberini aç</Text></Pressable>
         </View> : null}
       </Card>
@@ -937,7 +937,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.inputLabel}>Gece uyanınca önce ihtiyacı değerlendirin</Text>
           <Text style={styles.body}>Açlık, bez, rahatsızlık ve yakınlık ihtiyacını kontrol edin. Gece bakımını düşük ışıkta ve sakin tutmak yardımcı olabilir; beslenmeyi veya gerekli bakımı uyku planı uğruna ertelemeyin.</Text>
           <Text style={styles.inputLabel}>Bebekler için güvenli uyku</Text>
-          <Text style={styles.body}>Bebeği her uykuda sırtüstü, sert ve düz bir zemine yatırın; uyku alanını yastık, yorgan ve yumuşak eşyalardan boş tutun. Kendi yatağı aynı odada olabilir; yetişkin yatağından ayrı uyku yüzeyi kullanın.</Text>
+          <Text style={styles.body}>Bebeği her uykuda sırtüstü, sert ve düz, ayrı bir uyku yüzeyine yatırın. İlk 6 ay aynı odada ama ayrı uyku alanında uyuması önerilir. Yastık, yorgan, oyuncak ve gevşek örtüleri uyku alanından çıkarın; yetişkin yatağını paylaşmayın.</Text>
           <Text style={styles.inputLabel}>Bir yaklaşımı tüm bakım verenlerle konuşun</Text>
           <Text style={styles.body}>Kimlerin hangi desteği vereceğini, beslenme ve rahatlatma ihtiyaçlarına nasıl yanıt verileceğini ve hangi durumda planı bırakacağınızı önceden konuşun. Aynı yaklaşımda buluşamıyorsanız seçim yapmak zorunda değilsiniz; duyarlı rutinle devam edebilir veya konuyu daha sonra yeniden değerlendirebilirsiniz.</Text>
           <Text style={styles.inputLabel}>Zor günlerde ara verin</Text>
