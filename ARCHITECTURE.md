@@ -1,6 +1,6 @@
 # Uykuva — Ürün ve Teknik Mimari
 
-Son güncelleme: 26 Ekim 2026
+Son güncelleme: 27 Ekim 2026
 
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
@@ -38,6 +38,8 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
 Bulut senkronizasyonu eklendiğinde PostgreSQL tabanlı bir arka uç, satır seviyesinde erişim kuralları ve çevrimdışı olay senkronizasyonu kullanılacaktır. Sağlık verileri uygulama günlüklerine veya analitik olaylarına yazılmayacaktır.
+
+Android ana ekran uyku widget'ı `plugins/withUykuvaWidget.js` Expo config plugin'iyle oluşturulur. Plugin Android manifest'ine sağlayıcıyı ekler; Kotlin sağlayıcı/modülünü ve widget kaynaklarını yazar, React Native paketini `MainApplication` içine kaydeder. `App.tsx`, uygulama açıkken güncel bebek adı, uyku penceresi ve durum metnini yerel widget depolamasına gönderir. Android widget'ı en az 30 dakikalık işletim sistemi yenilemesini kullanır ve dokunulduğunda uygulamayı açar. Bu Android'e özgüdür; otomatik bulut senkronizasyonu veya iOS widget'ı sağlamaz. Böylece `expo prebuild` çalıştırıldığında yerel değişikliklerin kaybolmaması hedeflenir.
 
 ## 4. Dizin yapısı
 
@@ -149,7 +151,7 @@ Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema
 
 Kullanıcı tüm cihaz verisini silmeyi onayladığında `cancelAllCareReminders`, bekleyen ve bildirim merkezinde gösterilmiş tüm uygulama bildirimlerini kaldırmayı dener. Önbellekteki `uykuva-yedek-YYYY-AA-GG.json` dosyaları da silinir; ardından `resetState` SQLite olay, görev ve profil tablolarını temizler. Bildirim veya yedek dosyası temizliği başarısız olsa bile veri silme sürer ve sonuç ekranı kalan öğeleri açıkça bildirir.
 
-Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
+Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik, ısıtılan veya oda sıcaklığına gelen süt için iki saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
 
 Katı gıda günlüğü, `src/domain/solids.ts` içinde kaydedilen yiyecek adlarını, ilk uygulama kayıt tarihini, öğün sayısını ve seçilen alerjen etiketlerini özetler. Tepki gözlemleri öğün notuyla birlikte tarih sırasıyla gösterilir; etiketlerden veya notlardan alerji durumu çıkarılmaz.
 
@@ -263,7 +265,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Ortak zaman çizelgesi eklendi.
 - [x] Son dört saat için bakım devri özeti eklendi.
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
-- [x] 14 günlük uyku eğitimi/alışkanlık planı eklendi.
+- [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; son 10 döngü başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
 - [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
 - [x] Hazır oluş koşulları tamamlandığında altı yaklaşım; yöntemin özeti, bakım verenin uygulayacağı adım ve gece uyanmasına verilecek yanıtla karşılaştırma penceresinde sunuluyor; pencereden doğrudan seçim yapılabiliyor.
 - [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
@@ -334,11 +336,13 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Kayıtlardan ilk uyku/beslenme/ek gıda/ölçüm, dört saatlik uyku ve 100. beslenme anı isteğe bağlı tespit edilip anı günlüğüne eklenebiliyor.
 - [x] Son yedi günün ıslak, kirli ve ikili bez kayıtları ayrı trend grafiğinde gösteriliyor.
 
-## 10. Henüz tamamlanmayanlar
+## 10. Uyku koçluğu kapsamı ve kalan işler
 
-### Uyku planı döngü arşivi
+Whispie'nin resmi ürün sayfası, 6 aydan itibaren altı yöntemli uyku koçluğu sunduğunu belirtiyor ([Whispie özellikleri](https://www.whispieapp.com/whispie/)). Uykuva'da da altı yaklaşım, yaşa bağlı hazır oluş kapısı, günlük 14 günlük rehber, gece uyanması rehberi, sabah check-in'i, duraklatma ve tamamlanan program arşivi bulunuyor. Uykuva tüm koçluk özelliklerini ücretsiz tutuyor.
 
-14 günlük rehber tamamlandığında günlük kayıtlar `completedRuns` içine başlangıç ve bitiş tarihiyle arşivlenir (en çok 10 döngü). Yeni döngü başlatıldığında aktif döngünün 14 günlük geçmişi temizlenir; yaklaşım, odak, rutin ve check-in kayıtları korunur. Arşivlenmiş döngüler koç ekranında gün sayısı ve ilerletilen günlük görev toplamıyla görünür. Yeni döngü, aynı yerel takvim gününde tekrar ilerletilemez.
+Öne çıkan ürün farkı çoklu cihaz işbirliğinde: Uykuva şu an aynı cihazda bakım veren profilleri ve paylaşılabilir devir/plan özetleri sunuyor; davetle başka telefondan eşzamanlı kayıt ve rol bazlı erişim henüz yok. Whispie'nin aile daveti ve rol bazlı görünüm özellikleriyle aradaki farkı kapatmak için sonraki büyük iş güvenli hesap, davet ve çevrimdışı senkronizasyon tasarımıdır. Mevcut cihaz içi SQLite depolamasını koruyarak bu akışın veri birleştirme ve çakışma kuralları ayrıca tanımlanmalıdır.
+
+Uyku koçluğu ve tahminler ebeveynin gözlemlerinin yerine geçmez. Mevcut yaş sınırları, hazır oluş maddeleri, hastalık/seyahat duraklatması ve sağlık uzmanına yönlendirme metinleri korunmalıdır.
 
 Randevular tek seferlik, haftalık veya aylık olarak ayarlanabilir. Tekrarlanan sonraki randevu, mevcut kayıt tamamlandığında oluşturulur; geçmişteki tamamlanmış kayıt silinmez. Aşı kayıtları tekrarlama seçeneği almaz. Bildirim tercihi açıksa sıradaki örnek mevcut randevu hatırlatma zamanlamasına girer.
 
@@ -353,7 +357,8 @@ Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrar
 - [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
 - [x] Randevular için haftalık/aylık tekrar; tamamlanan her örnekten sonra sıradaki örnek açılır ve geçmiş kayıt saklanır.
 - [ ] Ayrıntılı bildirim zamanlama seçenekleri
-- [ ] Widget, iOS Live Activity ve saat uygulamaları
+- [x] Android ana ekran uyku widget'ı eklendi; Android dışındaki widget/Live Activity desteği açık
+- [x] Tamamlanan 14 günlük uyku planı döngülerinin en çok 10 tanesi, başlangıç/bitiş tarihleri ve görev geçmişiyle saklanır ve koç ekranında listelenir.
 - [x] WHO 0–5 yaş kilo, boy ve baş çevresi z-skor tablolarıyla persentil eğrileri; kız/erkek eğrisi profilde isteğe bağlı seçilir
 - [x] Aşı önerisinde kaynak sürümü, resmi duyuru bağlantısı ve 49–72 ay suçiçeği yakalama dönemi için hekimle teyit uyarısı gösteriliyor.
 - [ ] Aşı kartı/e-Nabızdan doğrulanan doz geçmişiyle kişiye özel, hekim onaylı eksik doz akışı
@@ -370,7 +375,7 @@ Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrar
 1. Görev hatırlatmaları ve güvenilir zamanlayıcılar
 2. Aile hesabı, davet ve çevrimdışı senkronizasyon
 3. Ek dozlar için hekim yönlendirmeli aşı akışı
-4. Widget, Live Activity ve sesli kayıt
+4. iOS Live Activity, saat uygulamaları ve Türkçe sesli kayıt
 5. İçerik/uyku planlarının uzman doğrulaması
 6. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
 
@@ -399,11 +404,12 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 
 ### Son doğrulama sonucu
 
-26 Ekim 2026 tarihinde:
+27 Ekim 2026 tarihinde:
 
 - `npm.cmd run typecheck`: başarılı
-- `npm.cmd test`: 13/13 test başarılı
+- `npm.cmd test`: 26/26 test başarılı
 - `npx.cmd expo-doctor`: 20/20 kontrol başarılı
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
+- Android `:app:assembleDebug`: başarılı; APK emülatöre kuruldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
