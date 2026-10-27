@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dailyReminderDatesBefore, isInQuietHours, isValidClock, normalizeClockInput } from "./time";
+import { clockInputDigits, dailyReminderDatesBefore, isInQuietHours, isValidClock, normalizeClockInput } from "./time";
 
 test("quiet hours work across midnight", () => {
   assert.equal(isInQuietHours(new Date("2026-10-26T23:00:00"), "21:00", "07:00"), true);
@@ -19,6 +19,13 @@ test("morning wake input accepts common clock formats", () => {
   assert.equal(normalizeClockInput("730"), "07:30");
   assert.equal(normalizeClockInput("12:45"), "12:45");
   assert.equal(isValidClock(normalizeClockInput("7:00")), true);
+});
+
+test("clock entry preserves digits while a four-digit time is still being typed", () => {
+  assert.equal(clockInputDigits("16"), "16");
+  assert.equal(clockInputDigits("16:0"), "160");
+  assert.equal(normalizeClockInput(clockInputDigits("16:00")), "16:00");
+  assert.equal(clockInputDigits("25:006"), "2500");
 });
 
 test("daily reminders are planned before the next clock time and omit times already passed", () => {
