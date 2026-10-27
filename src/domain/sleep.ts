@@ -143,6 +143,13 @@ function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Rec
 }
 
 export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date(), wakeAtOverride?: Date, dayContext?: SleepDayContext): SleepForecast {
+  if (wakeAtOverride && (!Number.isFinite(wakeAtOverride.getTime()) || wakeAtOverride.getTime() > now.getTime())) {
+    return {
+      available: false,
+      confidence: "low",
+      explanation: "Sabah uyanış saati şu andan ileride olamaz. Gerçek uyanış saatini girince uyku penceresi hesaplanır."
+    };
+  }
   if (dayContext) {
     const explanations: Record<SleepDayContext, string> = {
       illness: "Bugün hastalık veya rahatsızlık işaretlendi. Uyku penceresi ve hatırlatmalar duraklatıldı; bebeğinizin ihtiyaçlarına ve sağlık uzmanınızın önerilerine göre ilerleyin.",
