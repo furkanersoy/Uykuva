@@ -167,6 +167,19 @@ export default function App() {
   const forecastWakeAt = hasSleepSinceMorningWake ? undefined : savedMorningWakeAt;
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext), [app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
+  const childSleepReminders = useMemo(() => app.state.children.map((child) => {
+    const checkIn = child.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow));
+    const wakeMinutes = checkIn?.wakeTime && isValidClock(checkIn.wakeTime) ? checkIn.wakeTime.split(":").map(Number) : undefined;
+    const wakeAt = wakeMinutes ? new Date(clockNow) : undefined;
+    if (wakeAt && wakeMinutes) wakeAt.setHours(wakeMinutes[0]!, wakeMinutes[1]!, 0, 0);
+    const forecastWake = wakeAt && !hasSleepSinceWake(child.events, wakeAt) ? wakeAt : undefined;
+    return {
+      babyName: child.baby.name,
+      isSleeping: child.events.some((event) => event.kind === "sleep" && !event.endedAt),
+      forecast: createSleepForecast(child.baby, child.events, clockNow, forecastWake, checkIn?.dayContext)
+    };
+  }), [app.state.children, clockNow]);
+  const childSleepReminderKey = childSleepReminders.map((child) => `${child.babyName}:${child.isSleeping}:${child.forecast.available}:${child.forecast.start?.getTime() ?? ""}:${child.forecast.end?.getTime() ?? ""}:${child.forecast.explanation}`).join("|");
 
   useEffect(() => {
     const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string) => Promise<void> } | undefined;
@@ -225,68 +238,69 @@ export default function App() {
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
-    if (!app.state.preferences.notificationsEnabled || app.runningSleep) {
+    if (!app.state.preferences.notificationsEnabled) {
       void cancelSleepReminders();
       return;
     }
-    void scheduleSleepReminder(
-      app.state.baby.name,
-      forecast,
-      app.state.preferences.sleepReminderMinutes,
-      app.state.preferences.quietStart,
-      app.state.preferences.quietEnd
-    );
-  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, app.runningSleep?.id, forecast.start?.getTime(), forecast.end?.getTime()]);
+    void (async () => {
+      await cancelSleepReminders();
+      for (const child of childSleepReminders) {
+        if (child.isSleeping) continue;
+        await scheduleSleepReminder(child.babyName, child.forecast, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, false);
+      }
+    })();
+  }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childSleepReminderKey]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
-    void scheduleCareTaskReminders(
-      app.state.careTasks,
-      app.state.preferences.careTaskRemindersEnabled,
-      app.state.preferences.careTaskReminderMinutes,
-      app.state.preferences.quietStart,
-      app.state.preferences.quietEnd
-    );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
+    void (async () => {
+      for (let index = 0; index < app.state.children.length; index += 1) {
+        const child = app.state.children[index]!;
+        await scheduleCareTaskReminders(child.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, child.baby.name, index === 0);
+      }
+    })();
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   useEffect(() => {
     if (!app.hydrated) return;
-    const routineMinutes = app.state.sleepPlan.routine.reduce((sum, step) => sum + (step.enabled ? step.minutes : 0), 0);
-    void scheduleRoutineReminders(
-      app.state.baby.name,
-      app.state.sleepPlan.bedtime,
-      routineMinutes,
-      app.state.onboardingComplete && app.state.preferences.routineRemindersEnabled,
-      app.state.preferences.quietStart,
-      app.state.preferences.quietEnd
-    );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.state.sleepPlan.bedtime, app.state.sleepPlan.routine, app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, localDateValue(clockNow)]);
+    void (async () => {
+      for (let index = 0; index < app.state.children.length; index += 1) {
+        const child = app.state.children[index]!;
+        const routineMinutes = child.sleepPlan.routine.reduce((sum, step) => sum + (step.enabled ? step.minutes : 0), 0);
+        await scheduleRoutineReminders(child.baby.name, child.sleepPlan.bedtime, routineMinutes, app.state.onboardingComplete && app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), index === 0);
+      }
+    })();
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, localDateValue(clockNow)]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
-    void scheduleDiaperReminder(
-      app.state.events,
-      app.state.preferences.diaperRemindersEnabled,
-      app.state.preferences.diaperReminderHours,
-      app.state.preferences.quietStart,
-      app.state.preferences.quietEnd
-    );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
+    void (async () => {
+      for (let index = 0; index < app.state.children.length; index += 1) {
+        const child = app.state.children[index]!;
+        await scheduleDiaperReminder(child.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0);
+      }
+    })();
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   useEffect(() => {
     if (!app.hydrated) return;
-    void scheduleMedicationReminders(app.state.onboardingComplete ? app.state.events : []);
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events]);
+    void (async () => {
+      for (let index = 0; index < app.state.children.length; index += 1) {
+        const child = app.state.children[index]!;
+        await scheduleMedicationReminders(app.state.onboardingComplete ? child.events : [], child.baby.name, index === 0);
+      }
+    })();
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children]);
 
   useEffect(() => {
     if (!app.hydrated) return;
-    void scheduleMilkExpiryReminders(
-      app.state.onboardingComplete ? app.state.events : [],
-      app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled,
-      app.state.preferences.quietStart,
-      app.state.preferences.quietEnd
-    );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
+    void (async () => {
+      for (let index = 0; index < app.state.children.length; index += 1) {
+        const child = app.state.children[index]!;
+        await scheduleMilkExpiryReminders(app.state.onboardingComplete ? child.events : [], app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0);
+      }
+    })();
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   const promptNightWake = () => setNightWakeOpen(true);
   const switchCaregiver = () => {
