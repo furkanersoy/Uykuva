@@ -1,4 +1,3 @@
-Warning: fsx was declared with const; use let for reassignable variables.
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
@@ -25,7 +24,7 @@ import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
-import { createDataExport, parseDataExport } from "./src/domain/export";
+import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
@@ -35,7 +34,7 @@ import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
-import { CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
+import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
@@ -290,7 +289,7 @@ export default function App() {
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
-      <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentBabyName={app.state.baby.name} restore={app.restoreData} />
+      <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
       <NightWakeModal visible={nightWakeOpen} close={() => setNightWakeOpen(false)} save={saveNightWake} />
@@ -1298,12 +1297,12 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
         {app.state.preferences.diaperRemindersEnabled ? <><Text style={styles.inputLabel}>Kaç saat sonra?</Text><View style={styles.choiceRow}>{([2, 3, 4] as const).map((hours) => <Pill key={hours} label={`${hours} saat`} active={app.state.preferences.diaperReminderHours === hours} onPress={() => app.updatePreferences({ diaperReminderHours: hours })} />)}</View><Text style={styles.hint}>Hatırlatma sessiz saate denk gelirse sessiz dönem bitiminde gelir. Bez kontrolü isteğe bağlıdır; uygulama bir bakım sıklığı önermez.</Text></> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
-      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini JSON dosyası olarak paylaşabilir, başka cihazdan seçip geri yükleyebilir veya bu cihazdan silebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini dosya olarak paylaş" quiet onPress={() => void exportBackupFile()} /><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini geri yükle" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
+      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini ücretsiz JSON dosyasıyla paylaşabilir, başka cihazdaki aynı bebeğin kayıtlarıyla birleştirebilir veya yedeği bu cihaza tamamen geri yükleyebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini dosya olarak paylaş" quiet onPress={() => void exportBackupFile()} /><View style={styles.spacer12} /><PrimaryButton label="Yedek dosyasından aktar" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
     </ScrollView>
   );
 }
 
-function DataRestoreModal({ visible, close, currentBabyName, restore }: { visible: boolean; close: () => void; currentBabyName: string; restore: ReturnType<typeof useUykuvaState>["restoreData"] }) {
+function DataRestoreModal({ visible, close, currentState, restore }: { visible: boolean; close: () => void; currentState: UykuvaAppState; restore: ReturnType<typeof useUykuvaState>["restoreData"] }) {
   const [raw, setRaw] = useState("");
   useEffect(() => { if (visible) setRaw(""); }, [visible]);
   if (!visible) return null;
@@ -1314,12 +1313,24 @@ function DataRestoreModal({ visible, close, currentBabyName, restore }: { visibl
     } catch (error) {
       return Alert.alert("Yedeği okuyamadım", error instanceof Error ? error.message : "JSON içeriğini ve yedek biçimini kontrol edin.");
     }
+    let merged: UykuvaAppState;
+    try {
+      merged = mergeDataStates(currentState, restored);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "Bebek profili eşleşmedi.";
+      return Alert.alert("Birleştirilemedi", `${reason}\n\nYedeği yine de mevcut verilerin yerine tamamen geri yükleyebilirsiniz.`);
+    }
+    const currentEventIds = new Set(currentState.events.map((event) => event.id));
+    const currentTaskIds = new Set(currentState.careTasks.map((task) => task.id));
+    const newEvents = restored.events.filter((event) => !currentEventIds.has(event.id)).length;
+    const newTasks = restored.careTasks.filter((task) => !currentTaskIds.has(task.id)).length;
     Alert.alert(
       "Yedek geri yüklensin mi?",
-      `${restored.baby.name} profiliyle ${restored.events.length} bakım kaydı ve ${restored.careTasks.length} aşı/randevu yüklenecek. Bu cihazdaki ${currentBabyName} verilerinin yerini alacak. İsterseniz önce mevcut verileri dışa aktarın.`,
+      `${restored.baby.name} profiline ait ${newEvents} yeni bakım kaydı ve ${newTasks} yeni aşı/randevu var. Aynı kimlikli kayıtlar yinelenmez.\n\nBirleştirme cihazdaki profil, uyku planı ayarları ve tercihleri korur. Tam geri yükleme mevcut cihaz verilerinin yerini alır.`,
       [
         { text: "Vazgeç", style: "cancel" },
-        { text: "Yedeği geri yükle", style: "destructive", onPress: () => { restore(restored); setRaw(""); close(); } }
+        { text: "Birleştir", onPress: () => { restore(merged); setRaw(""); close(); } },
+        { text: "Tamamen geri yükle", style: "destructive", onPress: () => { restore(restored); setRaw(""); close(); } }
       ]
     );
   };
@@ -1338,7 +1349,7 @@ function DataRestoreModal({ visible, close, currentBabyName, restore }: { visibl
       Alert.alert("Dosya açılamadı", "Uykuva JSON yedeğini seçip yeniden deneyin.");
     }
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini geri yükle</Text><Text style={styles.pageIntro}>Uykuva JSON yedeği dosyası seçin veya yedek metnini yapıştırın. Geri yükleme bu cihazdaki kayıtların yerini alır.</Text><PrimaryButton label="JSON yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve geri yükle" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini aktar</Text><Text style={styles.pageIntro}>Uykuva JSON yedeği dosyası seçin veya yedek metnini yapıştırın. Aynı bebeğin verilerini mevcut kayıtlarla birleştirebilir ya da bu cihazdaki verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="JSON yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve aktar" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
