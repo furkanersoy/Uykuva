@@ -85,7 +85,7 @@ SleepWell/
 - **Özet:** Günlük toplamlar ve paylaşılabilir doktor raporu.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
 
-Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım veren adına göre yerel metin aramasını ve birden fazla bakım veren varsa tek dokunuşlu kişi filtresini sunar; kayıt verileri depoda değişmeden kalır. Gece modunda etkin bakım veren hızlıca değiştirilerek sonraki uyku, beslenme ve bez kayıtları doğru kişiye yazılır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
+Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım veren adına göre yerel metin aramasını ve birden fazla bakım veren varsa tek dokunuşlu kişi filtresini sunar; kayıt verileri depoda değişmeden kalır. Birden fazla bakım veren tanımlıysa üst başlıktan veya gece modundan etkin kişi değiştirilir; yeni uyku, beslenme, bez ve diğer bakım kayıtları seçili kişinin adıyla saklanır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
 
 ### Ulusal aşı takvimi önerileri
 
