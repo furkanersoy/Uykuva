@@ -17,6 +17,7 @@ export type NightWakeLog = {
 };
 
 export type SleepDayContext = "illness" | "travel" | "teething" | "routineChange";
+export type MilkExpiryReminderLead = "adaptive" | 2 | 6 | 12 | 24 | 48;
 
 export type Baby = {
   id: string;
@@ -127,6 +128,7 @@ export type AppPreferences = {
   diaperRemindersEnabled: boolean;
   diaperReminderHours: 2 | 3 | 4;
   milkExpiryRemindersEnabled: boolean;
+  milkExpiryReminderLead: MilkExpiryReminderLead;
   routineRemindersEnabled: boolean;
   quietStart: string;
   quietEnd: string;
