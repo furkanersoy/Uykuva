@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -18,6 +18,7 @@ import {
   View
 } from "react-native";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
+import * as Notifications from "expo-notifications";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
@@ -31,6 +32,7 @@ import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE
 import { isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
+import { notificationDestination } from "./src/domain/notificationRouting";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
@@ -142,6 +144,7 @@ export default function App() {
   const [promptedSleepWindow, setPromptedSleepWindow] = useState<number | null>(null);
   const [promptedRunningSleepId, setPromptedRunningSleepId] = useState<string | null>(null);
   const [foregroundCycle, setForegroundCycle] = useState(0);
+  const lastNotificationResponseId = useRef<string | null>(null);
   useEffect(() => {
     let awayFromApp = AppState.currentState !== "active";
     const subscription = AppState.addEventListener("change", (nextState) => {
@@ -174,12 +177,53 @@ export default function App() {
     if (wakeAt && wakeMinutes) wakeAt.setHours(wakeMinutes[0]!, wakeMinutes[1]!, 0, 0);
     const forecastWake = wakeAt && !hasSleepSinceWake(child.events, wakeAt) ? wakeAt : undefined;
     return {
+      childId: child.baby.id,
       babyName: child.baby.name,
       isSleeping: child.events.some((event) => event.kind === "sleep" && !event.endedAt),
       forecast: createSleepForecast(child.baby, child.events, clockNow, forecastWake, checkIn?.dayContext)
     };
   }), [app.state.children, clockNow]);
-  const childSleepReminderKey = childSleepReminders.map((child) => `${child.babyName}:${child.isSleeping}:${child.forecast.available}:${child.forecast.start?.getTime() ?? ""}:${child.forecast.end?.getTime() ?? ""}:${child.forecast.explanation}`).join("|");
+  const childSleepReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.forecast.available}:${child.forecast.start?.getTime() ?? ""}:${child.forecast.end?.getTime() ?? ""}:${child.forecast.explanation}`).join("|");
+
+  useEffect(() => {
+    if (!app.hydrated || !app.state.onboardingComplete) return;
+    let active = true;
+    const openNotificationDestination = (response: Notifications.NotificationResponse | null) => {
+      if (!active || !response) return;
+      const request = response.notification.request;
+      if (lastNotificationResponseId.current === request.identifier) return;
+      lastNotificationResponseId.current = request.identifier;
+      const destination = notificationDestination(request.content.data);
+      if (!destination) {
+        void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+        return;
+      }
+      const child = destination.childId
+        ? app.state.children.find((item) => item.baby.id === destination.childId)
+        : app.state.children.find((item) => item.baby.id === app.state.activeChildId);
+      if (destination.childId && child) app.setActiveChild(child.baby.id);
+      setNightMode(false);
+      setTab(destination.tab);
+      if (destination.taskId && child) {
+        const task = child.careTasks.find((item) => item.id === destination.taskId);
+        if (task) {
+          setTaskToEdit(task);
+          setTaskMode(task.type);
+        }
+      }
+      if (destination.eventId && child) {
+        const event = child.events.find((item) => item.id === destination.eventId);
+        if (event) setEventEditor(event);
+      }
+      void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+    };
+    const subscription = Notifications.addNotificationResponseReceivedListener(openNotificationDestination);
+    void Notifications.getLastNotificationResponseAsync().then(openNotificationDestination).catch(() => undefined);
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.activeChildId, app.setActiveChild]);
 
   useEffect(() => {
     const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string) => Promise<void> } | undefined;
@@ -246,7 +290,7 @@ export default function App() {
       await cancelSleepReminders();
       for (const child of childSleepReminders) {
         if (child.isSleeping) continue;
-        await scheduleSleepReminder(child.babyName, child.forecast, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, false);
+        await scheduleSleepReminder(child.babyName, child.forecast, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, false, child.childId);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childSleepReminderKey]);
@@ -256,7 +300,7 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleCareTaskReminders(child.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, child.baby.name, index === 0);
+        await scheduleCareTaskReminders(child.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, child.baby.name, index === 0, child.baby.id);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
@@ -267,7 +311,7 @@ export default function App() {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
         const routineMinutes = child.sleepPlan.routine.reduce((sum, step) => sum + (step.enabled ? step.minutes : 0), 0);
-        await scheduleRoutineReminders(child.baby.name, child.sleepPlan.bedtime, routineMinutes, app.state.onboardingComplete && app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), index === 0);
+        await scheduleRoutineReminders(child.baby.name, child.sleepPlan.bedtime, routineMinutes, app.state.onboardingComplete && app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), index === 0, child.baby.id);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, localDateValue(clockNow)]);
@@ -277,7 +321,7 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleDiaperReminder(child.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0);
+        await scheduleDiaperReminder(child.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0, child.baby.id);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
@@ -287,7 +331,7 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleMedicationReminders(app.state.onboardingComplete ? child.events : [], child.baby.name, index === 0);
+        await scheduleMedicationReminders(app.state.onboardingComplete ? child.events : [], child.baby.name, index === 0, child.baby.id);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children]);
@@ -297,7 +341,7 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleMilkExpiryReminders(app.state.onboardingComplete ? child.events : [], app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0);
+        await scheduleMilkExpiryReminders(app.state.onboardingComplete ? child.events : [], app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0, child.baby.id);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
