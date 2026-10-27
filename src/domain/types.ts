@@ -131,12 +131,22 @@ export type Caregiver = {
   role: "parent" | "family" | "caregiver";
 };
 
+export type DevelopmentAnswer = "yes" | "notSure" | "notYet";
+
+export type DevelopmentCheckIn = {
+  ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18;
+  checkedAt: string;
+  answers: Record<string, DevelopmentAnswer>;
+  note?: string;
+};
+
 export type AppState = {
   schemaVersion: 3;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
   careInstructions?: string;
+  developmentCheckIns?: DevelopmentCheckIn[];
   caregivers: Caregiver[];
   activeCaregiverId: string;
   events: CareEvent[];
@@ -161,3 +171,4 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
+
