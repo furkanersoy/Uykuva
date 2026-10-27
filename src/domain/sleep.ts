@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord, SleepSupport } from "./types";
+import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod, NightWakeResponse, SleepPlanDayRecord, SleepSupport } from "./types";
 
 const DAY = 86_400_000;
 
@@ -442,6 +442,17 @@ export function sleepSupportLabel(support: SleepSupport): string {
   return SLEEP_SUPPORT_OPTIONS.find((item) => item.id === support)?.label ?? "Diğer";
 }
 
+export const NIGHT_WAKE_RESPONSE_OPTIONS: { id: NightWakeResponse; label: string }[] = [
+  { id: "feeding", label: "Beslenme" },
+  { id: "comfort", label: "Sakinleştirme / yakınlık" },
+  { id: "diaper", label: "Bez / temel ihtiyaç" },
+  { id: "other", label: "Diğer" }
+];
+
+export function nightWakeResponseLabel(response: NightWakeResponse): string {
+  return NIGHT_WAKE_RESPONSE_OPTIONS.find((item) => item.id === response)?.label ?? "Diğer";
+}
+
 export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true, correctedAge = 183, focus: SleepFocus = "routine"): CoachingDay {
   const safeDay = Math.min(14, Math.max(1, day));
   if (!canReduceSupport) {
@@ -835,6 +846,9 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const lastDiaper = recent.filter((event) => event.kind === "diaper").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
   const healthEvents = recent.filter((event) => event.kind === "health");
   const notes = recent.filter((event) => event.kind === "note" && event.note?.trim());
+  const nightWakeLogs = state.sleepPlan.checkIns.flatMap((checkIn) => checkIn.nightWakeLogs ?? [])
+    .filter((log) => new Date(log.at).getTime() >= since && new Date(log.at).getTime() <= now.getTime())
+    .sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime());
   const nextTasks = state.careTasks
     .filter((task) => !task.completedAt && new Date(task.dueAt).getTime() >= now.getTime() && new Date(task.dueAt).getTime() <= now.getTime() + 24 * 60 * 60 * 1000)
     .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
@@ -850,6 +864,10 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const lastSleep = [...sleepSegments].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
   const eventTime = (value: string) => new Date(value).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
+  if (nightWakeLogs.length) {
+    const latestWake = nightWakeLogs[0]!;
+    parts.push(`${nightWakeLogs.length} gece uyanması kaydı · son ${eventTime(latestWake.at)} ${nightWakeResponseLabel(latestWake.response)} · ${latestWake.caregiver}`);
+  }
   if (state.careInstructions?.trim()) parts.push(`Bakım talimatı: ${state.careInstructions.trim()}`);
   if (feeds.length) parts.push(`${feeds.length} beslenme kaydı${amount ? ` · ${amount} ml kayıtlı biberon` : ""}`);
   if (lastFeed) {
