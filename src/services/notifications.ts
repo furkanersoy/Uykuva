@@ -2,12 +2,14 @@ import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { CareEvent, CareTask, SleepForecast } from "../domain/types";
 import { isInQuietHours } from "../domain/time";
+import { createMilkInventory, milkStorageLabel } from "../domain/milk";
 
 const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
 const CARE_TASK_NOTIFICATION_KIND = "uykuva-care-task";
 const DIAPER_NOTIFICATION_KIND = "uykuva-diaper-check";
 const MEDICATION_NOTIFICATION_KIND = "uykuva-medication-reminder";
+const MILK_EXPIRY_NOTIFICATION_KIND = "uykuva-milk-expiry";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -52,6 +54,16 @@ async function ensureMedicationChannel() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync("medication-reminders", {
     name: "İlaç planı hatırlatmaları",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+    lightColor: "#A8C7B5"
+  });
+}
+
+async function ensureMilkChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("milk-expiry-reminders", {
+    name: "Sağılan süt hatırlatmaları",
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 180],
     lightColor: "#A8C7B5"
@@ -235,3 +247,53 @@ export async function scheduleMedicationReminders(events: CareEvent[]) {
   return count;
 }
 
+export async function scheduleMilkExpiryReminders(
+  events: CareEvent[],
+  enabled: boolean,
+  quietStart: string,
+  quietEnd: string,
+  now = new Date()
+) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter((item) => String(item.content.data?.kind) === MILK_EXPIRY_NOTIFICATION_KIND)
+    .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+  if (!enabled) return 0;
+
+  const batches = createMilkInventory(events, now).batches
+    .filter((batch) => batch.remainingMl > 0 && !batch.isExpired && batch.useBy.getTime() > now.getTime())
+    .sort((a, b) => a.useBy.getTime() - b.useBy.getTime())
+    .slice(0, 24);
+  await ensureMilkChannel();
+  let count = 0;
+  for (const batch of batches) {
+    const remainingMs = batch.useBy.getTime() - now.getTime();
+    const leadMs = remainingMs <= 2 * 60 * 60_000 ? 30 * 60_000
+      : remainingMs <= 4 * 60 * 60_000 ? 60 * 60_000
+        : remainingMs <= 24 * 60 * 60_000 ? 2 * 60 * 60_000
+          : remainingMs <= 4 * 24 * 60 * 60_000 ? 12 * 60 * 60_000
+            : 24 * 60 * 60_000;
+    const reminderAt = new Date(batch.useBy.getTime() - leadMs);
+    if (reminderAt.getTime() <= now.getTime()) continue;
+    if (isInQuietHours(reminderAt, quietStart, quietEnd)) {
+      const [hour, minute] = quietEnd.split(":").map(Number);
+      reminderAt.setHours(hour ?? 0, minute ?? 0, 0, 0);
+      if (reminderAt.getTime() <= now.getTime()) reminderAt.setDate(reminderAt.getDate() + 1);
+    }
+    if (reminderAt.getTime() >= batch.useBy.getTime()) continue;
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Sağılan süt kullanım süresi yaklaşıyor",
+        body: `${batch.remainingMl} ml ${milkStorageLabel(batch.event)} · ${batch.useBy.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })} öncesinde stoğu kontrol edin.`,
+        data: { kind: MILK_EXPIRY_NOTIFICATION_KIND, batchId: batch.event.id }
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: reminderAt,
+        channelId: Platform.OS === "android" ? "milk-expiry-reminders" : undefined
+      }
+    });
+    count += 1;
+  }
+  return count;
+}
