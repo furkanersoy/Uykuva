@@ -612,7 +612,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <View style={styles.timeFields}>
           <View style={styles.timeField}>
             <Text style={styles.inputLabel}>Bugün uyandığı saat</Text>
-            <TextInput accessibilityLabel="Bugün sabah uyanış saati" value={morningWake} onChangeText={updateMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} />
+            <TextInput accessibilityLabel="Bugün sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde ilk uyku penceresi hesaplanır." value={morningWake} onChangeText={updateMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} />
           </View>
           <View style={[styles.timeField, { justifyContent: "flex-end" }]}>
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWake ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
