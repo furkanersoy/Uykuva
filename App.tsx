@@ -340,7 +340,7 @@ export default function App() {
       <CareTaskModal mode={taskMode} task={taskToEdit} close={() => { setTaskMode(null); setTaskToEdit(null); }} add={app.addCareTask} update={app.updateCareTask} />
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
-      <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
+      <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} add={app.addCaregiver} />
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
@@ -1573,6 +1573,10 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
     if (!babyName.trim() || !caregiverName.trim() || Number.isNaN(birth.getTime()) || birth > new Date() || !Number.isInteger(week) || week < 22 || week > 42) {
       return Alert.alert("Bilgileri kontrol edin", "Adları, doğum tarihini ve 22–42 arasındaki gebelik haftasını kontrol edin.");
     }
+    const normalizedCaregiverName = caregiverName.trim().normalize("NFKC").toLocaleLowerCase("tr-TR");
+    if (app.state.caregivers.some((caregiver) => caregiver.id !== app.state.activeCaregiverId && caregiver.name.trim().normalize("NFKC").toLocaleLowerCase("tr-TR") === normalizedCaregiverName)) {
+      return Alert.alert("Bu bakım veren zaten var", "Kayıtların doğru kişiye bağlanması için her bakım verene farklı bir ad veya rol yazın.");
+    }
     app.updateProfile({ ...app.state.baby, name: babyName.trim(), birthDate, gestationalWeek: week, growthChartSex }, caregiverName);
     close();
   };
@@ -1627,7 +1631,7 @@ function NightWakeModal({ visible, close, save }: { visible: boolean; close: () 
   </Modal>;
 }
 
-function CaregiverModal({ visible, close, add }: { visible: boolean; close: () => void; add: (caregiver: Omit<Caregiver, "id">) => void }) {
+function CaregiverModal({ visible, close, caregivers, add }: { visible: boolean; close: () => void; caregivers: string[]; add: (caregiver: Omit<Caregiver, "id">) => void }) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<Caregiver["role"]>("parent");
   useEffect(() => {
@@ -1636,6 +1640,8 @@ function CaregiverModal({ visible, close, add }: { visible: boolean; close: () =
   const save = () => {
     const cleanName = name.trim();
     if (!cleanName) return Alert.alert("İsim gerekli", "Bakım verenin adını veya aile içindeki rolünü yazın.");
+    const normalizedName = cleanName.normalize("NFKC").toLocaleLowerCase("tr-TR");
+    if (caregivers.some((caregiver) => caregiver.trim().normalize("NFKC").toLocaleLowerCase("tr-TR") === normalizedName)) return Alert.alert("Bu bakım veren zaten var", "Kayıtların doğru kişiye bağlanması için farklı bir ad veya rol kullanın.");
     add({ name: cleanName, role });
     close();
   };
