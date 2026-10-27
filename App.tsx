@@ -1159,8 +1159,8 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
   };
   const confirmDelete = () => Alert.alert(
     "Tüm cihaz verileri silinsin mi?",
-    "Bebek profili, bakım kayıtları ve uyku planı bu cihazdan kalıcı olarak silinir. Uyku, bez, ilaç, aşı ve randevu hatırlatmaları da kaldırılır.",
-    [{ text: "Vazgeç", style: "cancel" }, { text: "Tümünü sil", style: "destructive", onPress: () => { void app.clearAllData().then((remindersCancelled) => Alert.alert("Veriler silindi", remindersCancelled ? "Kayıtlar ve planlı bildirimler bu cihazdan kaldırıldı." : "Kayıtlar silindi, ancak bazı bildirimler kaldı. Bildirimleri cihaz ayarlarından kaldırın.")).catch(() => Alert.alert("Veriler silinemedi", "Cihaz kayıtları temizlenirken bir sorun oluştu. Yeniden deneyin.")); } }]
+    "Bebek profili, bakım kayıtları, uyku planı ve Uykuva'nın oluşturduğu yedek dosyaları bu cihazdan silinir. Planlı hatırlatmalar da kaldırılır.",
+    [{ text: "Vazgeç", style: "cancel" }, { text: "Tümünü sil", style: "destructive", onPress: () => { void app.clearAllData().then(({ remindersCancelled, backupsDeleted }) => { const remaining = [!backupsDeleted ? "önbellekteki yedek dosyaları" : "", !remindersCancelled ? "planlı bildirimler" : ""].filter(Boolean); Alert.alert("Veriler silindi", remaining.length ? `Kayıtlar temizlendi; ancak ${remaining.join(" ve ")} kaldı.` : "Kayıtlar, yedek dosyaları ve planlı bildirimler bu cihazdan kaldırıldı."); }).catch(() => Alert.alert("Veriler silinemedi", "Cihaz kayıtları temizlenirken bir sorun oluştu. Yeniden deneyin.")); } }]
   );
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
