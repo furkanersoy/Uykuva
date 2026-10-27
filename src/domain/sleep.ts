@@ -169,8 +169,23 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   const hasPersonalPattern = personal.length >= requiredSamples;
   const personalMedian = median(personal);
   const blendedTarget = hasPersonalPattern ? baseline * 0.35 + personalMedian * 0.65 : baseline;
-  const target = Math.max(band.min, Math.min(band.max, blendedTarget));
-  const spread = hasPersonalPattern ? personal.length >= 8 ? 12 : 18 : Math.max(20, (band.max - band.min) / 2);
+  const forecastCutoff = now.getTime() - 30 * DAY;
+  const suggestionErrors = events.flatMap((event) => {
+    if (event.kind !== "sleep" || !event.suggestedSleepWindowStartAt || !event.suggestedSleepWindowEndAt) return [];
+    const actualStart = new Date(event.startedAt).getTime();
+    const suggestedStart = new Date(event.suggestedSleepWindowStartAt).getTime();
+    const suggestedEnd = new Date(event.suggestedSleepWindowEndAt).getTime();
+    if (!Number.isFinite(actualStart) || !Number.isFinite(suggestedStart) || !Number.isFinite(suggestedEnd) || actualStart < forecastCutoff || actualStart > now.getTime() || suggestedEnd <= suggestedStart) return [];
+    const error = (actualStart - (suggestedStart + suggestedEnd) / 2) / 60_000;
+    return Math.abs(error) <= 240 ? [error] : [];
+  }).slice(-10);
+  const learnedOffset = suggestionErrors.length >= 3 ? median(suggestionErrors) : 0;
+  const target = Math.max(band.min, Math.min(band.max, blendedTarget + learnedOffset));
+  const typicalError = median(suggestionErrors);
+  const errorSpread = suggestionErrors.length >= 3 ? median(suggestionErrors.map((error) => Math.abs(error - typicalError))) : 0;
+  const spread = suggestionErrors.length >= 3
+    ? Math.max(12, Math.min(30, Math.round(errorSpread * 1.5)))
+    : hasPersonalPattern ? personal.length >= 8 ? 12 : 18 : Math.max(20, (band.max - band.min) / 2);
   const start = new Date(wakeAt.getTime() + Math.max(band.min, target - spread) * 60_000);
   const end = new Date(wakeAt.getTime() + Math.min(band.max, target + spread) * 60_000);
   const awakeMinutes = Math.max(0, Math.floor((now.getTime() - wakeAt.getTime()) / 60_000));
@@ -183,10 +198,12 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
     start,
     end,
     awakeMinutes,
-    confidence: hasPersonalPattern ? personal.length >= 8 ? "high" : "medium" : "low",
-    explanation: hasPersonalPattern
-      ? `Son 30 gündeki ${DAY_PART_LABELS[dayPart]} uyanıklık kayıtlarının son ${personal.length} örneği yaş aralığıyla birlikte değerlendirildi.`
-      : `${DAY_PART_LABELS[dayPart]} saat diliminde kişisel tahmin için yeterli kayıt yok (${personal.length}/${requiredSamples}); yaşa göre referans aralığı kullanılıyor.`
+    confidence: suggestionErrors.length >= 6 || hasPersonalPattern && personal.length >= 8 ? "high" : hasPersonalPattern || suggestionErrors.length >= 3 ? "medium" : "low",
+    explanation: suggestionErrors.length >= 3
+      ? `Son 30 gündeki ${suggestionErrors.length} tahmin ile gerçek uyku başlangıcı karşılaştırılarak aralık kişiselleştirildi${hasPersonalPattern ? `; ${DAY_PART_LABELS[dayPart]} uyanıklık örüntüsü de hesaba katıldı` : ""}.`
+      : hasPersonalPattern
+        ? `Son 30 gündeki ${DAY_PART_LABELS[dayPart]} uyanıklık kayıtlarının son ${personal.length} örneği yaş aralığıyla birlikte değerlendirildi.`
+        : `${DAY_PART_LABELS[dayPart]} saat diliminde kişisel tahmin için yeterli kayıt yok (${personal.length}/${requiredSamples}); yaşa göre referans aralığı kullanılıyor.`
   };
 }
 
