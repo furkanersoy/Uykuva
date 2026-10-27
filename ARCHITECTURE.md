@@ -278,7 +278,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
 - [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; son 10 döngü başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
 - [x] Yedi uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi. Süreli kontrol yaklaşımı sabit aralık veya ağlama süresi önermiyor; bebeğin ihtiyaçları ve bakım verenin kararı öncelikli.
-- [x] Hazır oluş koşulları tamamlandığında yedi yaklaşım; yöntemin özeti, bakım verenin uygulayacağı adım ve gece uyanmasına verilecek yanıtla karşılaştırma penceresinde sunuluyor; pencereden doğrudan seçim yapılabiliyor.
+- [x] Hazır oluş koşulları tamamlandığında yedi yaklaşım; yöntem özeti, bakım veren adımı, gece yanıtı, beklenen huzursuzluk, yakınlık, uygulama yükü ve ilerleme biçimiyle karşılaştırılıyor; pencereden doğrudan seçim yapılabiliyor.
 - [x] Ailece belirlenen kısa kontroller yaklaşımı eklendi. Uygulama sabit aralık veya ağlama süresi önermiyor; beslenme, sağlık ve yoğun huzursuzlukta gecikmeden yanıt veriliyor.
 - [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
