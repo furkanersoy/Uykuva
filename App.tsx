@@ -640,12 +640,18 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     const digits = value.replace(/\D/g, "").slice(0, 4);
     setMorningWake(digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits);
   };
+  const morningWakeHasSleep = isValidClock(morningWake) && (() => {
+    const [hour, minute] = morningWake.split(":").map(Number);
+    const wakeAt = new Date(now);
+    wakeAt.setHours(hour!, minute!, 0, 0);
+    return hasSleepSinceWake(app.state.events, wakeAt);
+  })();
   const morningWakeForecast = (() => {
     if (!isValidClock(morningWake)) return undefined;
     const [hour, minute] = morningWake.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
-    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt, todayCheckIn?.dayContext);
+    return createSleepForecast(app.state.baby, app.state.events, now, morningWakeHasSleep ? undefined : wakeAt, todayCheckIn?.dayContext);
   })();
   const nightSpanMinutes = isValidClock(nightBedtime) && isValidClock(morningWake)
     ? (() => {
@@ -873,7 +879,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={setNightBedtime} style={styles.compactInput} placeholder="20:30" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" value={morningWake} onChangeText={updateCoachMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} /></View></View>
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
-        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `Sabah uyanışına göre ilk uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
+        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
         <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() || undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
         <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
@@ -1157,6 +1163,10 @@ function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date
     { text: "Vazgeç", style: "cancel" },
     { text: "Tamamen çözüldü", onPress: () => update(event.id, { milkStorageLocation: "fridge", milkThawedAt: new Date().toISOString() }) }
   ]);
+  const markWarmed = (event: CareEvent) => Alert.alert("Süt ısıtıldı veya oda sıcaklığına geldi mi?", "Bu andan itibaren 2 saatlik kullanım süresi başlar. Sütü yeniden dondurmayın.", [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Evet, süreyi başlat", onPress: () => update(event.id, { milkWarmedAt: new Date().toISOString() }) }
+  ]);
   const moveTo = (event: CareEvent, location: "fridge" | "freezer") => update(event.id, { milkStorageLocation: location });
   return <>
     <SectionTitle title="Sağılan süt stoğu" action={`${inventory.availableMl} ml kullanılabilir`} />
@@ -1169,13 +1179,14 @@ function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date
             {batch.event.milkStorageLocation === "freezer" && !batch.isThawed ? <Text style={styles.muted}>En iyi kalite: {dateTime(batch.bestBy)} · Tavsiye edilen son tarih: {dateTime(batch.useBy)}</Text> : <Text style={styles.muted}>Kullanım aralığı: {dateTime(batch.useBy)} tarihine kadar</Text>}
             {batch.isExpired ? <Text style={styles.dangerText}>Önerilen kullanım süresi geçti</Text> : qualityDatePassed ? <Text style={styles.muted}>En iyi kalite dönemi geçti; CDC'nin kabul edilebilir saklama süresi sürüyor.</Text> : dueSoon ? <Text style={styles.dangerText}>Önümüzdeki 48 saatte kullanım süresi doluyor</Text> : null}
             {batch.event.milkStorageLocation === "freezer" && !batch.event.milkThawedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => thaw(batch.event)}><Text style={styles.linkText}>Tamamen çözüldüğünde işaretle</Text></Pressable> : null}
+            {(batch.event.milkThawedAt || batch.event.milkStorageLocation === "fridge") && !batch.event.milkWarmedAt && !batch.isExpired ? <Pressable accessibilityRole="button" accessibilityLabel="Süt ısıtıldı veya oda sıcaklığına geldi olarak işaretle; iki saatlik süre başlat" onPress={() => markWarmed(batch.event)}><Text style={styles.linkText}>Isıtıldı / oda sıcaklığına geldi</Text></Pressable> : null}
             {batch.event.milkStorageLocation === "room" && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "fridge")}><Text style={styles.linkText}>Buzdolabına alındı olarak güncelle</Text></Pressable> : null}
-            {batch.event.milkStorageLocation === "fridge" && !batch.event.milkThawedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "freezer")}><Text style={styles.linkText}>Dondurucuya alındı olarak güncelle</Text></Pressable> : null}
+            {batch.event.milkStorageLocation === "fridge" && !batch.event.milkThawedAt && !batch.event.milkWarmedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "freezer")}><Text style={styles.linkText}>Dondurucuya alındı olarak güncelle</Text></Pressable> : null}
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Süt stoğunu çıkar" onPress={() => discard(batch.event)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable>
         </View>;
       }) : <Text style={styles.body}>Henüz sağım stoğu yok. Beslenme kaydından “Sağım” seçerek miktarı ve saklama yerini ekleyebilirsiniz.</Text>}
-      <Text style={styles.hint}>Önerilen süreler taze sağılmış süt ve uygun sıcaklık koşulları içindir. Çözdürülmüş süt ve artan biberon için farklı süreler geçerlidir.</Text>
+      <Text style={styles.hint}>Önerilen süreler taze sağılmış süt ve uygun sıcaklık koşulları içindir. Tamamen çözündürülmüş süt 24 saat içinde, ısıtılmış veya oda sıcaklığına gelmiş süt 2 saat içinde kullanılmalıdır. CDC kuralları sağlıklı ve zamanında doğan bebeklere yöneliktir; bebeğiniz prematüre veya hastaysa sağlık uzmanınıza danışın.</Text>
       <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/breastfeeding/breast-milk-preparation-and-storage/handling-breastmilk.html")}><Text style={styles.linkText}>CDC saklama rehberini aç</Text></Pressable>
     </Card>
   </>;
