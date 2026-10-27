@@ -1,3 +1,4 @@
+Warning: fsx was declared with const; use let for reassignable variables.
 # Uykuva — Ürün ve Teknik Mimari
 
 Son güncelleme: 26 Ekim 2026
@@ -130,7 +131,7 @@ Ana fonksiyonlar:
 - `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir; hesaplanan aralık tamamen geçmişse bayat tahmini göstermez.
 - `coachingDay`: Düzeltilmiş yaş aşaması ve seçilen yaklaşıma göre birbirinden farklı günlük görev ve check-in sorularını üretir; 6 aydan küçük bebeklerde destek azaltma görevi vermez.
 - `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. En güncel yedi tarihli check-in'i kullanır; tarihsiz, bozuk tarihli ve gelecekteki check-in'leri dışarıda bırakır. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla eşleşme kurup rutin–uyku başlangıç aralığının ortancasını verir; son 30 gündeki en yeni yedi işaretli uyku kaydının kullanılan geçiş desteği dağılımını tıbbi veya başarı değerlendirmesi yapmadan gösterir.
-- `handoffSummary`: Seçili 2/4/6/8 saatlik aralıktaki kayıtları, en son beslenme/bez/uyku saatlerini ve biberon miktarını özetler; son beslenme ve bez kaydında bakım verenin adını da gösterir. Pencere dışında başlamış olsa da açık emzirmeyi toplam ve taraf süreleriyle gösterir. Pencereyle kesişen uyku süresini, devam eden uykuyu ve sonraki 24 saatin en yakın üç görevini ekler. Tercih varsayılanı 4 saattir; eski yedeklerde alan yoksa migrasyon bu değeri kullanır.
+- `handoffSummary`: Seçili 2/4/6/8 saatlik aralıktaki kayıtları, en son beslenme/bez/uyku saatlerini ve biberon miktarını özetler; son beslenme ve bez kaydında bakım verenin adını da gösterir. Pencere dışında başlamış olsa da açık emzirmeyi toplam ve taraf süreleriyle gösterir. Pencereyle kesişen uyku süresini, devam eden uykuyu ve sonraki 24 saatin en yakın üç görevini ekler. Bebek uyanıksa ve tahmin penceresi geçmemişse, günün sabah uyanış saatinden veya son uykudan hesaplanan sıradaki uyku penceresini de içerir. Tercih varsayılanı 4 saattir; eski yedeklerde alan yoksa migrasyon bu değeri kullanır.
 - `careInstructions`: Ailenin bakım verene bırakmak istediği notları cihazda saklar; yalnızca bakım veren paylaşımı açıkça başlatıldığında devir özetine ekler. Yedeklerde taşınır ve eski veriler boş notla açılır.
 
 ### Veri katmanı
@@ -407,4 +408,3 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npx.cmd expo export --platform android`: Android üretim paketi başarıyla oluşturuldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
-
