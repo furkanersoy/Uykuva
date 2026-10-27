@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, handoffSummary, median, sleepProgramStage } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, median, sleepProgramStage } from "./sleep";
 import { Baby, CareEvent } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -14,6 +14,13 @@ test("median handles odd and even sets", () => {
 test("corrected age accounts for prematurity during first two years", () => {
   const baby: Baby = { ...termBaby, gestationalWeek: 36 };
   assert.equal(correctedAgeDays(baby, new Date("2026-07-27T12:00:00")), 28);
+});
+
+test("corrected calendar age recognizes month-end anniversaries", () => {
+  const monthEndBaby: Baby = { ...termBaby, birthDate: "2026-01-31" };
+  assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-02-28T12:00:00")), 1);
+  assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-03-30T12:00:00")), 1);
+  assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-03-31T12:00:00")), 2);
 });
 
 test("forecast stays unavailable before week nine", () => {
@@ -34,6 +41,15 @@ test("forecast returns an explainable range after a completed sleep", () => {
   assert.equal(result.available, true);
   assert.ok(result.start && result.end && result.start < result.end);
   assert.match(result.explanation, /yaşa göre/i);
+});
+
+test("day context pauses sleep windows on illness, travel, teething, or routine changes", () => {
+  const now = new Date("2026-10-26T09:00:00");
+  for (const context of ["illness", "travel", "teething", "routineChange"] as const) {
+    const result = createSleepForecast(termBaby, [], now, new Date("2026-10-26T08:00:00"), context);
+    assert.equal(result.available, false);
+    assert.match(result.explanation, /duraklatıldı/i);
+  }
 });
 
 test("forecast learns its center and range from saved suggestion outcomes", () => {
@@ -76,6 +92,18 @@ test("bedtime adjustment is capped at fifteen minutes", () => {
   assert.equal(insight.adjustmentMinutes, -15);
   assert.equal(insight.checkInAverage, 3);
 });
+
+test("sleep insights summarize recorded settling support neutrally", () => {
+  const events: CareEvent[] = [
+    { id: "s1", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T01:00:00", caregiver: "Anne" },
+    { id: "s2", kind: "sleep", sleepSupport: "feeding", startedAt: "2026-10-25T20:00:00", endedAt: "2026-10-26T01:00:00", caregiver: "Anne" },
+    { id: "s3", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-24T20:00:00", endedAt: "2026-10-25T01:00:00", caregiver: "Baba" }
+  ];
+  const insight = createSleepCoachInsights(events, "20:00", [], new Date("2026-10-27T12:00:00"));
+  assert.equal(insight.sleepSupportSamples, 3);
+  assert.equal(insight.sleepSupportSummary, "Kucakta 2, Beslenerek 1");
+});
+
 test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   const state = createInitialState();
   state.careInstructions = "";
@@ -91,13 +119,4 @@ test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   assert.match(summary, /Son uyku 08:00–09:00 · Kucakta/);
   assert.match(summary, /1 gece uyanması kaydı · son 10:45 Beslenme · Baba/);
 });
-test("sleep insights summarize recorded settling support neutrally", () => {
-  const events: CareEvent[] = [
-    { id: "s1", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T01:00:00", caregiver: "Anne" },
-    { id: "s2", kind: "sleep", sleepSupport: "feeding", startedAt: "2026-10-25T20:00:00", endedAt: "2026-10-26T01:00:00", caregiver: "Anne" },
-    { id: "s3", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-24T20:00:00", endedAt: "2026-10-25T01:00:00", caregiver: "Baba" }
-  ];
-  const insight = createSleepCoachInsights(events, "20:00", [], new Date("2026-10-27T12:00:00"));
-  assert.equal(insight.sleepSupportSamples, 3);
-  assert.equal(insight.sleepSupportSummary, "Kucakta 2, Beslenerek 1");
-});
+
