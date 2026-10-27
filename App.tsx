@@ -1,3 +1,4 @@
+Warning: fsx was declared with const; use let for reassignable variables.
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
@@ -1821,10 +1822,10 @@ const styles = StyleSheet.create({
   nightGuideHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   nightGuideHeaderText: { flex: 1, flexShrink: 1, minWidth: 0 },
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
-  nightGuideContent: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
-  nightGuideStep: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8 },
-  nightGuideStepText: { flex: 1, flexShrink: 1, minWidth: 0 },
-  nightGuideNumber: { width: 24, height: 24, flexShrink: 0, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
+  nightGuideContent: { width: "100%", alignSelf: "stretch", borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
+  nightGuideStep: { width: "100%", alignSelf: "stretch", flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 8 },
+  nightGuideStepText: { flex: 1, flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, fontSize: 12, lineHeight: 18 },
+  nightGuideNumber: { width: 22, height: 22, flexShrink: 0, borderRadius: 11, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
@@ -1908,4 +1909,3 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
-
