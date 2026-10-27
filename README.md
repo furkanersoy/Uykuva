@@ -7,6 +7,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Açıklanabilir uyku penceresi tahmini
 - Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve durum; widget'a dokununca Uykuva açılır
 - İsteğe bağlı hastalık, seyahat, diş çıkarma ve düzen değişikliği günü işareti; bu günlerde olağan uyku penceresi ve hatırlatmalar duraklatılır
+- Olağan dışı gün işaretlendiğinde uyku koçluğu görevlerini ve günlük plan ilerlemesini de duraklatma; günlük bakım kayıtları kullanılmaya devam eder
 - Sabah check-in'inde uyanış saati girildiğinde ilk gündüz uykusu penceresini anında gösterme; ilk uyku kaydedilince sonraki tahminleri o uykudan sürdürme
 - Ana uyku kartında pencereye kalan süreyi, pencere açıkken kalan dakikayı ve tahmini aralık geçince esnek yanıt mesajını gösterme
 - Önerilen uyku penceresinden sonra açılan tek seferlik “uyudu mu?” sorusuyla gerçek uyku başlangıcını tahminle eşleştirme; en az üç eşleşmede sonraki pencerenin merkezini ve genişliğini bu geçmişe göre ayarlama
