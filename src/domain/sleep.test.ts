@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, median, sleepProgramStage } from "./sleep";
-import { Baby, CareEvent } from "./types";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, median, methodDescription, sleepProgramStage } from "./sleep";
+import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
@@ -21,6 +21,31 @@ test("corrected calendar age recognizes month-end anniversaries", () => {
   assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-02-28T12:00:00")), 1);
   assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-03-30T12:00:00")), 1);
   assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-03-31T12:00:00")), 2);
+});
+
+test("sleep coaching keeps support reduction closed before six months", () => {
+  const threeMonthOld = { ...termBaby, birthDate: "2026-03-01" };
+  const fiveMonthOld = { ...termBaby, birthDate: "2026-01-01" };
+  const sixMonthOld = { ...termBaby, birthDate: "2025-11-30" };
+  const now = new Date("2026-06-01T12:00:00");
+
+  assert.equal(sleepProgramStage(threeMonthOld, now).id, "newborn");
+  assert.equal(sleepProgramStage(threeMonthOld, now).canReduceSupport, false);
+  assert.equal(sleepProgramStage(fiveMonthOld, now).id, "foundations");
+  assert.equal(sleepProgramStage(fiveMonthOld, now).canReduceSupport, false);
+  assert.equal(sleepProgramStage(sixMonthOld, now).id, "plan");
+  assert.equal(sleepProgramStage(sixMonthOld, now).canReduceSupport, true);
+});
+
+test("all six sleep coaching approaches include caregiver and night-waking guidance", () => {
+  const methods: SleepMethod[] = ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
+  for (const method of methods) {
+    const guidance = methodDescription(method);
+    assert.ok(guidance.name.length > 0);
+    assert.ok(guidance.support.length > 0);
+    assert.ok(guidance.caregiverRole.length > 0);
+    assert.ok(guidance.nightResponse.length > 0);
+  }
 });
 
 test("forecast stays unavailable before week nine", () => {
