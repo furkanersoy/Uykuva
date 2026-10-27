@@ -787,6 +787,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const sleepMinutes = sleepSegments.reduce((sum, segment) => sum + segment.minutes, 0);
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
+  if (state.careInstructions?.trim()) parts.push(`Bakım talimatı: ${state.careInstructions.trim()}`);
   if (feeds.length) parts.push(`${feeds.length} beslenme kaydı${amount ? ` · ${amount} ml kayıtlı biberon` : ""}`);
   if (breastfeedingOngoing) {
     const nowMs = now.getTime();
