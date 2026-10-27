@@ -940,6 +940,16 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   if (todayCheckIn?.dayContext) {
     parts.push(`Bugün ${sleepDayContextLabel(todayCheckIn.dayContext)} işaretlendi · uyku tahmini ve koçluk planı beklemede`);
   }
+  if (state.sleepPlan.paused && !todayCheckIn?.dayContext) {
+    parts.push("Uyku planı duraklatıldı");
+  } else if (!state.sleepPlan.paused && !todayCheckIn?.dayContext) {
+    const stage = sleepProgramStage(state.baby, now);
+    const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => state.sleepPlan.readinessCompleted.includes(item));
+    const activeMethod = trainingReady ? state.sleepPlan.method : "responsive";
+    parts.push(`Uyku yaklaşımı: ${methodDescription(activeMethod).name}`);
+  }
+  const enabledRoutine = state.sleepPlan.routine.filter((step) => step.enabled && step.label.trim()).map((step) => step.label.trim());
+  if (enabledRoutine.length) parts.push(`Etkin akşam rutini: ${enabledRoutine.join(" → ")}`);
   if (nextSleepForecast?.available && nextSleepForecast.start && nextSleepForecast.end && nextSleepForecast.end > now) {
     parts.push(`Tahmini sonraki uyku penceresi ${eventTime(nextSleepForecast.start.toISOString())}–${eventTime(nextSleepForecast.end.toISOString())}`);
   }
