@@ -456,6 +456,7 @@ export function isSleepPlanPausedToday(plan: Pick<SleepPlan, "paused" | "checkIn
 const METHOD_COPY: Record<SleepMethod, { name: string; support: string; caregiverRole: string; nightResponse: string }> = {
   responsive: { name: "Duyarlı rutin", support: "Ağlamaya hızlı yanıt vererek uyku işaretlerini ve tutarlı rutini güçlendirir.", caregiverRole: "Bebeğinizin yanında kalın; ses, dokunuş veya kucak desteğini ihtiyacına göre kullanın.", nightResponse: "Uyanınca açlık, bez, rahatsızlık ve yakınlık ihtiyacını kontrol edip gecikmeden yanıt verin." },
   gradual: { name: "Kademeli destek", support: "Her birkaç gecede yardımı küçük adımlarla azaltır; katı bir süre tutmaz.", caregiverRole: "Yalnızca tek bir desteği, bebek ve aile rahat olduğunda daha az yoğun sunmayı deneyin.", nightResponse: "Huzursuzluk belirgin artarsa denemeyi bırakın, önceki desteğe dönüp sakinleştirin." },
+  timedChecks: { name: "Önceden kararlaştırılmış kısa kontroller", support: "Bakım veren, bebeğin temel ihtiyaçları karşılanmış ve sakin olduğu sürece, ailece önceden seçilen aralıklarla kısa ve sakin kontroller yapar. Uykuva ağlama süresi veya sabit aralık önermez.", caregiverRole: "Diğer bakım verenle kimin ne zaman kontrol edeceğini önceden konuşun. Kontrol sırasında kısa ses ve yakınlık desteği verin; planı istediğiniz an bırakabilirsiniz.", nightResponse: "Açlık, bez, ağrı, hastalık, yoğun ağlama veya farklı bir ihtiyaç varsa süreyi beklemeden yanıt verin. Zorlanırsanız bu yaklaşımı durdurup daha fazla destek verin." },
   camping: { name: "Yakında kalma", support: "Bakım veren odada kalır ve desteğini günler içinde yavaşça azaltır.", caregiverRole: "Uyku alanının yanında kalıp sesinizle veya nazik dokunuşla destek olun; mesafeyi artırmak zorunlu değildir.", nightResponse: "Bebeğiniz sizi aradığında yakınlığınızı sürdürün ve ihtiyacına yanıt verin." },
   bedtimeFading: { name: "Yatma saatini ayarlama", support: "Yatma saatini kayıtlı uykuya dalma örüntüsüne yaklaştırıp, rahat ilerledikçe küçük adımlarla erkene alır.", caregiverRole: "Uyku ve yatış saatlerini kaydedin; önerilen değişim küçük ve ailece sürdürülebilir olsun.", nightResponse: "Gece bakımında beslenme veya rahatlatma ihtiyacını saat ayarından bağımsız karşılayın." },
   pickUpPutDown: { name: "Al, sakinleştir, tekrar yatır", support: "Huzursuzlukta bebeği sakinleştirir; rahatlayınca güvenli uyku alanına geri yatırıp gerektiğinde tekrar destek verirsiniz.", caregiverRole: "Sakinleşene kadar kucağınızda destek olun; rahatlayınca bebeği güvenli uyku alanına sırtüstü yatırın.", nightResponse: "Ağlama sürerse tekrar destek verin; bu yaklaşımda tekrar tekrar yanıt vermek beklenir." },
@@ -550,6 +551,12 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
       routine: ["Yalnızca tek bir destek adımını daha az yoğun sunmayı değerlendirin", "Bebeğiniz rahatsız olursa önceki desteğe dönün"],
       practice: ["Seçtiğiniz küçük değişikliği yalnızca rahat bir anda deneyin", "Belirgin huzursuzlukta denemeyi bırakıp sakinleştirin"],
       consolidate: ["Aile için sürdürülebilir olan destek düzeyini koruyun", "Yeni bir adımı ancak önceki adım rahat geçtiyse düşünün"]
+    },
+    timedChecks: {
+      observe: ["Bakım verenlerle gece yanıtını ve durdurma işaretlerini önceden konuşun", "Bebeğinizin ihtiyacına göre verdiğiniz desteği değiştirmeden gözlemleyin"],
+      routine: ["Kısa, sakin ve tutarlı bir yatma rutini uygulayın", "Beslenme ve sağlık ihtiyaçlarının her zaman öncelikli olduğunu bakım verenlerle netleştirin"],
+      practice: ["Yalnızca herkes hazırsa, ailece belirlenen kısa kontrol düzenini deneyin", "Bebeğiniz veya siz zorlanırsanız süreyi beklemeden kontrol edip daha fazla destek verin"],
+      consolidate: ["Bu yaklaşımın aileye ve bebeğinize uygun olup olmadığını birlikte değerlendirin", "Uygun değilse durdurup duyarlı rutine veya daha fazla desteğe dönün"]
     },
     camping: {
       observe: ["Bebeğinizin yanında hangi sakin desteği verdiğinizi gözlemleyin", "Bakım verenlerin gece için ortak bir yanıt belirlemesini sağlayın"],
@@ -992,3 +999,4 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   return `${parts.join(" · ")}.`;
 }
+
