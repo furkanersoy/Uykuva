@@ -7,6 +7,13 @@ function minutesOfDay(value: string): number | null {
   return hour * 60 + minute;
 }
 
+export function normalizeClockInput(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length < 3) return digits;
+  if (digits.length === 3) return `0${digits[0]}:${digits.slice(1)}`;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
 export function isValidClock(value: string) {
   return minutesOfDay(value) !== null;
 }
@@ -36,4 +43,3 @@ export function isInQuietHours(date: Date, start: string, end: string): boolean 
     ? current >= startMinutes && current < endMinutes
     : current >= startMinutes || current < endMinutes;
 }
-
