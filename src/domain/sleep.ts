@@ -119,7 +119,10 @@ function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Rec
 
 export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date(), wakeAtOverride?: Date): SleepForecast {
   const age = correctedAgeDays(baby, now);
-  if (age < 63) {
+  // A parent-entered morning wake time is enough to estimate the next window
+  // from the age band, even before we have any sleep history. Without that
+  // explicit anchor, avoid presenting a schedule in the first nine weeks.
+  if (age < 63 && !wakeAtOverride) {
     return {
       available: false,
       confidence: "low",
@@ -160,7 +163,7 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   const start = new Date(wakeAt.getTime() + Math.max(band.min, target - spread) * 60_000);
   const end = new Date(wakeAt.getTime() + Math.min(band.max, target + spread) * 60_000);
   const awakeMinutes = Math.max(0, Math.floor((now.getTime() - wakeAt.getTime()) / 60_000));
-  if (awakeMinutes >= 20 * 60) {
+  if (!wakeAtOverride && awakeMinutes >= 20 * 60) {
     return { available: false, confidence: "low", awakeMinutes, explanation: "Son 20 saatte tamamlanmış uyku kaydı yok; yeni bir uyku kaydı olmadan tahmin yenilenemez." };
   }
 
