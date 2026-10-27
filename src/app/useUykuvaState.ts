@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Directory, File, Paths } from "expo-file-system";
 import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, DevelopmentAnswer, EventKind, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
@@ -363,12 +364,20 @@ export function useUykuvaState() {
   }, []);
 
   const clearAllData = useCallback(async () => {
-    const remindersCancelled = await cancelAllCareReminders().then(() => true).catch(() => false);
+    const [remindersCancelled, backupsDeleted] = await Promise.all([
+      cancelAllCareReminders().then(() => true).catch(() => false),
+      Promise.resolve().then(() => {
+        const cache = new Directory(Paths.cache);
+        const backups = cache.list().filter((entry): entry is File => entry instanceof File && /^uykuva-yedek-\d{4}-\d{2}-\d{2}\.json$/.test(entry.name));
+        backups.forEach((file) => file.delete());
+        return true;
+      }).catch(() => false)
+    ]);
     await resetState();
     setState(createInitialState());
     setStorageReady(true);
     setStorageError(null);
-    return remindersCancelled;
+    return { remindersCancelled, backupsDeleted };
   }, []);
 
   const runningSleep = useMemo(
