@@ -885,6 +885,19 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const diapers = recent.filter((event) => event.kind === "diaper").length;
   const lastDiaper = recent.filter((event) => event.kind === "diaper").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
   const healthEvents = recent.filter((event) => event.kind === "health");
+  const latestMedicationByName = new Map<string, CareEvent>();
+  for (const event of state.events) {
+    if (event.kind !== "health" || event.healthType !== "medicine" || !event.medicineName?.trim()) continue;
+    const key = event.medicineName.trim().toLocaleLowerCase("tr-TR");
+    const existing = latestMedicationByName.get(key);
+    if (!existing || new Date(event.startedAt).getTime() > new Date(existing.startedAt).getTime()) latestMedicationByName.set(key, event);
+  }
+  const upcomingMedicationReminders = [...latestMedicationByName.values()]
+    .filter((event) => {
+      const reminderAt = event.medicationReminderAt ? new Date(event.medicationReminderAt).getTime() : Number.NaN;
+      return Number.isFinite(reminderAt) && reminderAt > now.getTime() && reminderAt <= now.getTime() + windowHours * 60 * 60 * 1000;
+    })
+    .sort((a, b) => new Date(a.medicationReminderAt!).getTime() - new Date(b.medicationReminderAt!).getTime());
   const notes = recent.filter((event) => event.kind === "note" && event.note?.trim());
   const nightWakeLogs = state.sleepPlan.checkIns.flatMap((checkIn) => checkIn.nightWakeLogs ?? [])
     .filter((log) => new Date(log.at).getTime() >= since && new Date(log.at).getTime() <= now.getTime())
@@ -971,6 +984,9 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
       return `belirti${event.note ? `: ${event.note.slice(0, 70)}` : ""}`;
     });
     parts.push(`Sağlık: ${healthSummaries.join(", ")}`);
+  }
+  if (upcomingMedicationReminders.length) {
+    parts.push(`Kullanıcının girdiği ilaç planı kontrol saati: ${upcomingMedicationReminders.map((event) => `${event.medicineName} · ${new Date(event.medicationReminderAt!).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   }
   if (notes.length) parts.push(`Not: ${notes.map((event) => event.note!.trim().slice(0, 70)).join("; ")}`);
   if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
