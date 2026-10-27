@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, median, sleepProgramStage } from "./sleep";
+import { coachingDay, correctedAgeDays, createSleepCoachInsights, createSleepForecast, handoffSummary, median, sleepProgramStage } from "./sleep";
 import { Baby, CareEvent } from "./types";
+import { createInitialState } from "../data/seed";
 
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
 
@@ -75,4 +76,16 @@ test("bedtime adjustment is capped at fifteen minutes", () => {
   assert.equal(insight.adjustmentMinutes, -15);
   assert.equal(insight.checkInAverage, 3);
 });
-
+test("care handoff calls out the latest feed, diaper, and sleep times", () => {
+  const state = createInitialState();
+  state.careInstructions = "";
+  state.events = [
+    { id: "feed", kind: "feed", feedType: "bottle", amountMl: 90, startedAt: "2026-10-27T09:05:00", caregiver: "Baba" },
+    { id: "diaper", kind: "diaper", diaperType: "wet", startedAt: "2026-10-27T09:10:00", caregiver: "Anne" },
+    { id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00", endedAt: "2026-10-27T09:00:00", caregiver: "Anne" }
+  ];
+  const summary = handoffSummary(state, new Date("2026-10-27T12:00:00"), 4);
+  assert.match(summary, /Son beslenme 09:05 · biberon · 90 ml · Baba/);
+  assert.match(summary, /Son bez 09:10 · ıslak · Anne/);
+  assert.match(summary, /Son uyku 08:00–09:00/);
+});
