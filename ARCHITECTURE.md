@@ -85,7 +85,7 @@ SleepWell/
 - **Özet:** Günlük toplamlar ve paylaşılabilir doktor raporu.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
 
-Zaman çizelgesi, kayıt türüne göre filtreleri ve içerik/bakım veren adına göre yerel metin aramasını sunar; kayıt verileri depoda değişmeden kalır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
+Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım veren adına göre yerel metin aramasını ve birden fazla bakım veren varsa tek dokunuşlu kişi filtresini sunar; kayıt verileri depoda değişmeden kalır. Gece modunda etkin bakım veren hızlıca değiştirilerek sonraki uyku, beslenme ve bez kayıtları doğru kişiye yazılır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
 
 ### Ulusal aşı takvimi önerileri
 
@@ -423,4 +423,3 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Android `:app:assembleDebug`: başarılı; APK emülatöre kuruldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
-
