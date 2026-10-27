@@ -854,7 +854,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const saveNightSummary = () => {
     if (!nightBedtime.trim() && !morningWake.trim()) return Alert.alert("Saatleri girin", "İsterseniz yalnızca yatış veya sabah uyanış saatini de kaydedebilirsiniz.");
     if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWakeClock))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
-    if (nightBedtime && morningWake && nightBedtime === morningWake) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
+    if (nightBedtime && morningWake && nightBedtime === morningWakeClock) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
     app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() ? morningWakeClock : undefined });
   };
   const confirmDeleteNightWake = (id: string) => Alert.alert("Uyanma kaydını sil?", "Bu kayıt bakım devri ve doktor özetinden de kaldırılır.", [
