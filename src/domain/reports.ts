@@ -1,6 +1,7 @@
 import { ageInDays } from "./sleep";
 import { completedFeedMinutes } from "./feeding";
 import { AppState, CareEvent } from "./types";
+import { DEVELOPMENT_CHECKPOINTS } from "../data/developmentMilestones";
 
 function minutesBetween(event: CareEvent) {
   if (!event.endedAt) return 0;
@@ -21,6 +22,8 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const diapers = events.filter((event) => event.kind === "diaper");
   const health = events.filter((event) => event.kind === "health");
   const growth = state.events.find((event) => event.kind === "growth");
+  const latestDevelopment = [...(state.developmentCheckIns ?? [])].sort((a, b) => b.checkedAt.localeCompare(a.checkedAt))[0];
+  const developmentCheckpoint = latestDevelopment && DEVELOPMENT_CHECKPOINTS.find((item) => item.ageMonths === latestDevelopment.ageMonths);
   const totalSleepHours = sleeps.reduce((sum, event) => sum + minutesBetween(event), 0) / 60;
   const bottleMl = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
   const breastMinutes = feeds.reduce((sum, event) => sum + completedFeedMinutes(event), 0);
@@ -37,6 +40,16 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   if (pumping.length) lines.push(`Sağım: ${pumping.length} kayıt · toplam ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml`);
   if (growth) {
     lines.push(`Son ölçüm (${trDate(growth.startedAt)}): ${growth.weightG ? `${growth.weightG} g` : "—"} · ${growth.lengthCm ? `${growth.lengthCm} cm` : "—"} · baş ${growth.headCm ? `${growth.headCm} cm` : "—"}`);
+  }
+  if (latestDevelopment && developmentCheckpoint) {
+    const milestones = developmentCheckpoint.groups.flatMap((group) => group.items);
+    const observed = milestones.filter((item) => latestDevelopment.answers[item.id] === "yes");
+    const unsure = milestones.filter((item) => latestDevelopment.answers[item.id] === "notSure");
+    const notYet = milestones.filter((item) => latestDevelopment.answers[item.id] === "notYet");
+    lines.push(`Gelişim gözlemi · ${developmentCheckpoint.title} · ${trDate(latestDevelopment.checkedAt)} · ${observed.length} gözlemledim / ${unsure.length} emin değilim / ${notYet.length} henüz görmedim`);
+    if (notYet.length) lines.push(`Henüz gözlemlenmedi olarak işaretlenenler: ${notYet.map((item) => item.label).join("; ")}`);
+    if (unsure.length) lines.push(`Emin olunmayan gözlemler: ${unsure.map((item) => item.label).join("; ")}`);
+    if (latestDevelopment.note?.trim()) lines.push(`Gelişim görüşme notu: ${latestDevelopment.note.trim()}`);
   }
   if (health.length) {
     lines.push("", "Sağlık kayıtları:");
@@ -78,7 +91,7 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
       lines.push(`- ${task.title} · ${trDate(task.dueAt)}${task.note ? ` · Hazırlık notu: ${task.note}` : ""}`);
     });
   }
-  lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur; tıbbi değerlendirme veya doz önerisi değildir.");
+  lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur. Gelişim gözlemi CDC yaş listesine dayanır; standart, doğrulanmış tarama aracı veya tanı değildir. Sağlık değerlendirmesi veya doz önerisi sunmaz.");
   return lines.join("\n");
 }
 
@@ -114,3 +127,4 @@ export function createDoctorSummaryHtml(state: AppState, now = new Date()): stri
     .notice { margin-top: 22px; border-top: 1px solid #d9e0dc; padding-top: 10px; font-size: 10px; color: #66746d; }
   </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva bakım özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
 }
+
