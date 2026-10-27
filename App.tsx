@@ -809,6 +809,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     setNightBedtime(todayCheckIn?.bedtime ?? "");
     setMorningWake(todayCheckIn?.wakeTime ?? "");
   }, [today, todayCheckIn?.bedtime, todayCheckIn?.wakeTime]);
+  const morningWakeClock = normalizeClockInput(morningWake);
   const updateCoachMorningWake = (value: string) => {
     setMorningWake(normalizeClockInput(value));
   };
