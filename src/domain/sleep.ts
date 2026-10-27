@@ -885,7 +885,16 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
   const lastSleep = [...sleepSegments].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
   const eventTime = (value: string) => new Date(value).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+  const todayCheckIn = state.sleepPlan.checkIns.find((checkIn) => checkIn.date === localDayKey(now));
+  const wakeMinutes = todayCheckIn?.wakeTime ? clockMinutes(todayCheckIn.wakeTime) : null;
+  const wakeAt = wakeMinutes === null ? undefined : new Date(now);
+  if (wakeAt && wakeMinutes !== null) wakeAt.setHours(Math.floor(wakeMinutes / 60), wakeMinutes % 60, 0, 0);
+  const forecastWakeAt = wakeAt && !hasSleepSinceWake(state.events, wakeAt) ? wakeAt : undefined;
+  const nextSleepForecast = sleepOngoing ? undefined : createSleepForecast(state.baby, state.events, now, forecastWakeAt, todayCheckIn?.dayContext);
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
+  if (nextSleepForecast?.available && nextSleepForecast.start && nextSleepForecast.end && nextSleepForecast.end > now) {
+    parts.push(`Tahmini sonraki uyku penceresi ${eventTime(nextSleepForecast.start.toISOString())}–${eventTime(nextSleepForecast.end.toISOString())}`);
+  }
   if (nightWakeLogs.length) {
     const latestWake = nightWakeLogs[0]!;
     parts.push(`${nightWakeLogs.length} gece uyanması kaydı · son ${eventTime(latestWake.at)} ${nightWakeResponseLabel(latestWake.response)} · ${latestWake.caregiver}`);
@@ -940,4 +949,3 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   return `${parts.join(" · ")}.`;
 }
-
