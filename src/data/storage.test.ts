@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { migrateState } from "./migrations";
 import { createInitialState } from "./seed";
+import { migrateState } from "./migrations";
 import { createDataExport, parseDataExport } from "../domain/export";
 
 test("legacy state receives schema two defaults without losing events", () => {
@@ -39,14 +39,19 @@ test("caregiver migration preserves the active identity", () => {
 test("sleep and night-wake details survive export and invalid values are rejected", () => {
   const state = createInitialState();
   state.events = [{ id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00Z", endedAt: "2026-10-27T09:00:00Z", caregiver: "Anne", sleepSupport: "nearby" }];
-  state.sleepPlan.checkIns = [{ date: "2026-10-27", nightWakeLogs: [{ id: "wake-1", at: "2026-10-27T02:15:00Z", response: "comfort", caregiver: "Baba" }] }];
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", dayContext: "travel", nightWakeLogs: [{ id: "wake-1", at: "2026-10-27T02:15:00Z", response: "comfort", caregiver: "Baba" }] }];
   const backup = createDataExport(state);
   assert.equal(parseDataExport(backup).events[0]?.sleepSupport, "nearby");
   assert.equal(parseDataExport(backup).sleepPlan.checkIns[0]?.nightWakeLogs?.[0]?.response, "comfort");
+  assert.equal(parseDataExport(backup).sleepPlan.checkIns[0]?.dayContext, "travel");
   const invalid = JSON.parse(backup) as { events: Array<Record<string, unknown>> };
   invalid.events[0]!.sleepSupport = "made-up";
   assert.throws(() => parseDataExport(JSON.stringify(invalid)), /bakım kayıtları/i);
   const invalidWake = JSON.parse(backup) as { sleepPlan: { checkIns: Array<{ nightWakeLogs: Array<Record<string, unknown>> }> } };
   invalidWake.sleepPlan.checkIns[0]!.nightWakeLogs[0]!.response = "made-up";
   assert.throws(() => parseDataExport(JSON.stringify(invalidWake)), /check-in kayıtları/i);
+  const invalidContext = JSON.parse(backup) as { sleepPlan: { checkIns: Array<{ dayContext?: string }> } };
+  invalidContext.sleepPlan.checkIns[0]!.dayContext = "made-up";
+  assert.throws(() => parseDataExport(JSON.stringify(invalidContext)), /check-in kayıtları/i);
 });
+
