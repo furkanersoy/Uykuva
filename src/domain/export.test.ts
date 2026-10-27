@@ -14,6 +14,17 @@ test("backup validation accepts the expanded appointment reminder options", () =
   assert.throws(() => parseDataExport(createDataExport(state)), /tercih bilgileri eksik/i);
 });
 
+test("backup round-trips milk reminder lead preferences and rejects invalid values", () => {
+  const state = createInitialState();
+  for (const lead of ["adaptive", 2, 6, 12, 24, 48] as const) {
+    state.preferences.milkExpiryReminderLead = lead;
+    const restored = parseDataExport(createDataExport(state));
+    assert.equal(restored.preferences.milkExpiryReminderLead, lead);
+  }
+  state.preferences.milkExpiryReminderLead = 5 as never;
+  assert.throws(() => parseDataExport(createDataExport(state)), /tercih bilgileri eksik/i);
+});
+
 test("backup merge combines records and check-ins while preserving current device settings", () => {
   const current = createInitialState();
   const incoming = createInitialState();
