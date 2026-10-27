@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 52146)
-Total output lines: 2118
-
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
@@ -31,7 +28,7 @@ import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/repor
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
-import { isValidClock } from "./src/domain/time";
+import { isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
@@ -445,8 +442,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => setMorningWake(todayCheckIn?.wakeTime ?? ""), [todayCheckIn?.wakeTime, today]);
   const updateMorningWake = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 4);
-    setMorningWake(digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits);
+    setMorningWake(normalizeClockInput(value));
   };
   const morningWakeForecast = (() => {
     if (!isValidClock(morningWake)) return undefined;
@@ -1096,7 +1092,80 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
         {maxDailySleep ? <View style={styles.weeklyChart}>{weeklySleep.map((day) => {
           const hours = Math.floor(day.totalMinutes / 60);
           const minutes = day.totalMinutes % 60;
-          return <View key={day.…2146 tokens truncated…ünün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
+          return <View key={day.date} style={styles.weeklyColumn} accessibilityLabel={day.sleepCount ? `${day.label}: ${hours} saat ${minutes} dakika uyku, ${day.sleepCount} dönem` : `${day.label}: uyku kaydı yok`}><View style={styles.weeklyTrack}><View style={[styles.weeklyBar, { height: day.totalMinutes ? `${Math.max(3, day.totalMinutes / maxDailySleep * 100)}%` : "0%" }]} /></View><Text style={styles.weeklyValue}>{day.sleepCount ? hours ? `${hours}s` : `${minutes}d` : "—"}</Text><Text style={styles.weeklyLabel}>{day.label}</Text></View>;
+        })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
+        <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
+      </Card>
+      <SectionTitle title="Son 7 gün · bez kayıtları" action={maxDailyDiapers ? `${weeklyDiapers.reduce((sum, day) => sum + day.total, 0)} kayıt` : "Kayıt yok"} />
+      <Card>
+        {maxDailyDiapers ? <>
+          <View style={styles.diaperLegend}>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperWet]} /><Text style={styles.muted}>Islak</Text></View>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperDirty]} /><Text style={styles.muted}>Kirli</Text></View>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperMixed]} /><Text style={styles.muted}>İkisi</Text></View>
+          </View>
+          {weeklyDiapers.map((day) => <View key={day.date} style={styles.diaperTrendRow} accessibilityLabel={`${day.label}: ${day.wet} ıslak, ${day.dirty} kirli, ${day.mixed} ikisi, toplam ${day.total} bez kaydı`}>
+            <Text style={styles.diaperTrendLabel}>{day.label}</Text>
+            <View style={styles.diaperTrendTrack}>
+              {day.wet ? <View style={[styles.diaperSegment, styles.diaperWet, { flex: day.wet / maxDailyDiapers }]} /> : null}
+              {day.dirty ? <View style={[styles.diaperSegment, styles.diaperDirty, { flex: day.dirty / maxDailyDiapers }]} /> : null}
+              {day.mixed ? <View style={[styles.diaperSegment, styles.diaperMixed, { flex: day.mixed / maxDailyDiapers }]} /> : null}
+              {day.total < maxDailyDiapers ? <View style={{ flex: (maxDailyDiapers - day.total) / maxDailyDiapers }} /> : null}
+            </View>
+            <Text style={styles.diaperTrendCount}>{day.total || "—"}</Text>
+          </View>)}
+        </> : <Text style={styles.body}>Günlük bez değişimlerini ekledikçe son yedi gün burada görünür.</Text>}
+        <Text style={styles.hint}>Çubuklar kaydedilen ıslak, kirli ve ikili bez sayılarını gösterir. Kayıt eksik olabilir; bu grafik sağlık değerlendirmesi değildir.</Text>
+      </Card>
+      <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
+      <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
+      <SectionTitle title="Ek gıda günlüğü" action={`${solidHistory.mealCount} öğün`} />
+      <Card>
+        {solidHistory.foods.length || solidHistory.allergens.length ? <>
+          {solidHistory.foods.length ? <>
+            <Text style={styles.inputLabel}>Kaydedilen yiyecekler</Text>
+            {solidHistory.foods.slice(0, 8).map((food) => <View key={food.name.toLocaleLowerCase("tr-TR")} style={styles.eventRow}>
+              <View style={styles.flex}><Text style={styles.eventTitle}>{food.name}</Text><Text style={styles.muted}>İlk uygulama kaydı · {new Date(food.firstRecordedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</Text></View>
+              <Text style={styles.taskDate}>{food.mealCount} öğün</Text>
+            </View>)}
+            {solidHistory.foods.length > 8 ? <Text style={styles.hint}>Diğer yiyecek kayıtları Akış sekmesinde bulunabilir.</Text> : null}
+          </> : null}
+          {solidHistory.allergens.length ? <>
+            <Text style={styles.inputLabel}>Öğünlere eklenen alerjen etiketleri</Text>
+            <Text style={styles.body}>{solidHistory.allergens.map((item) => `${item.name} (${item.taggedMealCount})`).join(" · ")}</Text>
+          </> : null}
+          {solidHistory.observations.length ? <>
+            <Text style={styles.inputLabel}>Yazılı tepki gözlemleri</Text>
+            {solidHistory.observations.map((item) => <View key={`${item.startedAt}-${item.note}`} style={styles.growthHistoryRow}>
+              <Text style={styles.muted}>{new Date(item.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}{item.foods.length ? ` · ${item.foods.join(", ")}` : ""}</Text>
+              <Text style={styles.body}>{item.note}</Text>
+              {item.allergens.length ? <Text style={styles.hint}>Öğün etiketleri: {item.allergens.join(", ")}</Text> : null}
+            </View>)}
+          </> : null}
+        </> : <Text style={styles.body}>Katı gıda öğünleri kaydedildikçe yiyecek ve etiket geçmişi burada görünür.</Text>}
+        <Text style={styles.hint}>Bu bölüm yalnızca kaydedilen öğünleri ve ebeveyn gözlemlerini listeler; alerji tanısı, güvenli gıda önerisi veya tepki değerlendirmesi sunmaz.</Text>
+      </Card>
+      <MilkStockCard events={events} now={now} update={app.updateEvent} />
+      <GrowthHistoryCard measurements={growthMeasurements} baby={app.state.baby} />
+      <DevelopmentTrackerCard app={app} now={now} />
+      <SectionTitle title="Kayıtlardan anılar" action="İsteğe bağlı" />
+      <Card>
+        {milestones.length ? milestones.slice(0, 8).map((milestone) => <View key={milestone.id} style={styles.eventRow}>
+          <View style={styles.flex}>
+            <Text style={styles.eventTitle}>{milestone.title}</Text>
+            <Text style={styles.muted}>{new Date(milestone.occurredAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} · {milestone.detail}</Text>
+          </View>
+          {milestone.saved ? <Text style={styles.taskDate}>Anılarda</Text> : <PrimaryButton label="Anılara ekle" quiet onPress={() => app.addEvent({ kind: "memory", memoryTitle: milestone.title, note: `${milestone.detail} Bu an, uygulamada kayıtlı etkinliklerden bulundu.`, milestoneId: milestone.id, startedAt: milestone.occurredAt })} />}
+        </View>) : <Text style={styles.body}>Uyku, beslenme veya ölçüm kaydı ekledikçe burada kayıtlara dayalı anlar görünür.</Text>}
+        <Text style={styles.hint}>Bunlar yalnızca uygulamadaki kayıtlardan çıkarılır; gelişim basamağı veya sağlık değerlendirmesi değildir. Anı eklemek isteğe bağlıdır.</Text>
+      </Card>
+      <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
+      <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
+      <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
+      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
+      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
+      <SectionTitle title="Doktor görüşmesi" />
+      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
     </ScrollView>
   );
 }
@@ -2045,4 +2114,3 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
-
