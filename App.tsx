@@ -22,7 +22,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, SLEEP_READINESS_ITEMS, sleepProgramStage, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -31,6 +31,7 @@ import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, 
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
+import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { CareEvent, CareTask, Caregiver, RoutineStep, SleepFocus, SleepMethod } from "./src/domain/types";
@@ -922,6 +923,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       </Card>
       <MilkStockCard events={events} now={now} update={app.updateEvent} />
       <GrowthHistoryCard measurements={growthMeasurements} baby={app.state.baby} />
+      <DevelopmentTrackerCard app={app} now={now} />
       <SectionTitle title="Kayıtlardan anılar" action="İsteğe bağlı" />
       <Card>
         {milestones.length ? milestones.slice(0, 8).map((milestone) => <View key={milestone.id} style={styles.eventRow}>
@@ -942,6 +944,48 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
     </ScrollView>
   );
+}
+
+function DevelopmentTrackerCard({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
+  const ageMonths = correctedAgeMonths(app.state.baby, now);
+  const checkpoint = developmentCheckpointForAge(ageMonths);
+  const checkIn = checkpoint ? app.state.developmentCheckIns?.find((item) => item.ageMonths === checkpoint.ageMonths) : undefined;
+  const [note, setNote] = useState(checkIn?.note ?? "");
+  useEffect(() => setNote(checkIn?.note ?? ""), [checkpoint?.ageMonths, checkIn?.checkedAt]);
+
+  if (!checkpoint) return <>
+    <SectionTitle title="Yaşa göre gelişim gözlemi" action="2 ayda açılır" />
+    <Card><Text style={styles.body}>CDC yaş listeleri 2. aydan başlar. Düzeltilmiş yaşı iki aydan küçük bebeklerde burada liste gösterilmez.</Text><Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/act-early/milestones/")}><Text style={styles.linkText}>CDC gelişim kaynaklarını aç</Text></Pressable></Card>
+  </>;
+
+  const items = checkpoint.groups.flatMap((item) => item.items);
+  const answers = checkIn?.answers ?? {};
+  const counts = {
+    yes: items.filter((item) => answers[item.id] === "yes").length,
+    notSure: items.filter((item) => answers[item.id] === "notSure").length,
+    notYet: items.filter((item) => answers[item.id] === "notYet").length
+  };
+  const options = [{ id: "yes" as const, label: "Gözlemledim" }, { id: "notSure" as const, label: "Emin değilim" }, { id: "notYet" as const, label: "Henüz görmedim" }];
+  return <>
+    <SectionTitle title="Yaşa göre gelişim gözlemi" action={checkpoint.title} />
+    <Card>
+      <Text style={styles.body}>Düzeltilmiş yaşa göre {checkpoint.title} listesi · CDC yaş kontrol listesinden uyarlanmıştır.</Text>
+      <Text style={styles.hint}>Liste, çoğu çocuğun bu yaşa kadar yapabildiği becerileri gözlemlemek içindir; gelişim taraması veya tanı değildir. Yaş listeleri arasındaysanız önceki yaş listesini kullanın.</Text>
+      {checkIn ? <Text style={styles.awake}>Son kayıt: {new Date(checkIn.checkedAt).toLocaleDateString("tr-TR")} · {counts.yes} gözlemledim · {counts.notSure} emin değilim · {counts.notYet} henüz görmedim</Text> : <Text style={styles.muted}>Bu yaş için henüz gözlem kaydı yok.</Text>}
+      {checkpoint.groups.map((milestoneGroup) => <View key={milestoneGroup.domain}>
+        <Text style={styles.inputLabel}>{milestoneGroup.label}</Text>
+        {milestoneGroup.items.map((item) => <View key={item.id} style={styles.developmentItem}>
+          <Text style={styles.body}>{item.label}</Text>
+          <View style={styles.developmentOptions}>{options.map((option) => <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={`${item.label}: ${option.label}`} accessibilityState={{ selected: answers[item.id] === option.id }} onPress={() => app.saveDevelopmentAnswer(checkpoint.ageMonths, item.id, option.id)} style={[styles.developmentOption, answers[item.id] === option.id && styles.developmentOptionActive]}><Text style={[styles.developmentOptionText, answers[item.id] === option.id && styles.developmentOptionTextActive]}>{option.label}</Text></Pressable>)}</View>
+        </View>)}
+      </View>)}
+      <Text style={styles.inputLabel}>Doktora veya diğer bakım verene sorularım</Text>
+      <TextInput value={note} onChangeText={setNote} style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} multiline maxLength={500} placeholder="İsterseniz merak ettiğiniz noktaları not edin." placeholderTextColor="#93A09C" />
+      <PrimaryButton label="Gelişim notunu kaydet" quiet onPress={() => app.saveDevelopmentNote(checkpoint.ageMonths, note)} />
+      <Text style={styles.hint}>“Henüz görmedim” veya “Emin değilim” yanıtlarını, beceri kaybını ya da başka bir endişeyi çocuk doktorunuzla paylaşın. Bu gözlemler doktor özeti paylaşımına eklenir.</Text>
+      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(checkpoint.sourceUrl)}><Text style={styles.linkText}>CDC {checkpoint.title} kaynak listesini aç</Text></Pressable>
+    </Card>
+  </>;
 }
 
 function CareTaskRow({ task, onToggle, onDelete, onEdit }: { task: CareTask; onToggle: () => void; onDelete: () => void; onEdit?: () => void }) {
@@ -1705,5 +1749,12 @@ const styles = StyleSheet.create({
   caregiverAvatarActive: { backgroundColor: colors.sageDark },
   activeAvatarText: { color: "white" },
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.sage },
-  radioActive: { borderWidth: 6, borderColor: colors.sageDark }
+  radioActive: { borderWidth: 6, borderColor: colors.sageDark },
+  developmentItem: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
+  developmentOptions: { flexDirection: "row", gap: 6, marginTop: 8 },
+  developmentOption: { flex: 1, minWidth: 0, minHeight: 42, paddingHorizontal: 4, paddingVertical: 7, borderRadius: 12, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
+  developmentOptionActive: { backgroundColor: colors.sageDark },
+  developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
+  developmentOptionTextActive: { color: "white" }
 });
+
