@@ -11,7 +11,7 @@ function isSleepPlanDayRecord(item: unknown) {
 function isDevelopmentCheckIn(item: unknown): item is DevelopmentCheckIn {
   if (!item || typeof item !== "object") return false;
   const record = item as Record<string, unknown>;
-  const ageMonths = [2, 4, 6, 9, 12, 15, 18].includes(Number(record.ageMonths));
+  const ageMonths = [2, 4, 6, 9, 12, 15, 18, 24, 30, 36, 48, 60].includes(Number(record.ageMonths));
   const answers = record.answers;
   return ageMonths && typeof record.checkedAt === "string" && Number.isFinite(new Date(record.checkedAt).getTime()) &&
     !!answers && typeof answers === "object" && !Array.isArray(answers) && Object.values(answers).every((answer) => ["yes", "notSure", "notYet"].includes(String(answer))) &&
@@ -56,7 +56,7 @@ export function migrateState(value: unknown): AppState {
     },
     caregiverName,
     careInstructions: typeof candidate.careInstructions === "string" ? candidate.careInstructions.slice(0, 1000) : "",
-    developmentCheckIns: Array.isArray(candidate.developmentCheckIns) ? candidate.developmentCheckIns.filter(isDevelopmentCheckIn).slice(-7) : [],
+    developmentCheckIns: Array.isArray(candidate.developmentCheckIns) ? candidate.developmentCheckIns.filter(isDevelopmentCheckIn).slice(-12) : [],
     caregivers,
     activeCaregiverId: caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id,
     events: Array.isArray(candidate.events) ? candidate.events : initial.events,
