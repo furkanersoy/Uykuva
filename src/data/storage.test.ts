@@ -38,10 +38,14 @@ test("caregiver migration preserves the active identity", () => {
 
 test("sleep and night-wake details survive export and invalid values are rejected", () => {
   const state = createInitialState();
-  state.events = [{ id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00Z", endedAt: "2026-10-27T09:00:00Z", caregiver: "Anne", sleepSupport: "nearby" }];
+  state.events = [
+    { id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00Z", endedAt: "2026-10-27T09:00:00Z", caregiver: "Anne", sleepSupport: "nearby" },
+    { id: "milk", kind: "feed", feedType: "pump", amountMl: 80, milkStorageLocation: "fridge", milkThawedAt: "2026-10-27T06:00:00Z", milkWarmedAt: "2026-10-27T07:30:00Z", startedAt: "2026-10-27T05:00:00Z", caregiver: "Baba" }
+  ];
   state.sleepPlan.checkIns = [{ date: "2026-10-27", dayContext: "travel", nightWakeLogs: [{ id: "wake-1", at: "2026-10-27T02:15:00Z", response: "comfort", caregiver: "Baba" }] }];
   const backup = createDataExport(state);
   assert.equal(parseDataExport(backup).events[0]?.sleepSupport, "nearby");
+  assert.equal(parseDataExport(backup).events.find((event) => event.id === "milk")?.milkWarmedAt, "2026-10-27T07:30:00Z");
   assert.equal(parseDataExport(backup).sleepPlan.checkIns[0]?.nightWakeLogs?.[0]?.response, "comfort");
   assert.equal(parseDataExport(backup).sleepPlan.checkIns[0]?.dayContext, "travel");
   const invalid = JSON.parse(backup) as { events: Array<Record<string, unknown>> };
@@ -53,5 +57,7 @@ test("sleep and night-wake details survive export and invalid values are rejecte
   const invalidContext = JSON.parse(backup) as { sleepPlan: { checkIns: Array<{ dayContext?: string }> } };
   invalidContext.sleepPlan.checkIns[0]!.dayContext = "made-up";
   assert.throws(() => parseDataExport(JSON.stringify(invalidContext)), /check-in kayıtları/i);
+  const invalidMilk = JSON.parse(backup) as { events: Array<Record<string, unknown>> };
+  invalidMilk.events.find((event) => event.id === "milk")!.milkWarmedAt = "yesterday";
+  assert.throws(() => parseDataExport(JSON.stringify(invalidMilk)), /bakım kayıtları/i);
 });
-
