@@ -127,6 +127,15 @@ test("coaching plan is bounded to fourteen days", () => {
   assert.match(coachingDay(99, "gradual").title, /^14\. gün/);
 });
 
+test("each sleep approach gets distinct tasks throughout all coaching phases", () => {
+  const methods: SleepMethod[] = ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
+  for (const day of [2, 5, 8, 12]) {
+    const plans = methods.map((method) => coachingDay(day, method, true, 183, "routine"));
+    assert.equal(new Set(plans.map((plan) => plan.tasks.join("\n"))).size, methods.length, `day ${day} must differ by approach`);
+    plans.forEach((plan, index) => assert.match(plan.title, new RegExp(methodDescription(methods[index]!).name)));
+  }
+});
+
 test("sleep support stays foundational before six months", () => {
   const baby: Baby = { ...termBaby, birthDate: "2026-07-20" };
   const stage = sleepProgramStage(baby, new Date("2026-10-26T12:00:00"));
