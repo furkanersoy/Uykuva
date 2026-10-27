@@ -60,9 +60,9 @@ export function createInitialState(): AppState {
       careTaskReminderMinutes: 120,
       diaperRemindersEnabled: false,
       diaperReminderHours: 3,
+      milkExpiryRemindersEnabled: false,
       quietStart: "21:00",
       quietEnd: "07:00"
     }
   };
 }
-
