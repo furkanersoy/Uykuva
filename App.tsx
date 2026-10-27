@@ -190,7 +190,7 @@ export default function App() {
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
-    if (!app.state.preferences.notificationsEnabled) {
+    if (!app.state.preferences.notificationsEnabled || app.runningSleep) {
       void cancelSleepReminders();
       return;
     }
@@ -201,7 +201,7 @@ export default function App() {
       app.state.preferences.quietStart,
       app.state.preferences.quietEnd
     );
-  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, forecast.start?.getTime(), forecast.end?.getTime()]);
+  }, [app.hydrated, app.state.baby.name, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, app.runningSleep?.id, forecast.start?.getTime(), forecast.end?.getTime()]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
