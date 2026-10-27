@@ -74,13 +74,13 @@ SleepWell/
 
 ### Sunum katmanı
 
-`App.tsx`, alt gezinmeyi ve beş ana alanı içerir:
+`App.tsx`, alt gezinmeyi ve altı ana alanı içerir:
 
 - **Bugün:** Sıradaki uyku aralığı, hızlı kayıt, bakım devri ve son kayıtlar.
 - **Akış:** Uyku, beslenme, bez ve notların ortak zaman çizelgesi.
 - **Emzirme:** Tek oturumda sol/sağ taraf değişimi ve taraf başına ayrı süre; eski kayıtlar toplam süre olarak okunmaya devam eder.
 - **Uyku:** 14 günlük uyku planı, yaklaşım seçimi, günlük görevler ve akşam rutini.
-- **Özet:** Günlük toplamlar ve ileride eklenecek doktor raporu alanı.
+- **Özet:** Günlük toplamlar ve paylaşılabilir doktor raporu.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
 
 Zaman çizelgesi, kayıt türüne göre filtreleri ve içerik/bakım veren adına göre yerel metin aramasını sunar; kayıt verileri depoda değişmeden kalır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
