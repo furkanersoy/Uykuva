@@ -23,7 +23,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -603,6 +603,9 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
 }
 
 function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
+  const today = localDateValue(now);
+  const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
+  const coachingPausedToday = isSleepPlanPausedToday(app.state.sleepPlan, today);
   const stage = sleepProgramStage(app.state.baby);
   const readyItems = app.state.sleepPlan.readinessCompleted;
   const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => readyItems.includes(item));
@@ -615,12 +618,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const napPattern = compareNapPatterns(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
-  const today = localDateValue(now);
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
   const completedPlanRuns = app.state.sleepPlan.completedRuns ?? [];
   const completedProgramDays = programCompleted ? 14 : Math.max(0, app.state.sleepPlan.day - 1);
-  const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const nightSummary = summarizeNightSleep(app.state.events, todayCheckIn, now);
   const oldestNight = new Date(now);
   oldestNight.setDate(oldestNight.getDate() - 6);
@@ -744,11 +745,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       </Card>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
       {app.state.baby.gestationalWeek < 37 ? <Card tone="peach"><Text style={styles.cardTitle}>Erken doğum yaşı hesaba katılıyor</Text><Text style={styles.body}>Uyku penceresi ve koçluk aşaması, ilk iki yılda doğum haftasına göre düzeltilmiş yaşı kullanır. Aşı ve randevu tarihleri gerçek doğum tarihine bağlı kalır. Bu yaş bilgisi yalnızca genel rehber içindir; bebeğinizin bakım planını sağlık uzmanınızla belirleyin.</Text></Card> : null}
-      <Card tone={app.state.sleepPlan.paused ? "peach" : "white"}>
-        <Text style={styles.cardTitle}>{app.state.sleepPlan.paused ? "Uyku planı duraklatıldı" : "Planı istediğiniz zaman duraklatabilirsiniz"}</Text>
-        <Text style={styles.body}>{app.state.sleepPlan.paused ? "Koçluk adımları ve plan günü beklemede. Uyku, beslenme ve bakım kayıtlarınız normal şekilde devam eder." : "Hastalık, seyahat veya ailenizin ihtiyaçları değiştiğinde planı durdurup daha sonra kaldığınız günden sürdürebilirsiniz."}</Text>
-        <View style={styles.spacer12} />
-        <PrimaryButton label={app.state.sleepPlan.paused ? "Kaldığım yerden devam et" : "Uyku planını duraklat"} quiet={!app.state.sleepPlan.paused} onPress={app.toggleSleepPlanPaused} />
+      <Card tone={coachingPausedToday ? "peach" : "white"}>
+        <Text style={styles.cardTitle}>{todayCheckIn?.dayContext ? "Bugün uyku planı beklemede" : app.state.sleepPlan.paused ? "Uyku planı duraklatıldı" : "Planı istediğiniz zaman duraklatabilirsiniz"}</Text>
+        <Text style={styles.body}>{todayCheckIn?.dayContext ? `${({ illness: "Hastalık veya rahatsızlık", travel: "Seyahat", teething: "Diş çıkarma", routineChange: "Düzen değişikliği" } as const)[todayCheckIn.dayContext]} seçildi. Bugün koçluk adımları tamamlanmaz ve plan günü ilerlemez. Uyku, beslenme ve bakım kayıtları sürer; olağan güne döndüğünüzde günlük rehbere devam edebilirsiniz.` : app.state.sleepPlan.paused ? "Koçluk adımları ve plan günü beklemede. Uyku, beslenme ve bakım kayıtlarınız normal şekilde devam eder." : "Hastalık, seyahat veya ailenizin ihtiyaçları değiştiğinde planı durdurup daha sonra kaldığınız günden sürdürebilirsiniz."}</Text>
+        {!todayCheckIn?.dayContext ? <><View style={styles.spacer12} /><PrimaryButton label={app.state.sleepPlan.paused ? "Kaldığım yerden devam et" : "Uyku planını duraklat"} quiet={!app.state.sleepPlan.paused} onPress={app.toggleSleepPlanPaused} /></> : null}
       </Card>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
         {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={coachingMethod === method} onPress={() => app.setMethod(method)} />)}
@@ -763,9 +763,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.readinessNote}>Odağı değiştirdiğinizde günün görev işaretleri temizlenir; böylece yeni adımları ayrı takip edebilirsiniz.</Text>
       </> : null}
       <Card tone="lavender">
-        <Text style={styles.eyebrow}>{(app.state.sleepPlan.paused ? "PLAN BEKLEMEDE · " : "") + plan.title.toUpperCase()}</Text>
-        <Text style={styles.heroSmall}>{app.state.sleepPlan.paused ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>
-        <Text style={styles.body}>{app.state.sleepPlan.paused ? "Bu sırada günlük bakım kayıtlarını tutabilir, akşam rutininizi kullanabilirsiniz. Plan günü ilerlemez." : methodDescription(coachingMethod).support}</Text>
+        <Text style={styles.eyebrow}>{(coachingPausedToday ? "PLAN BEKLEMEDE · " : "") + plan.title.toUpperCase()}</Text>
+        <Text style={styles.heroSmall}>{coachingPausedToday ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>
+        <Text style={styles.body}>{coachingPausedToday ? "Bu sırada günlük bakım kayıtlarını tutabilir, akşam rutininizi kullanabilirsiniz. Plan günü ilerlemez." : methodDescription(coachingMethod).support}</Text>
       </Card>
       <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
       <SectionTitle title="Kayıtlarına göre gün taslağı" action="Son 14 gün" />
@@ -803,7 +803,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {plan.tasks.map((task) => {
           const done = app.state.sleepPlan.completedToday.includes(task);
           return (
-            <Pressable key={task} accessibilityRole="checkbox" accessibilityLabel={task} accessibilityState={{ checked: done, disabled: app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted }} disabled={app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (app.state.sleepPlan.paused || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
+            <Pressable key={task} accessibilityRole="checkbox" accessibilityLabel={task} accessibilityState={{ checked: done, disabled: coachingPausedToday || alreadyAdvancedToday || programCompleted }} disabled={coachingPausedToday || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (coachingPausedToday || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
               <View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View>
               <Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>
             </Pressable>
@@ -902,7 +902,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </View>) : <Text style={styles.body}>Gece özeti veya uyanma sayısı eklendikçe son yedi gün burada görünür.</Text>}
         <Text style={styles.hint}>Uyku süreleri yalnızca uygulamaya kaydedilmiş uyku aralıklarının toplamıdır.</Text>
       </Card>
-      {app.state.sleepPlan.paused ? <Text style={styles.pausedMessage}>Planı sürdürdüğünüzde gün adımları yeniden etkinleşir.</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={() => app.advancePlan(completedTodayCount, plan.tasks.length, coachingMethod)} />}
+      {coachingPausedToday ? <Text style={styles.pausedMessage}>{todayCheckIn?.dayContext ? "Bugünün bağlamı nedeniyle koçluk planı ilerlemiyor. Olağan güne döndüğünüzde devam edebilirsiniz." : "Planı sürdürdüğünüzde gün adımları yeniden etkinleşir."}</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={() => app.advancePlan(completedTodayCount, plan.tasks.length, coachingMethod)} />}
       <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
       <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
       <SleepMethodsModal visible={methodGuideOpen} close={() => setMethodGuideOpen(false)} methods={methods} activeMethod={coachingMethod} choose={(method) => app.setMethod(method)} />
