@@ -414,6 +414,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     return hasSleepSinceWake(app.state.events, wakeAt);
   })();
   const displayedForecast = morningWakeForecast ?? forecast;
+  const enabledRoutineMinutes = app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0);
+  const routineStartWindow = morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end && enabledRoutineMinutes > 0
+    ? {
+        start: new Date(morningWakeForecast.start.getTime() - enabledRoutineMinutes * 60_000),
+        end: new Date(morningWakeForecast.end.getTime() - enabledRoutineMinutes * 60_000)
+      }
+    : undefined;
   const saveMorningWake = () => {
     if (!isValidClock(morningWake)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
     app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWake });
@@ -478,6 +485,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
           <View accessibilityLiveRegion="polite" style={styles.wakeForecastPanel}>
             <Text style={styles.eyebrow}>İLK GÜNDÜZ UYKUSU</Text>
             <Text style={styles.wakeForecastTime}>{time(morningWakeForecast.start)}–{time(morningWakeForecast.end)}</Text>
+            {routineStartWindow ? <Text style={styles.body}>Etkin rutininiz {enabledRoutineMinutes} dk sürüyor; yaklaşık {time(routineStartWindow.start)}–{time(routineStartWindow.end)} arasında başlayabilirsiniz.</Text> : null}
             <Text style={styles.hint}>{morningWakeForecast.explanation}</Text>
           </View>
         ) : morningWakeForecast ? (
@@ -1867,7 +1875,7 @@ const styles = StyleSheet.create({
   routineRow: { flexDirection: "row", alignItems: "center", minHeight: 48 },
   routineToggle: { flex: 1, flexDirection: "row", alignItems: "center", minHeight: 48 },
   routineControls: { flexDirection: "row", gap: 4, marginLeft: 6 },
-  routineMove: { width: 32, height: 32, borderRadius: 11, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
+  routineMove: { width: 48, height: 48, borderRadius: 15, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
   routineMoveDisabled: { opacity: 0.3 },
   routineMoveText: { color: colors.sageDark, fontSize: 17, fontWeight: "800" },
   pausedTask: { opacity: 0.5 },
@@ -1890,7 +1898,7 @@ const styles = StyleSheet.create({
   minutesInput: { width: 62, marginTop: 0 },
   hint: { color: colors.inkSoft, fontSize: 10, lineHeight: 15, marginTop: 10 },
   easeRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
-  easeButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: "rgba(255,255,255,.58)", alignItems: "center", justifyContent: "center" },
+  easeButton: { width: 48, height: 48, borderRadius: 16, backgroundColor: "rgba(255,255,255,.58)", alignItems: "center", justifyContent: "center" },
   easeButtonActive: { backgroundColor: colors.sageDark },
   easeText: { color: colors.ink, fontWeight: "700" },
   easeTextActive: { color: "white" },
@@ -1951,7 +1959,7 @@ const styles = StyleSheet.create({
   dangerButton: { minHeight: 48, borderRadius: 16, borderWidth: 1, borderColor: "#E8C7C7", alignItems: "center", justifyContent: "center" },
   dangerText: { color: colors.danger, fontSize: 14, fontWeight: "700" },
   linkText: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 8 },
-  deleteButton: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "#F7EEEE" },
+  deleteButton: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "#F7EEEE" },
   deleteText: { color: colors.danger, fontSize: 23, lineHeight: 25 },
   caregiverRow: { minHeight: 64, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.line, gap: 12 },
   caregiverAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.paper, alignItems: "center", justifyContent: "center" },
@@ -1961,7 +1969,7 @@ const styles = StyleSheet.create({
   radioActive: { borderWidth: 6, borderColor: colors.sageDark },
   developmentItem: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
   developmentOptions: { flexDirection: "row", gap: 6, marginTop: 8 },
-  developmentOption: { flex: 1, minWidth: 0, minHeight: 42, paddingHorizontal: 4, paddingVertical: 7, borderRadius: 12, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
+  developmentOption: { flex: 1, minWidth: 0, minHeight: 48, paddingHorizontal: 4, paddingVertical: 7, borderRadius: 12, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
   developmentOptionActive: { backgroundColor: colors.sageDark },
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
