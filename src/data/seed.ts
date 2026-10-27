@@ -18,6 +18,7 @@ export function createInitialState(): AppState {
     onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
+    careInstructions: "",
     caregivers: [{ id: "caregiver-1", name: "Anne", role: "parent" }],
     activeCaregiverId: "caregiver-1",
     events: [
