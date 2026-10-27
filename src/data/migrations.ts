@@ -1,10 +1,21 @@
 import { AppState } from "../domain/types";
 import { createInitialState } from "./seed";
+import { DevelopmentCheckIn } from "../domain/types";
 
 function isSleepPlanDayRecord(item: unknown) {
   if (!item || typeof item !== "object") return false;
   const record = item as Record<string, unknown>;
   return typeof record.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(record.date) && Number.isInteger(record.day) && Number(record.day) >= 1 && Number(record.day) <= 14 && ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(record.method)) && ["bedtime", "nightWakings", "naps", "routine"].includes(String(record.focus)) && Number.isInteger(record.completedTasks) && Number(record.completedTasks) >= 0 && Number.isInteger(record.totalTasks) && Number(record.totalTasks) >= Number(record.completedTasks);
+}
+
+function isDevelopmentCheckIn(item: unknown): item is DevelopmentCheckIn {
+  if (!item || typeof item !== "object") return false;
+  const record = item as Record<string, unknown>;
+  const ageMonths = [2, 4, 6, 9, 12, 15, 18].includes(Number(record.ageMonths));
+  const answers = record.answers;
+  return ageMonths && typeof record.checkedAt === "string" && Number.isFinite(new Date(record.checkedAt).getTime()) &&
+    !!answers && typeof answers === "object" && !Array.isArray(answers) && Object.values(answers).every((answer) => ["yes", "notSure", "notYet"].includes(String(answer))) &&
+    (record.note === undefined || typeof record.note === "string");
 }
 
 function localDateOnly(value: string) {
@@ -45,6 +56,7 @@ export function migrateState(value: unknown): AppState {
     },
     caregiverName,
     careInstructions: typeof candidate.careInstructions === "string" ? candidate.careInstructions.slice(0, 1000) : "",
+    developmentCheckIns: Array.isArray(candidate.developmentCheckIns) ? candidate.developmentCheckIns.filter(isDevelopmentCheckIn).slice(-7) : [],
     caregivers,
     activeCaregiverId: caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id,
     events: Array.isArray(candidate.events) ? candidate.events : initial.events,
@@ -77,3 +89,4 @@ export function migrateState(value: unknown): AppState {
     }
   };
 }
+
