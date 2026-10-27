@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { CareEvent, CareTask, SleepForecast } from "../domain/types";
-import { isInQuietHours } from "../domain/time";
+import { dailyReminderDatesBefore, isInQuietHours, isValidClock } from "../domain/time";
 import { createMilkInventory, milkStorageLabel } from "../domain/milk";
 
 const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
@@ -10,6 +10,7 @@ const CARE_TASK_NOTIFICATION_KIND = "uykuva-care-task";
 const DIAPER_NOTIFICATION_KIND = "uykuva-diaper-check";
 const MEDICATION_NOTIFICATION_KIND = "uykuva-medication-reminder";
 const MILK_EXPIRY_NOTIFICATION_KIND = "uykuva-milk-expiry";
+const ROUTINE_NOTIFICATION_KIND = "uykuva-evening-routine";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -70,6 +71,16 @@ async function ensureMilkChannel() {
   });
 }
 
+async function ensureRoutineChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("routine-reminders", {
+    name: "Akşam rutini hatırlatmaları",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 180],
+    lightColor: "#A8C7B5"
+  });
+}
+
 export async function requestNotificationPermission(): Promise<boolean> {
   await ensureAndroidChannel();
   const current = await Notifications.getPermissionsAsync();
@@ -120,6 +131,42 @@ export async function scheduleSleepReminder(
     }
   });
   return true;
+}
+
+export async function scheduleRoutineReminders(
+  babyName: string,
+  bedtime: string,
+  routineMinutes: number,
+  enabled: boolean,
+  quietStart: string,
+  quietEnd: string,
+  now = new Date()
+): Promise<number> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter((item) => String(item.content.data?.kind) === ROUTINE_NOTIFICATION_KIND)
+    .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+  if (!enabled || !isValidClock(bedtime) || !Number.isInteger(routineMinutes) || routineMinutes <= 0 || routineMinutes >= 1440) return 0;
+
+  const reminders = dailyReminderDatesBefore(bedtime, routineMinutes, 7, now)
+    .filter((date) => !isInQuietHours(date, quietStart, quietEnd));
+  if (!reminders.length) return 0;
+  await ensureRoutineChannel();
+  for (const date of reminders) {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${babyName} için akşam rutini`,
+        body: `Hedef yatış saatinizden önce yaklaşık ${routineMinutes} dakikalık rutininize başlamak isteyebilirsiniz. Bu yalnızca sizin belirlediğiniz saat için hatırlatmadır.`,
+        data: { kind: ROUTINE_NOTIFICATION_KIND }
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date,
+        channelId: Platform.OS === "android" ? "routine-reminders" : undefined
+      }
+    });
+  }
+  return reminders.length;
 }
 
 export async function scheduleCareTaskReminders(
@@ -317,3 +364,4 @@ export async function scheduleMilkExpiryReminders(
   }
   return count;
 }
+
