@@ -61,6 +61,7 @@ export function createInitialState(): AppState {
       diaperRemindersEnabled: false,
       diaperReminderHours: 3,
       milkExpiryRemindersEnabled: false,
+      milkExpiryReminderLead: "adaptive",
       routineRemindersEnabled: false,
       quietStart: "21:00",
       quietEnd: "07:00"
