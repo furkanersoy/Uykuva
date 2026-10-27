@@ -73,7 +73,7 @@ async function readNormalizedState(db: SQLiteDatabase): Promise<AppState | null>
   const embeddedTasks = Array.isArray(saved.careTasks) ? saved.careTasks : [];
   const careTasks = storedTasks.length || !embeddedTasks.length ? storedTasks : embeddedTasks;
   const activeChildId = saved.activeChildId ?? saved.baby?.id;
-  const children = Array.isArray(saved.children) ? saved.children.map((child) => child.baby.id === activeChildId ? { ...child, events, careTasks } : child) : undefined;
+  const children = Array.isArray(saved.children) ? saved.children.map((child) => child && child.baby?.id === activeChildId ? { ...child, events, careTasks } : child) : undefined;
   const migrated = migrateState({ ...saved, events, careTasks, children });
   if (!storedTasks.length && embeddedTasks.length) await saveNormalizedState(db, migrated);
   return migrated;
