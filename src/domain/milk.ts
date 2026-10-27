@@ -1,4 +1,14 @@
-import { CareEvent } from "./types";
+import { CareEvent, MilkExpiryReminderLead } from "./types";
+
+export function milkExpiryReminderLeadMs(remainingMs: number, preference: MilkExpiryReminderLead): number {
+  if (!Number.isFinite(remainingMs) || remainingMs <= 0) return 0;
+  if (preference !== "adaptive") return Math.min(preference * 60 * 60_000, Math.floor(remainingMs / 2));
+  return remainingMs <= 2 * 60 * 60_000 ? 30 * 60_000
+    : remainingMs <= 4 * 60 * 60_000 ? 60 * 60_000
+      : remainingMs <= 24 * 60 * 60_000 ? 2 * 60 * 60_000
+        : remainingMs <= 4 * 24 * 60 * 60_000 ? 12 * 60 * 60_000
+          : 24 * 60 * 60_000;
+}
 
 export type MilkBatch = {
   event: CareEvent;
