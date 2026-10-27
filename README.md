@@ -27,6 +27,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Ortak bakım zaman çizelgesi
 - İkizler ve kardeşler için ayrı çocuk profilleri; uyku planı, bakım kayıtları, gelişim gözlemleri ve talimatları profil başına saklama
 - Üst başlıktan, gece modundan veya Aile ekranından çocuk profilleri arasında geçiş yapma
+- Uyku, rutin, aşı/randevu, bez, ilaç ve sağılmış süt hatırlatmalarını tüm çocuk profilleri için çocuğun adıyla planlama
 - Bakım verene özel aile talimatlarını cihazda saklama ve isteğe bağlı devir özetine ekleme
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama; birden fazla bakım veren için tek dokunuşla filtreleme
 - Üst başlıkta ve gece modunda hızlı bakım veren değiştirme; yeni kayıtlar seçili kişinin adına eklenir
