@@ -2,6 +2,25 @@
 
 Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
 
+## Android emülatöründe çalıştırma
+
+Windows PowerShell'de proje klasörünü açın. Android Studio Device Manager'dan bir emülatör başlatın, sonra ilk kurulum için:
+
+```powershell
+npm.cmd install
+npm.cmd run android
+```
+
+`android` komutu geliştirme sürümünü derler, çalışan emülatöre yükler ve Metro sunucusunu başlatır. İlk derleme biraz zaman alabilir. Uygulama `Uykuva · Development Build` ekranında sunucu bekliyorsa, sonraki bölümdeki Metro komutunu çalıştırıp terminalde `a` tuşuna basarak emülatörde açın.
+
+JavaScript/arayüz değişikliklerini sonraki çalıştırmalarda görmek için:
+
+```powershell
+npm.cmd start -- --dev-client
+```
+
+Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü açın; TypeScript/arayüz değişiklikleri Metro açıkken yenilenir. `npm.cmd run typecheck` TypeScript denetimini, `npm.cmd test` ise otomatik testleri çalıştırır. Yerel Android emülatöründe JavaScript paketi üretmek için `npx.cmd expo export --platform android` kullanılabilir; bu komut uygulamayı emülatöre yüklemez.
+
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
