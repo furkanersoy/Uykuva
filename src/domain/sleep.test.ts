@@ -35,6 +35,27 @@ test("forecast returns an explainable range after a completed sleep", () => {
   assert.match(result.explanation, /yaşa göre/i);
 });
 
+test("forecast learns its center and range from saved suggestion outcomes", () => {
+  const events: CareEvent[] = [24, 25, 26].map((day) => ({
+    id: `suggested-${day}`,
+    kind: "sleep",
+    startedAt: `2026-10-${day}T10:15:00`,
+    endedAt: `2026-10-${day}T10:35:00`,
+    suggestedSleepWindowStartAt: `2026-10-${day}T09:50:00`,
+    suggestedSleepWindowEndAt: `2026-10-${day}T10:10:00`,
+    caregiver: "Anne"
+  }));
+  const now = new Date("2026-10-26T11:00:00");
+  const wakeAt = new Date("2026-10-26T08:00:00");
+  const baseline = createSleepForecast(termBaby, [], now, wakeAt);
+  const personalized = createSleepForecast(termBaby, events, now, wakeAt);
+  assert.equal(personalized.available, true);
+  assert.equal(baseline.available, true);
+  assert.ok(personalized.start && baseline.start && personalized.start > baseline.start);
+  assert.ok(personalized.end && baseline.end && personalized.end < baseline.end);
+  assert.match(personalized.explanation, /3 tahmin/i);
+});
+
 test("coaching plan is bounded to fourteen days", () => {
   assert.match(coachingDay(99, "gradual").title, /^14\. gün/);
 });
@@ -54,3 +75,4 @@ test("bedtime adjustment is capped at fifteen minutes", () => {
   assert.equal(insight.adjustmentMinutes, -15);
   assert.equal(insight.checkInAverage, 3);
 });
+
