@@ -1,4 +1,3 @@
-Warning: fsx was declared with const; use let for reassignable variables.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, median, sleepProgramStage } from "./sleep";
@@ -28,6 +27,14 @@ test("forecast stays unavailable before week nine", () => {
   const baby: Baby = { ...termBaby, birthDate: "2026-09-15" };
   const result = createSleepForecast(baby, [], new Date("2026-10-26T12:00:00"));
   assert.equal(result.available, false);
+});
+
+test("parent-entered morning wake time enables a cautious first window before week nine", () => {
+  const baby: Baby = { ...termBaby, birthDate: "2026-09-15" };
+  const result = createSleepForecast(baby, [], new Date("2026-10-26T12:00:00"), new Date("2026-10-26T07:00:00"));
+  assert.equal(result.available, true);
+  assert.equal(result.confidence, "low");
+  assert.ok(result.start && result.end && result.start < result.end);
 });
 
 test("forecast returns an explainable range after a completed sleep", () => {
