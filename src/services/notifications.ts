@@ -75,6 +75,13 @@ export async function cancelSleepReminders() {
   );
 }
 
+export async function cancelAllCareReminders() {
+  await Promise.all([
+    Notifications.cancelAllScheduledNotificationsAsync(),
+    Notifications.dismissAllNotificationsAsync()
+  ]);
+}
+
 export async function scheduleSleepReminder(
   babyName: string,
   forecast: SleepForecast,
