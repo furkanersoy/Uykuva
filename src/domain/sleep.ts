@@ -50,7 +50,7 @@ export function wakeBandFor(baby: Baby, now = new Date()): WakeBand {
 
 export function wakeWindowGuide(baby: Baby, now = new Date()) {
   const age = correctedAgeDays(baby, now);
-  const ageLabels = ["0–2 ay", "3 ay", "4 ay", "5–6 ay", "7–9 ay", "10–12 ay", "13–18 ay", "18 ay+"];
+  const ageLabels = ["0–2 ay", "2–3 ay", "3–4 ay", "4–6 ay", "6–9 ay", "9–12 ay", "12–18 ay", "18 ay+"];
   return WAKE_BANDS.map((band, index) => ({
     ageLabel: ageLabels[index]!,
     minMinutes: band.min,

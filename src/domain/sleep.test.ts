@@ -27,7 +27,7 @@ test("wake-window guide highlights the age band used for forecasts, including co
   const now = new Date("2026-10-26T12:00:00");
   const guide = wakeWindowGuide(termBaby, now);
   assert.equal(guide.length, 8);
-  assert.deepEqual(guide.filter((row) => row.current).map((row) => row.ageLabel), ["5–6 ay"]);
+  assert.deepEqual(guide.filter((row) => row.current).map((row) => row.ageLabel), ["4–6 ay"]);
   assert.equal(guide.find((row) => row.current)?.minMinutes, 90);
 
   const pretermBaby = { ...termBaby, birthDate: "2026-07-18", gestationalWeek: 32 };
