@@ -44,6 +44,7 @@ export function migrateState(value: unknown): AppState {
       growthChartSex: candidate.baby?.growthChartSex === "female" || candidate.baby?.growthChartSex === "male" ? candidate.baby.growthChartSex : undefined
     },
     caregiverName,
+    careInstructions: typeof candidate.careInstructions === "string" ? candidate.careInstructions.slice(0, 1000) : "",
     caregivers,
     activeCaregiverId: caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id,
     events: Array.isArray(candidate.events) ? candidate.events : initial.events,
