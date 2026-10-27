@@ -23,6 +23,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama/filtreleme
 - Bakım kaydını zaman çizelgesinden silerken ikinci onay
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
+- Uyku kaydında uykuya geçiş desteğini isteğe bağlı işaretleme; zaman çizelgesi ve son 7 işaretli kayıtta tarafsız sıklık özeti
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; son beslenme/bez/uyku saatlerini, kaydı giren kişiyi ve pencere dışında başlamış açık emzirmenin sol/sağ sürelerini gösterme
 - Altı yaklaşım içeren 14 günlük nazik uyku planı
