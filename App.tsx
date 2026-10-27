@@ -656,7 +656,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       {sleepCoachGuidance ? <Card tone={sleepCoachGuidance.tone}><Text style={styles.eyebrow}>SON CHECK-IN'E GÖRE</Text><Text style={styles.cardTitle}>{sleepCoachGuidance.title}</Text><Text style={styles.body}>{sleepCoachGuidance.body}</Text></Card> : null}
       <Card>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: nightGuideOpen }} onPress={() => setNightGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
-          <View style={styles.flex}><Text style={styles.cardTitle}>Gece uyanırsa ne yapmalı?</Text><Text style={styles.body}>{nightGuide.title}</Text></View>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Gece uyanırsa ne yapmalı?</Text><Text style={styles.body}>{nightGuide.title}</Text></View>
           <Text style={styles.nightGuideChevron}>{nightGuideOpen ? "−" : "+"}</Text>
         </Pressable>
         {nightGuideOpen ? <View style={styles.nightGuideContent}>
@@ -1797,11 +1797,12 @@ const styles = StyleSheet.create({
   planProgressComplete: { backgroundColor: colors.sageDark },
   planProgressCurrent: { backgroundColor: colors.sage, borderWidth: 1, borderColor: colors.sageDark },
   nightGuideHeader: { flexDirection: "row", alignItems: "center" },
+  nightGuideHeaderText: { flex: 1, flexShrink: 1, minWidth: 0 },
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
   nightGuideContent: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
   nightGuideStep: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8 },
   nightGuideStepText: { flex: 1, flexShrink: 1, minWidth: 0 },
-  nightGuideNumber: { width: 24, height: 24, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
+  nightGuideNumber: { width: 24, height: 24, flexShrink: 0, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
