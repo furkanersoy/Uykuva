@@ -96,7 +96,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Doktor görüşmesi için yedi günlük bakım özetini PDF veya metin olarak paylaşma
 - Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri
 - Aktif bakım vereni seçme ve kayıtları seçilen kişi adına yazma
-- Kişisel uyku yaklaşımını; bakım veren uygulamasını, gece yanıtını, hedef saatleri, rutin adımlarını ve günlük rehberi bakım verenlerle paylaşma
+- Kişisel uyku yaklaşımını; bakım veren uygulamasını, gece yanıtını, yöntem özelliklerini, hedef saatleri, rutin adımlarını ve günlük rehberi bakım verenlerle paylaşma
 - Paylaşılan uyku planına son 7 gecenin check-in sonuçlarını ve mevcutsa ilk/son dönem karşılaştırmasını ekleme
 - Gerçek gece kayıtlarını hedef yatışla karşılaştıran uyku koçu
 - Akşam rutini bitişi ile uyku başlangıcı arasındaki ortanca süreyi gösteren kişisel içgörü
