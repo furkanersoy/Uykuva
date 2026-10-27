@@ -431,7 +431,7 @@ function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUyk
 }
 
 function Field({ label, ...props }: { label: string } & ComponentProps<typeof TextInput>) {
-  return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} style={styles.input} placeholderTextColor="#93A09C" /></View>;
+  return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} accessibilityLabel={props.accessibilityLabel ?? label} style={styles.input} placeholderTextColor="#93A09C" /></View>;
 }
 
 function SleepDayContextPicker({ selected, onSelect }: { selected?: SleepDayContext; onSelect: (context?: SleepDayContext) => void }) {
@@ -710,6 +710,7 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
   const steps: Record<SleepMethod, string[]> = {
     responsive: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yakınında kalıp sesinizle ve nazik dokunuşla sakinleştirin.", "Huzursuzluğu artarsa kucağa alıp sakinleştirin; hazır olduğunda tekrar yatırın."],
     gradual: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Bu gece için seçtiğiniz küçük destek adımını yalnızca bebek sakinse deneyin.", "Huzursuzluk artarsa önceki desteğe dönüp sakinleştirin; adım azaltmak zorunlu değildir."],
+    timedChecks: ["Önce açlık, bez, ağrı, hastalık ve güvenlik gibi temel ihtiyaçları değerlendirin; bunları hiçbir zaman bekletmeyin.", "Yalnızca önceden kararlaştırdığınız kısa kontrol düzeni size ve bebeğinize uygunsa sakin bir kontrol yapın.", "Ağlama artarsa, bebeğiniz iyi görünmüyorsa veya siz zorlanıyorsanız süreyi beklemeden destek verin ve planı durdurun."],
     camping: ["Önce temel ihtiyaçları ve güvenliği kontrol edin; beslenme ihtiyacını plana göre ertelemeyin.", "Yatağın yanında kalıp sesinizle ve nazik dokunuşla destek verin.", "Mesafeyi yalnızca aile ve bebek hazır olduğunda, küçük adımlarla artırın."],
     bedtimeFading: ["Son günlerdeki uyku başlangıçlarını ve bebeğinizin işaretlerini gözden geçirin.", "Hedef yatışı yalnızca küçük bir adımla ayarlayın; çok yorgunluk veya huzursuzluk varsa önceki düzene dönün.", "Beslenme ve gece bakımını saate göre ertelemeyin."],
     pickUpPutDown: ["Açlık, rahatsızlık, bez ve sağlık gibi temel ihtiyaçları önce kontrol edin.", "Bebeğiniz belirgin huzursuzsa kucağa alıp sakinleşene kadar destek olun.", "Rahatlayınca güvenli uyku alanına sırtüstü geri yatırın; ihtiyaç duyarsa yeniden destek verin."],
@@ -733,7 +734,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
-  const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
+  const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
   const completedPlanRuns = app.state.sleepPlan.completedRuns ?? [];
@@ -2182,3 +2183,4 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
+
