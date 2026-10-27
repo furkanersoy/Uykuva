@@ -49,7 +49,7 @@ SleepWell/
 ├── app.json                        # Expo, iOS ve Android uygulama ayarları
 ├── package.json                    # Komutlar ve bağımlılıklar
 ├── src/
-│   ├── app/
+│   ├── state/
 │   │   └── useUykuvaState.ts       # Uygulama durumu ve kullanıcı eylemleri
 │   ├── data/
 │   │   ├── migrations.ts           # Eski cihaz verileri için şema geçişleri
