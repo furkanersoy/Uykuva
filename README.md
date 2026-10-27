@@ -27,7 +27,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Ortak bakım zaman çizelgesi
 - Bakım verene özel aile talimatlarını cihazda saklama ve isteğe bağlı devir özetine ekleme
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama; birden fazla bakım veren için tek dokunuşla filtreleme
-- Gece modunda yeni kayıtların doğru kişiye yazılması için hızlı bakım veren değiştirme
+- Üst başlıkta ve gece modunda hızlı bakım veren değiştirme; yeni kayıtlar seçili kişinin adına eklenir
 - Bakım kaydını zaman çizelgesinden silerken ikinci onay
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
 - Uyku kaydında uykuya geçiş desteğini isteğe bağlı işaretleme; zaman çizelgesi ve son 7 işaretli kayıtta tarafsız sıklık özeti
