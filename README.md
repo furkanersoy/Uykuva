@@ -63,7 +63,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Uyku, rutin, bez, aşı/randevu, ilaç ve sağılan süt bildirimine dokununca ilgili ekranı açma; çoklu çocukta doğru çocuk profiline geçme ve gerekirse ilgili kayıt düzenlemesini açma
 - Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
 - Uyku sayacı 12 saati aşmışsa uygulama açıkken veya uygulamaya dönüldüğünde hâlâ sürüp sürmediğini sorma; otomatik süre düzeltmesi yapmama
-- Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
+- Aşı ve doktor randevuları için 15 dakika, 30 dakika, 1/2/3 saat veya 1 gün önceden ayarlanabilir yerel hatırlatmalar
 - Son bez kaydından 2, 3 veya 4 saat sonra isteğe bağlı tek seferlik bez kontrol bildirimi
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Günlük gece uyanma kaydı ve son yedi check-in ortalaması
