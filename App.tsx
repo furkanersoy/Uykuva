@@ -403,6 +403,28 @@ function SleepDayContextPicker({ selected, onSelect }: { selected?: SleepDayCont
 function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void }) {
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
+  const newbornSummary = correctedAgeDays(app.state.baby, now) < 63;
+  const summaryStart = new Date(now);
+  if (newbornSummary) summaryStart.setTime(now.getTime() - 24 * 60 * 60 * 1000);
+  else summaryStart.setHours(0, 0, 0, 0);
+  const summaryEvents = app.state.events.filter((event) => {
+    const start = new Date(event.startedAt).getTime();
+    return Number.isFinite(start) && start >= summaryStart.getTime() && start <= now.getTime();
+  });
+  const summarySleepEvents = app.state.events.filter((event) => {
+    if (event.kind !== "sleep") return false;
+    const start = new Date(event.startedAt).getTime();
+    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
+    return Number.isFinite(start) && start < now.getTime() && end > summaryStart.getTime();
+  });
+  const summarySleepMinutes = summarySleepEvents.reduce((sum, event) => {
+    const start = Math.max(new Date(event.startedAt).getTime(), summaryStart.getTime());
+    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
+    return sum + Math.max(0, end - start) / 60_000;
+  }, 0);
+  const summaryFeeding = todayFeedingTotals(app.state.events, now, newbornSummary);
+  const summaryDiapers = summaryEvents.filter((event) => event.kind === "diaper").length;
+  const summaryHealth = summaryEvents.filter((event) => event.kind === "health").length;
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => setMorningWake(todayCheckIn?.wakeTime ?? ""), [todayCheckIn?.wakeTime, today]);
   const updateMorningWake = (value: string) => {
@@ -507,6 +529,14 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         )}
         <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
+      <SectionTitle title={newbornSummary ? "Son 24 saatin özeti" : "Bugün şu ana kadar"} />
+      <View style={styles.statGrid}>
+        <Stat value={`${Math.floor(summarySleepMinutes / 60)} sa ${Math.round(summarySleepMinutes % 60)} dk`} label="Kaydedilen uyku" tone="mint" />
+        <Stat value={`${summaryFeeding.count}`} label="Beslenme" tone="peach" />
+        <Stat value={`${summaryDiapers}`} label="Bez kaydı" tone="lavender" />
+        <Stat value={`${summaryHealth}`} label="Sağlık kaydı" tone="white" />
+      </View>
+      <Text style={styles.hint}>Yalnızca bu aralıkta kaydedilenler sayılır; eksik kayıt olabilir. Bu sayılar sağlık değerlendirmesi değildir.</Text>
       <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
       <Card>
         {agenda.length ? agenda.map((item) => item.task
