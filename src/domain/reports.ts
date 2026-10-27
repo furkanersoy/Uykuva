@@ -91,7 +91,7 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
       lines.push(`- ${task.title} · ${trDate(task.dueAt)}${task.note ? ` · Hazırlık notu: ${task.note}` : ""}`);
     });
   }
-  lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur. Gelişim gözlemi CDC yaş listesine dayanır; standart, doğrulanmış tarama aracı veya tanı değildir. Sağlık değerlendirmesi veya doz önerisi sunmaz.");
+  lines.push("", "Bu özet kullanıcı tarafından girilen kayıtlardan oluşur. Gelişim gözlemi CDC yaş listesine dayanır; standart, doğrulanmış tarama aracı veya tanı değildir. Sağlık değerlendirmesi sunmaz; kullanıcının girdiği miktarlar doz önerisi değildir.");
   return lines.join("\n");
 }
 
