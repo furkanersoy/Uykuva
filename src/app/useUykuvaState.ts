@@ -372,7 +372,7 @@ export function useUykuvaState() {
       cancelAllCareReminders().then(() => true).catch(() => false),
       Promise.resolve().then(() => {
         const cache = new Directory(Paths.cache);
-        const backups = cache.list().filter((entry): entry is File => entry instanceof File && /^uykuva-yedek-\d{4}-\d{2}-\d{2}\.json$/.test(entry.name));
+        const backups = cache.list().filter((entry): entry is File => entry instanceof File && /^uykuva-(?:sifreli-)?yedek-\d{4}-\d{2}-\d{2}\.json$/.test(entry.name));
         backups.forEach((file) => file.delete());
         return true;
       }).catch(() => false)
