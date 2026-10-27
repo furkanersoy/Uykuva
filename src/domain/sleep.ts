@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod, NightWakeResponse, SleepPlanDayRecord, SleepSupport } from "./types";
+import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord, SleepSupport } from "./types";
 
 const DAY = 86_400_000;
 
@@ -35,7 +35,9 @@ export function correctedAgeMonths(baby: Baby, now = new Date()): number {
     birthDate.setDate(birthDate.getDate() - Math.max(0, 40 - baby.gestationalWeek) * 7);
   }
   let months = (now.getFullYear() - birthDate.getFullYear()) * 12 + now.getMonth() - birthDate.getMonth();
-  if (now.getDate() < birthDate.getDate()) months -= 1;
+  const lastDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const anniversaryDay = Math.min(birthDate.getDate(), lastDayOfCurrentMonth);
+  if (now.getDate() < anniversaryDay) months -= 1;
   return Math.max(0, months);
 }
 
@@ -128,7 +130,16 @@ function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Rec
   return windows;
 }
 
-export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date(), wakeAtOverride?: Date): SleepForecast {
+export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date(), wakeAtOverride?: Date, dayContext?: SleepDayContext): SleepForecast {
+  if (dayContext) {
+    const explanations: Record<SleepDayContext, string> = {
+      illness: "Bugün hastalık veya rahatsızlık işaretlendi. Uyku penceresi ve hatırlatmalar duraklatıldı; bebeğinizin ihtiyaçlarına ve sağlık uzmanınızın önerilerine göre ilerleyin.",
+      travel: "Bugün seyahat işaretlendi. Olağan uyku tahmini ve hatırlatmalar duraklatıldı; bebeğinizin sinyallerine göre esnek davranın.",
+      teething: "Bugün diş çıkarma işaretlendi. Olağan uyku tahmini ve hatırlatmalar duraklatıldı; bebeğinizin rahatlığına ve sinyallerine öncelik verin.",
+      routineChange: "Bugün düzen değişikliği işaretlendi. Olağan uyku tahmini ve hatırlatmalar duraklatıldı; planı bebeğinizin gününe göre uyarlayın."
+    };
+    return { available: false, confidence: "low", explanation: explanations[dayContext] };
+  }
   const age = correctedAgeDays(baby, now);
   // A parent-entered morning wake time is enough to estimate the next window
   // from the age band, even before we have any sleep history. Without that
@@ -848,7 +859,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const notes = recent.filter((event) => event.kind === "note" && event.note?.trim());
   const nightWakeLogs = state.sleepPlan.checkIns.flatMap((checkIn) => checkIn.nightWakeLogs ?? [])
     .filter((log) => new Date(log.at).getTime() >= since && new Date(log.at).getTime() <= now.getTime())
-    .sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime());
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
   const nextTasks = state.careTasks
     .filter((task) => !task.completedAt && new Date(task.dueAt).getTime() >= now.getTime() && new Date(task.dueAt).getTime() <= now.getTime() + 24 * 60 * 60 * 1000)
     .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
