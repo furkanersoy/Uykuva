@@ -71,7 +71,10 @@ async function readNormalizedState(db: SQLiteDatabase): Promise<AppState | null>
   const taskRows = await db.getAllAsync<StoredTaskRow>("SELECT payload_json FROM care_tasks ORDER BY rowid ASC");
   const storedTasks = taskRows.map((task) => JSON.parse(task.payload_json) as CareTask);
   const embeddedTasks = Array.isArray(saved.careTasks) ? saved.careTasks : [];
-  const migrated = migrateState({ ...saved, events, careTasks: storedTasks.length || !embeddedTasks.length ? storedTasks : embeddedTasks });
+  const careTasks = storedTasks.length || !embeddedTasks.length ? storedTasks : embeddedTasks;
+  const activeChildId = saved.activeChildId ?? saved.baby?.id;
+  const children = Array.isArray(saved.children) ? saved.children.map((child) => child.baby.id === activeChildId ? { ...child, events, careTasks } : child) : undefined;
+  const migrated = migrateState({ ...saved, events, careTasks, children });
   if (!storedTasks.length && embeddedTasks.length) await saveNormalizedState(db, migrated);
   return migrated;
 }
