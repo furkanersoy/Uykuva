@@ -143,6 +143,8 @@ Uyku bildirimi, bakım vereni tahmini pencere öncesinde haberdar eder ve sessiz
 
 Yedekleme akışı `createDataExport` ile cihaz verisini biçim etiketi ve şema sürümü taşıyan JSON'a dönüştürür. `parseDataExport` boyutu, biçimi ve temel profil/kayıt yapılarını doğrular; `migrateState` veriyi geçerli şemaya birleştirir. Kullanıcı mevcut verinin yerini alacağını onayladıktan sonra durum SQLite anahtarına kaydedilir. JSON yedeği `expo-file-system` ile yerel cache'e yazılır ve `expo-sharing` üzerinden dosya olarak paylaşılır. İçe aktarmada `expo-document-picker` dosyayı seçer; içerik mevcut JSON doğrulama ve kullanıcı onayı akışına girer. Metin yapıştırma seçeneği de korunur. Aile ekranındaki tek seferlik cihaz aktarımı aynı JSON dosyasını paylaşır; otomatik cihaz senkronizasyonu sağlamaz. Yedekler otomatik olarak sunucuya gönderilmez.
 
+Kullanıcı tüm cihaz verisini silmeyi onayladığında `cancelAllCareReminders`, bekleyen ve bildirim merkezinde gösterilmiş tüm uygulama bildirimlerini kaldırmayı dener; ardından `resetState` SQLite olay, görev ve profil tablolarını temizler. Bildirim iptali başarısız olsa bile veri silme sürer ve sonuç ekranı kalan bildirimleri açıkça bildirir.
+
 Sağım kayıtları beslenme tüketimlerinden ayrı tutulur. `src/domain/milk.ts` sağılan süt partilerini saklama türüne göre son kullanım tarihleriyle hesaplar; sağılan süt biberonları en eski uygun partiden düşer. Tamamen çözüldü olarak işaretlenen süt için 24 saatlik kullanım süresi başlatılır. Depolama aralıkları CDC rehberine dayalıdır ve uygulama stok uyarısını tıbbi talimat olarak sunmaz.
 
 Katı gıda günlüğü, `src/domain/solids.ts` içinde kaydedilen yiyecek adlarını, ilk uygulama kayıt tarihini, öğün sayısını ve seçilen alerjen etiketlerini özetler. Tepki gözlemleri öğün notuyla birlikte tarih sırasıyla gösterilir; etiketlerden veya notlardan alerji durumu çıkarılmaz.
@@ -370,10 +372,10 @@ Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrar
 ## 12. Güvenlik ve mevzuat notları
 
 - Bebek ve sağlıkla ilişkili kayıtlar hassas veri kabul edilerek tasarlanmalıdır.
-- Aktarımda TLS, depoda şifreleme ve ayrıntılı erişim denetimi zorunludur.
+- Bulut senkronizasyonu eklenirse aktarımda TLS, depoda şifreleme ve ayrıntılı erişim denetimi zorunludur.
 - Üretim analitiğinde olay ayrıntıları, bebek adı, doğum tarihi veya bakım notu bulunmamalıdır.
 - Bulut sağlayıcı ve yurt dışı aktarımı seçilmeden önce KVKK aktarım mekanizması belirlenmelidir.
-- Uygulama içinden hesap/veri silme ve makinece okunabilir dışa aktarma sunulmalıdır.
+- Yerel cihaz verisini silme ve makinece okunabilir dışa aktarma akışları uygulama içinde bulunmalıdır. Hesap sistemi eklenirse hesap silme akışı da eklenmelidir.
 - Tahmin metodolojisi ve sınırları uygulama içinde açıklanmalıdır.
 - İlaç modülü yalnızca kullanıcının verdiği saat/miktarı kaydetmeli; doz veya tekrar zamanı önermemelidir.
 
