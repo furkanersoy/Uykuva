@@ -6,6 +6,8 @@ export type BreastfeedingSegment = {
   endedAt?: string;
 };
 
+export type SleepSupport = "feeding" | "held" | "rocked" | "nearby" | "cribSupport" | "independent" | "other";
+
 export type Baby = {
   id: string;
   name: string;
@@ -21,6 +23,7 @@ export type CareEvent = {
   endedAt?: string;
   suggestedSleepWindowStartAt?: string;
   suggestedSleepWindowEndAt?: string;
+  sleepSupport?: SleepSupport;
   amountMl?: number;
   feedType?: "breast" | "bottle" | "solid" | "pump";
   bottleSource?: "formula" | "expressed";
