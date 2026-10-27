@@ -1,4 +1,3 @@
-Warning: fsu was declared with const; use let for reassignable variables.
 # Uykuva — Ürün ve Teknik Mimari
 
 Son güncelleme: 26 Ekim 2026
@@ -179,7 +178,7 @@ Koç ekranında son yedi yerel tarih içindeki check-in'ler gecelik geçmiş ola
 
 Tahmin motorunun mevcut davranışı:
 
-1. Düzeltilmiş yaş 9 haftadan küçükse tahmin göstermez.
+1. Ebeveyn sabah uyanış saatini girerse yaşa uygun düşük güvenli ilk pencereyi, uyku geçmişi olmasa da hesaplar. Bu giriş yoksa düzeltilmiş yaşı 9 haftadan küçük bebekler için saat aralığı sunmaz.
 2. Bitmiş son uyku kaydını bulur.
 3. Yaşa uygun genel uyanıklık aralığını seçer.
 4. Son 30 takvim günündeki geçerli uyanıklık sürelerini altı yerel saat dilimine ayırır; her dilimde en fazla son 10 örneği tutar.
