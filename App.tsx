@@ -522,6 +522,9 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const updateMorningWake = (value: string) => {
     setMorningWake(normalizeClockInput(value));
   };
+  const morningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWake)
+    ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
+    : undefined;
   const morningWakeForecast = (() => {
     if (!isValidClock(morningWake)) return undefined;
     const [hour, minute] = morningWake.split(":").map(Number);
@@ -615,6 +618,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWake ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
+        {morningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{morningWakeInputError}</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end ? (
           <View accessibilityLiveRegion="polite" style={styles.wakeForecastPanel}>
@@ -2124,6 +2128,7 @@ const styles = StyleSheet.create({
   feedForecast: { color: colors.ink, fontSize: 27, fontWeight: "800", letterSpacing: -0.8, marginTop: 12, marginBottom: 7 },
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
+  inputError: { color: colors.danger, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 8 },
   awake: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 14 },
   nightEntry: { minHeight: 48, borderRadius: 15, backgroundColor: "#E7ECE6", alignItems: "center", justifyContent: "center", marginBottom: 14, paddingHorizontal: 14 },
   nightEntryText: { color: colors.sageDark, fontSize: 13, fontWeight: "800" },
