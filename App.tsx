@@ -784,6 +784,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const [routineMinutes, setRoutineMinutes] = useState("5");
   const [routineRunnerOpen, setRoutineRunnerOpen] = useState(false);
   const [nightGuideOpen, setNightGuideOpen] = useState(false);
+  const [sleepBasicsOpen, setSleepBasicsOpen] = useState(false);
   const [methodGuideOpen, setMethodGuideOpen] = useState(false);
   const nightGuide = nightWakingGuide(stage.id, coachingMethod);
   const saveSchedule = () => {
@@ -861,6 +862,33 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={[styles.body, styles.nightGuideStepText]}>{step}</Text></View>)}
           {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz bir yüzey; uyku alanında yalnızca gergin çarşaf bulundurun.</Text> : null}
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx")}><Text style={styles.linkText}>AAP güvenli uyku rehberini aç</Text></Pressable>
+        </View> : null}
+      </Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sleepBasicsOpen }} onPress={() => setSleepBasicsOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Uyku hakkında kısa rehber</Text><Text style={styles.body}>Rutin, gece uyanmaları ve güvenli uyku</Text></View>
+          <Text style={styles.nightGuideChevron}>{sleepBasicsOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {sleepBasicsOpen ? <View style={styles.nightGuideContent}>
+          <Text style={styles.inputLabel}>Her bebeğin ritmi farklıdır</Text>
+          <Text style={styles.body}>Uyku süresi ve uyanma düzeni bebekler arasında değişir. Özellikle ilk aylarda kısa uyku aralıkları ve beslenme için uyanmalar olağandır; tek bir saat çizelgesi her aileye uymaz.</Text>
+          <Text style={styles.inputLabel}>Sakin, tekrarlanabilir bir rutin deneyin</Text>
+          <Text style={styles.body}>Benzer sırayla yapılan kısa ve sakin adımlar uykuya geçişi kolaylaştırabilir. Ailenize uyan adımları seçin; bebeğinizin işaretlerine göre rutini kısaltabilir veya ara verebilirsiniz.</Text>
+          <Text style={styles.inputLabel}>Gece uyanınca önce ihtiyacı değerlendirin</Text>
+          <Text style={styles.body}>Açlık, bez, rahatsızlık ve yakınlık ihtiyacını kontrol edin. Gece bakımını düşük ışıkta ve sakin tutmak yardımcı olabilir; beslenmeyi veya gerekli bakımı uyku planı uğruna ertelemeyin.</Text>
+          <Text style={styles.inputLabel}>Bebekler için güvenli uyku</Text>
+          <Text style={styles.body}>Bebeği her uykuda sırtüstü, sert ve düz bir zemine yatırın; uyku alanını yastık, yorgan ve yumuşak eşyalardan boş tutun. Kendi yatağı aynı odada olabilir; yetişkin yatağından ayrı uyku yüzeyi kullanın.</Text>
+          <Text style={styles.inputLabel}>Bir yaklaşımı tüm bakım verenlerle konuşun</Text>
+          <Text style={styles.body}>Kimlerin hangi desteği vereceğini, beslenme ve rahatlatma ihtiyaçlarına nasıl yanıt verileceğini ve hangi durumda planı bırakacağınızı önceden konuşun. Aynı yaklaşımda buluşamıyorsanız seçim yapmak zorunda değilsiniz; duyarlı rutinle devam edebilir veya konuyu daha sonra yeniden değerlendirebilirsiniz.</Text>
+          <Text style={styles.inputLabel}>Zor günlerde ara verin</Text>
+          <Text style={styles.body}>Hastalık, ağrı, seyahat veya düzen değişikliği olduğunda koçluk planını erteleyin. Uyku ekranındaki gün bağlamı seçimi günlük koçluk adımlarını bekletir; bakım kayıtları sürer ve olağan güne dönünce plan kaldığı yerden devam eder.</Text>
+          {!stage.canReduceSupport ? <Text style={styles.hint}>Bu yaş aşamasında desteği azaltma yaklaşımı sunulmuyor. Uyku işaretleri, güvenli uyku ve duyarlı bakım önceliklidir.</Text> : null}
+          {trainingReady ? <><View style={styles.spacer12} /><PrimaryButton label="Uyku yaklaşımlarını karşılaştır" quiet onPress={() => { setSleepBasicsOpen(false); setMethodGuideOpen(true); }} /></> : null}
+          <Text style={styles.hint}>Uyku eğitimi zorunlu değildir. Uyku yaklaşımı seçseniz bile beslenme, hastalık, güvenlik ve yoğun huzursuzluk işaretleri her zaman önceliklidir. Kişisel sağlık sorularında çocuk doktorunuza danışın.</Text>
+          <Text style={styles.inputLabel}>Kaynaklar</Text>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/").catch(() => Alert.alert("Bağlantı açılamadı", "NHS uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>NHS · Bebeğinizin uyumasına yardımcı olma</Text></Pressable>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Bebeğinizi uyutmaya yardımcı olma</Text></Pressable>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/sudden-infant-death/sleep-safely/").catch(() => Alert.alert("Bağlantı açılamadı", "CDC güvenli uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>CDC · Güvenli uyku alanı</Text></Pressable>
         </View> : null}
       </Card>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
