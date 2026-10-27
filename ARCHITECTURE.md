@@ -349,7 +349,7 @@ Uyku koçluğu ve tahminler ebeveynin gözlemlerinin yerine geçmez. Mevcut yaş
 
 Randevular tek seferlik, haftalık veya aylık olarak ayarlanabilir. Tekrarlanan sonraki randevu, mevcut kayıt tamamlandığında oluşturulur; geçmişteki tamamlanmış kayıt silinmez. Aşı kayıtları tekrarlama seçeneği almaz. Bildirim tercihi açıksa sıradaki örnek mevcut randevu hatırlatma zamanlamasına girer.
 
-Gece modu girişinde ekran okuyucu etiketi ve eylem ipucu bulunur. Gece modu giriş/çıkış hedefleri en az 48 dp, uyku/beslenme/bez hızlı eylemleri en az 88 dp, ortak seçim etiketleri en az 48 dp yüksekliğindedir. Rutin sıralama, kayıt silme, uyku değerlendirme ve gelişim dönüm noktası seçimlerinin dokunma hedefleri de en az 48 dp'dir. Metinler sistemin varsayılan yazı ölçeklendirmesini kullanır; bu düzenleme tam erişilebilirlik denetiminin yerini almaz.
+Gece modu girişinde ekran okuyucu etiketi ve eylem ipucu bulunur. Alt gezinme hedefleri sekme rolü ve seçili durumunu ekran okuyucuya aktarır; koçluk ilerleme şeridi tek bir tamamlanan gün özeti olarak okunur. Gece modu giriş/çıkış hedefleri en az 48 dp, uyku/beslenme/bez hızlı eylemleri en az 88 dp, ortak seçim etiketleri en az 48 dp yüksekliğindedir. Rutin sıralama, kayıt silme, uyku değerlendirme ve gelişim dönüm noktası seçimlerinin dokunma hedefleri de en az 48 dp'dir. Metinler sistemin varsayılan yazı ölçeklendirmesini kullanır; bu düzenleme tam erişilebilirlik denetiminin yerini almaz.
 
 Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrarlayan zor gecelerde daha fazla destek ve temel ihtiyaç kontrolü önerir; daha kolay gecelerde mevcut rutini korumayı söyler. Bu rehber plan yöntemini otomatik değiştirmez, beslenmeyi ertelemez ve uyku başarısı/sağlık sonucu iddiasında bulunmaz.
 
