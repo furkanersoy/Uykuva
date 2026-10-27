@@ -18,8 +18,8 @@
     "plugins": [
       "expo-sqlite",
       "expo-notifications",
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/withUykuvaWidget"
     ]
   }
 }
-
