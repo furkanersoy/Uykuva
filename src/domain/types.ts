@@ -136,6 +136,7 @@ export type AppState = {
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
+  careInstructions?: string;
   caregivers: Caregiver[];
   activeCaregiverId: string;
   events: CareEvent[];
