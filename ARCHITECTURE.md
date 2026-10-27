@@ -97,7 +97,7 @@ Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamaml
 
 Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak isteğe bağlı yatış/uyanış saatleri ve kısa bağlam notu saklar. Bu check-in notları günlük doktor özetine dahil edilmez; cihaz verisi dışa aktarımında yer alır.
 
-Geçerli bir sabah uyanış saati girildiğinde, kaydetmeyi beklemeden yaşa ve yeterli geçmiş örnek varsa kişisel uyanıklık aralığına göre ilk uyku penceresi aynı check-in kartında hesaplanır. Check-in kaydedildikten sonra Bugün ekranındaki sıradaki uyku tahmini de bu uyanış saatini kullanır. Dokuz haftadan küçük düzeltilmiş yaşta girilmiş uyanış saati varsa düşük güvenli yaş aralığı gösterilir; saat girilmediyse yalnızca açıklama sunulur.
+Geçerli bir sabah uyanış saati girildiğinde, kaydetmeyi beklemeden yaşa ve yeterli geçmiş örnek varsa kişisel uyanıklık aralığına göre ilk uyku penceresi aynı check-in kartında hesaplanır. Check-in kaydedilince sabah saati Bugün ekranındaki ilk pencere için başlangıç noktası olur; bu uyanıştan sonraki ilk uyku kaydedilince tahmin son uykunun bitişinden devam eder. Dokuz haftadan küçük düzeltilmiş yaşta girilmiş uyanış saati varsa düşük güvenli yaş aralığı gösterilir; saat girilmediyse yalnızca açıklama sunulur.
 
 ### Uygulama durumu
 
