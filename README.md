@@ -5,6 +5,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
+- Sabah check-in'inde uyanış saati girildiğinde ilk gündüz uykusu penceresini anında gösterme; kaydettikten sonra Bugün ekranında kullanma
 - Son 30 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi (kişisel örnek azsa yaş aralığına ağırlık verir)
 - Son 14 günde tekrar eden gündüz uykularından kişisel günlük taslak çıkarma
 - Yeterli geçmiş kayıt olduğunda sıradaki gündüz uykularını 24 saatlik planda tarihsel aralıklarla görme
@@ -22,7 +23,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; pencere dışında başlamış açık emzirmeyi ve sol/sağ sürelerini de gösterme
 - Altı yaklaşım içeren 14 günlük nazik uyku planı
-- Hazır oluş koşulları tamamlandığında uyku yaklaşımlarını açıklamalarıyla karşılaştırıp doğrudan seçim yapma
+- Hazır oluş koşulları tamamlandığında altı uyku yaklaşımını bakım verenin uygulayacağı adım ve gece uyanması yanıtıyla karşılaştırıp doğrudan seçim yapma
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
