@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { migrateState } from "./migrations";
+import { createInitialState } from "./seed";
+import { createDataExport, parseDataExport } from "../domain/export";
 
 test("legacy state receives schema two defaults without losing events", () => {
   const migrated = migrateState({
@@ -34,3 +36,12 @@ test("caregiver migration preserves the active identity", () => {
   assert.equal(migrated.caregivers.length, 2);
 });
 
+test("sleep settling support survives export and invalid values are rejected", () => {
+  const state = createInitialState();
+  state.events = [{ id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00Z", endedAt: "2026-10-27T09:00:00Z", caregiver: "Anne", sleepSupport: "nearby" }];
+  const backup = createDataExport(state);
+  assert.equal(parseDataExport(backup).events[0]?.sleepSupport, "nearby");
+  const invalid = JSON.parse(backup) as { events: Array<Record<string, unknown>> };
+  invalid.events[0]!.sleepSupport = "made-up";
+  assert.throws(() => parseDataExport(JSON.stringify(invalid)), /bakım kayıtları/i);
+});
