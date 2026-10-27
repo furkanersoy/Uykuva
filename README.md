@@ -60,6 +60,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
 - Profil ve plan için SQLite saklama, bakım kayıtları için indeksli SQLite olay tablosu ve çevrimdışı göç
 - İsteğe bağlı uyku penceresi bildirimleri
+- Uyku, rutin, bez, aşı/randevu, ilaç ve sağılan süt bildirimine dokununca ilgili ekranı açma; çoklu çocukta doğru çocuk profiline geçme ve gerekirse ilgili kayıt düzenlemesini açma
 - Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
 - Uyku sayacı 12 saati aşmışsa uygulama açıkken veya uygulamaya dönüldüğünde hâlâ sürüp sürmediğini sorma; otomatik süre düzeltmesi yapmama
 - Aşı ve doktor randevuları için ayarlanabilir yerel hatırlatmalar
