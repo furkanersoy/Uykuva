@@ -123,7 +123,7 @@ export type AppPreferences = {
   notificationsEnabled: boolean;
   sleepReminderMinutes: 5 | 10 | 15 | 20 | 30;
   careTaskRemindersEnabled: boolean;
-  careTaskReminderMinutes: 30 | 120 | 1440;
+  careTaskReminderMinutes: 15 | 30 | 60 | 120 | 180 | 1440;
   diaperRemindersEnabled: boolean;
   diaperReminderHours: 2 | 3 | 4;
   milkExpiryRemindersEnabled: boolean;
