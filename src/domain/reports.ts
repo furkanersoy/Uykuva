@@ -1,4 +1,4 @@
-import { ageInDays } from "./sleep";
+import { ageInDays, nightWakeResponseLabel } from "./sleep";
 import { completedFeedMinutes } from "./feeding";
 import { AppState, CareEvent } from "./types";
 import { DEVELOPMENT_CHECKPOINTS } from "../data/developmentMilestones";
@@ -38,6 +38,13 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
     `Sağlık: ${health.length} kullanıcı kaydı`
   ];
   if (pumping.length) lines.push(`Sağım: ${pumping.length} kayıt · toplam ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml`);
+  const nightWakeLogs = state.sleepPlan.checkIns.flatMap((checkIn) => checkIn.nightWakeLogs ?? [])
+    .filter((log) => new Date(log.at).getTime() >= since && new Date(log.at).getTime() <= now.getTime())
+    .sort((x, y) => new Date(x.at).getTime() - new Date(y.at).getTime());
+  if (nightWakeLogs.length) {
+    lines.push(`Gece uyanmaları: ${nightWakeLogs.length} yapılandırılmış kayıt`);
+    nightWakeLogs.slice(-30).forEach((log) => lines.push(`- ${trDate(log.at)} · ${nightWakeResponseLabel(log.response)} · ${log.caregiver}`));
+  }
   if (growth) {
     lines.push(`Son ölçüm (${trDate(growth.startedAt)}): ${growth.weightG ? `${growth.weightG} g` : "—"} · ${growth.lengthCm ? `${growth.lengthCm} cm` : "—"} · baş ${growth.headCm ? `${growth.headCm} cm` : "—"}`);
   }
