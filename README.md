@@ -45,6 +45,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Son check-in'lere göre desteği artırmayı veya mevcut rutini korumayı öneren, planı otomatik değiştirmeyen uyku koçu rehberi
 - Tamamlanan 14 günlük plan döngülerinin görev toplamlarıyla arşivi (en çok 10 döngü)
 - Akşam rutini ve günlük görevler
+- İsteğe bağlı akşam rutini hatırlatması; hedef yatış ve etkin rutin süresinden hesaplanır, sessiz saatleri gözetir ve önümüzdeki yedi gün için cihazda planlanır
 - Kişisel akşam rutini adımlarını etkinleştirme ve sıraya koyma
 - Etkin akşam rutini adımlarını sırayla uygulama ve tamamlanma özetini zaman çizelgesine kaydetme
 - Günlük bakım özeti
@@ -120,3 +121,4 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
+
