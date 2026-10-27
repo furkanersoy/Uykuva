@@ -40,8 +40,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Bakım devri özetinde seçilen zaman aralığına düşen, kullanıcı tarafından girilmiş sonraki ilaç planı kontrol saatlerini gösterme
 - Gün hastalık, seyahat, diş çıkarma veya düzen değişikliği olarak işaretlendiyse bakım devri özetinde nedeni ve koçluk planının beklediğini belirtme
 - Bakım devri özetinde, günün uyanış saati veya son uykudan hesaplanan sıradaki uyku penceresini gösterme
-- Altı yaklaşım içeren 14 günlük nazik uyku planı
-- Hazır oluş koşulları tamamlandığında altı uyku yaklaşımını bakım verenin uygulayacağı adım ve gece uyanması yanıtıyla karşılaştırıp doğrudan seçim yapma
+- Yedi yaklaşım içeren 14 günlük nazik uyku planı; hazır oluş koşulları tamamlandığında yöntemleri karşılaştırıp doğrudan seçme
+- Önceden kararlaştırılmış kısa kontroller yaklaşımı; Uykuva sabit aralık veya ağlama süresi önermez, beslenme ve sağlık ihtiyaçları her zaman önceliklidir
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
@@ -125,3 +125,4 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
+
