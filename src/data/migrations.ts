@@ -24,7 +24,7 @@ function localDateOnly(value: string) {
   return Number.isNaN(date.getTime()) ? undefined : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-export function migrateState(value: unknown): AppState {
+function migrateSingleState(value: unknown): AppState {
   const initial = createInitialState();
   if (!value || typeof value !== "object") return initial;
   const candidate = value as Partial<AppState>;
@@ -47,7 +47,7 @@ export function migrateState(value: unknown): AppState {
   return {
     ...initial,
     ...candidate,
-    schemaVersion: 3,
+    schemaVersion: 4,
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: {
       ...initial.baby,
@@ -95,3 +95,49 @@ export function migrateState(value: unknown): AppState {
   };
 }
 
+function childProfileFromState(state: AppState) {
+  return {
+    baby: state.baby,
+    careInstructions: state.careInstructions,
+    developmentCheckIns: state.developmentCheckIns,
+    events: state.events,
+    careTasks: state.careTasks,
+    sleepPlan: state.sleepPlan
+  };
+}
+
+export function migrateState(value: unknown): AppState {
+  const base = migrateSingleState(value);
+  if (!value || typeof value !== "object") return base;
+  const candidate = value as Partial<AppState>;
+  const seenBabyIds = new Set<string>();
+  const profiles = Array.isArray(candidate.children) ? candidate.children.flatMap((profile) => {
+    if (!profile || typeof profile !== "object" || !profile.baby || typeof profile.baby.id !== "string" || !profile.baby.id || typeof profile.baby.name !== "string" || !profile.baby.name.trim() || seenBabyIds.has(profile.baby.id)) return [];
+    seenBabyIds.add(profile.baby.id);
+    const migrated = migrateSingleState({
+      ...base,
+      ...profile,
+      onboardingComplete: base.onboardingComplete,
+      caregivers: base.caregivers,
+      activeCaregiverId: base.activeCaregiverId,
+      caregiverName: base.caregiverName,
+      preferences: base.preferences
+    });
+    return [childProfileFromState(migrated)];
+  }) : [];
+  if (!profiles.length) profiles.push(childProfileFromState(base));
+
+  const requestedActiveId = typeof candidate.activeChildId === "string" ? candidate.activeChildId : base.baby.id;
+  const active = profiles.find((profile) => profile.baby.id === requestedActiveId) ?? profiles.find((profile) => profile.baby.id === base.baby.id) ?? profiles[0]!;
+  return {
+    ...base,
+    baby: active.baby,
+    careInstructions: active.careInstructions,
+    developmentCheckIns: active.developmentCheckIns,
+    events: active.events,
+    careTasks: active.careTasks,
+    sleepPlan: active.sleepPlan,
+    children: profiles,
+    activeChildId: active.baby.id
+  };
+}
