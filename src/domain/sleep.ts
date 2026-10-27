@@ -1,5 +1,6 @@
 import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlan, SleepPlanDayRecord, SleepSupport } from "./types";
 import { createMilkInventory, milkStorageLabel } from "./milk";
+import { isValidClock } from "./time";
 
 const DAY = 86_400_000;
 
@@ -937,6 +938,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const forecastWakeAt = wakeAt && !hasSleepSinceWake(state.events, wakeAt) ? wakeAt : undefined;
   const nextSleepForecast = sleepOngoing ? undefined : createSleepForecast(state.baby, state.events, now, forecastWakeAt, todayCheckIn?.dayContext);
   const parts = [`Son ${windowHours} saatte ${recent.length} kayıt`];
+  if (isValidClock(state.sleepPlan.bedtime)) parts.push(`Hedef yatış: ${state.sleepPlan.bedtime}`);
   if (todayCheckIn?.dayContext) {
     parts.push(`Bugün ${sleepDayContextLabel(todayCheckIn.dayContext)} işaretlendi · uyku tahmini ve koçluk planı beklemede`);
   }
