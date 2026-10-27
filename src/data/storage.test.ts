@@ -36,7 +36,7 @@ test("caregiver migration preserves the active identity", () => {
   assert.equal(migrated.caregivers.length, 2);
 });
 
-test("sleep settling support survives export and invalid values are rejected", () => {
+test("sleep and night-wake details survive export and invalid values are rejected", () => {
   const state = createInitialState();
   state.events = [{ id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00Z", endedAt: "2026-10-27T09:00:00Z", caregiver: "Anne", sleepSupport: "nearby" }];
   state.sleepPlan.checkIns = [{ date: "2026-10-27", nightWakeLogs: [{ id: "wake-1", at: "2026-10-27T02:15:00Z", response: "comfort", caregiver: "Baba" }] }];
