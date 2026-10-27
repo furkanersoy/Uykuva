@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepProgramStage } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -203,4 +203,14 @@ test("care handoff says how much expressed milk is usable and which batch to use
 
   assert.match(summary, /Kullanılabilir süt stoğu 150 ml/);
   assert.match(summary, /önce 60 ml Isıtılmış \/ oda sıcaklığında · 2 sa, 13:00 saatine kadar kullanın/);
+});
+
+test("care handoff names today's exceptional context and paused sleep coaching", () => {
+  const now = new Date("2026-10-27T12:00:00");
+  for (const context of ["illness", "travel", "teething", "routineChange"] as const) {
+    const state = createInitialState();
+    state.sleepPlan.checkIns = [{ date: "2026-10-27", dayContext: context }];
+    const summary = handoffSummary(state, now, 4);
+    assert.ok(summary.includes(`Bugün ${sleepDayContextLabel(context)} işaretlendi · uyku tahmini ve koçluk planı beklemede`));
+  }
 });
