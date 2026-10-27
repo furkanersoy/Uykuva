@@ -1,4 +1,3 @@
-Warning: fsu was declared with const; use let for reassignable variables.
 # Uykuva
 
 Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
@@ -6,6 +5,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
+- Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve durum; widget'a dokununca Uykuva açılır
 - İsteğe bağlı hastalık, seyahat, diş çıkarma ve düzen değişikliği günü işareti; bu günlerde olağan uyku penceresi ve hatırlatmalar duraklatılır
 - Sabah check-in'inde uyanış saati girildiğinde ilk gündüz uykusu penceresini anında gösterme; ilk uyku kaydedilince sonraki tahminleri o uykudan sürdürme
 - Ana uyku kartında pencereye kalan süreyi, pencere açıkken kalan dakikayı ve tahmini aralık geçince esnek yanıt mesajını gösterme
@@ -75,7 +75,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Bebek uyurken bekleyen sonraki uyku hatırlatmasını iptal etme; sayaç bitince yeni tahmine göre tekrar planlama
 - JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden içe aktarma; aynı bebeğe ait cihaz kayıtlarını kimlik tekrarlarını ayıklayarak birleştirme veya mevcut verilerin yerine tamamen geri yükleme, metin yapıştırma ve kontrollü cihaz verisi silme (silme uygulamanın önbellekteki yedeklerini ve planlı hatırlatmaları da kaldırır)
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
-- Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü
+- Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü; çözündürme için 24 saat, ısıtma/oda sıcaklığına gelme için iki saatlik kullanım penceresi
 - Biberon ve katı gıda ayrıntıları
 - Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
 - Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
