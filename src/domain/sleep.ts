@@ -218,6 +218,17 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   };
 }
 
+export function hasSleepSinceWake(events: CareEvent[], wakeAt: Date): boolean {
+  const wakeAtMs = wakeAt.getTime();
+  if (!Number.isFinite(wakeAtMs)) return false;
+  return events.some((event) => {
+    if (event.kind !== "sleep") return false;
+    const startedAt = new Date(event.startedAt).getTime();
+    const endedAt = event.endedAt ? new Date(event.endedAt).getTime() : Number.NaN;
+    return startedAt >= wakeAtMs || Number.isFinite(endedAt) && endedAt >= wakeAtMs;
+  });
+}
+
 export type SleepWakeEstimate = {
   available: boolean;
   from?: Date;
