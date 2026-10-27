@@ -66,6 +66,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Doğum tarihine göre düzenlenebilir ulusal aşı takvimi önerileri
 - Aşı önerilerinde kaynak sürümü ve resmi Sağlık Bakanlığı bağlantısı; 49–72 ay suçiçeği yakalama dönemi için aile hekimiyle teyit hatırlatması
 - Sessiz saatlere uyan uyku bildirimleri
+- Bebek uyurken bekleyen sonraki uyku hatırlatmasını iptal etme; sayaç bitince yeni tahmine göre tekrar planlama
 - JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden geri yükleme; metin yapıştırma yedeği, tek seferlik telefonlar arası aktarım, doğrulama ve kontrollü cihaz verisi silme
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü
