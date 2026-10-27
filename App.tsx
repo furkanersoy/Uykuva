@@ -308,7 +308,7 @@ export default function App() {
 
         {!nightMode ? <View style={styles.nav}>
           {tabs.map((item) => (
-            <Pressable key={item.id} onPress={() => setTab(item.id)} style={styles.navItem}>
+            <Pressable key={item.id} accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: tab === item.id }} onPress={() => setTab(item.id)} style={styles.navItem}>
               <Text style={[styles.navGlyph, tab === item.id && styles.navActive]}>{item.glyph}</Text>
               <Text style={[styles.navLabel, tab === item.id && styles.navActive]}>{item.label}</Text>
             </Pressable>
@@ -744,7 +744,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
       <Card>
         <View style={styles.cardTopline}><Text style={styles.eyebrow}>PROGRAM İLERLEYİŞİ</Text><Text style={styles.confidence}>{completedProgramDays}/14 gün</Text></View>
-        <View style={styles.planProgressBar}>{Array.from({ length: 14 }, (_, index) => <View key={index} style={[styles.planProgressSegment, index < completedProgramDays && styles.planProgressComplete, index === app.state.sleepPlan.day - 1 && !programCompleted && styles.planProgressCurrent]} />)}</View>
+        <View accessible accessibilityLabel={`14 günlük program: ${completedProgramDays} gün tamamlandı${programCompleted ? "" : `, ${app.state.sleepPlan.day}. gün`}`} style={styles.planProgressBar}>{Array.from({ length: 14 }, (_, index) => <View key={index} accessible={false} style={[styles.planProgressSegment, index < completedProgramDays && styles.planProgressComplete, index === app.state.sleepPlan.day - 1 && !programCompleted && styles.planProgressCurrent]} />)}</View>
         <Text style={styles.body}>{programCompleted ? "14 günlük rehber tamamlandı. Uyku ve sabah check-in kayıtlarını kullanmaya devam edebilirsiniz." : `Şu an ${app.state.sleepPlan.day}. gündesiniz${alreadyAdvancedToday ? "; sıradaki gün yarın açılır" : ""}.`}</Text>
         {programCompleted ? <View style={styles.spacer12} /> : null}
         {programCompleted ? <PrimaryButton label="Yeni 14 günlük programa başla" onPress={app.restartSleepPlan} /> : null}
