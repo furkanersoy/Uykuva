@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10, marginBottom: 12 },
   sectionTitle: { color: colors.ink, fontSize: 20, fontWeight: "700", letterSpacing: -0.4 },
   sectionAction: { color: colors.sageDark, fontSize: 13, fontWeight: "600" },
-  pill: { borderWidth: 1, borderColor: colors.line, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, marginRight: 8 },
+  pill: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.line, paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999, marginRight: 8 },
   pillActive: { backgroundColor: colors.sageDark, borderColor: colors.sageDark },
   pillText: { color: colors.inkSoft, fontSize: 13, fontWeight: "600" },
   pillTextActive: { color: "white" },
