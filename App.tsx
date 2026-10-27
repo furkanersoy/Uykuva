@@ -232,11 +232,11 @@ export default function App() {
   }, [app.hydrated, app.state.onboardingComplete, app.state.events]);
 
   const promptNightWake = () => setNightWakeOpen(true);
-  const saveNightWake = (response: NightWakeResponse) => {
+  const saveNightWake = (response: NightWakeResponse, occurredAt: string) => {
     const now = new Date();
     const date = localDateValue(now);
     const checkIn = app.state.sleepPlan.checkIns.find((item) => item.date === date);
-    const log = { id: `wake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, at: now.toISOString(), response, caregiver: app.state.caregiverName };
+    const log = { id: `wake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, at: occurredAt, response, caregiver: app.state.caregiverName };
     app.saveCheckIn({ ...checkIn, date, nightWakeLogs: [...(checkIn?.nightWakeLogs ?? []), log].slice(-30) });
     setNightWakeOpen(false);
   };
@@ -795,7 +795,24 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
 }
 
 function SleepMethodsModal({ visible, close, methods, activeMethod, choose }: { visible: boolean; close: () => void; methods: SleepMethod[]; activeMethod: SleepMethod; choose: (method: SleepMethod) => void }) {
-  if (!visible) return null;
+  const [date, setDate] = useState(localDateValue(new Date()));
+  const [clock, setClock] = useState(time(new Date()));
+  const [response, setResponse] = useState<NightWakeResponse | "">("");
+  useEffect(() => {
+    if (!visible) return;
+    const now = new Date();
+    setDate(localDateValue(now));
+    setClock(time(now));
+    setResponse("");
+  }, [visible]);
+  const submit = () => {
+    if (!response) return Alert.alert("Desteği seçin", "Bu uyanmada verdiğiniz desteği işaretleyin.");
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
+    const occurredAt = new Date(`${date}T${clock}:00`);
+    if (!Number.isFinite(occurredAt.getTime()) || localDateValue(occurredAt) !== date) return Alert.alert("Tarihi kontrol edin", "Gerçek bir takvim tarihi girin.");
+    if (occurredAt.getTime() > Date.now() || occurredAt.getTime() < Date.now() - 24 * 60 * 60_000) return Alert.alert("Zamanı kontrol edin", "Gece uyanmasını son 24 saat içinde kaydedebilirsiniz.");
+    save(response, occurredAt.toISOString());
+  };
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Uyku yaklaşımlarını karşılaştır</Text><Text style={styles.pageIntro}>Bir yaklaşım seçmek zorunlu değildir. Bebeğinizin ve ailenizin ihtiyaçlarına uyan adımı belirleyin; istediğiniz zaman duraklatıp daha fazla destek verebilirsiniz.</Text>
     {methods.map((method) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.inputLabel}>Bakım veren ne yapar?</Text><Text style={styles.body}>{methodDescription(method).caregiverRole}</Text><Text style={styles.inputLabel}>Gece uyanınca</Text><Text style={styles.body}>{methodDescription(method).nightResponse}</Text><Text style={styles.hint}>Bebek belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa denemeyi bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>)}
     <Card tone="peach"><Text style={styles.body}>Bu seçenekler genel bilgilendirmedir; her bebeğe uyan tek bir yöntem yoktur. Beslenme ihtiyacını ertelemeyin. Sağlık veya gelişim kaygısında çocuk doktorunuzla konuşun.</Text></Card><PrimaryButton label="Kapat" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
@@ -1260,7 +1277,7 @@ function DataRestoreModal({ visible, close, currentBabyName, restore }: { visibl
       Alert.alert("Dosya açılamadı", "Uykuva JSON yedeğini seçip yeniden deneyin.");
     }
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini geri yükle</Text><Text style={styles.pageIntro}>Uykuva JSON yedeği dosyası seçin veya yedek metnini yapıştırın. Geri yükleme bu cihazdaki kayıtların yerini alır.</Text><PrimaryButton label="JSON yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve geri yükle" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini geri yükle</Text><Text style={styles.pageIntro}>Uykuva JSON yedeği dosyası seçin veya yedek metnini yapıştırın. Geri yükleme bu cihazdaki kayıtların yerini alır.</Text><PrimaryButton label="JSON yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve geri yükle" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Uyanma kaydını ekle" onPress={submit} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
@@ -1303,15 +1320,15 @@ function ProfileModal({ visible, close, app }: { visible: boolean; close: () => 
   );
 }
 
-function NightWakeModal({ visible, close, save }: { visible: boolean; close: () => void; save: (response: NightWakeResponse) => void }) {
+function NightWakeModal({ visible, close, save }: { visible: boolean; close: () => void; save: (response: NightWakeResponse, occurredAt: string) => void }) {
   if (!visible) return null;
   return <Modal visible transparent animationType="slide" onRequestClose={close}>
     <Pressable style={styles.backdrop} onPress={close} />
     <ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset}>
       <View style={styles.sheetHandle} />
       <Text style={styles.pageTitle}>Gece uyanması</Text>
-      <Text style={styles.pageIntro}>Saat şu an olarak kaydedilir. O sırada verdiğiniz desteği seçin.</Text>
-      <View style={styles.choiceRow}>{NIGHT_WAKE_RESPONSE_OPTIONS.map((item) => <Pill key={item.id} label={item.label} onPress={() => save(item.id)} />)}</View>
+      <Text style={styles.pageIntro}>Saat otomatik dolar; hatırladığınız gerçek zamanla düzeltebilirsiniz.</Text>
+      <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Tarih</Text><TextInput accessibilityLabel="Uyanma tarihi" value={date} onChangeText={setDate} style={styles.compactInput} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Saat</Text><TextInput accessibilityLabel="Uyanma saati" value={clock} onChangeText={setClock} style={styles.compactInput} placeholder="02:15" keyboardType="numbers-and-punctuation" /></View></View><Text style={styles.inputLabel}>Verilen destek</Text><View style={styles.choiceRow}>{NIGHT_WAKE_RESPONSE_OPTIONS.map((item) => <Pill key={item.id} label={item.label} active={response === item.id} onPress={() => setResponse(item.id)} />)}</View>
       <Text style={styles.hint}>Bu kayıt toplam uyanma sayısından ayrıdır; son 30 kayıt saklanır.</Text>
       <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
     </ScrollView>
