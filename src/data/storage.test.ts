@@ -14,6 +14,7 @@ test("legacy state receives schema two defaults without losing events", () => {
   });
   assert.equal(migrated.schemaVersion, 4);
   assert.equal(migrated.onboardingComplete, true);
+  assert.equal(migrated.preferences.milkExpiryReminderLead, "adaptive");
   assert.equal(migrated.events.length, 1);
   assert.deepEqual(migrated.careTasks, []);
   assert.equal(migrated.preferences.sleepReminderMinutes, 15);
