@@ -158,7 +158,7 @@ export default function App() {
     if (!app.hydrated || !app.state.onboardingComplete || app.runningSleep || sleepEditor || logMode || taskMode || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen || !forecast.available || !forecast.start || !forecast.end) return;
     const start = forecast.start.getTime();
     const end = forecast.end.getTime();
-    if (clockNow.getTime() < end || promptedSleepWindow === start) return;
+    if (clockNow.getTime() < end || clockNow.getTime() >= end + 10 * 60_000 || promptedSleepWindow === start) return;
     const alreadyLogged = app.state.events.some((event) => event.kind === "sleep" && new Date(event.startedAt).getTime() >= start - 15 * 60_000 && new Date(event.startedAt).getTime() <= end + 30 * 60_000);
     if (alreadyLogged) return;
     setPromptedSleepWindow(start);
