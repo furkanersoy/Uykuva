@@ -16,6 +16,8 @@ export type NightWakeLog = {
   caregiver: string;
 };
 
+export type SleepDayContext = "illness" | "travel" | "teething" | "routineChange";
+
 export type Baby = {
   id: string;
   name: string;
@@ -110,6 +112,7 @@ export type SleepCheckIn = {
   nightWakings?: number;
   bedtime?: string;
   wakeTime?: string;
+  dayContext?: SleepDayContext;
   nightWakeLogs?: NightWakeLog[];
   note?: string;
 };
