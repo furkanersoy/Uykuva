@@ -956,7 +956,10 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
 
 function DevelopmentTrackerCard({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
   const ageMonths = correctedAgeMonths(app.state.baby, now);
-  const checkpoint = developmentCheckpointForAge(ageMonths);
+  const currentCheckpoint = developmentCheckpointForAge(ageMonths);
+  const [selectedAge, setSelectedAge] = useState<number | null>(currentCheckpoint?.ageMonths ?? null);
+  useEffect(() => setSelectedAge(currentCheckpoint?.ageMonths ?? null), [app.state.baby.id, currentCheckpoint?.ageMonths]);
+  const checkpoint = DEVELOPMENT_CHECKPOINTS.find((item) => item.ageMonths === selectedAge && item.ageMonths <= ageMonths) ?? currentCheckpoint;
   const checkIn = checkpoint ? app.state.developmentCheckIns?.find((item) => item.ageMonths === checkpoint.ageMonths) : undefined;
   const [note, setNote] = useState(checkIn?.note ?? "");
   useEffect(() => setNote(checkIn?.note ?? ""), [checkpoint?.ageMonths, checkIn?.checkedAt]);
@@ -977,6 +980,12 @@ function DevelopmentTrackerCard({ app, now }: { app: ReturnType<typeof useUykuva
   return <>
     <SectionTitle title="Yaşa göre gelişim gözlemi" action={checkpoint.title} />
     <Card>
+      {DEVELOPMENT_CHECKPOINTS.filter((item) => item.ageMonths <= ageMonths).length > 1 ? <>
+        <Text style={styles.inputLabel}>Gözden geçirilecek yaş listesi</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills} contentContainerStyle={{ flexDirection: "row", gap: 8 }}>
+          {DEVELOPMENT_CHECKPOINTS.filter((item) => item.ageMonths <= ageMonths).map((item) => <Pill key={item.ageMonths} label={item.title} active={checkpoint.ageMonths === item.ageMonths} onPress={() => setSelectedAge(item.ageMonths)} />)}
+        </ScrollView>
+      </> : null}
       <Text style={styles.body}>Düzeltilmiş yaşa göre {checkpoint.title} listesi · CDC yaş kontrol listesinden uyarlanmıştır.</Text>
       <Text style={styles.hint}>Liste, çoğu çocuğun bu yaşa kadar yapabildiği becerileri gözlemlemek içindir; gelişim taraması veya tanı değildir. Yaş listeleri arasındaysanız önceki yaş listesini kullanın.</Text>
       {checkIn ? <Text style={styles.awake}>Son kayıt: {new Date(checkIn.checkedAt).toLocaleDateString("tr-TR")} · {counts.yes} gözlemledim · {counts.notSure} emin değilim · {counts.notYet} henüz görmedim</Text> : <Text style={styles.muted}>Bu yaş için henüz gözlem kaydı yok.</Text>}
