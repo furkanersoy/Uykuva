@@ -81,6 +81,10 @@ export function useUykuvaState() {
     }));
   }, []);
 
+  const updateCareInstructions = useCallback((careInstructions: string) => {
+    setState((current) => ({ ...current, careInstructions: careInstructions.slice(0, 1000) }));
+  }, []);
+
   const addCaregiver = useCallback((caregiver: Omit<Caregiver, "id">) => {
     setState((current) => ({ ...current, caregivers: [...current.caregivers, { ...caregiver, id: id("caregiver") }] }));
   }, []);
@@ -359,6 +363,7 @@ export function useUykuvaState() {
     runningFeed,
     completeOnboarding,
     updateProfile,
+    updateCareInstructions,
     addCaregiver,
     setActiveCaregiver,
     deleteCaregiver,
