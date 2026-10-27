@@ -160,9 +160,23 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
     current.baby.name.trim().toLocaleLowerCase("tr-TR") === incoming.baby.name.trim().toLocaleLowerCase("tr-TR");
   if (!sameBaby) throw new Error("Yedek farklı bir bebek profiline ait. Birleştirmek için aynı bebeğin adını, doğum tarihini ve gebelik haftasını kullanın; farklı profilde tam geri yüklemeyi seçin.");
 
-  const events = mergeById(current.events, incoming.events)
+  const events = mergeById(current.events, incoming.events, (previous, imported) => {
+    const merged = { ...previous, ...imported };
+    const endedAt = [previous.endedAt, imported.endedAt]
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .at(-1);
+    return { ...merged, endedAt };
+  })
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  const careTasks = mergeById(current.careTasks, incoming.careTasks)
+  const careTasks = mergeById(current.careTasks, incoming.careTasks, (previous, imported) => {
+    const merged = { ...previous, ...imported };
+    const completedAt = [previous.completedAt, imported.completedAt]
+      .filter((value): value is string => Boolean(value))
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .at(-1);
+    return { ...merged, completedAt };
+  })
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   const developmentCheckIns = new Map((current.developmentCheckIns ?? []).map((item) => [item.ageMonths, item]));
   for (const item of incoming.developmentCheckIns ?? []) {
