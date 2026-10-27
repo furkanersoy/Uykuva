@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -221,5 +221,28 @@ test("care handoff names today's exceptional context and paused sleep coaching",
     const summary = handoffSummary(state, now, 4);
     assert.ok(summary.includes(`Bugün ${sleepDayContextLabel(context)} işaretlendi · uyku tahmini ve koçluk planı beklemede`));
   }
+});
+
+test("care handoff includes the active sleep approach and evening routine", () => {
+  const state = createInitialState();
+  state.baby = { ...termBaby, birthDate: "2025-06-01" };
+  state.sleepPlan.method = "gradual";
+  state.sleepPlan.readinessCompleted = [...SLEEP_READINESS_ITEMS];
+  state.sleepPlan.routine = [
+    { id: "wind-down", label: "Işıkları azalt", minutes: 5, enabled: true },
+    { id: "song", label: "Ninni", minutes: 5, enabled: true },
+    { id: "off", label: "Devre dışı", minutes: 5, enabled: false }
+  ];
+  const now = new Date("2026-10-27T12:00:00");
+  const active = handoffSummary(state, now);
+  assert.match(active, /Uyku yaklaşımı: Kademeli destek/);
+  assert.match(active, /Etkin akşam rutini: Işıkları azalt → Ninni/);
+  assert.doesNotMatch(active, /Devre dışı/);
+
+  state.sleepPlan.paused = true;
+  const paused = handoffSummary(state, now);
+  assert.match(paused, /Uyku planı duraklatıldı/);
+  assert.doesNotMatch(paused, /Uyku yaklaşımı:/);
+  assert.match(paused, /Etkin akşam rutini: Işıkları azalt → Ninni/);
 });
 
