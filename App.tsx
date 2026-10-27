@@ -143,7 +143,14 @@ export default function App() {
     wakeAt.setHours(hour!, minute!, 0, 0);
     return wakeAt;
   }, [clockNow, savedMorningWake]);
-  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, savedMorningWakeAt), [app.state.baby, app.state.events, clockNow, savedMorningWakeAt]);
+  const hasSleepSinceMorningWake = savedMorningWakeAt ? app.state.events.some((event) => {
+    if (event.kind !== "sleep") return false;
+    const startedAt = new Date(event.startedAt).getTime();
+    const endedAt = event.endedAt ? new Date(event.endedAt).getTime() : Number.NaN;
+    return startedAt >= savedMorningWakeAt.getTime() || Number.isFinite(endedAt) && endedAt >= savedMorningWakeAt.getTime();
+  }) : false;
+  const forecastWakeAt = hasSleepSinceMorningWake ? undefined : savedMorningWakeAt;
+  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt), [app.state.baby, app.state.events, clockNow, forecastWakeAt]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
 
   useEffect(() => {
