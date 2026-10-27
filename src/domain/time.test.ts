@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dailyReminderDatesBefore, isInQuietHours, isValidClock } from "./time";
+import { dailyReminderDatesBefore, isInQuietHours, isValidClock, normalizeClockInput } from "./time";
 
 test("quiet hours work across midnight", () => {
   assert.equal(isInQuietHours(new Date("2026-10-26T23:00:00"), "21:00", "07:00"), true);
@@ -11,6 +11,14 @@ test("clock validation rejects invalid input", () => {
   assert.equal(isValidClock("07:30"), true);
   assert.equal(isValidClock("25:00"), false);
   assert.equal(isValidClock("7:30"), false);
+});
+
+test("morning wake input accepts common clock formats", () => {
+  assert.equal(normalizeClockInput("0700"), "07:00");
+  assert.equal(normalizeClockInput("7:00"), "07:00");
+  assert.equal(normalizeClockInput("730"), "07:30");
+  assert.equal(normalizeClockInput("12:45"), "12:45");
+  assert.equal(isValidClock(normalizeClockInput("7:00")), true);
 });
 
 test("daily reminders are planned before the next clock time and omit times already passed", () => {
@@ -24,4 +32,3 @@ test("daily reminders are planned before the next clock time and omit times alre
   assert.deepEqual(dailyReminderDatesBefore("21:00", 30, 2, new Date("2026-10-27T20:45:00")).map((date) => date.toISOString()), [new Date("2026-10-28T20:30:00").toISOString()]);
   assert.deepEqual(dailyReminderDatesBefore("25:00", 30, 3, now), []);
 });
-
