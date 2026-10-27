@@ -126,6 +126,7 @@ export type AppPreferences = {
   careTaskReminderMinutes: 30 | 120 | 1440;
   diaperRemindersEnabled: boolean;
   diaperReminderHours: 2 | 3 | 4;
+  milkExpiryRemindersEnabled: boolean;
   quietStart: string;
   quietEnd: string;
 };
