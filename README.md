@@ -25,6 +25,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
 - Düzeltilmiş takvim yaşına göre 2 ay–5 yaş CDC gelişim gözlem listeleri; ebeveyn yanıtları, geçmiş yaş listelerini gözden geçirme, notlar ve doktorla paylaşılabilir özet
 - Ortak bakım zaman çizelgesi
+- İkizler ve kardeşler için ayrı çocuk profilleri; uyku planı, bakım kayıtları, gelişim gözlemleri ve talimatları profil başına saklama
+- Üst başlıktan, gece modundan veya Aile ekranından çocuk profilleri arasında geçiş yapma
 - Bakım verene özel aile talimatlarını cihazda saklama ve isteğe bağlı devir özetine ekleme
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama; birden fazla bakım veren için tek dokunuşla filtreleme
 - Üst başlıkta ve gece modunda hızlı bakım veren değiştirme; yeni kayıtlar seçili kişinin adına eklenir
