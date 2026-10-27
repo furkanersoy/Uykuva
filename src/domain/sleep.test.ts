@@ -1,6 +1,6 @@
-import assert from "node:assert/strict";
+YªçŠx±6¬“¬uç%j·Â+ar‰ì¶ë•ë_¢ºŞjË"‚v›•ëÚ®&›•ëj¹ââ•äÚ²L±×œ•ªŞw­…Ê'²Û¬zW­~Šëy«,Š	ÚnW¯j¸šnW¬import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -21,6 +21,18 @@ test("corrected calendar age recognizes month-end anniversaries", () => {
   assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-02-28T12:00:00")), 1);
   assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-03-30T12:00:00")), 1);
   assert.equal(correctedAgeMonths(monthEndBaby, new Date("2026-03-31T12:00:00")), 2);
+});
+
+test("wake-window guide highlights the age band used for forecasts, including corrected age", () => {
+  const now = new Date("2026-10-26T12:00:00");
+  const guide = wakeWindowGuide(termBaby, now);
+  assert.equal(guide.length, 8);
+  assert.deepEqual(guide.filter((row) => row.current).map((row) => row.ageLabel), ["5â€“6 ay"]);
+  assert.equal(guide.find((row) => row.current)?.minMinutes, 90);
+
+  const pretermBaby = { ...termBaby, birthDate: "2026-07-18", gestationalWeek: 32 };
+  const pretermGuide = wakeWindowGuide(pretermBaby, now);
+  assert.deepEqual(pretermGuide.filter((row) => row.current).map((row) => row.ageLabel), ["0â€“2 ay"]);
 });
 
 test("sleep coaching keeps support reduction closed before six months", () => {
@@ -246,4 +258,3 @@ test("care handoff includes the active sleep approach and evening routine", () =
   assert.doesNotMatch(paused, /Uyku yaklaÅŸÄ±mÄ±:/);
   assert.match(paused, /Etkin akÅŸam rutini: IÅŸÄ±klarÄ± azalt â†’ Ninni/);
 });
-

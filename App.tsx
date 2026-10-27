@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+Y��x�6���u�%j���+ar�����_���j�"�v���ڮ&���j����ڲL�ל���w���'�۬zW�~��y�,�	�nW�j��nW�import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -24,7 +24,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
@@ -325,7 +325,7 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleDiaperReminder(child.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0, child.baby.id, app.state.preferences.milkExpiryReminderLead);
+        await scheduleDiaperReminder(child.events, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0, child.baby.id);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.diaperRemindersEnabled, app.state.preferences.diaperReminderHours, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
@@ -345,7 +345,7 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleMilkExpiryReminders(app.state.onboardingComplete ? child.events : [], app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0, child.baby.id);
+        await scheduleMilkExpiryReminders(app.state.onboardingComplete ? child.events : [], app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, new Date(), child.baby.name, index === 0, child.baby.id, app.state.preferences.milkExpiryReminderLead);
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.milkExpiryReminderLead, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
@@ -520,13 +520,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => setMorningWake(todayCheckIn?.wakeTime ?? ""), [todayCheckIn?.wakeTime, today]);
   const morningWakeClock = normalizeClockInput(morningWake);
-  const updateMorningWake = (value: string) => {
-    // Keep digits raw while typing so four-digit times remain easy to enter.
-    setMorningWake(clockInputDigits(value));
-  };
   const morningWakeInputError = morningWake.length === 4 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
     : undefined;
+  const updateMorningWake = (value: string) => {
+    // Keep digits raw while typing so `0700` is not reformatted after `070`.
+    setMorningWake(clockInputDigits(value));
+  };
   const morningWakeForecast = (() => {
     if (!isValidClock(morningWakeClock)) return undefined;
     const [hour, minute] = morningWakeClock.split(":").map(Number);
@@ -621,7 +621,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWakeClock ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
-        {morningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{morningWakeInputError}</Text> : null}
+        {morningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{morningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end ? (
           <View accessibilityLiveRegion="polite" style={styles.wakeForecastPanel}>
@@ -811,7 +811,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   }, [today, todayCheckIn?.bedtime, todayCheckIn?.wakeTime]);
   const morningWakeClock = normalizeClockInput(morningWake);
   const updateCoachMorningWake = (value: string) => {
-    // Keep digits raw while typing so four-digit times remain easy to enter.
+    // Preserve the typed digits until the full time is entered.
     setMorningWake(clockInputDigits(value));
   };
   const coachMorningWakeInputError = morningWake.length === 4 && !isValidClock(morningWakeClock)
@@ -844,8 +844,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const [routineMinutes, setRoutineMinutes] = useState("5");
   const [routineRunnerOpen, setRoutineRunnerOpen] = useState(false);
   const [nightGuideOpen, setNightGuideOpen] = useState(false);
-  const [sleepBasicsOpen, setSleepBasicsOpen] = useState(false);
   const [methodGuideOpen, setMethodGuideOpen] = useState(false);
+  const [sleepBasicsOpen, setSleepBasicsOpen] = useState(false);
+  const [wakeWindowGuideOpen, setWakeWindowGuideOpen] = useState(false);
+  const wakeWindows = wakeWindowGuide(app.state.baby, now);
   const nightGuide = nightWakingGuide(stage.id, coachingMethod);
   const saveSchedule = () => {
     if (!isValidClock(bedtime) || !isValidClock(wakeTime)) return Alert.alert("Saatleri kontrol edin", "Saatleri 20:00 gibi SS:DD biçiminde yazın.");
@@ -854,7 +856,8 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const saveNightSummary = () => {
     if (!nightBedtime.trim() && !morningWake.trim()) return Alert.alert("Saatleri girin", "İsterseniz yalnızca yatış veya sabah uyanış saatini de kaydedebilirsiniz.");
     if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWakeClock))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
-    if (nightBedtime && morningWake && nightBedtime === morningWakeClock) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
+    if (nightBedtime && morningWakeClock && nightBedtime === morningWakeClock) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
+    setMorningWake(morningWakeClock);
     app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() ? morningWakeClock : undefined });
   };
   const confirmDeleteNightWake = (id: string) => Alert.alert("Uyanma kaydını sil?", "Bu kayıt bakım devri ve doktor özetinden de kaldırılır.", [
@@ -920,7 +923,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </Pressable>
         {nightGuideOpen ? <View style={styles.nightGuideContent}>
           {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={[styles.body, styles.nightGuideStepText]}>{step}</Text></View>)}
-          {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz, ayrı bir uyku yüzeyi kullanın. İlk 6 ay aynı odada ama ayrı uyku alanında uyuması önerilir; yetişkin yatağını paylaşmayın, başını örtmeyin ve aşırı sıcak tutmayın.</Text> : null}
+          {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz, ayrı bir uyku yüzeyi kullanın. İlk 6 ay aynı odada ama ayrı uyku alanında uyuması önerilir; yatağı paylaşmayın, başını örtmeyin ve aşırı sıcak tutmayın.</Text> : null}
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx")}><Text style={styles.linkText}>AAP güvenli uyku rehberini aç</Text></Pressable>
         </View> : null}
       </Card>
@@ -952,6 +955,16 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </View> : null}
       </Card>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: wakeWindowGuideOpen }} onPress={() => setWakeWindowGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Yaşa göre uyanıklık aralıkları</Text><Text style={styles.body}>Bebeğiniz için rehber aralığı ve diğer yaş grupları</Text></View>
+          <Text style={styles.nightGuideChevron}>{wakeWindowGuideOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {wakeWindowGuideOpen ? <View style={styles.nightGuideContent}>
+          {wakeWindows.map((window) => <View key={window.ageLabel} style={[styles.methodCompareRow, window.current && styles.currentWakeWindow]}><Text style={[styles.methodCompareLabel, window.current && styles.currentWakeWindowText]}>{window.ageLabel}{window.current ? " · bebeğiniz" : ""}</Text><Text style={[styles.methodCompareText, window.current && styles.currentWakeWindowText]}>{window.minMinutes}–{window.maxMinutes} dk</Text></View>)}
+          <Text style={styles.hint}>Bunlar genel başlangıç aralıklarıdır; bebeğin uyku işaretleri ve kendi kayıtları önceliklidir. Erken doğan bebeklerde ilk 2 yıl düzeltilmiş yaş kullanılır. Kesin saat veya sağlık önerisi değildir.</Text>
+        </View> : null}
+      </Card>
       {app.state.baby.gestationalWeek < 37 ? <Card tone="peach"><Text style={styles.cardTitle}>Erken doğum yaşı hesaba katılıyor</Text><Text style={styles.body}>Uyku penceresi ve koçluk aşaması, ilk iki yılda doğum haftasına göre düzeltilmiş yaşı kullanır. Aşı ve randevu tarihleri gerçek doğum tarihine bağlı kalır. Bu yaş bilgisi yalnızca genel rehber içindir; bebeğinizin bakım planını sağlık uzmanınızla belirleyin.</Text></Card> : null}
       <Card tone={coachingPausedToday ? "peach" : "white"}>
         <Text style={styles.cardTitle}>{todayCheckIn?.dayContext ? "Bugün uyku planı beklemede" : app.state.sleepPlan.paused ? "Uyku planı duraklatıldı" : "Planı istediğiniz zaman duraklatabilirsiniz"}</Text>
@@ -1086,11 +1099,11 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} /></View></View>
-        {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : null}
+        {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
-        <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() || undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
+        <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() ? morningWakeClock : undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
         <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
         <Text style={styles.inputLabel}>Uykuya geçişin kolaylığı</Text>
         <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
@@ -2138,7 +2151,6 @@ const styles = StyleSheet.create({
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
   inputError: { color: colors.danger, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 8 },
-  inputError: { color: colors.danger, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 8 },
   awake: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 14 },
   nightEntry: { minHeight: 48, borderRadius: 15, backgroundColor: "#E7ECE6", alignItems: "center", justifyContent: "center", marginBottom: 14, paddingHorizontal: 14 },
   nightEntryText: { color: colors.sageDark, fontSize: 13, fontWeight: "800" },
@@ -2208,6 +2220,8 @@ const styles = StyleSheet.create({
   methodCompareRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
   methodCompareLabel: { width: 92, color: colors.inkSoft, fontSize: 11, fontWeight: "700" },
   methodCompareText: { flex: 1, color: colors.ink, fontSize: 12, lineHeight: 18 },
+  currentWakeWindow: { backgroundColor: colors.mint, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6, marginHorizontal: -8 },
+  currentWakeWindowText: { color: colors.sageDark, fontWeight: "800" },
   nightGuideNumber: { width: 22, height: 22, flexShrink: 0, borderRadius: 11, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
@@ -2292,4 +2306,3 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
-

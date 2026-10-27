@@ -1,4 +1,4 @@
-# Uykuva
+Y��x�6���u�%j���+ar�����_���j�"�v���ڮ&���j����ڲL�ל���w���'�۬zW�~��y�,�	�nW�j��nW�# Uykuva
 
 Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
 
@@ -11,7 +11,7 @@ npm.cmd install
 npm.cmd run android
 ```
 
-`android` komutu geliştirme sürümünü derler, çalışan emülatöre yükler ve Metro sunucusunu başlatır. İlk derleme biraz zaman alabilir. Uygulama `Uykuva · Development Build` ekranında sunucu bekliyorsa, sonraki bölümdeki Metro komutunu çalıştırıp terminalde `a` tuşuna basarak emülatörde açın.
+`android` komutu geliştirme sürümünü derler, çalışan emülatöre yükler ve Metro sunucusunu başlatır. İlk derleme biraz zaman alabilir. Uygulama `Uykuva · Development Build` ekranında sunucu bekliyorsa, bir sonraki bölümdeki Metro komutunu çalıştırıp terminalde `a` tuşuna basarak emülatörde açın.
 
 JavaScript/arayüz değişikliklerini sonraki çalıştırmalarda görmek için:
 
@@ -24,6 +24,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
+- Uyku sekmesinde, erken doğumda düzeltilmiş yaşa göre geçerli aralığı vurgulayan, yaş gruplarına göre uyanıklık aralığı rehberi
 - Bugün ekranında kaydedilen uyku, beslenme, bez ve sağlık kayıtlarının hızlı özeti; ilk dokuz haftada kayan 24 saat, sonrasında yerel gün
 - Kullanıcının girdiği sonraki ilaç planı kontrol hatırlatmasını önümüzdeki 24 saatlik bakım planında gösterme; doz veya ilaç aralığı önermez
 - Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve durum; widget'a dokununca Uykuva açılır
@@ -56,16 +57,16 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
 - Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; son beslenme/bez/uyku saatlerini, kaydı giren kişiyi ve pencere dışında başlamış açık emzirmenin sol/sağ sürelerini gösterme
 - Bakım devri özetinde kullanılabilir sağılan süt stoğu, önce kullanılması gereken parti ve kullanım son saatini gösterme
+- Bakım devrinde hedef yatış saatini, etkin uyku yaklaşımını ve kapalı olmayan akşam rutini adımlarını madde madde paylaşma
 - Bakım devri özetinde seçilen zaman aralığına düşen, kullanıcı tarafından girilmiş sonraki ilaç planı kontrol saatlerini gösterme
 - Gün hastalık, seyahat, diş çıkarma veya düzen değişikliği olarak işaretlendiyse bakım devri özetinde nedeni ve koçluk planının beklediğini belirtme
-- Bakım devrinde hedef yatış saatini, etkin uyku yaklaşımını ve açık akşam rutini adımlarını ayrı maddelerde gösterme
 - Bakım devri özetinde, günün uyanış saati veya son uykudan hesaplanan sıradaki uyku penceresini gösterme
 - Yedi yaklaşım içeren 14 günlük nazik uyku planı; yöntemleri ailenin yakınlık, desteği azaltma veya kısa kontrol tercihine göre filtreleme ve tüm seçenekleri karşılaştırma
 - Önceden kararlaştırılmış kısa kontroller yaklaşımı; Uykuva sabit aralık veya ağlama süresi önermez, beslenme ve sağlık ihtiyaçları her zaman önceliklidir
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
-- Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
 - Çevrimdışı kısa uyku öğrenme rehberi; değişken bebek ritmi, sakin rutin, gece bakım yanıtı ve güvenli uyku için NHS, AAP ve CDC kaynak bağlantıları
+- Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
 - Uyku planında günlük ilerleme göstergesi, her gün tek adım ve 14. gün için ayrı tamamlanma onayı
 - Son check-in'lere göre desteği artırmayı veya mevcut rutini korumayı öneren, planı otomatik değiştirmeyen uyku koçu rehberi
@@ -148,4 +149,3 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
-

@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlan, SleepPlanDayRecord, SleepSupport } from "./types";
+YªçŠx±6¬“¬uç%j·Â+ar‰ì¶ë•ë_¢ºŞjË"‚v›•ëÚ®&›•ëj¹ââ•äÚ²L±×œ•ªŞw­…Ê'²Û¬zW­~Šëy«,Š	ÚnW¯j¸šnW¬import { AppState, Baby, CareEvent, NightWakeResponse, SleepCheckIn, SleepDayContext, SleepForecast, SleepFocus, SleepMethod, SleepPlan, SleepPlanDayRecord, SleepSupport } from "./types";
 import { createMilkInventory, milkStorageLabel } from "./milk";
 import { isValidClock } from "./time";
 
@@ -46,6 +46,17 @@ export function correctedAgeMonths(baby: Baby, now = new Date()): number {
 export function wakeBandFor(baby: Baby, now = new Date()): WakeBand {
   const age = correctedAgeDays(baby, now);
   return WAKE_BANDS.find((band) => age <= band.maxAgeDays) ?? WAKE_BANDS[WAKE_BANDS.length - 1]!;
+}
+
+export function wakeWindowGuide(baby: Baby, now = new Date()) {
+  const age = correctedAgeDays(baby, now);
+  const ageLabels = ["0â€“2 ay", "3 ay", "4 ay", "5â€“6 ay", "7â€“9 ay", "10â€“12 ay", "13â€“18 ay", "18 ay+"];
+  return WAKE_BANDS.map((band, index) => ({
+    ageLabel: ageLabels[index]!,
+    minMinutes: band.min,
+    maxMinutes: band.max,
+    current: age <= band.maxAgeDays && (index === 0 || age > WAKE_BANDS[index - 1]!.maxAgeDays)
+  }));
 }
 
 export function median(values: number[]): number {
@@ -1020,4 +1031,3 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     ? `${parts[0]}.\n${parts.slice(1).map((part) => `â€¢ ${part}`).join("\n")}`
     : `${parts[0]}.`;
 }
-
