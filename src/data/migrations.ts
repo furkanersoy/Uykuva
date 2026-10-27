@@ -5,7 +5,7 @@ import { DevelopmentCheckIn } from "../domain/types";
 function isSleepPlanDayRecord(item: unknown) {
   if (!item || typeof item !== "object") return false;
   const record = item as Record<string, unknown>;
-  return typeof record.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(record.date) && Number.isInteger(record.day) && Number(record.day) >= 1 && Number(record.day) <= 14 && ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(record.method)) && ["bedtime", "nightWakings", "naps", "routine"].includes(String(record.focus)) && Number.isInteger(record.completedTasks) && Number(record.completedTasks) >= 0 && Number.isInteger(record.totalTasks) && Number(record.totalTasks) >= Number(record.completedTasks);
+  return typeof record.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(record.date) && Number.isInteger(record.day) && Number(record.day) >= 1 && Number(record.day) <= 14 && ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(record.method)) && ["bedtime", "nightWakings", "naps", "routine"].includes(String(record.focus)) && Number.isInteger(record.completedTasks) && Number(record.completedTasks) >= 0 && Number.isInteger(record.totalTasks) && Number(record.totalTasks) >= Number(record.completedTasks);
 }
 
 function isDevelopmentCheckIn(item: unknown): item is DevelopmentCheckIn {
@@ -68,7 +68,7 @@ function migrateSingleState(value: unknown): AppState {
     sleepPlan: {
       ...initial.sleepPlan,
       ...candidate.sleepPlan,
-      method: ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(candidate.sleepPlan?.method)) ? candidate.sleepPlan!.method! : initial.sleepPlan.method,
+      method: ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(candidate.sleepPlan?.method)) ? candidate.sleepPlan!.method! : initial.sleepPlan.method,
       focus: ["bedtime", "nightWakings", "naps", "routine"].includes(String(candidate.sleepPlan?.focus)) ? candidate.sleepPlan!.focus! : initial.sleepPlan.focus,
       paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
@@ -141,3 +141,4 @@ export function migrateState(value: unknown): AppState {
     activeChildId: active.baby.id
   };
 }
+
