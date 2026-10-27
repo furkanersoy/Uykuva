@@ -44,6 +44,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Önceden kararlaştırılmış kısa kontroller yaklaşımı; Uykuva sabit aralık veya ağlama süresi önermez, beslenme ve sağlık ihtiyaçları her zaman önceliklidir
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
+- Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
+- Çevrimdışı kısa uyku öğrenme rehberi; değişken bebek ritmi, sakin rutin, gece bakım yanıtı ve güvenli uyku için NHS, AAP ve CDC kaynak bağlantıları
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
 - Uyku planında günlük ilerleme göstergesi, her gün tek adım ve 14. gün için ayrı tamamlanma onayı
 - Son check-in'lere göre desteği artırmayı veya mevcut rutini korumayı öneren, planı otomatik değiştirmeyen uyku koçu rehberi
