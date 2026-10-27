@@ -49,6 +49,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Son bez kaydından 2, 3 veya 4 saat sonra isteğe bağlı tek seferlik bez kontrol bildirimi
 - Uyku planı için günlük kolaylık değerlendirmesi
 - Günlük gece uyanma kaydı ve son yedi check-in ortalaması
+- Bugün ekranından tek dokunuşla saatli gece uyanması ve verilen desteği kaydetme; kayıtları bakım devri ve doktor özetinde görme
 - Sabah check-in'ine isteğe bağlı bağlam notu ekleme
 - Zamanlayıcı kullanılmayan geceler için isteğe bağlı yatış/sabah uyanış özeti; seyrek gece kayıtlarında yatış medyanını uyku koçuna katma
 - Sabah check-in'inde gece aralığına denk gelen kaydedilmiş uyku sürelerini toplama ve ebeveynin bildirdiği uyanma sayısını gösterme
