@@ -2,6 +2,8 @@ import { AppState } from "./types";
 import { migrateState } from "../data/migrations";
 
 export function createDataExport(state: AppState) {
+  const activeChild = { baby: state.baby, careInstructions: state.careInstructions, developmentCheckIns: state.developmentCheckIns, events: state.events, careTasks: state.careTasks, sleepPlan: state.sleepPlan };
+  const children = state.children.map((child) => child.baby.id === state.activeChildId ? activeChild : child);
   return JSON.stringify({
     format: "uykuva-export",
     exportedAt: new Date().toISOString(),
@@ -15,7 +17,9 @@ export function createDataExport(state: AppState) {
     events: state.events,
     careTasks: state.careTasks,
     sleepPlan: state.sleepPlan,
-    preferences: state.preferences
+    preferences: state.preferences,
+    children,
+    activeChildId: state.activeChildId
   }, null, 2);
 }
 
@@ -80,7 +84,7 @@ export function parseDataExport(raw: string): AppState {
   } catch {
     throw new Error("Metin geçerli bir JSON yedeği değil.");
   }
-  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || parsed.schemaVersion !== 3) {
+  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4].includes(Number(parsed.schemaVersion))) {
     throw new Error("Bu dosya Uykuva'nın desteklenen yedek biçiminde değil.");
   }
   if (!isRecord(parsed.baby) || typeof parsed.baby.id !== "string" || typeof parsed.baby.name !== "string" || !parsed.baby.name.trim() || typeof parsed.baby.birthDate !== "string" || !isDateOnly(parsed.baby.birthDate) || typeof parsed.baby.gestationalWeek !== "number" || !Number.isInteger(parsed.baby.gestationalWeek) || parsed.baby.gestationalWeek < 22 || parsed.baby.gestationalWeek > 42) {
@@ -104,7 +108,16 @@ export function parseDataExport(raw: string): AppState {
   if (!isRecord(preferences) || (preferences.handoffHours !== undefined && ![2, 4, 6, 8].includes(Number(preferences.handoffHours))) || typeof preferences.notificationsEnabled !== "boolean" || ![5, 10, 15, 20, 30].includes(Number(preferences.sleepReminderMinutes)) || typeof preferences.careTaskRemindersEnabled !== "boolean" || ![30, 120, 1440].includes(Number(preferences.careTaskReminderMinutes)) || (preferences.diaperRemindersEnabled !== undefined && typeof preferences.diaperRemindersEnabled !== "boolean") || (preferences.diaperReminderHours !== undefined && ![2, 3, 4].includes(Number(preferences.diaperReminderHours))) || (preferences.milkExpiryRemindersEnabled !== undefined && typeof preferences.milkExpiryRemindersEnabled !== "boolean") || !isClockString(preferences.quietStart) || !isClockString(preferences.quietEnd) || typeof parsed.caregiverName !== "string" || (parsed.careInstructions !== undefined && (typeof parsed.careInstructions !== "string" || parsed.careInstructions.length > 1000)) || !Array.isArray(parsed.caregivers) || !parsed.caregivers.length || !parsed.caregivers.every((caregiver) => isRecord(caregiver) && typeof caregiver.id === "string" && typeof caregiver.name === "string" && ["parent", "family", "caregiver"].includes(String(caregiver.role)))) {
     throw new Error("Uyku planı veya tercih bilgileri eksik.");
   }
-  return migrateState({ ...parsed, onboardingComplete: true });
+  let children: AppState["children"] | undefined;
+  if (parsed.children !== undefined) {
+    if (!Array.isArray(parsed.children)) throw new Error("Yedekteki çocuk profili sayısı geçersiz.");
+    children = parsed.children.map((profile) => {
+      if (!isRecord(profile) || !isRecord(profile.baby)) throw new Error("Yedekte bir çocuk profili geçersiz.");
+      const childState = parseDataExport(JSON.stringify({ ...parsed, ...profile, children: undefined, activeChildId: profile.baby.id }));
+      return { baby: childState.baby, careInstructions: childState.careInstructions, developmentCheckIns: childState.developmentCheckIns, events: childState.events, careTasks: childState.careTasks, sleepPlan: childState.sleepPlan };
+    });
+  }
+  return migrateState({ ...parsed, ...(children ? { children } : {}), onboardingComplete: true });
 }
 
 function mergeById<T extends { id: string }>(current: T[], incoming: T[], merge?: (current: T, incoming: T) => T): T[] {
@@ -153,7 +166,7 @@ function mergeCaregivers(current: AppState["caregivers"], incoming: AppState["ca
   return result;
 }
 
-export function mergeDataStates(current: AppState, incoming: AppState): AppState {
+function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
   const sameBaby = current.baby.birthDate === incoming.baby.birthDate &&
     current.baby.gestationalWeek === incoming.baby.gestationalWeek &&
     current.baby.name.trim().toLocaleLowerCase("tr-TR") === incoming.baby.name.trim().toLocaleLowerCase("tr-TR");
@@ -208,5 +221,43 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
         .slice(-14),
       completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns).slice(-10)
     }
+  };
+}
+
+function childProfileFor(state: AppState): AppState["children"][number] {
+  return { baby: state.baby, careInstructions: state.careInstructions, developmentCheckIns: state.developmentCheckIns, events: state.events, careTasks: state.careTasks, sleepPlan: state.sleepPlan };
+}
+
+function withChildProfile(state: AppState, child: AppState["children"][number]): AppState {
+  return { ...state, ...child, activeChildId: child.baby.id, children: [] };
+}
+
+export function mergeDataStates(current: AppState, incoming: AppState): AppState {
+  const currentChildren = current.children.map((child) => child.baby.id === current.activeChildId ? childProfileFor(current) : child);
+  if (!currentChildren.some((child) => child.baby.id === current.activeChildId)) currentChildren.push(childProfileFor(current));
+  const incomingChildren = incoming.children.map((child) => child.baby.id === incoming.activeChildId ? childProfileFor(incoming) : child);
+  if (!incomingChildren.some((child) => child.baby.id === incoming.activeChildId)) incomingChildren.push(childProfileFor(incoming));
+
+  for (const imported of incomingChildren) {
+    const index = currentChildren.findIndex((child) => child.baby.id === imported.baby.id);
+    if (index < 0) {
+      currentChildren.push(imported);
+      continue;
+    }
+    const merged = mergeSingleDataState(withChildProfile(current, currentChildren[index]!), withChildProfile(incoming, imported));
+    currentChildren[index] = childProfileFor(merged);
+  }
+
+  const activeChildId = current.activeChildId || current.baby.id;
+  const active = currentChildren.find((child) => child.baby.id === activeChildId) ?? currentChildren[0]!;
+  return {
+    ...current,
+    ...active,
+    caregivers: mergeCaregivers(current.caregivers, incoming.caregivers),
+    caregiverName: current.caregiverName,
+    activeCaregiverId: current.activeCaregiverId,
+    preferences: current.preferences,
+    children: currentChildren,
+    activeChildId: active.baby.id
   };
 }
