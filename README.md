@@ -26,7 +26,8 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Düzeltilmiş takvim yaşına göre 2 ay–5 yaş CDC gelişim gözlem listeleri; ebeveyn yanıtları, geçmiş yaş listelerini gözden geçirme, notlar ve doktorla paylaşılabilir özet
 - Ortak bakım zaman çizelgesi
 - Bakım verene özel aile talimatlarını cihazda saklama ve isteğe bağlı devir özetine ekleme
-- Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama/filtreleme
+- Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama; birden fazla bakım veren için tek dokunuşla filtreleme
+- Gece modunda yeni kayıtların doğru kişiye yazılması için hızlı bakım veren değiştirme
 - Bakım kaydını zaman çizelgesinden silerken ikinci onay
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
 - Uyku kaydında uykuya geçiş desteğini isteğe bağlı işaretleme; zaman çizelgesi ve son 7 işaretli kayıtta tarafsız sıklık özeti
@@ -121,4 +122,3 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
-
