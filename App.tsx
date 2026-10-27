@@ -26,6 +26,7 @@ import { useUykuvaState } from "./src/app/useUykuvaState";
 import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
+import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
 import { isValidClock } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
@@ -1311,6 +1312,7 @@ function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; 
 
 function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onRestoreData: () => void }) {
   const summary = handoffSummary(app.state, new Date(), app.state.preferences.handoffHours);
+  const [encryptedBackupOpen, setEncryptedBackupOpen] = useState(false);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
   const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
   const toggleNotifications = async (enabled: boolean) => {
@@ -1355,7 +1357,7 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
     app.updatePreferences({ quietStart, quietEnd });
     Alert.alert("Kaydedildi", "Bu saatler arasında sessiz bildirim tercihleri uygulanacak.");
   };
-  const exportBackupFile = async () => {
+  const exportPlainBackupFile = async () => {
     try {
       const file = new File(Paths.cache, `uykuva-yedek-${localDateValue(new Date())}.json`);
       file.create({ overwrite: true });
@@ -1366,12 +1368,26 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
       Alert.alert("Yedek oluşturulamadı", "JSON yedeği hazırlanırken bir sorun oluştu. Daha sonra yeniden deneyin.");
     }
   };
+  const exportEncryptedBackupFile = async (password: string) => {
+    try {
+      const contents = await createEncryptedDataExport(app.state, password);
+      const file = new File(Paths.cache, `uykuva-sifreli-yedek-${localDateValue(new Date())}.json`);
+      file.create({ overwrite: true });
+      await file.write(contents);
+      if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "Bu cihazda dosya paylaşımı açılamadı.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/json", dialogTitle: "Uykuva parola korumalı yedeğini paylaş" });
+      setEncryptedBackupOpen(false);
+    } catch (error) {
+      Alert.alert("Şifreli yedek oluşturulamadı", error instanceof Error ? error.message : "Daha sonra yeniden deneyin.");
+    }
+  };
   const confirmDelete = () => Alert.alert(
     "Tüm cihaz verileri silinsin mi?",
     "Bebek profili, bakım kayıtları, uyku planı ve Uykuva'nın oluşturduğu yedek dosyaları bu cihazdan silinir. Planlı hatırlatmalar da kaldırılır.",
     [{ text: "Vazgeç", style: "cancel" }, { text: "Tümünü sil", style: "destructive", onPress: () => { void app.clearAllData().then(({ remindersCancelled, backupsDeleted }) => { const remaining = [!backupsDeleted ? "önbellekteki yedek dosyaları" : "", !remindersCancelled ? "planlı bildirimler" : ""].filter(Boolean); Alert.alert("Veriler silindi", remaining.length ? `Kayıtlar temizlendi; ancak ${remaining.join(" ve ")} kaldı.` : "Kayıtlar, yedek dosyaları ve planlı bildirimler bu cihazdan kaldırıldı."); }).catch(() => Alert.alert("Veriler silinemedi", "Cihaz kayıtları temizlenirken bir sorun oluştu. Yeniden deneyin.")); } }]
   );
   return (
+    <>
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
       <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.baby.name} profili</Text><Text style={styles.body}>Aktif bakım veren: {app.state.caregiverName}</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Profili düzenle</Text></Pressable></View></Card>
@@ -1395,9 +1411,11 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
       </Card>
       <Card>
         <Text style={styles.cardTitle}>Başka telefona veri aktar</Text>
-        <Text style={styles.body}>JSON yedeği dosyasını diğer telefona paylaşın. Bu tek seferlik kopyadır; değişiklikler iki cihaz arasında otomatik eşitlenmez.</Text>
+        <Text style={styles.body}>Bebek ve sağlık kayıtlarını içeren yedek, parola korumalı olarak aktarılabilir. Bu tek seferlik kopyadır; değişiklikler cihazlar arasında otomatik eşitlenmez. Diğer telefonda geri yüklerken aynı parolayı kullanın.</Text>
         <View style={styles.spacer12} />
-        <PrimaryButton label="Yedeği paylaş" quiet onPress={() => Alert.alert("Tek seferlik veri aktarımı", "Bu dosya bebek profili ve bakım kayıtları dahil tüm verileri içerir. Diğer telefonda JSON yedeği olarak geri yükleyin. Otomatik eşitleme yapılmaz.", [{ text: "Vazgeç", style: "cancel" }, { text: "Dosyayı paylaş", onPress: () => void exportBackupFile() }])} />
+        <PrimaryButton label="Parola korumalı yedeği paylaş" onPress={() => setEncryptedBackupOpen(true)} />
+        <View style={styles.spacer12} />
+        <PrimaryButton label="Şifresiz JSON yedeği paylaş" quiet onPress={() => Alert.alert("Şifresiz yedek", "Bu dosya bebek profili ve sağlık kayıtlarını okunabilir JSON olarak içerir. Yalnızca güvenli bir yerde saklayacağınızdan eminseniz paylaşın.", [{ text: "Vazgeç", style: "cancel" }, { text: "Şifresiz yedeği oluştur", onPress: () => void exportPlainBackupFile() }])} />
       </Card>
       <SectionTitle title="Hatırlatmalar" />
       <Card>
@@ -1412,22 +1430,50 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
         {app.state.preferences.milkExpiryRemindersEnabled ? <Text style={styles.hint}>Dondurulmuş ve çözülmemiş süt için en iyi kalite önerisi ile tavsiye edilen son tarih ayrı hatırlatılır; kalite tarihi geçince stok otomatik olarak geçersiz sayılmaz. Diğer partilerde kullanım süresi sonu hatırlatılır. Sessiz saatler gözetilir. Saklama aralıkları genel rehberdir; özel sağlık durumlarında sağlık uzmanınıza danışın.</Text> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
-      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini ücretsiz JSON dosyasıyla paylaşabilir, başka cihazdaki aynı bebeğin kayıtlarıyla birleştirebilir veya yedeği bu cihaza tamamen geri yükleyebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini dosya olarak paylaş" quiet onPress={() => void exportBackupFile()} /><View style={styles.spacer12} /><PrimaryButton label="Yedek dosyasından aktar" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
+      <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Parolalı yedeği aktarabilir, aynı bebeğin verileriyle birleştirebilir veya mevcut kayıtların yerine tamamen geri yükleyebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedek dosyasından aktar" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
     </ScrollView>
+    <EncryptedBackupModal visible={encryptedBackupOpen} close={() => setEncryptedBackupOpen(false)} exportBackup={exportEncryptedBackupFile} />
+    </>
   );
+}
+
+function EncryptedBackupModal({ visible, close, exportBackup }: { visible: boolean; close: () => void; exportBackup: (password: string) => Promise<void> }) {
+  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (visible) { setPassword(""); setConfirmation(""); setBusy(false); }
+  }, [visible]);
+  if (!visible) return null;
+  const submit = async () => {
+    if (busy) return;
+    if (password !== confirmation) return Alert.alert("Parolalar eşleşmiyor", "İki alana aynı parolayı yazın.");
+    setBusy(true);
+    await exportBackup(password);
+    setBusy(false);
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Parola korumalı yedek</Text><Text style={styles.pageIntro}>Yedek AES-GCM ile şifrelenir. En az 12 karakterli bir parola oluşturun; diğer cihazda içe aktarırken aynı parola gerekir. Parolayı kaybederseniz Uykuva yedeği açamaz.</Text><Text style={styles.inputLabel}>Yedek parolası</Text><TextInput accessibilityLabel="Yedek parolası" value={password} onChangeText={setPassword} style={styles.input} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} textContentType="newPassword" /><Text style={styles.inputLabel}>Parolayı tekrar yazın</Text><TextInput accessibilityLabel="Yedek parolasını tekrar yazın" value={confirmation} onChangeText={setConfirmation} style={styles.input} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} textContentType="newPassword" /><View style={styles.spacer12} /><PrimaryButton label={busy ? "Yedek şifreleniyor…" : "Şifrele ve paylaş"} onPress={() => void submit()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function DataRestoreModal({ visible, close, currentState, restore }: { visible: boolean; close: () => void; currentState: UykuvaAppState; restore: ReturnType<typeof useUykuvaState>["restoreData"] }) {
   const [raw, setRaw] = useState("");
-  useEffect(() => { if (visible) setRaw(""); }, [visible]);
+  const [password, setPassword] = useState("");
+  const [decrypting, setDecrypting] = useState(false);
+  useEffect(() => { if (visible) { setRaw(""); setPassword(""); setDecrypting(false); } }, [visible]);
   if (!visible) return null;
-  const reviewBackup = () => {
+  const reviewBackup = async () => {
+    if (decrypting) return;
+    setDecrypting(true);
     let restored;
     try {
-      restored = parseDataExport(raw.trim());
+      const input = raw.trim();
+      const json = isEncryptedDataExport(input) ? await decryptDataExport(input, password) : input;
+      restored = parseDataExport(json);
     } catch (error) {
+      setDecrypting(false);
       return Alert.alert("Yedeği okuyamadım", error instanceof Error ? error.message : "JSON içeriğini ve yedek biçimini kontrol edin.");
     }
+    setDecrypting(false);
     let merged: UykuvaAppState;
     try {
       merged = mergeDataStates(currentState, restored);
@@ -1455,16 +1501,16 @@ function DataRestoreModal({ visible, close, currentState, restore }: { visible: 
       if (result.canceled) return;
       const asset = result.assets[0];
       if (!asset) return Alert.alert("Dosya bulunamadı", "JSON yedeğini seçip yeniden deneyin.");
-      if (asset.size !== undefined && asset.size > 5 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva JSON yedeklerinin dosya sınırı 5 MB.");
+      if (asset.size !== undefined && asset.size > 5 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin dosya sınırı 5 MB.");
       const contents = await new File(asset.uri).text();
-      if (contents.length > 2_000_000) return Alert.alert("Yedek çok büyük", "Uykuva JSON yedeklerinin metin sınırı 2 milyon karakter.");
+      if (contents.length > 5_000_000) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin metin sınırı 5 milyon karakter.");
       setRaw(contents);
       Alert.alert("Yedek yüklendi", "Dosya kontrol için hazır. İçeriği doğrulayıp geri yüklemeyi onaylayın.");
     } catch {
       Alert.alert("Dosya açılamadı", "Uykuva JSON yedeğini seçip yeniden deneyin.");
     }
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>JSON yedeğini aktar</Text><Text style={styles.pageIntro}>Uykuva JSON yedeği dosyası seçin veya yedek metnini yapıştırın. Aynı bebeğin verilerini mevcut kayıtlarla birleştirebilir ya da bu cihazdaki verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="JSON yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top" }]} multiline maxLength={2_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva JSON yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · yalnızca Uykuva JSON yedekleri kabul edilir.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedeği kontrol et ve aktar" onPress={reviewBackup} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Yedeği aktar</Text><Text style={styles.pageIntro}>Şifreli Uykuva yedeğini dosyadan seçin veya içeriğini yapıştırın. Şifreli dosyalar için yedeği oluştururken belirlediğiniz parolayı girin. Aynı bebeğin kayıtlarını birleştirebilir ya da mevcut verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="Uykuva yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput accessibilityLabel="Şifreli yedek parolası" value={password} onChangeText={setPassword} style={[styles.input, { marginTop: 12 }]} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} placeholder="Parola · yalnızca şifreli yedek için" placeholderTextColor="#93A09C" /><TextInput accessibilityLabel="Yedek dosyası içeriği" value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top", marginTop: 12 }]} multiline maxLength={5_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · şifreli veya standart Uykuva yedeği</Text><View style={styles.spacer12} /><PrimaryButton label={decrypting ? "Yedek açılıyor…" : "Yedeği kontrol et ve aktar"} onPress={() => void reviewBackup()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
