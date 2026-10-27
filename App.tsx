@@ -133,7 +133,15 @@ export default function App() {
     const timer = setInterval(() => setClockNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
-  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow), [app.state.baby, app.state.events, clockNow]);
+  const savedMorningWake = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow))?.wakeTime;
+  const savedMorningWakeAt = useMemo(() => {
+    if (!savedMorningWake || !isValidClock(savedMorningWake)) return undefined;
+    const [hour, minute] = savedMorningWake.split(":").map(Number);
+    const wakeAt = new Date(clockNow);
+    wakeAt.setHours(hour!, minute!, 0, 0);
+    return wakeAt;
+  }, [clockNow, savedMorningWake]);
+  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, savedMorningWakeAt), [app.state.baby, app.state.events, clockNow, savedMorningWakeAt]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
 
   useEffect(() => {
@@ -501,6 +509,13 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     setNightBedtime(todayCheckIn?.bedtime ?? "");
     setMorningWake(todayCheckIn?.wakeTime ?? "");
   }, [today, todayCheckIn?.bedtime, todayCheckIn?.wakeTime]);
+  const morningWakeForecast = (() => {
+    if (!isValidClock(morningWake)) return undefined;
+    const [hour, minute] = morningWake.split(":").map(Number);
+    const wakeAt = new Date(now);
+    wakeAt.setHours(hour!, minute!, 0, 0);
+    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt);
+  })();
   const nightSpanMinutes = isValidClock(nightBedtime) && isValidClock(morningWake)
     ? (() => {
       const [bedHour, bedMinute] = nightBedtime.split(":").map(Number);
@@ -581,7 +596,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.nightGuideChevron}>{nightGuideOpen ? "−" : "+"}</Text>
         </Pressable>
         {nightGuideOpen ? <View style={styles.nightGuideContent}>
-          {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={styles.body}>{step}</Text></View>)}
+          {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={[styles.body, styles.nightGuideStepText]}>{step}</Text></View>)}
           {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz bir yüzey; uyku alanında yalnızca gergin çarşaf bulundurun.</Text> : null}
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx")}><Text style={styles.linkText}>AAP güvenli uyku rehberini aç</Text></Pressable>
         </View> : null}
@@ -721,6 +736,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={setNightBedtime} style={styles.compactInput} placeholder="20:30" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" value={morningWake} onChangeText={setMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="numbers-and-punctuation" /></View></View>
+        {morningWakeForecast ? <Text style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi tahmini: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
         <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() || undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
         <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
@@ -753,7 +769,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
 function SleepMethodsModal({ visible, close, methods, activeMethod, choose }: { visible: boolean; close: () => void; methods: SleepMethod[]; activeMethod: SleepMethod; choose: (method: SleepMethod) => void }) {
   if (!visible) return null;
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Uyku yaklaşımlarını karşılaştır</Text><Text style={styles.pageIntro}>Bir yaklaşım seçmek zorunlu değildir. Bebeğinizin ve ailenizin ihtiyaçlarına uyan adımı belirleyin; istediğiniz zaman duraklatıp daha fazla destek verebilirsiniz.</Text>
-    {methods.map((method) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.hint}>Bebeğiniz belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa azaltma adımını bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>)}
+    {methods.map((method) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.inputLabel}>Bakım veren ne yapar?</Text><Text style={styles.body}>{methodDescription(method).caregiverRole}</Text><Text style={styles.inputLabel}>Gece uyanınca</Text><Text style={styles.body}>{methodDescription(method).nightResponse}</Text><Text style={styles.hint}>Bebek belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa denemeyi bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>)}
     <Card tone="peach"><Text style={styles.body}>Bu seçenekler genel bilgilendirmedir; her bebeğe uyan tek bir yöntem yoktur. Beslenme ihtiyacını ertelemeyin. Sağlık veya gelişim kaygısında çocuk doktorunuzla konuşun.</Text></Card><PrimaryButton label="Kapat" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
@@ -1606,6 +1622,7 @@ const styles = StyleSheet.create({
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
   nightGuideContent: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
   nightGuideStep: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 8 },
+  nightGuideStepText: { flex: 1, flexShrink: 1, minWidth: 0 },
   nightGuideNumber: { width: 24, height: 24, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
