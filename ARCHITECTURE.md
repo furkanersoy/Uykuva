@@ -99,7 +99,7 @@ Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak iste�
 
 Bugün ekranındaki `Uyanma` kısayolu, her gece uyanmasında tarih/saat ve verilen desteği (`beslenme`, `sakinleştirme/yakınlık`, `bez/temel ihtiyaç`, `diğer`) bir check-in altında kaydeder; zaman son 24 saat içinde düzeltilebilir. Saatli kayıtlar elle bildirilen toplam uyanma sayısından ayrı tutulur, son 30 kayıtla sınırlanır; yanlış kayıtlar silinebilir. Bakım devri ve yedi günlük doktor özetinde bakım veren adıyla gösterilir. Bu, aile gözlem kaydıdır; uyku veya sağlık sonucu değerlendirmesi üretmez.
 
-Geçerli bir sabah uyanış saati girildiğinde, kaydetmeyi beklemeden yaşa ve yeterli geçmiş örnek varsa kişisel uyanıklık aralığına göre ilk uyku penceresi aynı check-in kartında hesaplanır. Check-in kaydedilince sabah saati Bugün ekranındaki ilk pencere için başlangıç noktası olur; bu uyanıştan sonraki ilk uyku kaydedilince tahmin son uykunun bitişinden devam eder. Dokuz haftadan küçük düzeltilmiş yaşta girilmiş uyanış saati varsa düşük güvenli yaş aralığı gösterilir; saat girilmediyse yalnızca açıklama sunulur.
+Bugün ekranındaki sabah uyanış alanı, dört rakamlı girişi otomatik olarak `SS:DD` biçimine getirir ve saat tamamlanınca ilk uyku penceresini hemen gösterir; kaydetme isteğe bağlıdır. Uyku koçluğundaki sabah check-in alanı da aynı önizlemeyi sunar. Check-in kaydedilince sabah saati Bugün ekranındaki ilk pencere için başlangıç noktası olur; bu uyanıştan sonraki ilk uyku kaydedilince tahmin son uykunun bitişinden devam eder. Dokuz haftadan küçük düzeltilmiş yaşta girilmiş uyanış saati varsa düşük güvenli yaş aralığı gösterilir; saat girilmediyse yalnızca açıklama sunulur.
 
 ### Uygulama durumu
 
