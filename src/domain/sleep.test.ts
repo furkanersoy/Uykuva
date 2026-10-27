@@ -62,6 +62,13 @@ test("parent-entered morning wake time enables a cautious first window before we
   assert.ok(result.start && result.end && result.start < result.end);
 });
 
+test("a future morning wake time does not create a sleep window", () => {
+  const now = new Date("2026-10-26T06:30:00");
+  const result = createSleepForecast(termBaby, [], now, new Date("2026-10-26T07:00:00"));
+  assert.equal(result.available, false);
+  assert.match(result.explanation, /ileride olamaz/i);
+});
+
 test("forecast returns an explainable range after a completed sleep", () => {
   const events: CareEvent[] = [{
     id: "s1",
