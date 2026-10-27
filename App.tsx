@@ -288,6 +288,12 @@ export default function App() {
   }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   const promptNightWake = () => setNightWakeOpen(true);
+  const switchCaregiver = () => {
+    const caregivers = app.state.caregivers;
+    if (caregivers.length < 2) return;
+    const currentIndex = caregivers.findIndex((caregiver) => caregiver.id === app.state.activeCaregiverId);
+    app.setActiveCaregiver(caregivers[(currentIndex + 1 + caregivers.length) % caregivers.length]!.id);
+  };
   const saveNightWake = (response: NightWakeResponse, occurredAt: string) => {
     const now = new Date();
     const date = localDateValue(now);
@@ -314,7 +320,7 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
         </View> : null}
 
-        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} />}
+        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} onSwitchCaregiver={switchCaregiver} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
@@ -414,7 +420,7 @@ function SleepDayContextPicker({ selected, onSelect }: { selected?: SleepDayCont
   </>;
 }
 
-function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void }) {
+function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake, onSwitchCaregiver }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void; onSwitchCaregiver: () => void }) {
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const newbornSummary = correctedAgeDays(app.state.baby, now) < 63;
@@ -514,7 +520,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     agenda.push({ id: `nap-outline-${nap.order}`, at: nap.from.getTime() > now.getTime() ? nap.from : now, endAt: nap.to, kind: "sleep", label: `${nap.order}. gündüz uykusu taslağı`, detail: `Son 14 günde ${nap.sampleCount} günde kaydedilen saatlerin ortancası ${time(nap.typical)}; kesin program değildir.` });
   });
   agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
-  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} />;
+  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onSwitchCaregiver={onSwitchCaregiver} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
@@ -606,7 +612,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   );
 }
 
-function NightModeScreen({ app, now, onExit, openLog }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void }) {
+function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onSwitchCaregiver: () => void }) {
   const elapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   return (
     <View style={styles.nightScreen}>
@@ -614,6 +620,7 @@ function NightModeScreen({ app, now, onExit, openLog }: { app: ReturnType<typeof
         <View><Text style={styles.nightEyebrow}>UYKUVA · GECE MODU</Text><Text style={styles.nightBaby}>{app.state.baby.name}</Text></View>
         <Pressable accessibilityRole="button" accessibilityLabel="Gece modundan çık" onPress={onExit} style={styles.nightExit}><Text style={styles.nightExitText}>Çık</Text></Pressable>
       </View>
+      {app.state.caregivers.length > 1 ? <Pressable accessibilityRole="button" accessibilityLabel={`Aktif bakım veren ${app.state.caregiverName}. Sonraki bakım verene geç`} onPress={onSwitchCaregiver} style={styles.nightCaregiver}><Text style={styles.nightCaregiverText}>Bakımı devralan: {app.state.caregiverName} · Değiştir</Text></Pressable> : null}
       <View style={styles.nightTimerCard}>
         <Text style={styles.nightEyebrow}>{app.runningSleep ? "UYKU SÜRESİ" : "GECE KAYDI"}</Text>
         <Text style={styles.nightTimer}>{app.runningSleep ? `${Math.floor(elapsed / 60)} sa ${elapsed % 60} dk` : "Hazır"}</Text>
@@ -1977,6 +1984,8 @@ const styles = StyleSheet.create({
   nightEyebrow: { color: "#91A79B", fontSize: 11, fontWeight: "800", letterSpacing: 1.3 },
   nightBaby: { color: "#E5ECE7", fontSize: 25, fontWeight: "700", marginTop: 5 },
   nightExit: { minWidth: 64, minHeight: 48, borderRadius: 15, backgroundColor: "#25332D", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
+  nightCaregiver: { minHeight: 44, borderRadius: 14, backgroundColor: "#17221D", borderWidth: 1, borderColor: "#34443B", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
+  nightCaregiverText: { color: "#D7E5DA", fontSize: 13, fontWeight: "700" },
   nightExitText: { color: "#DCE7DF", fontSize: 14, fontWeight: "700" },
   nightTimerCard: { borderRadius: 28, backgroundColor: "#19231F", padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#28362F" },
   nightTimer: { color: "#E8EFE9", fontSize: 42, fontWeight: "700", letterSpacing: -1.4, marginVertical: 12 },
