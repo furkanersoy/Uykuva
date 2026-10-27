@@ -81,7 +81,7 @@ SleepWell/
 - **Bugün:** Sıradaki uyku aralığı, hızlı kayıt, bakım devri ve son kayıtlar.
 - **Akış:** Uyku, beslenme, bez ve notların ortak zaman çizelgesi.
 - **Emzirme:** Tek oturumda sol/sağ taraf değişimi ve taraf başına ayrı süre; eski kayıtlar toplam süre olarak okunmaya devam eder.
-- **Uyku:** 14 günlük uyku planı, yaklaşım seçimi, günlük görevler ve akşam rutini.
+- **Uyku:** 14 günlük uyku planı, yedi yaklaşım, günlük görevler ve akşam rutini.
 - **Özet:** Günlük toplamlar ve paylaşılabilir doktor raporu.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
 
@@ -278,7 +278,8 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
 - [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; son 10 döngü başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
 - [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
-- [x] Hazır oluş koşulları tamamlandığında altı yaklaşım; yöntemin özeti, bakım verenin uygulayacağı adım ve gece uyanmasına verilecek yanıtla karşılaştırma penceresinde sunuluyor; pencereden doğrudan seçim yapılabiliyor.
+- [x] Hazır oluş koşulları tamamlandığında yedi yaklaşım; yöntemin özeti, bakım verenin uygulayacağı adım ve gece uyanmasına verilecek yanıtla karşılaştırma penceresinde sunuluyor; pencereden doğrudan seçim yapılabiliyor.
+- [x] Ailece belirlenen kısa kontroller yaklaşımı eklendi. Uygulama sabit aralık veya ağlama süresi önermiyor; beslenme, sağlık ve yoğun huzursuzlukta gecikmeden yanıt veriliyor.
 - [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
 - [x] Plan günü ilerletildiğinde yaklaşım/odak ve tamamlanan görev sayısı 14 günlük geçmişte korunuyor.
@@ -351,7 +352,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 
 Whispie'nin resmi ürün sayfası uyku tahmininin yaş aralığını bebeğin uyanıklık kayıtlarıyla kişiselleştirdiğini, pencereyi kısa bir aralık olarak gösterdiğini ve 6 aydan itibaren Sleep Coach sunduğunu belirtiyor ([özellik sayfası](https://www.whispieapp.com/whispie/), [tahmin nasıl çalışıyor](https://www.whispieapp.com/whispie/how-it-works/)). 21 Ekim 2026 tarihli açıklamasında altı gün diliminde son 10 uyanıklık aralığı, gündüzde en az 5 ve gecede en az 2 örnek eşiği tarif ediliyor; sonraki uyku tahminleri ilk üç etkin günden sonra Premium'a, koç ise Premium+ üyeliğine bağlı. Uykuva'nın tüm özellikleri ücretsiz tutma kararı korunuyor.
 
-Uykuva'nın hesaplama motoru da altı gün dilimini, son 10 örneği ve gündüz/gece için 5/2 örnek eşiğini kullanıyor; yaş aralığına kişisel örüntüyü harmanlıyor ve geçmiş tahmin hatalarına göre pencereyi ayarlıyor. Uyku koçluğunda altı yaklaşım, yaşa bağlı hazır oluş kapısı, 14 günlük rehber, gece uyanması rehberi, sabah check-in'i, duraklatma ve tamamlanan program arşivi var.
+Uykuva'nın hesaplama motoru da altı gün dilimini, son 10 örneği ve gündüz/gece için 5/2 örnek eşiğini kullanıyor; yaş aralığına kişisel örüntüyü harmanlıyor ve geçmiş tahmin hatalarına göre pencereyi ayarlıyor. Uyku koçluğunda yedi yaklaşım, yaşa bağlı hazır oluş kapısı, 14 günlük rehber, gece uyanması rehberi, sabah check-in'i, duraklatma ve tamamlanan program arşivi var.
 
 Güncel ürün farkları: Whispie sayfası 27+ dil ve 39 ülkede aşı takvimi, ayrıca hesaplar arası paylaşımlı aile günlüğü tanıtıyor. Uykuva şu an Türkçe ve Türkiye takvimine odaklı; aynı cihazda bakım veren profilleri, paylaşılabilir devir/plan özeti ve dosya tabanlı yedek taşıma sunuyor. Başka telefondan eşzamanlı kayıt, rol bazlı bulut erişimi, çok dilli arayüz ve ülkeye göre aşı takvimi henüz yok. En yüksek öncelikli fark çoklu cihaz senkronizasyonu; bunun için güvenli hesap, aile daveti, çevrimdışı değişiklik birleştirme/çakışma kuralları ve kullanıcı denetimli veri silme birlikte tasarlanmalı. Mevcut cihaz içi SQLite saklaması çevrimdışı kaynak olarak korunmalıdır.
 
@@ -425,3 +426,4 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Android `:app:assembleDebug`: başarılı; APK emülatöre kuruldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
+
