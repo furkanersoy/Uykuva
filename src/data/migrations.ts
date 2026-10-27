@@ -90,6 +90,7 @@ function migrateSingleState(value: unknown): AppState {
       diaperRemindersEnabled: candidate.preferences?.diaperRemindersEnabled ?? false,
       diaperReminderHours: [2, 3, 4].includes(Number(candidate.preferences?.diaperReminderHours)) ? Number(candidate.preferences?.diaperReminderHours) as 2 | 3 | 4 : 3,
       milkExpiryRemindersEnabled: candidate.preferences?.milkExpiryRemindersEnabled ?? false,
+      milkExpiryReminderLead: ["adaptive", 2, 6, 12, 24, 48].includes(candidate.preferences?.milkExpiryReminderLead as never) ? candidate.preferences?.milkExpiryReminderLead as AppState["preferences"]["milkExpiryReminderLead"] : "adaptive",
       routineRemindersEnabled: candidate.preferences?.routineRemindersEnabled ?? false
     }
   };
