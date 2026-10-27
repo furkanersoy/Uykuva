@@ -1,4 +1,4 @@
-import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord } from "./types";
+import { AppState, Baby, CareEvent, SleepCheckIn, SleepForecast, SleepFocus, SleepMethod, SleepPlanDayRecord, SleepSupport } from "./types";
 
 const DAY = 86_400_000;
 
@@ -428,6 +428,20 @@ export function methodDescription(method: SleepMethod) {
   return METHOD_COPY[method];
 }
 
+export const SLEEP_SUPPORT_OPTIONS: { id: SleepSupport; label: string }[] = [
+  { id: "feeding", label: "Beslenerek" },
+  { id: "held", label: "Kucakta" },
+  { id: "rocked", label: "Sallanarak" },
+  { id: "nearby", label: "Yanında kalınarak" },
+  { id: "cribSupport", label: "Beşikte destekle" },
+  { id: "independent", label: "Kendi kendine" },
+  { id: "other", label: "Diğer" }
+];
+
+export function sleepSupportLabel(support: SleepSupport): string {
+  return SLEEP_SUPPORT_OPTIONS.find((item) => item.id === support)?.label ?? "Diğer";
+}
+
 export function coachingDay(day: number, method: SleepMethod, canReduceSupport = true, correctedAge = 183, focus: SleepFocus = "routine"): CoachingDay {
   const safeDay = Math.min(14, Math.max(1, day));
   if (!canReduceSupport) {
@@ -683,6 +697,8 @@ export type SleepCoachInsights = {
   nightWakingsAverage?: number;
   routineToSleepMedianMinutes?: number;
   routineToSleepSamples: number;
+  sleepSupportSummary?: string;
+  sleepSupportSamples: number;
   nightsUsed: number;
 };
 
@@ -781,6 +797,16 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
   const recordedWakings = recentCheckIns.flatMap((item) => item.nightWakings === undefined ? [] : [item.nightWakings]);
   const checkInAverage = easeRatings.length ? easeRatings.reduce((sum, value) => sum + value, 0) / easeRatings.length : undefined;
   const nightWakingsAverage = recordedWakings.length ? recordedWakings.reduce((sum, value) => sum + value, 0) / recordedWakings.length : undefined;
+  const supportEvents = events
+    .filter((event) => event.kind === "sleep" && event.sleepSupport && new Date(event.startedAt).getTime() >= cutoff && new Date(event.startedAt).getTime() <= now.getTime())
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+    .slice(0, 7);
+  const supportCounts = new Map<SleepSupport, number>();
+  for (const event of supportEvents) supportCounts.set(event.sleepSupport!, (supportCounts.get(event.sleepSupport!) ?? 0) + 1);
+  const sleepSupportSummary = [...supportCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([support, count]) => `${sleepSupportLabel(support)} ${count}`)
+    .join(", ");
   return {
     actualBedtime: actual === undefined ? undefined : formatClock(actual),
     targetBedtime: formatClock(target),
@@ -790,6 +816,8 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     nightWakingsAverage,
     routineToSleepMedianMinutes: routineLatencies.length ? median(routineLatencies) : undefined,
     routineToSleepSamples: routineLatencies.length,
+    sleepSupportSummary: sleepSupportSummary || undefined,
+    sleepSupportSamples: supportEvents.length,
     nightsUsed: bedtimeSample.length
   };
 }
@@ -815,7 +843,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     const start = new Date(event.startedAt).getTime();
     const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
     const overlap = Math.max(0, end - Math.max(start, since));
-    return overlap > 0 ? [{ minutes: overlap / 60_000, ongoing: !event.endedAt, startedAt: event.startedAt, endedAt: event.endedAt }] : [];
+    return overlap > 0 ? [{ minutes: overlap / 60_000, ongoing: !event.endedAt, startedAt: event.startedAt, endedAt: event.endedAt, sleepSupport: event.sleepSupport }] : [];
   });
   const sleepMinutes = sleepSegments.reduce((sum, segment) => sum + segment.minutes, 0);
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
@@ -853,7 +881,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   }
   if (sleepMinutes) {
     parts.push(`Son ${windowHours} saatte ${Math.round(sleepMinutes)} dk uyku${sleepOngoing ? " · şu anda uyuyor" : ""}`);
-    if (lastSleep) parts.push(`Son uyku ${eventTime(lastSleep.startedAt)}${lastSleep.endedAt ? `–${eventTime(lastSleep.endedAt)}` : " · sürüyor"}`);
+    if (lastSleep) parts.push(`Son uyku ${eventTime(lastSleep.startedAt)}${lastSleep.endedAt ? `–${eventTime(lastSleep.endedAt)}` : " · sürüyor"}${lastSleep.sleepSupport ? ` · ${sleepSupportLabel(lastSleep.sleepSupport)}` : ""}`);
   }
   if (diapers) parts.push(`${diapers} bez`);
   if (lastDiaper) {
