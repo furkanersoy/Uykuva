@@ -4,6 +4,7 @@ import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, Develop
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
 import { cancelAllCareReminders } from "../services/notifications";
+import { isSleepPlanPausedToday } from "../domain/sleep";
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -201,10 +202,13 @@ export function useUykuvaState() {
 
   const toggleTask = useCallback((task: string) => {
     setState((current) => {
+      const today = localDateKey();
+      const plan = current.sleepPlan;
+      if (isSleepPlanPausedToday(plan, today) || plan.completedDate || plan.lastAdvancedDate === today) return current;
       const completed = current.sleepPlan.completedToday.includes(task)
         ? current.sleepPlan.completedToday.filter((item) => item !== task)
         : [...current.sleepPlan.completedToday, task];
-      return { ...current, sleepPlan: { ...current.sleepPlan, completedToday: completed } };
+      return { ...current, sleepPlan: { ...plan, completedToday: completed } };
     });
   }, []);
 
@@ -221,7 +225,7 @@ export function useUykuvaState() {
     const today = localDateKey();
     setState((current) => {
       const plan = current.sleepPlan;
-      if (plan.paused || plan.completedDate || plan.lastAdvancedDate === today) return current;
+      if (isSleepPlanPausedToday(plan, today) || plan.completedDate || plan.lastAdvancedDate === today) return current;
       const dayRecord = {
         date: today,
         day: plan.day,
@@ -437,4 +441,3 @@ export function useUykuvaState() {
     clearAllData
   };
 }
-
