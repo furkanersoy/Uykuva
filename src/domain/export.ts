@@ -1,3 +1,4 @@
+Warning: fsu was declared with const; use let for reassignable variables.
 import { AppState } from "./types";
 import { migrateState } from "../data/migrations";
 
@@ -107,3 +108,92 @@ export function parseDataExport(raw: string): AppState {
   return migrateState({ ...parsed, onboardingComplete: true });
 }
 
+function mergeById<T extends { id: string }>(current: T[], incoming: T[], merge?: (current: T, incoming: T) => T): T[] {
+  const rows = new Map(current.map((item) => [item.id, item]));
+  for (const item of incoming) {
+    const previous = rows.get(item.id);
+    rows.set(item.id, previous && merge ? merge(previous, item) : previous ? { ...previous, ...item } : item);
+  }
+  return [...rows.values()];
+}
+
+function mergeCheckIns(current: AppState["sleepPlan"]["checkIns"], incoming: AppState["sleepPlan"]["checkIns"]) {
+  const byDate = new Map(current.map((item) => [item.date, item]));
+  for (const item of incoming) {
+    const previous = byDate.get(item.date);
+    if (!previous) {
+      byDate.set(item.date, item);
+      continue;
+    }
+    const logs = mergeById(previous.nightWakeLogs ?? [], item.nightWakeLogs ?? [])
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .slice(-30);
+    const notes = [...new Set([previous.note?.trim(), item.note?.trim()].filter((note): note is string => Boolean(note)))];
+    byDate.set(item.date, {
+      ...previous,
+      ...item,
+      nightWakeLogs: logs.length ? logs : undefined,
+      note: notes.length ? notes.join("\n").slice(0, 1000) : undefined
+    });
+  }
+  return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function mergeCaregivers(current: AppState["caregivers"], incoming: AppState["caregivers"]) {
+  const result = [...current];
+  const usedIds = new Set(result.map((item) => item.id));
+  const normalizedName = (name: string) => name.trim().toLocaleLowerCase("tr-TR");
+  for (const caregiver of incoming) {
+    if (result.some((item) => normalizedName(item.name) === normalizedName(caregiver.name))) continue;
+    let id = caregiver.id;
+    let suffix = 2;
+    while (usedIds.has(id)) id = `${caregiver.id}-import-${suffix++}`;
+    usedIds.add(id);
+    result.push({ ...caregiver, id });
+  }
+  return result;
+}
+
+export function mergeDataStates(current: AppState, incoming: AppState): AppState {
+  const sameBaby = current.baby.birthDate === incoming.baby.birthDate &&
+    current.baby.gestationalWeek === incoming.baby.gestationalWeek &&
+    current.baby.name.trim().toLocaleLowerCase("tr-TR") === incoming.baby.name.trim().toLocaleLowerCase("tr-TR");
+  if (!sameBaby) throw new Error("Yedek farklı bir bebek profiline ait. Birleştirmek için aynı bebeğin adını, doğum tarihini ve gebelik haftasını kullanın; farklı profilde tam geri yüklemeyi seçin.");
+
+  const events = mergeById(current.events, incoming.events)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  const careTasks = mergeById(current.careTasks, incoming.careTasks)
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  const developmentCheckIns = new Map((current.developmentCheckIns ?? []).map((item) => [item.ageMonths, item]));
+  for (const item of incoming.developmentCheckIns ?? []) {
+    const previous = developmentCheckIns.get(item.ageMonths);
+    developmentCheckIns.set(item.ageMonths, previous ? {
+      ...previous,
+      ...item,
+      answers: { ...previous.answers, ...item.answers },
+      note: [...new Set([previous.note?.trim(), item.note?.trim()].filter((note): note is string => Boolean(note)))].join("\n").slice(0, 500) || undefined
+    } : item);
+  }
+  const instructions = [...new Set([current.careInstructions?.trim(), incoming.careInstructions?.trim()].filter((note): note is string => Boolean(note)))];
+
+  return {
+    ...current,
+    baby: current.baby,
+    caregiverName: current.caregiverName,
+    careInstructions: instructions.join("\n").slice(0, 1000),
+    developmentCheckIns: [...developmentCheckIns.values()].sort((a, b) => b.ageMonths - a.ageMonths).slice(0, 12),
+    caregivers: mergeCaregivers(current.caregivers, incoming.caregivers),
+    activeCaregiverId: current.activeCaregiverId,
+    events,
+    careTasks,
+    sleepPlan: {
+      ...current.sleepPlan,
+      checkIns: mergeCheckIns(current.sleepPlan.checkIns, incoming.sleepPlan.checkIns),
+      completedDays: mergeById(current.sleepPlan.completedDays.map((item) => ({ ...item, id: `${item.date}-${item.day}` })), incoming.sleepPlan.completedDays.map((item) => ({ ...item, id: `${item.date}-${item.day}` })))
+        .map(({ id: _id, ...item }) => item)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-14),
+      completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns).slice(-10)
+    }
+  };
+}
