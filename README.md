@@ -5,7 +5,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 ## Mevcut özellikler
 
 - Açıklanabilir uyku penceresi tahmini
-- Sabah check-in'inde uyanış saati girildiğinde ilk gündüz uykusu penceresini anında gösterme; kaydettikten sonra Bugün ekranında kullanma
+- Sabah check-in'inde uyanış saati girildiğinde ilk gündüz uykusu penceresini anında gösterme; ilk uyku kaydedilince sonraki tahminleri o uykudan sürdürme
 - Önerilen uyku penceresinden sonra açılan tek seferlik “uyudu mu?” sorusuyla gerçek uyku başlangıcını tahminle eşleştirme; en az üç eşleşmede sonraki pencerenin merkezini ve genişliğini bu geçmişe göre ayarlama
 - Son 30 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi (kişisel örnek azsa yaş aralığına ağırlık verir)
 - Son 14 günde tekrar eden gündüz uykularından kişisel günlük taslak çıkarma
