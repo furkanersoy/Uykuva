@@ -80,6 +80,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Sessiz saatlere uyan uyku bildirimleri
 - Bebek uyurken bekleyen sonraki uyku hatırlatmasını iptal etme; sayaç bitince yeni tahmine göre tekrar planlama
 - JSON yedeğini dosya olarak paylaşma veya sistem dosya seçicisinden içe aktarma; aynı bebeğe ait cihaz kayıtlarını kimlik tekrarlarını ayıklayarak birleştirme veya mevcut verilerin yerine tamamen geri yükleme, metin yapıştırma ve kontrollü cihaz verisi silme (silme uygulamanın önbellekteki yedeklerini ve planlı hatırlatmaları da kaldırır)
+- Varsayılan parola korumalı yedek aktarımı (PBKDF2-SHA256 ve AES-256-GCM); parola unutulursa yedek açılamaz. Şifresiz JSON aktarımı ayrıca uyarı onayı ister.
 - Sağ/sol emzirme zamanlayıcısı ve sıradaki taraf önerisi
 - Sağım miktarı, saklama yeri ve sağılan süt stoğunun FIFO düşümü; çözündürme için 24 saat, ısıtma/oda sıcaklığına gelme için iki saatlik kullanım penceresi
 - İsteğe bağlı yerel bildirimle stokta kalan sağılan süt partisinin kullanım süresi yaklaşınca hatırlatma; dondurulmuş sütte en iyi kalite tarihi ile tavsiye edilen son tarihi ayrı gösterme ve sessiz saatlere uyum
