@@ -19,6 +19,8 @@ export type CareEvent = {
   kind: EventKind;
   startedAt: string;
   endedAt?: string;
+  suggestedSleepWindowStartAt?: string;
+  suggestedSleepWindowEndAt?: string;
   amountMl?: number;
   feedType?: "breast" | "bottle" | "solid" | "pump";
   bottleSource?: "formula" | "expressed";
