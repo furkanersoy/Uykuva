@@ -119,7 +119,7 @@ Ana fonksiyonlar:
 
 - `correctedAgeDays`: Gebelik haftası 37'nin altında olan bebeklerde ilk iki yıl düzeltilmiş yaşı hesaplar; uyku ekranı bu kullanımı açıklar. Aşı/randevu tarihleri gerçek doğum tarihine bağlıdır.
 - `wakeBandFor`: Düzeltilmiş yaşa göre ürün referans aralığını seçer.
-- `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Kişisel uyanıklık örneklerini son 30 günden toplar, yaş aralığıyla harmanlar ve kişisel/yaş bandı dışındaki uç değerleri yaş aralığında sınırlar; böylece tahmin başlangıcı bitişten sonraya kaymaz.
+- `createSleepForecast`: Son 14 gün içindeki en son tamamlanmış uykuyu kullanır; gelecekteki veya 14 günü aşan eski kayıtla pencere üretmez. Kişisel uyanıklık örneklerini son 30 günden toplar, yaş aralığıyla harmanlar ve kişisel/yaş bandı dışındaki uç değerleri yaş aralığında sınırlar. Tahmin aralığından sonra ebeveynin onaylayarak açtığı uyku kaydı, önerilen başlangıç/bitişi de saklar; en az üç eşleşme olduğunda son 30 gündeki gerçek başlangıç sapması pencerenin merkezini, hata dağılımı genişliğini ayarlar.
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
 - `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir. Bugünkü planda henüz kaydedilmemiş, gelecekteki uyku taslakları sonraki uyku tahminiyle çakışmıyorsa listelenir.
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
@@ -178,6 +178,7 @@ Tahmin motorunun mevcut davranışı:
 6. Tek saat yerine başlangıç ve bitiş aralığı üretir.
 7. Veri miktarına göre düşük, orta veya yüksek güven etiketi verir.
 8. Sonucun nedenini kullanıcıya düz metinle açıklar.
+9. En az üç öneri–gerçek başlangıç eşleşmesi varsa son 30 günlük sapmaları kullanarak tahmin merkezini ve pencere genişliğini kişiselleştirir; kullanıcı tarafından elle eklenen eşleşmemiş kayıtlar bu hesaba girmez.
 
 Bu motor bir tıbbi model değildir. Yayına çıkmadan önce referans aralıkları pediatri/uyku uzmanı tarafından gözden geçirilmeli ve içerik sürümüyle birlikte kaydedilmelidir.
 
