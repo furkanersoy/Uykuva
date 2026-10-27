@@ -155,7 +155,7 @@ export default function App() {
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
 
   useEffect(() => {
-    if (!app.hydrated || !app.state.onboardingComplete || app.runningSleep || sleepEditor || !forecast.available || !forecast.start || !forecast.end) return;
+    if (!app.hydrated || !app.state.onboardingComplete || app.runningSleep || sleepEditor || logMode || taskMode || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen || !forecast.available || !forecast.start || !forecast.end) return;
     const start = forecast.start.getTime();
     const end = forecast.end.getTime();
     if (clockNow.getTime() < end || promptedSleepWindow === start) return;
@@ -171,11 +171,11 @@ export default function App() {
         { text: "Uyudu", onPress: () => { setSleepEditorSuggestedStart(suggestedStart); setSleepEditorSuggestedWindow({ start: new Date(start).toISOString(), end: new Date(end).toISOString() }); setSleepEditor("new"); } }
       ]
     );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, clockNow, forecast.available, forecast.start?.getTime(), forecast.end?.getTime(), sleepEditor, promptedSleepWindow]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, clockNow, forecast.available, forecast.start?.getTime(), forecast.end?.getTime(), sleepEditor, promptedSleepWindow, logMode, taskMode, eventEditor, nightWakeOpen, restoreOpen, profileOpen, caregiverOpen, vaccineSuggestionsOpen]);
 
   useEffect(() => {
     const running = app.runningSleep;
-    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || logMode || taskMode || sleepEditor || eventEditor) return;
+    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || logMode || taskMode || sleepEditor || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen) return;
     const startedAt = new Date(running.startedAt).getTime();
     if (!Number.isFinite(startedAt) || Date.now() - startedAt < 12 * 60 * 60_000) return;
     setPromptedRunningSleepId(running.id);
@@ -187,7 +187,7 @@ export default function App() {
         { text: "Uyanış saatini düzelt", onPress: () => { const current = app.state.events.find((item) => item.id === running.id); if (current) setSleepEditor(current); } }
       ]
     );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor, nightWakeOpen, restoreOpen, profileOpen, caregiverOpen, vaccineSuggestionsOpen]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
