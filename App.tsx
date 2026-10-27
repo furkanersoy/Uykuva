@@ -130,6 +130,7 @@ export default function App() {
   const [taskToEdit, setTaskToEdit] = useState<CareTask | null>(null);
   const [vaccineSuggestionsOpen, setVaccineSuggestionsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [childOpen, setChildOpen] = useState(false);
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [nightWakeOpen, setNightWakeOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
@@ -294,6 +295,12 @@ export default function App() {
     const currentIndex = caregivers.findIndex((caregiver) => caregiver.id === app.state.activeCaregiverId);
     app.setActiveCaregiver(caregivers[(currentIndex + 1 + caregivers.length) % caregivers.length]!.id);
   };
+  const switchChild = () => {
+    const children = app.state.children;
+    if (children.length < 2) return;
+    const currentIndex = children.findIndex((child) => child.baby.id === app.state.activeChildId);
+    app.setActiveChild(children[(currentIndex + 1 + children.length) % children.length]!.baby.id);
+  };
   const saveNightWake = (response: NightWakeResponse, occurredAt: string) => {
     const now = new Date();
     const date = localDateValue(now);
@@ -316,16 +323,17 @@ export default function App() {
           <View>
             <Text style={styles.brand}>uykuva</Text>
             <Text style={styles.headerSub}>{app.state.baby.name} · bugün</Text>
+            {app.state.children.length > 1 ? <Pressable accessibilityRole="button" accessibilityLabel={`Aktif çocuk ${app.state.baby.name}. Sonraki çocuğa geç`} onPress={switchChild} style={styles.headerCaregiver}><Text style={styles.headerCaregiverText}>Çocuk: {app.state.baby.name} · Değiştir</Text></Pressable> : null}
             {app.state.caregivers.length > 1 ? <Pressable accessibilityRole="button" accessibilityLabel={`Aktif bakım veren ${app.state.caregiverName}. Sonraki bakım verene geç`} onPress={switchCaregiver} style={styles.headerCaregiver}><Text style={styles.headerCaregiverText}>Kayıtları ekleyen: {app.state.caregiverName} · Değiştir</Text></Pressable> : null}
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
         </View> : null}
 
-        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} onSwitchCaregiver={switchCaregiver} />}
+        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} onSwitchCaregiver={switchCaregiver} onSwitchChild={switchChild} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
-        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
+        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onAddChild={() => setChildOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
 
         {!nightMode ? <View style={styles.nav}>
           {tabs.map((item) => (
@@ -340,6 +348,7 @@ export default function App() {
       <CareTaskModal mode={taskMode} task={taskToEdit} close={() => { setTaskMode(null); setTaskToEdit(null); }} add={app.addCareTask} update={app.updateCareTask} />
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
+      <ChildProfileModal visible={childOpen} close={() => setChildOpen(false)} add={app.addChild} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} add={app.addCaregiver} />
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
@@ -421,7 +430,7 @@ function SleepDayContextPicker({ selected, onSelect }: { selected?: SleepDayCont
   </>;
 }
 
-function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake, onSwitchCaregiver }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void; onSwitchCaregiver: () => void }) {
+function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const newbornSummary = correctedAgeDays(app.state.baby, now) < 63;
@@ -521,7 +530,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     agenda.push({ id: `nap-outline-${nap.order}`, at: nap.from.getTime() > now.getTime() ? nap.from : now, endAt: nap.to, kind: "sleep", label: `${nap.order}. gündüz uykusu taslağı`, detail: `Son 14 günde ${nap.sampleCount} günde kaydedilen saatlerin ortancası ${time(nap.typical)}; kesin program değildir.` });
   });
   agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
-  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onSwitchCaregiver={onSwitchCaregiver} />;
+  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onSwitchCaregiver={onSwitchCaregiver} onSwitchChild={onSwitchChild} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
@@ -613,7 +622,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   );
 }
 
-function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onSwitchCaregiver: () => void }) {
+function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
   const elapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   return (
     <View style={styles.nightScreen}>
@@ -622,6 +631,7 @@ function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver }: { app
         <Pressable accessibilityRole="button" accessibilityLabel="Gece modundan çık" onPress={onExit} style={styles.nightExit}><Text style={styles.nightExitText}>Çık</Text></Pressable>
       </View>
       {app.state.caregivers.length > 1 ? <Pressable accessibilityRole="button" accessibilityLabel={`Aktif bakım veren ${app.state.caregiverName}. Sonraki bakım verene geç`} onPress={onSwitchCaregiver} style={styles.nightCaregiver}><Text style={styles.nightCaregiverText}>Bakımı devralan: {app.state.caregiverName} · Değiştir</Text></Pressable> : null}
+      {app.state.children.length > 1 ? <Pressable accessibilityRole="button" accessibilityLabel={`Aktif çocuk ${app.state.baby.name}. Sonraki çocuğa geç`} onPress={onSwitchChild} style={styles.nightCaregiver}><Text style={styles.nightCaregiverText}>Çocuk: {app.state.baby.name} · Değiştir</Text></Pressable> : null}
       <View style={styles.nightTimerCard}>
         <Text style={styles.nightEyebrow}>{app.runningSleep ? "UYKU SÜRESİ" : "GECE KAYDI"}</Text>
         <Text style={styles.nightTimer}>{app.runningSleep ? `${Math.floor(elapsed / 60)} sa ${elapsed % 60} dk` : "Hazır"}</Text>
@@ -1340,7 +1350,7 @@ function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; 
   </>;
 }
 
-function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onRestoreData: () => void }) {
+function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onAddChild: () => void; onRestoreData: () => void }) {
   const summary = handoffSummary(app.state, new Date(), app.state.preferences.handoffHours);
   const [encryptedBackupOpen, setEncryptedBackupOpen] = useState(false);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
@@ -1429,6 +1439,11 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
     <>
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
+      <SectionTitle title="Çocuk profilleri" action={`${app.state.children.length} çocuk`} />
+      <Card>{app.state.children.map((child) => {
+        const active = child.baby.id === app.state.activeChildId;
+        return <Pressable key={child.baby.id} accessibilityRole="radio" accessibilityLabel={`${child.baby.name}, ${active ? "aktif profil" : "profili seç"}`} accessibilityState={{ selected: active }} onPress={() => app.setActiveChild(child.baby.id)} onLongPress={() => { if (app.state.children.length > 1) Alert.alert("Çocuk profilini sil", `${child.baby.name} profili, uyku planı ve kayıtları bu cihazdan silinsin mi?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Profili sil", style: "destructive", onPress: () => app.deleteChild(child.baby.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{child.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{child.baby.name}</Text><Text style={styles.muted}>{active ? "Aktif profil" : "Dokunarak geçiş yap"}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
+      })}<View style={styles.spacer12} /><PrimaryButton label="Çocuk profili ekle" quiet onPress={onAddChild} /><Text style={styles.hint}>Her çocuğun uyku planı, bakım kayıtları, gelişim gözlemleri ve talimatları ayrı tutulur. Silmek için profile basılı tutun.</Text></Card>
       <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.baby.name} profili</Text><Text style={styles.body}>Aktif bakım veren: {app.state.caregiverName}</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Profili düzenle</Text></Pressable></View></Card>
       <SectionTitle title="Bu cihazdaki bakım verenler" action={`${app.state.caregivers.length} kişi`} />
       <Card>{app.state.caregivers.map((caregiver) => {
@@ -1629,6 +1644,25 @@ function NightWakeModal({ visible, close, save }: { visible: boolean; close: () 
       <View style={styles.spacer12} /><PrimaryButton label="Uyanma kaydını ekle" onPress={submit} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
     </ScrollView>
   </Modal>;
+}
+
+function ChildProfileModal({ visible, close, add }: { visible: boolean; close: () => void; add: (profile: { babyName: string; birthDate: string; gestationalWeek: number }) => void }) {
+  const [name, setName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [gestationalWeek, setGestationalWeek] = useState("40");
+  useEffect(() => {
+    if (visible) { setName(""); setBirthDate(""); setGestationalWeek("40"); }
+  }, [visible]);
+  const save = () => {
+    const week = Number(gestationalWeek);
+    const birth = new Date(`${birthDate}T12:00:00`);
+    if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || Number.isNaN(birth.getTime()) || localDateValue(birth) !== birthDate || birth > new Date() || !Number.isInteger(week) || week < 22 || week > 42) {
+      return Alert.alert("Bilgileri kontrol edin", "Çocuğun adını, gerçek bir YYYY-AA-GG doğum tarihini ve 22–42 arasındaki gebelik haftasını girin.");
+    }
+    add({ babyName: name.trim(), birthDate, gestationalWeek: week });
+    close();
+  };
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Çocuk profili ekle</Text><Text style={styles.pageIntro}>Bu çocuk için uyku planı, bakım kayıtları ve gelişim gözlemleri ayrı tutulur.</Text><Field label="Çocuğun adı" value={name} onChangeText={setName} placeholder="Örn. Deniz" /><Field label="Doğum tarihi" value={birthDate} onChangeText={setBirthDate} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" /><Field label="Doğduğu gebelik haftası" value={gestationalWeek} onChangeText={setGestationalWeek} keyboardType="number-pad" /><View style={styles.spacer24} /><PrimaryButton label="Profili ekle ve aç" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function CaregiverModal({ visible, close, caregivers, add }: { visible: boolean; close: () => void; caregivers: string[]; add: (caregiver: Omit<Caregiver, "id">) => void }) {
