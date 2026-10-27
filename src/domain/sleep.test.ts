@@ -37,8 +37,8 @@ test("sleep coaching keeps support reduction closed before six months", () => {
   assert.equal(sleepProgramStage(sixMonthOld, now).canReduceSupport, true);
 });
 
-test("all six sleep coaching approaches include caregiver and night-waking guidance", () => {
-  const methods: SleepMethod[] = ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
+test("all seven sleep coaching approaches include caregiver and night-waking guidance", () => {
+  const methods: SleepMethod[] = ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
   for (const method of methods) {
     const guidance = methodDescription(method);
     assert.ok(guidance.name.length > 0);
@@ -128,7 +128,7 @@ test("coaching plan is bounded to fourteen days", () => {
 });
 
 test("each sleep approach gets distinct tasks throughout all coaching phases", () => {
-  const methods: SleepMethod[] = ["responsive", "gradual", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
+  const methods: SleepMethod[] = ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
   for (const day of [2, 5, 8, 12]) {
     const plans = methods.map((method) => coachingDay(day, method, true, 183, "routine"));
     assert.equal(new Set(plans.map((plan) => plan.tasks.join("\n"))).size, methods.length, `day ${day} must differ by approach`);
@@ -214,3 +214,4 @@ test("care handoff names today's exceptional context and paused sleep coaching",
     assert.ok(summary.includes(`Bugün ${sleepDayContextLabel(context)} işaretlendi · uyku tahmini ve koçluk planı beklemede`));
   }
 });
+
