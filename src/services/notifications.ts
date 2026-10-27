@@ -3,14 +3,9 @@ import * as Notifications from "expo-notifications";
 import { CareEvent, CareTask, SleepForecast } from "../domain/types";
 import { dailyReminderDatesBefore, isInQuietHours, isValidClock } from "../domain/time";
 import { createMilkInventory, milkStorageLabel } from "../domain/milk";
+import { NOTIFICATION_KINDS } from "../domain/notificationRouting";
 
-const SLEEP_NOTIFICATION_KIND = "uykuva-sleep-window";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
-const CARE_TASK_NOTIFICATION_KIND = "uykuva-care-task";
-const DIAPER_NOTIFICATION_KIND = "uykuva-diaper-check";
-const MEDICATION_NOTIFICATION_KIND = "uykuva-medication-reminder";
-const MILK_EXPIRY_NOTIFICATION_KIND = "uykuva-milk-expiry";
-const ROUTINE_NOTIFICATION_KIND = "uykuva-evening-routine";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -93,7 +88,7 @@ export async function cancelSleepReminders() {
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled
-      .filter((item) => [SLEEP_NOTIFICATION_KIND, LEGACY_NOTIFICATION_KIND].includes(String(item.content.data?.kind)))
+      .filter((item) => [NOTIFICATION_KINDS.sleepWindow, LEGACY_NOTIFICATION_KIND].includes(String(item.content.data?.kind)))
       .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier))
   );
 }
@@ -111,7 +106,8 @@ export async function scheduleSleepReminder(
   leadMinutes: number,
   quietStart: string,
   quietEnd: string,
-  cancelExisting = true
+  cancelExisting = true,
+  childId?: string
 ): Promise<boolean> {
   if (cancelExisting) await cancelSleepReminders();
   if (!forecast.available || !forecast.start) return false;
@@ -123,7 +119,7 @@ export async function scheduleSleepReminder(
     content: {
       title: `${babyName} için uyku vakti yaklaşıyor`,
       body: `Tahmini uyku penceresi yaklaşık ${leadMinutes} dakika sonra başlıyor. Bebeğinizin sinyallerini izleyin.`,
-      data: { kind: SLEEP_NOTIFICATION_KIND }
+      data: { kind: NOTIFICATION_KINDS.sleepWindow, ...(childId ? { childId } : {}) }
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -142,12 +138,13 @@ export async function scheduleRoutineReminders(
   quietStart: string,
   quietEnd: string,
   now = new Date(),
-  cancelExisting = true
+  cancelExisting = true,
+  childId?: string
 ): Promise<number> {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(scheduled
-      .filter((item) => String(item.content.data?.kind) === ROUTINE_NOTIFICATION_KIND)
+      .filter((item) => String(item.content.data?.kind) === NOTIFICATION_KINDS.routine)
       .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
   }
   if (!enabled || !isValidClock(bedtime) || !Number.isInteger(routineMinutes) || routineMinutes <= 0 || routineMinutes >= 1440) return 0;
@@ -161,7 +158,7 @@ export async function scheduleRoutineReminders(
       content: {
         title: `${babyName} için akşam rutini`,
         body: `Hedef yatış saatinizden önce yaklaşık ${routineMinutes} dakikalık rutininize başlamak isteyebilirsiniz. Bu yalnızca sizin belirlediğiniz saat için hatırlatmadır.`,
-        data: { kind: ROUTINE_NOTIFICATION_KIND }
+        data: { kind: NOTIFICATION_KINDS.routine, ...(childId ? { childId } : {}) }
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -180,12 +177,13 @@ export async function scheduleCareTaskReminders(
   quietStart: string,
   quietEnd: string,
   babyName?: string,
-  cancelExisting = true
+  cancelExisting = true,
+  childId?: string
 ) {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(scheduled
-      .filter((item) => String(item.content.data?.kind) === CARE_TASK_NOTIFICATION_KIND)
+      .filter((item) => String(item.content.data?.kind) === NOTIFICATION_KINDS.careTask)
       .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
   }
   if (!enabled) return 0;
@@ -207,7 +205,7 @@ export async function scheduleCareTaskReminders(
       content: {
         title: task.type === "vaccine" ? "Aşı hatırlatması" : "Randevu hatırlatması",
         body: `${babyName ? `${babyName} · ` : ""}${task.title} · ${dueAt.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}`,
-        data: { kind: CARE_TASK_NOTIFICATION_KIND, taskId: task.id }
+        data: { kind: NOTIFICATION_KINDS.careTask, taskId: task.id, ...(childId ? { childId } : {}) }
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -228,12 +226,13 @@ export async function scheduleDiaperReminder(
   quietEnd: string,
   now = new Date(),
   babyName?: string,
-  cancelExisting = true
+  cancelExisting = true,
+  childId?: string
 ): Promise<boolean> {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(scheduled
-      .filter((item) => String(item.content.data?.kind) === DIAPER_NOTIFICATION_KIND)
+      .filter((item) => String(item.content.data?.kind) === NOTIFICATION_KINDS.diaper)
       .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
   }
   if (!enabled) return false;
@@ -257,7 +256,7 @@ export async function scheduleDiaperReminder(
     content: {
       title: "Bez kontrolü",
       body: `${babyName ? `${babyName} · ` : ""}${afterHours} saat geçti. İsterseniz bezini kontrol edin.`,
-      data: { kind: DIAPER_NOTIFICATION_KIND, eventId: lastDiaper.id }
+      data: { kind: NOTIFICATION_KINDS.diaper, eventId: lastDiaper.id, ...(childId ? { childId } : {}) }
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -268,11 +267,11 @@ export async function scheduleDiaperReminder(
   return true;
 }
 
-export async function scheduleMedicationReminders(events: CareEvent[], babyName?: string, cancelExisting = true) {
+export async function scheduleMedicationReminders(events: CareEvent[], babyName?: string, cancelExisting = true, childId?: string) {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(scheduled
-      .filter((item) => String(item.content.data?.kind) === MEDICATION_NOTIFICATION_KIND)
+      .filter((item) => String(item.content.data?.kind) === NOTIFICATION_KINDS.medication)
       .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
   }
 
@@ -295,7 +294,7 @@ export async function scheduleMedicationReminders(events: CareEvent[], babyName?
       content: {
         title: "İlaç planı hatırlatması",
         body: `${babyName ? `${babyName} · ` : ""}${event.medicineName} için kaydettiğiniz saat geldi. Sağlık uzmanınızın veya ilaç etiketindeki talimatı kontrol edin.`,
-        data: { kind: MEDICATION_NOTIFICATION_KIND, eventId: event.id }
+        data: { kind: NOTIFICATION_KINDS.medication, eventId: event.id, ...(childId ? { childId } : {}) }
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -315,12 +314,13 @@ export async function scheduleMilkExpiryReminders(
   quietEnd: string,
   now = new Date(),
   babyName?: string,
-  cancelExisting = true
+  cancelExisting = true,
+  childId?: string
 ) {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(scheduled
-      .filter((item) => String(item.content.data?.kind) === MILK_EXPIRY_NOTIFICATION_KIND)
+      .filter((item) => String(item.content.data?.kind) === NOTIFICATION_KINDS.milkExpiry)
       .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
   }
   if (!enabled) return 0;
@@ -369,7 +369,7 @@ export async function scheduleMilkExpiryReminders(
         content: {
           title: babyName ? `${babyName} · ${milestone.title}` : milestone.title,
           body: milestone.body,
-          data: { kind: MILK_EXPIRY_NOTIFICATION_KIND, batchId: batch.event.id, milestone: milestone.type }
+          data: { kind: NOTIFICATION_KINDS.milkExpiry, eventId: batch.event.id, ...(childId ? { childId } : {}), milestone: milestone.type }
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -382,3 +382,4 @@ export async function scheduleMilkExpiryReminders(
   }
   return count;
 }
+
