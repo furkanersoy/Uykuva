@@ -19,6 +19,7 @@ export function createInitialState(): AppState {
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
     careInstructions: "",
+    developmentCheckIns: [],
     caregivers: [{ id: "caregiver-1", name: "Anne", role: "parent" }],
     activeCaregiverId: "caregiver-1",
     events: [
@@ -64,3 +65,4 @@ export function createInitialState(): AppState {
     }
   };
 }
+
