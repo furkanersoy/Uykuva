@@ -263,37 +263,57 @@ export async function scheduleMilkExpiryReminders(
   const batches = createMilkInventory(events, now).batches
     .filter((batch) => batch.remainingMl > 0 && !batch.isExpired && batch.useBy.getTime() > now.getTime())
     .sort((a, b) => a.useBy.getTime() - b.useBy.getTime())
-    .slice(0, 24);
+    .slice(0, 12);
   await ensureMilkChannel();
   let count = 0;
   for (const batch of batches) {
     const remainingMs = batch.useBy.getTime() - now.getTime();
-    const leadMs = remainingMs <= 2 * 60 * 60_000 ? 30 * 60_000
+    const useByLeadMs = remainingMs <= 2 * 60 * 60_000 ? 30 * 60_000
       : remainingMs <= 4 * 60 * 60_000 ? 60 * 60_000
         : remainingMs <= 24 * 60 * 60_000 ? 2 * 60 * 60_000
           : remainingMs <= 4 * 24 * 60 * 60_000 ? 12 * 60 * 60_000
             : 24 * 60 * 60_000;
-    const reminderAt = new Date(batch.useBy.getTime() - leadMs);
-    if (reminderAt.getTime() <= now.getTime()) continue;
-    if (isInQuietHours(reminderAt, quietStart, quietEnd)) {
-      const [hour, minute] = quietEnd.split(":").map(Number);
-      reminderAt.setHours(hour ?? 0, minute ?? 0, 0, 0);
-      if (reminderAt.getTime() <= now.getTime()) reminderAt.setDate(reminderAt.getDate() + 1);
-    }
-    if (reminderAt.getTime() >= batch.useBy.getTime()) continue;
-    await Notifications.scheduleNotificationAsync({
-      content: {
+    const milestones = [
+      {
+        type: "use-by",
+        at: batch.useBy,
+        leadMs: useByLeadMs,
         title: "Sağılan süt kullanım süresi yaklaşıyor",
-        body: `${batch.remainingMl} ml ${milkStorageLabel(batch.event)} · ${batch.useBy.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })} öncesinde stoğu kontrol edin.`,
-        data: { kind: MILK_EXPIRY_NOTIFICATION_KIND, batchId: batch.event.id }
+        body: `${batch.remainingMl} ml ${milkStorageLabel(batch.event)} · ${batch.event.milkStorageLocation === "freezer" && !batch.isThawed ? "tavsiye edilen son tarih" : "kullanım süresi sonu"} ${batch.useBy.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}.`
       },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: reminderAt,
-        channelId: Platform.OS === "android" ? "milk-expiry-reminders" : undefined
+      ...(batch.event.milkStorageLocation === "freezer" && !batch.isThawed && batch.bestBy.getTime() > now.getTime() && batch.bestBy.getTime() < batch.useBy.getTime()
+        ? [{
+            type: "best-quality",
+            at: batch.bestBy,
+            leadMs: Math.min(7 * 24 * 60 * 60_000, Math.floor((batch.bestBy.getTime() - now.getTime()) / 2)),
+            title: "Dondurulmuş süt için kalite tarihi yaklaşıyor",
+            body: `${batch.remainingMl} ml ${milkStorageLabel(batch.event)} · en iyi kalite önerisi ${batch.bestBy.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}. Tavsiye edilen son tarih ${batch.useBy.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}.`
+          }]
+        : [])
+    ];
+    for (const milestone of milestones) {
+      const reminderAt = new Date(milestone.at.getTime() - milestone.leadMs);
+      if (reminderAt.getTime() <= now.getTime()) continue;
+      if (isInQuietHours(reminderAt, quietStart, quietEnd)) {
+        const [hour, minute] = quietEnd.split(":").map(Number);
+        reminderAt.setHours(hour ?? 0, minute ?? 0, 0, 0);
+        if (reminderAt.getTime() <= now.getTime()) reminderAt.setDate(reminderAt.getDate() + 1);
       }
-    });
-    count += 1;
+      if (reminderAt.getTime() >= milestone.at.getTime()) continue;
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: milestone.title,
+          body: milestone.body,
+          data: { kind: MILK_EXPIRY_NOTIFICATION_KIND, batchId: batch.event.id, milestone: milestone.type }
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: reminderAt,
+          channelId: Platform.OS === "android" ? "milk-expiry-reminders" : undefined
+        }
+      });
+      count += 1;
+    }
   }
   return count;
 }
