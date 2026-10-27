@@ -205,10 +205,11 @@ Bu motor bir tıbbi model değildir. Yayına çıkmadan önce referans aralıkla
 
 ## 7. Uyku eğitimi mimarisi
 
-Uyku planı altı aile merkezli yaklaşım sunar. Altı aydan küçük düzeltilmiş yaşta veya dört hazırlık maddesi tamamlanmadan yöntem seçimi açılmaz; bu aşamalarda duyarlı bakım ve rutin rehberi gösterilir:
+Uyku planı yedi aile merkezli yaklaşım sunar. Altı aydan küçük düzeltilmiş yaşta veya dört hazırlık maddesi tamamlanmadan yöntem seçimi açılmaz; bu aşamalarda duyarlı bakım ve rutin rehberi gösterilir:
 
 - **Duyarlı rutin:** Huzursuzluğa hızlı yanıt ve tutarlı uyku öncesi sıra.
 - **Kademeli destek:** Bakım yardımını küçük adımlarla azaltma.
+- **Önceden kararlaştırılmış kısa kontroller:** Bakım verenlerin seçtiği kısa kontrol düzeni; uygulama sabit süre veya ağlama aralığı önermez.
 - **Yakında kalma:** Bakım verenin odada kalıp mesafeyi zamanla artırması.
 - **Yatma saatini ayarlama:** Kayıtları gözden geçirerek yatış hedefini küçük adımlarla ayarlama.
 - **Al, sakinleştir, tekrar yatır:** Belirgin huzursuzlukta kucak desteği verip sakinleşince güvenli uyku alanına geri yatırma.
@@ -283,7 +284,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
 - [x] Plan günü ilerletildiğinde yaklaşım/odak ve tamamlanan görev sayısı 14 günlük geçmişte korunuyor.
-- [x] Bakım verenlerle paylaşılan uyku planı son 7 gecenin check-in ölçümlerini/notlarını ve varsa ilk/son dönem karşılaştırmasını içeriyor.
+- [x] Bakım verenlerle paylaşılan uyku planı, seçilen yaklaşımın özeti ile bakım veren ve gece uyanması yönergelerini; son 7 gecenin check-in ölçümlerini/notlarını ve varsa ilk/son dönem karşılaştırmasını içeriyor.
 - [x] Aynı yaklaşım/odakta ilk ve son üç plan gününün check-in kolaylığı ve sayısal gece uyanması kayıtları karşılaştırılabiliyor.
 - [x] Günlük görev tamamlama ve plan ilerletme eklendi.
 - [x] Akşam rutini veri modeli ve görünümü eklendi.
