@@ -82,10 +82,20 @@ test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   state.events = [
     { id: "feed", kind: "feed", feedType: "bottle", amountMl: 90, startedAt: "2026-10-27T09:05:00", caregiver: "Baba" },
     { id: "diaper", kind: "diaper", diaperType: "wet", startedAt: "2026-10-27T09:10:00", caregiver: "Anne" },
-    { id: "sleep", kind: "sleep", startedAt: "2026-10-27T08:00:00", endedAt: "2026-10-27T09:00:00", caregiver: "Anne" }
+    { id: "sleep", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-27T08:00:00", endedAt: "2026-10-27T09:00:00", caregiver: "Anne" }
   ];
   const summary = handoffSummary(state, new Date("2026-10-27T12:00:00"), 4);
   assert.match(summary, /Son beslenme 09:05 · biberon · 90 ml · Baba/);
   assert.match(summary, /Son bez 09:10 · ıslak · Anne/);
-  assert.match(summary, /Son uyku 08:00–09:00/);
+  assert.match(summary, /Son uyku 08:00–09:00 · Kucakta/);
+});
+test("sleep insights summarize recorded settling support neutrally", () => {
+  const events: CareEvent[] = [
+    { id: "s1", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T01:00:00", caregiver: "Anne" },
+    { id: "s2", kind: "sleep", sleepSupport: "feeding", startedAt: "2026-10-25T20:00:00", endedAt: "2026-10-26T01:00:00", caregiver: "Anne" },
+    { id: "s3", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-24T20:00:00", endedAt: "2026-10-25T01:00:00", caregiver: "Baba" }
+  ];
+  const insight = createSleepCoachInsights(events, "20:00", [], new Date("2026-10-27T12:00:00"));
+  assert.equal(insight.sleepSupportSamples, 3);
+  assert.equal(insight.sleepSupportSummary, "Kucakta 2, Beslenerek 1");
 });
