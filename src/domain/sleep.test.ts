@@ -1,6 +1,6 @@
 YªçŠx±6¬“¬uç%j·Â+ar‰ì¶ë•ë_¢ºŞjË"‚v›•ëÚ®&›•ëj¹ââ•äÚ²L±×œ•ªŞw­…Ê'²Û¬zW­~Šëy«,Š	ÚnW¯j¸šnW¬import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -33,6 +33,36 @@ test("wake-window guide highlights the age band used for forecasts, including co
   const pretermBaby = { ...termBaby, birthDate: "2026-07-18", gestationalWeek: 32 };
   const pretermGuide = wakeWindowGuide(pretermBaby, now);
   assert.deepEqual(pretermGuide.filter((row) => row.current).map((row) => row.ageLabel), ["0â€“2 ay"]);
+});
+
+test("awake-window insights share forecast thresholds and report the personal median only when ready", () => {
+  const events: CareEvent[] = [];
+  for (let index = 0; index < 5; index += 1) {
+    const nightStart = new Date("2026-10-20T20:00:00");
+    nightStart.setDate(nightStart.getDate() + index);
+    const nightEnd = new Date(nightStart);
+    nightEnd.setDate(nightEnd.getDate() + 1);
+    nightEnd.setHours(7, 0, 0, 0);
+    const napStart = new Date(nightEnd);
+    napStart.setHours(9, 0, 0, 0);
+    const napEnd = new Date(napStart);
+    napEnd.setHours(10, 0, 0, 0);
+    events.push(
+      { id: `night-${index}`, kind: "sleep", startedAt: nightStart.toISOString(), endedAt: nightEnd.toISOString(), caregiver: "Anne" },
+      { id: `nap-${index}`, kind: "sleep", startedAt: napStart.toISOString(), endedAt: napEnd.toISOString(), caregiver: "Anne" }
+    );
+  }
+  const now = new Date("2026-10-27T12:00:00");
+  const insights = createAwakeWindowInsights(events, now);
+  const morning = insights.find((item) => item.part === "morning");
+  assert.equal(insights.length, 6);
+  assert.equal(morning?.sampleCount, 5);
+  assert.equal(morning?.requiredSamples, 5);
+  assert.equal(morning?.medianMinutes, 120);
+
+  const limited = createAwakeWindowInsights(events.slice(0, 8), now).find((item) => item.part === "morning");
+  assert.equal(limited?.sampleCount, 4);
+  assert.equal(limited?.medianMinutes, undefined);
 });
 
 test("sleep coaching keeps support reduction closed before six months", () => {

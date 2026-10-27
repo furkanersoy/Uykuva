@@ -24,7 +24,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
@@ -847,7 +847,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const [methodGuideOpen, setMethodGuideOpen] = useState(false);
   const [sleepBasicsOpen, setSleepBasicsOpen] = useState(false);
   const [wakeWindowGuideOpen, setWakeWindowGuideOpen] = useState(false);
+  const [awakePatternOpen, setAwakePatternOpen] = useState(false);
   const wakeWindows = wakeWindowGuide(app.state.baby, now);
+  const awakeWindowInsights = createAwakeWindowInsights(app.state.events, now);
   const nightGuide = nightWakingGuide(stage.id, coachingMethod);
   const saveSchedule = () => {
     if (!isValidClock(bedtime) || !isValidClock(wakeTime)) return Alert.alert("Saatleri kontrol edin", "Saatleri 20:00 gibi SS:DD biçiminde yazın.");
@@ -967,6 +969,19 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {wakeWindowGuideOpen ? <View style={styles.nightGuideContent}>
           {wakeWindows.map((window) => <View key={window.ageLabel} style={[styles.methodCompareRow, window.current && styles.currentWakeWindow]}><Text style={[styles.methodCompareLabel, window.current && styles.currentWakeWindowText]}>{window.ageLabel}{window.current ? " · bebeğiniz" : ""}</Text><Text style={[styles.methodCompareText, window.current && styles.currentWakeWindowText]}>{window.minMinutes}–{window.maxMinutes} dk</Text></View>)}
           <Text style={styles.hint}>Bunlar genel başlangıç aralıklarıdır; bebeğin uyku işaretleri ve kendi kayıtları önceliklidir. Erken doğan bebeklerde ilk 2 yıl düzeltilmiş yaş kullanılır. Kesin saat veya sağlık önerisi değildir.</Text>
+        </View> : null}
+      </Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: awakePatternOpen }} onPress={() => setAwakePatternOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Bebeğinizin uyanıklık örüntüsü</Text><Text style={styles.body}>Son 30 gündeki tamamlanmış uyku kayıtları</Text></View>
+          <Text style={styles.nightGuideChevron}>{awakePatternOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {awakePatternOpen ? <View style={styles.nightGuideContent}>
+          {awakeWindowInsights.map((insight) => <View key={insight.part} style={styles.awakeWindowRow}>
+            <Text style={styles.awakeWindowLabel}>{insight.label}</Text>
+            <Text style={styles.awakeWindowValue}>{insight.medianMinutes !== undefined ? `${insight.medianMinutes} dk medyan · ${insight.sampleCount} kayıt` : `${insight.sampleCount}/${insight.requiredSamples} kayıt · yaş rehberi kullanılıyor`}</Text>
+          </View>)}
+          <Text style={styles.hint}>Bu süreler birbirini izleyen tamamlanmış uyku kayıtlarından hesaplanır. Gündüz diliminde en az 5, gece diliminde en az 2 örnek olmadan kişisel medyan kullanılmaz. Aralıklar hedef veya kesin program değildir.</Text>
         </View> : null}
       </Card>
       {app.state.baby.gestationalWeek < 37 ? <Card tone="peach"><Text style={styles.cardTitle}>Erken doğum yaşı hesaba katılıyor</Text><Text style={styles.body}>Uyku penceresi ve koçluk aşaması, ilk iki yılda doğum haftasına göre düzeltilmiş yaşı kullanır. Aşı ve randevu tarihleri gerçek doğum tarihine bağlı kalır. Bu yaş bilgisi yalnızca genel rehber içindir; bebeğinizin bakım planını sağlık uzmanınızla belirleyin.</Text></Card> : null}
@@ -2226,6 +2241,9 @@ const styles = StyleSheet.create({
   methodCompareText: { flex: 1, color: colors.ink, fontSize: 12, lineHeight: 18 },
   currentWakeWindow: { backgroundColor: colors.mint, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 6, marginHorizontal: -8 },
   currentWakeWindowText: { color: colors.sageDark, fontWeight: "800" },
+  awakeWindowRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.line },
+  awakeWindowLabel: { flex: 1, minWidth: 0, color: colors.inkSoft, fontSize: 12, fontWeight: "700" },
+  awakeWindowValue: { flexShrink: 0, color: colors.ink, fontSize: 11, textAlign: "right" },
   nightGuideNumber: { width: 22, height: 22, flexShrink: 0, borderRadius: 11, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 12, fontWeight: "800" },
   routineDisabled: { opacity: 0.45 },
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },

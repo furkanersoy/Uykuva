@@ -98,7 +98,7 @@ export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailyS
   }));
 }
 
-type DayPart = "night" | "earlyMorning" | "morning" | "midday" | "afternoon" | "evening";
+export type DayPart = "night" | "earlyMorning" | "morning" | "midday" | "afternoon" | "evening";
 
 const DAY_PART_LABELS: Record<DayPart, string> = {
   night: "gece",
@@ -152,6 +152,29 @@ function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Rec
   }
   for (const part of Object.keys(windows) as DayPart[]) windows[part] = windows[part].slice(-10);
   return windows;
+}
+
+export type AwakeWindowInsight = {
+  part: DayPart;
+  label: string;
+  sampleCount: number;
+  requiredSamples: number;
+  medianMinutes?: number;
+};
+
+export function createAwakeWindowInsights(events: CareEvent[], now = new Date()): AwakeWindowInsight[] {
+  const windows = recentAwakeWindowsByDayPart(events, now);
+  return (Object.keys(DAY_PART_LABELS) as DayPart[]).map((part) => {
+    const samples = windows[part];
+    const requiredSamples = part === "night" ? 2 : 5;
+    return {
+      part,
+      label: DAY_PART_LABELS[part],
+      sampleCount: samples.length,
+      requiredSamples,
+      medianMinutes: samples.length >= requiredSamples ? Math.round(median(samples)) : undefined
+    };
+  });
 }
 
 export function createSleepForecast(baby: Baby, events: CareEvent[], now = new Date(), wakeAtOverride?: Date, dayContext?: SleepDayContext): SleepForecast {

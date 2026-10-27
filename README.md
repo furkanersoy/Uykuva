@@ -34,6 +34,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Ana uyku kartında pencereye kalan süreyi, pencere açıkken kalan dakikayı ve tahmini aralık geçince esnek yanıt mesajını gösterme
 - Önerilen uyku penceresinden sonra açılan tek seferlik “uyudu mu?” sorusuyla gerçek uyku başlangıcını tahminle eşleştirme; en az üç eşleşmede sonraki pencerenin merkezini ve genişliğini bu geçmişe göre ayarlama
 - Son 30 günlük uyanıklık kayıtlarını sabah, öğle, akşam ve gece dilimlerine göre kullanan kişisel uyku penceresi (kişisel örnek azsa yaş aralığına ağırlık verir)
+- Uyku ekranında, son 30 gündeki altı zaman dilimi için kişisel uyanıklık medyanını ve örnek sayısını gösterme; eşik dolmadığında yaş rehberinin kullanıldığını belirtme
 - Son 14 günde tekrar eden gündüz uykularından kişisel günlük taslak çıkarma
 - Yeterli geçmiş kayıt olduğunda sıradaki gündüz uykularını 24 saatlik planda tarihsel aralıklarla görme
 - İki haftanın kayıtlı gündüz uykusu örüntüsünü karşılaştırma; uyku geçişi tanısı veya kesin tahmin üretmez
