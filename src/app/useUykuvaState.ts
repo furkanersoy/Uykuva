@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, DevelopmentAnswer, EventKind, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
+import { cancelAllCareReminders } from "../services/notifications";
 
 function id(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -362,10 +363,12 @@ export function useUykuvaState() {
   }, []);
 
   const clearAllData = useCallback(async () => {
+    const remindersCancelled = await cancelAllCareReminders().then(() => true).catch(() => false);
     await resetState();
     setState(createInitialState());
     setStorageReady(true);
     setStorageError(null);
+    return remindersCancelled;
   }, []);
 
   const runningSleep = useMemo(
