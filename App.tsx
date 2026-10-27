@@ -809,6 +809,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const updateCoachMorningWake = (value: string) => {
     setMorningWake(normalizeClockInput(value));
   };
+  const coachMorningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWake)
+    ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
+    : undefined;
   const morningWakeHasSleep = isValidClock(morningWake) && (() => {
     const [hour, minute] = morningWake.split(":").map(Number);
     const wakeAt = new Date(now);
@@ -1078,6 +1081,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" value={morningWake} onChangeText={updateCoachMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} /></View></View>
+        {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
@@ -2128,6 +2132,7 @@ const styles = StyleSheet.create({
   feedForecast: { color: colors.ink, fontSize: 27, fontWeight: "800", letterSpacing: -0.8, marginTop: 12, marginBottom: 7 },
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
+  inputError: { color: colors.danger, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 8 },
   inputError: { color: colors.danger, fontSize: 12, lineHeight: 17, fontWeight: "700", marginTop: 8 },
   awake: { color: colors.sageDark, fontSize: 13, fontWeight: "700", marginTop: 14 },
   nightEntry: { minHeight: 48, borderRadius: 15, backgroundColor: "#E7ECE6", alignItems: "center", justifyContent: "center", marginBottom: 14, paddingHorizontal: 14 },
