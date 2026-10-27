@@ -27,6 +27,13 @@ function addMonths(date: Date, months: number) {
 
 function batchDates(event: CareEvent) {
   const storedAt = new Date(event.startedAt);
+  if (event.milkWarmedAt) {
+    const warmedAt = new Date(event.milkWarmedAt);
+    const warmedUseBy = new Date(warmedAt.getTime() + 2 * 60 * 60 * 1000);
+    const thawedUseBy = event.milkThawedAt ? new Date(new Date(event.milkThawedAt).getTime() + 24 * 60 * 60 * 1000) : warmedUseBy;
+    const useBy = new Date(Math.min(warmedUseBy.getTime(), thawedUseBy.getTime()));
+    return { bestBy: useBy, useBy, isThawed: Boolean(event.milkThawedAt) };
+  }
   if (event.milkThawedAt) {
     const thawedAt = new Date(event.milkThawedAt);
     const useBy = new Date(thawedAt.getTime() + 24 * 60 * 60 * 1000);
@@ -89,6 +96,7 @@ export function createMilkInventory(events: CareEvent[], now = new Date()): Milk
 }
 
 export function milkStorageLabel(event: CareEvent) {
+  if (event.milkWarmedAt) return "Isıtılmış / oda sıcaklığında · 2 sa";
   if (event.milkThawedAt) return "Çözdürülmüş · buzdolabı";
   return { room: "Oda sıcaklığı", fridge: "Buzdolabı", freezer: "Dondurucu" }[event.milkStorageLocation ?? "fridge"];
 }
