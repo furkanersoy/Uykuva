@@ -343,9 +343,11 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 
 ## 10. Uyku koçluğu kapsamı ve kalan işler
 
-Whispie'nin resmi ürün sayfası, 6 aydan itibaren altı yöntemli uyku koçluğu sunduğunu belirtiyor ([Whispie özellikleri](https://www.whispieapp.com/whispie/)). Uykuva'da da altı yaklaşım, yaşa bağlı hazır oluş kapısı, günlük 14 günlük rehber, gece uyanması rehberi, sabah check-in'i, duraklatma ve tamamlanan program arşivi bulunuyor. Uykuva tüm koçluk özelliklerini ücretsiz tutuyor.
+Whispie'nin resmi ürün sayfası uyku tahmininin yaş aralığını bebeğin uyanıklık kayıtlarıyla kişiselleştirdiğini, pencereyi kısa bir aralık olarak gösterdiğini ve 6 aydan itibaren Sleep Coach sunduğunu belirtiyor ([özellik sayfası](https://www.whispieapp.com/whispie/), [tahmin nasıl çalışıyor](https://www.whispieapp.com/whispie/how-it-works/)). 21 Ekim 2026 tarihli açıklamasında altı gün diliminde son 10 uyanıklık aralığı, gündüzde en az 5 ve gecede en az 2 örnek eşiği tarif ediliyor; sonraki uyku tahminleri ilk üç etkin günden sonra Premium'a, koç ise Premium+ üyeliğine bağlı. Uykuva'nın tüm özellikleri ücretsiz tutma kararı korunuyor.
 
-Öne çıkan ürün farkı çoklu cihaz işbirliğinde: Uykuva şu an aynı cihazda bakım veren profilleri ve paylaşılabilir devir/plan özetleri sunuyor; davetle başka telefondan eşzamanlı kayıt ve rol bazlı erişim henüz yok. Whispie'nin aile daveti ve rol bazlı görünüm özellikleriyle aradaki farkı kapatmak için sonraki büyük iş güvenli hesap, davet ve çevrimdışı senkronizasyon tasarımıdır. Mevcut cihaz içi SQLite depolamasını koruyarak bu akışın veri birleştirme ve çakışma kuralları ayrıca tanımlanmalıdır.
+Uykuva'nın hesaplama motoru da altı gün dilimini, son 10 örneği ve gündüz/gece için 5/2 örnek eşiğini kullanıyor; yaş aralığına kişisel örüntüyü harmanlıyor ve geçmiş tahmin hatalarına göre pencereyi ayarlıyor. Uyku koçluğunda altı yaklaşım, yaşa bağlı hazır oluş kapısı, 14 günlük rehber, gece uyanması rehberi, sabah check-in'i, duraklatma ve tamamlanan program arşivi var.
+
+Güncel ürün farkları: Whispie sayfası 27+ dil ve 39 ülkede aşı takvimi, ayrıca hesaplar arası paylaşımlı aile günlüğü tanıtıyor. Uykuva şu an Türkçe ve Türkiye takvimine odaklı; aynı cihazda bakım veren profilleri, paylaşılabilir devir/plan özeti ve dosya tabanlı yedek taşıma sunuyor. Başka telefondan eşzamanlı kayıt, rol bazlı bulut erişimi, çok dilli arayüz ve ülkeye göre aşı takvimi henüz yok. En yüksek öncelikli fark çoklu cihaz senkronizasyonu; bunun için güvenli hesap, aile daveti, çevrimdışı değişiklik birleştirme/çakışma kuralları ve kullanıcı denetimli veri silme birlikte tasarlanmalı. Mevcut cihaz içi SQLite saklaması çevrimdışı kaynak olarak korunmalıdır.
 
 Uyku koçluğu ve tahminler ebeveynin gözlemlerinin yerine geçmez. Mevcut yaş sınırları, hazır oluş maddeleri, hastalık/seyahat duraklatması ve sağlık uzmanına yönlendirme metinleri korunmalıdır.
 
@@ -377,12 +379,11 @@ Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrar
 
 ## 11. Sonraki geliştirme sırası
 
-1. Görev hatırlatmaları ve güvenilir zamanlayıcılar
-2. Aile hesabı, davet ve çevrimdışı senkronizasyon
-3. Ek dozlar için hekim yönlendirmeli aşı akışı
-4. iOS Live Activity, saat uygulamaları ve Türkçe sesli kayıt
-5. İçerik/uyku planlarının uzman doğrulaması
-6. Kapalı beta, erişilebilirlik ve mağaza hazırlığı
+1. Güvenli aile hesabı, başka telefona bakım veren daveti, çevrimdışı senkronizasyon ve çakışma çözümü
+2. Bildirim planlarının gerçek cihaz ve saat dilimi değişimlerinde uçtan uca doğrulanması
+3. Türkçe sesli kayıt ve ebeveynin seçtiği ek dil/ülke aşı takvimleri
+4. İçerik ve uyku planlarının kaynak sürümlemeyle uzman doğrulaması
+5. Erişilebilirlik denetimi, gerçek cihaz testleri, kapalı beta ve mağaza hazırlığı
 
 ## 12. Güvenlik ve mevzuat notları
 
