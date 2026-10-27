@@ -7,6 +7,14 @@ export type BreastfeedingSegment = {
 };
 
 export type SleepSupport = "feeding" | "held" | "rocked" | "nearby" | "cribSupport" | "independent" | "other";
+export type NightWakeResponse = "feeding" | "comfort" | "diaper" | "other";
+
+export type NightWakeLog = {
+  id: string;
+  at: string;
+  response: NightWakeResponse;
+  caregiver: string;
+};
 
 export type Baby = {
   id: string;
@@ -102,6 +110,7 @@ export type SleepCheckIn = {
   nightWakings?: number;
   bedtime?: string;
   wakeTime?: string;
+  nightWakeLogs?: NightWakeLog[];
   note?: string;
 };
 
