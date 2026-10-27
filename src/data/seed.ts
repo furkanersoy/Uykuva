@@ -13,8 +13,8 @@ export function createInitialState(): AppState {
   const sleep2 = iso(4.2, 63);
   const sleep3 = iso(7.1, 48);
   const sleep4 = iso(10.4, 55);
-  return {
-    schemaVersion: 3,
+  const initialState: Omit<AppState, "children" | "activeChildId"> = {
+    schemaVersion: 4,
     onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
@@ -66,5 +66,9 @@ export function createInitialState(): AppState {
       quietEnd: "07:00"
     }
   };
+  return {
+    ...initialState,
+    children: [{ baby: initialState.baby, careInstructions: initialState.careInstructions, developmentCheckIns: initialState.developmentCheckIns, events: initialState.events, careTasks: initialState.careTasks, sleepPlan: initialState.sleepPlan }],
+    activeChildId: initialState.baby.id
+  };
 }
-
