@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, median, sleepProgramStage } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, median, sleepProgramStage } from "./sleep";
 import { Baby, CareEvent } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -41,6 +41,16 @@ test("forecast returns an explainable range after a completed sleep", () => {
   assert.equal(result.available, true);
   assert.ok(result.start && result.end && result.start < result.end);
   assert.match(result.explanation, /yaşa göre/i);
+});
+
+test("morning wake forecast advances after a sleep is recorded since wake", () => {
+  const wakeAt = new Date("2026-10-26T07:00:00");
+  const priorNight: CareEvent = { id: "prior", kind: "sleep", startedAt: "2026-10-25T20:00:00", endedAt: "2026-10-26T06:30:00", caregiver: "Anne" };
+  const firstNap: CareEvent = { id: "nap", kind: "sleep", startedAt: "2026-10-26T09:00:00", endedAt: "2026-10-26T09:40:00", caregiver: "Anne" };
+  const ongoingNap: CareEvent = { id: "ongoing", kind: "sleep", startedAt: "2026-10-26T09:00:00", caregiver: "Anne" };
+  assert.equal(hasSleepSinceWake([priorNight], wakeAt), false);
+  assert.equal(hasSleepSinceWake([firstNap], wakeAt), true);
+  assert.equal(hasSleepSinceWake([ongoingNap], wakeAt), true);
 });
 
 test("day context pauses sleep windows on illness, travel, teething, or routine changes", () => {
