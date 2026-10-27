@@ -17,6 +17,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 - Emzirme zamanlayıcısında tek oturum içinde taraf değiştirme ve sol/sağ sürelerini ayrı görme
 - İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
 - Ortak bakım zaman çizelgesi
+- Bakım verene özel aile talimatlarını cihazda saklama ve isteğe bağlı devir özetine ekleme
 - Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama/filtreleme
 - Bakım kaydını zaman çizelgesinden silerken ikinci onay
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
