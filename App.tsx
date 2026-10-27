@@ -5,6 +5,7 @@ import {
   Alert,
   Linking,
   Modal,
+  NativeModules,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -164,6 +165,26 @@ export default function App() {
   const forecastWakeAt = hasSleepSinceMorningWake ? undefined : savedMorningWakeAt;
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext), [app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
+
+  useEffect(() => {
+    const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string) => Promise<void> } | undefined;
+    if (!app.hydrated || !app.state.onboardingComplete || !widget?.updateSleepWindow) return;
+    const sleepWindow = app.runningSleep
+      ? "Uyku devam ediyor"
+      : forecast.available && forecast.start && forecast.end
+        ? `${time(forecast.start)}–${time(forecast.end)}`
+        : "Uyku aralığı bekleniyor";
+    const status = app.runningSleep
+      ? `Başlangıç ${time(app.runningSleep.startedAt)}`
+      : !forecast.available || !forecast.start || !forecast.end
+        ? "Güncel tahmin için Uykuva'yı açın"
+        : clockNow < forecast.start
+          ? `Uykuya ${compactMinutes((forecast.start.getTime() - clockNow.getTime()) / 60_000)} kaldı`
+          : clockNow < forecast.end
+            ? "Uyku penceresi açık"
+            : "Aralık geçti · uyku işaretlerini izleyin";
+    void widget.updateSleepWindow(app.state.baby.name, sleepWindow, status).catch(() => undefined);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep, forecast, clockNow]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete || app.runningSleep || sleepEditor || logMode || taskMode || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen || !forecast.available || !forecast.start || !forecast.end) return;
@@ -453,7 +474,19 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
           </View>
         </View>
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
-        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : morningWakeSleepRecorded ? <Text style={styles.hint}>İlk uyku kaydedildi; sonraki pencere son uyku kaydından hesaplanıyor.</Text> : <Text style={styles.hint}>Saat otomatik biçimlendirilir. Örnek: 0700.</Text>}
+        {morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end ? (
+          <View accessibilityLiveRegion="polite" style={styles.wakeForecastPanel}>
+            <Text style={styles.eyebrow}>İLK GÜNDÜZ UYKUSU</Text>
+            <Text style={styles.wakeForecastTime}>{time(morningWakeForecast.start)}–{time(morningWakeForecast.end)}</Text>
+            <Text style={styles.hint}>{morningWakeForecast.explanation}</Text>
+          </View>
+        ) : morningWakeForecast ? (
+          <Text accessibilityLiveRegion="polite" style={styles.hint}>{morningWakeForecast.explanation}</Text>
+        ) : morningWakeSleepRecorded ? (
+          <Text accessibilityLiveRegion="polite" style={styles.hint}>İlk uyku kaydedildi; sıradaki pencere son uyku kaydından hesaplanıyor.</Text>
+        ) : (
+          <Text style={styles.hint}>Uyanış saatini girin (ör. 0700); ilk uyku penceresi burada anında görünür.</Text>
+        )}
         <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
       <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
@@ -1770,6 +1803,8 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.sageDark, fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
   confidence: { color: colors.sageDark, fontSize: 11, fontWeight: "700", backgroundColor: "rgba(255,255,255,.5)", paddingHorizontal: 9, paddingVertical: 5, borderRadius: 99 },
   heroTime: { color: colors.ink, fontSize: 38, fontWeight: "800", letterSpacing: -1.6, marginTop: 14, marginBottom: 8 },
+  wakeForecastPanel: { marginTop: 14, padding: 14, borderRadius: 16, backgroundColor: colors.mint },
+  wakeForecastTime: { color: colors.sageDark, fontSize: 28, lineHeight: 34, fontWeight: "800", letterSpacing: -0.8, marginTop: 6 },
   feedForecast: { color: colors.ink, fontSize: 27, fontWeight: "800", letterSpacing: -0.8, marginTop: 12, marginBottom: 7 },
   heroSmall: { color: colors.ink, fontSize: 28, fontWeight: "800", letterSpacing: -1, marginVertical: 10 },
   body: { color: colors.inkSoft, fontSize: 14, lineHeight: 21 },
