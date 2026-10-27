@@ -201,6 +201,10 @@ export default function App() {
       const child = destination.childId
         ? app.state.children.find((item) => item.baby.id === destination.childId)
         : app.state.children.find((item) => item.baby.id === app.state.activeChildId);
+      if (destination.childId && !child) {
+        void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
+        return;
+      }
       if (destination.childId && child) app.setActiveChild(child.baby.id);
       setNightMode(false);
       setTab(destination.tab);
