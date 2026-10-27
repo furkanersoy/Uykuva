@@ -1111,6 +1111,12 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
         const role = { parent: "Ebeveyn", family: "Aile", caregiver: "Bakıcı" }[caregiver.role];
         return <Pressable accessibilityRole="radio" accessibilityState={{ selected: active }} key={caregiver.id} onPress={() => app.setActiveCaregiver(caregiver.id)} onLongPress={() => { if (app.state.caregivers.length > 1) Alert.alert("Bakım vereni sil", `${caregiver.name} bu cihazdan kaldırılsın mı?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Sil", style: "destructive", onPress: () => app.deleteCaregiver(caregiver.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{caregiver.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{caregiver.name}</Text><Text style={styles.muted}>{role}{active ? " · aktif" : ""}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
       })}<View style={styles.spacer12} /><PrimaryButton label="Bu cihaza bakım veren ekle" quiet onPress={onAddCaregiver} /><Text style={styles.hint}>Kişiyi seçtiğinizde yeni kayıtlar onun adına yazılır. Silmek için basılı tutun.</Text></Card>
+      <Card>
+        <Text style={styles.cardTitle}>Bakım verene özel notlar</Text>
+        <Text style={styles.body}>Beslenme düzeni, sakinleşmesine yardımcı olanlar ve aile talimatları gibi bilgileri yazın.</Text>
+        <TextInput value={app.state.careInstructions ?? ""} onChangeText={app.updateCareInstructions} style={[styles.input, { minHeight: 112, textAlignVertical: "top" }]} multiline maxLength={1000} placeholder="Örn. Uykudan önce kısa ninni iyi geliyor; biberon miktarını bakım planındaki gibi verin." placeholderTextColor="#93A09C" />
+        <Text style={styles.hint}>Bu not bu cihazda saklanır ve yalnızca “Bakım özetini paylaş” düğmesine bastığınızda devir metnine eklenir.</Text>
+      </Card>
       <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
       <Card>
         <Text style={styles.cardTitle}>Bakım devri aralığı</Text>
