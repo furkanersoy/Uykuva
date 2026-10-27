@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createMilkInventory, milkStorageLabel } from "./milk";
+import { createMilkInventory, milkExpiryReminderLeadMs, milkStorageLabel } from "./milk";
 import { CareEvent } from "./types";
 
 function pump(id: string, startedAt: string, amountMl: number, milkStorageLocation: "room" | "fridge" | "freezer" = "fridge"): CareEvent {
@@ -10,6 +10,16 @@ function pump(id: string, startedAt: string, amountMl: number, milkStorageLocati
 function expressedBottle(id: string, startedAt: string, amountMl: number): CareEvent {
   return { id, kind: "feed", feedType: "bottle", bottleSource: "expressed", startedAt, amountMl, caregiver: "Baba" };
 }
+
+test("milk expiry reminder lead can be adaptive or caregiver-selected", () => {
+  const hour = 60 * 60_000;
+  assert.equal(milkExpiryReminderLeadMs(10 * 24 * hour, "adaptive"), 24 * hour);
+  assert.equal(milkExpiryReminderLeadMs(3 * 24 * hour, "adaptive"), 12 * hour);
+  assert.equal(milkExpiryReminderLeadMs(12 * hour, "adaptive"), 2 * hour);
+  assert.equal(milkExpiryReminderLeadMs(12 * hour, 2), 2 * hour);
+  assert.equal(milkExpiryReminderLeadMs(12 * hour, 24), 6 * hour);
+  assert.equal(milkExpiryReminderLeadMs(0, 24), 0);
+});
 
 test("expressed bottles use the oldest eligible milk batch first", () => {
   const events = [
