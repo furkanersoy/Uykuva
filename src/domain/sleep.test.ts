@@ -240,7 +240,8 @@ test("care handoff includes the next sleep window based on today's wake time or 
   assert.equal(expected.available, true);
   assert.ok(expected.start && expected.end);
   const expectedWindow = `${expected.start.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}–${expected.end.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
-  assert.match(summary, new RegExp(`Tahmini sonraki uyku penceresi ${expectedWindow}`));
+  const confidenceLabel = { low: "ilk tahmin", medium: "kişiselleşiyor", high: "kişisel ritim" }[expected.confidence];
+  assert.match(summary, new RegExp(`Tahmini sonraki uyku penceresi ${expectedWindow} · ${confidenceLabel}`));
 });
 
 test("care handoff says how much expressed milk is usable and which batch to use first", () => {

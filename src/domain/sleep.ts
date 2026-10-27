@@ -987,7 +987,8 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
   const enabledRoutine = state.sleepPlan.routine.filter((step) => step.enabled && step.label.trim()).map((step) => step.label.trim());
   if (enabledRoutine.length) parts.push(`Etkin akşam rutini: ${enabledRoutine.join(" → ")}`);
   if (nextSleepForecast?.available && nextSleepForecast.start && nextSleepForecast.end && nextSleepForecast.end > now) {
-    parts.push(`Tahmini sonraki uyku penceresi ${eventTime(nextSleepForecast.start.toISOString())}–${eventTime(nextSleepForecast.end.toISOString())}`);
+    const confidenceLabel = { low: "ilk tahmin", medium: "kişiselleşiyor", high: "kişisel ritim" }[nextSleepForecast.confidence];
+    parts.push(`Tahmini sonraki uyku penceresi ${eventTime(nextSleepForecast.start.toISOString())}–${eventTime(nextSleepForecast.end.toISOString())} · ${confidenceLabel}`);
   }
   if (nightWakeLogs.length) {
     const latestWake = nightWakeLogs[0]!;
