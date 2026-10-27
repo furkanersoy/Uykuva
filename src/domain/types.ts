@@ -134,7 +134,7 @@ export type Caregiver = {
 export type DevelopmentAnswer = "yes" | "notSure" | "notYet";
 
 export type DevelopmentCheckIn = {
-  ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18;
+  ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18 | 24 | 30 | 36 | 48 | 60;
   checkedAt: string;
   answers: Record<string, DevelopmentAnswer>;
   note?: string;
