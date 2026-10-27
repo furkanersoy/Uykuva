@@ -11,6 +11,22 @@ export function isValidClock(value: string) {
   return minutesOfDay(value) !== null;
 }
 
+export function dailyReminderDatesBefore(clock: string, leadMinutes: number, days: number, now = new Date()): Date[] {
+  const targetMinutes = minutesOfDay(clock);
+  if (targetMinutes === null || !Number.isInteger(leadMinutes) || leadMinutes < 0 || leadMinutes >= 1440 || !Number.isInteger(days) || days < 1 || days > 14 || !Number.isFinite(now.getTime())) return [];
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const reminders: Date[] = [];
+  for (let offset = 0; offset < days; offset += 1) {
+    const target = new Date(today);
+    target.setDate(today.getDate() + offset);
+    target.setHours(Math.floor(targetMinutes / 60), targetMinutes % 60, 0, 0);
+    const reminder = new Date(target.getTime() - leadMinutes * 60_000);
+    if (reminder.getTime() > now.getTime()) reminders.push(reminder);
+  }
+  return reminders;
+}
+
 export function isInQuietHours(date: Date, start: string, end: string): boolean {
   const startMinutes = minutesOfDay(start);
   const endMinutes = minutesOfDay(end);
@@ -20,3 +36,4 @@ export function isInQuietHours(date: Date, start: string, end: string): boolean 
     ? current >= startMinutes && current < endMinutes
     : current >= startMinutes || current < endMinutes;
 }
+
