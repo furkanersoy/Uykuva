@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, median, methodDescription, sleepProgramStage } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepProgramStage } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -93,6 +93,13 @@ test("day context pauses sleep windows on illness, travel, teething, or routine 
     assert.equal(result.available, false);
     assert.match(result.explanation, /duraklatıldı/i);
   }
+});
+
+test("a non-routine day pauses coaching progress without changing the saved plan pause setting", () => {
+  const plan = { paused: false, checkIns: [{ date: "2026-10-27", dayContext: "illness" as const }] };
+  assert.equal(isSleepPlanPausedToday(plan, "2026-10-27"), true);
+  assert.equal(isSleepPlanPausedToday(plan, "2026-10-28"), false);
+  assert.equal(isSleepPlanPausedToday({ paused: true, checkIns: [] }, "2026-10-27"), true);
 });
 
 test("forecast learns its center and range from saved suggestion outcomes", () => {
