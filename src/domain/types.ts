@@ -41,6 +41,7 @@ export type CareEvent = {
   milkLabel?: string;
   milkDiscardedAt?: string;
   milkThawedAt?: string;
+  milkWarmedAt?: string;
   breastSide?: "left" | "right" | "both";
   breastSessions?: BreastfeedingSegment[];
   foods?: string[];
@@ -188,4 +189,3 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
-
