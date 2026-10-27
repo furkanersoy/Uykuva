@@ -89,7 +89,9 @@ export function migrateState(value: unknown): AppState {
       careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120,
       diaperRemindersEnabled: candidate.preferences?.diaperRemindersEnabled ?? false,
       diaperReminderHours: [2, 3, 4].includes(Number(candidate.preferences?.diaperReminderHours)) ? Number(candidate.preferences?.diaperReminderHours) as 2 | 3 | 4 : 3,
-      milkExpiryRemindersEnabled: candidate.preferences?.milkExpiryRemindersEnabled ?? false
+      milkExpiryRemindersEnabled: candidate.preferences?.milkExpiryRemindersEnabled ?? false,
+      routineRemindersEnabled: candidate.preferences?.routineRemindersEnabled ?? false
     }
   };
 }
+
