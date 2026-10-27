@@ -1,3 +1,4 @@
+Warning: fsx was declared with const; use let for reassignable variables.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { coachingDay, correctedAgeDays, correctedAgeMonths, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, median, sleepProgramStage } from "./sleep";
@@ -130,3 +131,16 @@ test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   assert.match(summary, /1 gece uyanması kaydı · son 10:45 Beslenme · Baba/);
 });
 
+test("care handoff includes the next sleep window based on today's wake time or latest nap", () => {
+  const state = createInitialState();
+  state.baby = termBaby;
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", wakeTime: "07:00" }];
+  state.events = [{ id: "nap", kind: "sleep", startedAt: "2026-10-27T08:30:00", endedAt: "2026-10-27T08:45:00", caregiver: "Anne" }];
+  const now = new Date("2026-10-27T09:00:00");
+  const summary = handoffSummary(state, now, 4);
+  const expected = createSleepForecast(termBaby, state.events, now);
+  assert.equal(expected.available, true);
+  assert.ok(expected.start && expected.end);
+  const expectedWindow = `${expected.start.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}–${expected.end.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
+  assert.match(summary, new RegExp(`Tahmini sonraki uyku penceresi ${expectedWindow}`));
+});
