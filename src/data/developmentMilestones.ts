@@ -2,7 +2,7 @@ export type DevelopmentDomain = "social" | "language" | "cognitive" | "movement"
 
 export type DevelopmentMilestone = { id: string; label: string };
 export type DevelopmentMilestoneGroup = { domain: DevelopmentDomain; label: string; items: DevelopmentMilestone[] };
-export type DevelopmentCheckpoint = { ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18; title: string; sourceUrl: string; groups: DevelopmentMilestoneGroup[] };
+export type DevelopmentCheckpoint = { ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18 | 24 | 30 | 36 | 48 | 60; title: string; sourceUrl: string; groups: DevelopmentMilestoneGroup[] };
 
 const group = (domain: DevelopmentDomain, label: string, age: number, labels: string[]): DevelopmentMilestoneGroup => ({
   domain,
@@ -72,6 +72,51 @@ export const DEVELOPMENT_CHECKPOINTS: DevelopmentCheckpoint[] = [
       group("language", "Dil ve iletişim", 18, ["“Anne/baba” dışında en az üç kelime söylemeye çalışır", "El hareketi olmadan tek adımlı yönergeyi izler"]),
       group("cognitive", "Öğrenme ve problem çözme", 18, ["Süpürme gibi ev işlerini taklit eder", "Oyuncak arabayı itmek gibi basit biçimde oyuncaklarla oynar"]),
       group("movement", "Hareket ve fiziksel gelişim", 18, ["Bir yere tutunmadan yürür", "Karalama yapar", "Kapaksız bardaktan içer; bazen dökebilir", "Parmaklarıyla kendi kendini besler", "Kaşık kullanmayı dener", "Koltuk veya sandalyeye yardımsız çıkıp iner"])
+    ]
+  },
+  {
+    ageMonths: 24, title: "2 yaş", sourceUrl: "https://www.cdc.gov/act-early/digital-online-checklist/2-years.html",
+    groups: [
+      group("social", "Sosyal ve duygusal", 24, ["Başkalarının incindiğini veya üzüldüğünü fark eder", "Yeni bir durumda nasıl tepki vereceğini anlamak için yüzünüze bakar"]),
+      group("language", "Dil ve iletişim", 24, ["Kitapta sorduğunuz şeyi gösterir", "En az iki kelimeyi bir araya getirir", "İstediğinizde en az iki vücut bölümünü gösterir", "El sallama ve işaret etmenin dışında jestler kullanır"]),
+      group("cognitive", "Öğrenme ve problem çözme", 24, ["Bir eliyle tuttuğu nesne üzerinde diğer eliyle işlem yapar", "Oyuncaktaki düğme, anahtar veya kolları kullanmayı dener", "Birden fazla oyuncakla aynı anda oynar"]),
+      group("movement", "Hareket ve fiziksel gelişim", 24, ["Topa vurur", "Koşar", "Birkaç basamağı yardımla veya yardımsız çıkar", "Kaşıkla yemek yer"])
+    ]
+  },
+  {
+    ageMonths: 30, title: "30 ay", sourceUrl: "https://www.cdc.gov/act-early/digital-online-checklist/30-months.html",
+    groups: [
+      group("social", "Sosyal ve duygusal", 30, ["Diğer çocukların yanında oynar ve bazen onlarla oyuna katılır", "Yapabildiği bir şeyi size gösterir", "Basit rutinleri söylenince izler"]),
+      group("language", "Dil ve iletişim", 30, ["Yaklaşık 50 kelime söyler", "Bir eylem sözcüğü içeren iki veya daha fazla kelimeyi birleştirir", "Kitapta gösterdiğiniz nesnenin adını söyler", "Ben, beni veya biz gibi sözcükleri kullanır"]),
+      group("cognitive", "Öğrenme ve problem çözme", 30, ["Bir nesneyi başka bir şeyi temsil edecek şekilde kullanarak oyun kurar", "Basit sorunları çözmek için bir yol dener", "İki aşamalı yönergeleri izler", "En az bir rengi tanır"]),
+      group("movement", "Hareket ve fiziksel gelişim", 30, ["Kapı kolu çevirmek veya kapağı açmak gibi elini döndürür", "Bazı giysilerini kendi çıkarır", "İki ayağıyla yerden zıplar", "Kitap sayfalarını teker teker çevirir"])
+    ]
+  },
+  {
+    ageMonths: 36, title: "3 yaş", sourceUrl: "https://www.cdc.gov/act-early/digital-online-checklist/3-years.html",
+    groups: [
+      group("social", "Sosyal ve duygusal", 36, ["Siz ayrıldıktan sonra 10 dakika içinde sakinleşir", "Diğer çocukları fark eder ve oyuna katılır"]),
+      group("language", "Dil ve iletişim", 36, ["Sizinle en az iki karşılıklı konuşma sırası yapar", "Kim, ne, nerede veya neden soruları sorar", "Resimde veya kitapta olan eylemi söyler", "Sorulduğunda adını söyler", "Çoğu kişinin anlayabileceği şekilde konuşur"]),
+      group("cognitive", "Öğrenme ve problem çözme", 36, ["Nasıl yapıldığını gösterdiğinizde daire çizer", "Uyarıldığında sıcak nesneye dokunmaktan kaçınır"]),
+      group("movement", "Hareket ve fiziksel gelişim", 36, ["Büyük boncuk veya makarna gibi nesneleri ipe dizer", "Bazı giysilerini kendi giyer", "Çatal kullanır"])
+    ]
+  },
+  {
+    ageMonths: 48, title: "4 yaş", sourceUrl: "https://www.cdc.gov/act-early/digital-online-checklist/4-years.html",
+    groups: [
+      group("social", "Sosyal ve duygusal", 48, ["Oyun sırasında başka biriymiş gibi davranır", "Yakında çocuk yoksa onlarla oynamayı ister", "Üzgün veya incinmiş birini teselli eder", "Oyun alanında yüksekten atlamamak gibi tehlikelerden kaçınır", "Yardımcı olmayı sever", "Bulunduğu yere göre davranışını değiştirir"]),
+      group("language", "Dil ve iletişim", 48, ["Dört veya daha fazla kelimeli cümleler kurar", "Şarkı, hikâye veya tekerlemeden bazı sözleri söyler", "Gününde olan en az bir şeyi anlatır", "Basit nesne ve araçların ne işe yaradığını yanıtlar"]),
+      group("cognitive", "Öğrenme ve problem çözme", 48, ["Bazı renkleri adlandırır", "Bildiği bir hikâyede sırada ne olacağını söyler", "Bir kişiyi en az üç vücut bölümüyle çizer"]),
+      group("movement", "Hareket ve fiziksel gelişim", 48, ["Çoğu zaman büyük bir topu yakalar", "Yetişkin gözetiminde yiyecek koyar veya su döker", "Bazı düğmeleri açar", "Kalemi yumruk yerine parmaklarıyla tutar"])
+    ]
+  },
+  {
+    ageMonths: 60, title: "5 yaş", sourceUrl: "https://www.cdc.gov/act-early/digital-online-checklist/5-years.html",
+    groups: [
+      group("social", "Sosyal ve duygusal", 60, ["Oyunlarda kurallara uyar veya sırasını bekler", "Sizin için şarkı söyler, dans eder veya rol yapar", "Çorap eşleştirmek gibi basit ev işlerini yapar"]),
+      group("language", "Dil ve iletişim", 60, ["Duyduğu veya uydurduğu bir hikâyeyi en az iki olayla anlatır", "Okuduğunuz hikâyeyle ilgili basit soruları yanıtlar", "Üçten fazla karşılıklı konuşma sırasını sürdürür", "Basit kafiyeleri kullanır veya tanır"]),
+      group("cognitive", "Öğrenme ve problem çözme", 60, ["10'a kadar sayar", "Gösterdiğiniz 1–5 arasındaki bazı rakamları adlandırır", "Dün, yarın, sabah veya gece gibi zaman sözcükleri kullanır", "Bir etkinliğe 5–10 dakika dikkatini verir", "Adındaki bazı harfleri yazar", "Gösterdiğiniz bazı harfleri adlandırır"]),
+      group("movement", "Hareket ve fiziksel gelişim", 60, ["Bazı düğmeleri ilikler", "Tek ayak üzerinde zıplar"])
     ]
   }
 ];
