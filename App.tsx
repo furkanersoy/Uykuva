@@ -34,7 +34,7 @@ import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
-import { CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
+import { CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
@@ -65,6 +65,13 @@ const sleepFocusOptions: { id: SleepFocus; label: string }[] = [
   { id: "naps", label: "Gündüz uykuları" },
   { id: "routine", label: "Akşam rutini" }
 ];
+const sleepDayContextOptions: { id?: SleepDayContext; label: string }[] = [
+  { label: "Olağan gün" },
+  { id: "illness", label: "Hastalık / rahatsızlık" },
+  { id: "travel", label: "Seyahat" },
+  { id: "teething", label: "Diş çıkarma" },
+  { id: "routineChange", label: "Düzen değişikliği" }
+];
 
 function time(value?: string | Date) {
   if (!value) return "—";
@@ -76,6 +83,14 @@ function duration(event: CareEvent) {
   if (!event.endedAt) return "devam ediyor";
   const minutes = Math.round((new Date(event.endedAt).getTime() - new Date(event.startedAt).getTime()) / 60_000);
   return `${minutes} dk`;
+}
+
+function compactMinutes(minutes: number) {
+  const value = Math.max(0, Math.ceil(minutes));
+  const hours = Math.floor(value / 60);
+  const remainder = value % 60;
+  if (hours === 0) return `${remainder} dk`;
+  return remainder === 0 ? `${hours} sa` : `${hours} sa ${remainder} dk`;
 }
 
 function eventTitle(event: CareEvent) {
@@ -136,7 +151,8 @@ export default function App() {
     const timer = setInterval(() => setClockNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
-  const savedMorningWake = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow))?.wakeTime;
+  const todaySleepCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow));
+  const savedMorningWake = todaySleepCheckIn?.wakeTime;
   const savedMorningWakeAt = useMemo(() => {
     if (!savedMorningWake || !isValidClock(savedMorningWake)) return undefined;
     const [hour, minute] = savedMorningWake.split(":").map(Number);
@@ -151,7 +167,7 @@ export default function App() {
     return startedAt >= savedMorningWakeAt.getTime() || Number.isFinite(endedAt) && endedAt >= savedMorningWakeAt.getTime();
   }) : false;
   const forecastWakeAt = hasSleepSinceMorningWake ? undefined : savedMorningWakeAt;
-  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt), [app.state.baby, app.state.events, clockNow, forecastWakeAt]);
+  const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext), [app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
 
   useEffect(() => {
@@ -348,6 +364,16 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
   return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} style={styles.input} placeholderTextColor="#93A09C" /></View>;
 }
 
+function SleepDayContextPicker({ selected, onSelect }: { selected?: SleepDayContext; onSelect: (context?: SleepDayContext) => void }) {
+  return <>
+    <Text style={styles.inputLabel}>Bugünün durumu · isteğe bağlı</Text>
+    <View style={styles.choiceRow}>
+      {sleepDayContextOptions.map((item) => <Pill key={item.id ?? "ordinary"} label={item.label} active={selected === item.id} onPress={() => onSelect(item.id)} />)}
+    </View>
+    {selected ? <Text style={styles.hint}>Bu işaret açıkken uyku penceresi ve uyku hatırlatmaları duraklatılır. Olağan güne döndüğünüzde “Olağan gün”ü seçin.</Text> : null}
+  </>;
+}
+
 function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, onToggleNightMode, onLogNightWake }: { app: ReturnType<typeof useUykuvaState>; forecast: ReturnType<typeof createSleepForecast>; feedingForecast: ReturnType<typeof createFeedingForecast>; openLog: (mode: LogMode) => void; now: Date; nightMode: boolean; onToggleNightMode: () => void; onLogNightWake: () => void }) {
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
@@ -362,13 +388,21 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     const [hour, minute] = morningWake.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
-    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt);
+    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt, todayCheckIn?.dayContext);
   })();
+  const displayedForecast = morningWakeForecast ?? forecast;
   const saveMorningWake = () => {
     if (!isValidClock(morningWake)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
     app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWake });
   };
-  const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[forecast.confidence];
+  const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[displayedForecast.confidence];
+  const sleepWindowStatus = !displayedForecast.available || !displayedForecast.start || !displayedForecast.end
+    ? undefined
+    : now < displayedForecast.start
+      ? `Uyku penceresine yaklaşık ${compactMinutes((displayedForecast.start.getTime() - now.getTime()) / 60_000)} var.`
+      : now < displayedForecast.end
+        ? `Uyku penceresi açık; tahmini aralığın bitmesine ${compactMinutes((displayedForecast.end.getTime() - now.getTime()) / 60_000)} var.`
+        : "Tahmini aralık geçti; bebeğinizin uyku işaretlerine göre ilerleyin.";
   const sleepElapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   const wakeEstimate = estimateSleepWakeWindow(app.state.events, app.runningSleep, now);
   const careWindowEnd = now.getTime() + 24 * 60 * 60 * 1000;
@@ -383,13 +417,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   }
   const napOutline = createDailyNapOutline(app.state.events, now);
   const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
-  if (forecast.available && forecast.start && forecast.end) agenda.push({ id: "next-sleep", at: forecast.start, endAt: forecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Kayıt ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
+  if (displayedForecast.available && displayedForecast.start && displayedForecast.end) agenda.push({ id: "next-sleep", at: displayedForecast.start, endAt: displayedForecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Sabah uyanış saati ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
   if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı beslenme aralığı", detail: "Açlık işaretleri ve bebeğinizin ihtiyacı her zaman önceliklidir." });
   if (bedtimeTarget && bedtimeTarget.getTime() <= careWindowEnd) agenda.push({ id: "bedtime", at: bedtimeTarget, kind: "bedtime", label: "Hedef yatış", detail: "Uyku planınızdaki esnek hedef saat." });
   nextCareTasks.forEach((task) => agenda.push({ id: task.id, at: new Date(task.dueAt), kind: "care", label: task.title, detail: task.type === "vaccine" ? "Aşı" : "Randevu", task }));
   napOutline.forEach((nap) => {
     if (nap.actualStart || nap.typical.getTime() <= now.getTime() || nap.typical.getTime() > careWindowEnd) return;
-    if (forecast.available && forecast.end && nap.typical.getTime() <= forecast.end.getTime()) return;
+    if (displayedForecast.available && displayedForecast.end && nap.typical.getTime() <= displayedForecast.end.getTime()) return;
     agenda.push({ id: `nap-outline-${nap.order}`, at: nap.from.getTime() > now.getTime() ? nap.from : now, endAt: nap.to, kind: "sleep", label: `${nap.order}. gündüz uykusu taslağı`, detail: `Son 14 günde ${nap.sampleCount} günde kaydedilen saatlerin ortancası ${time(nap.typical)}; kesin program değildir.` });
   });
   agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
@@ -398,10 +432,11 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
         <View style={styles.cardTopline}><Text style={styles.eyebrow}>{app.runningSleep ? "UYKU DEVAM EDİYOR" : "SIRADAKİ UYKU"}</Text><Text style={styles.confidence}>{app.runningSleep ? "Canlı süre" : confidence}</Text></View>
-        <Text style={styles.heroTime}>{app.runningSleep ? `${Math.floor(sleepElapsed / 60) ? `${Math.floor(sleepElapsed / 60)} sa ` : ""}${sleepElapsed % 60} dk` : forecast.available ? `${time(forecast.start)}–${time(forecast.end)}` : "Henüz hazır değil"}</Text>
-        <Text style={styles.body}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı. Bitirmek için aşağıdaki “Uyandı” kaydını kullanın.` : forecast.explanation}</Text>
+        <Text style={styles.heroTime}>{app.runningSleep ? `${Math.floor(sleepElapsed / 60) ? `${Math.floor(sleepElapsed / 60)} sa ` : ""}${sleepElapsed % 60} dk` : displayedForecast.available ? `${time(displayedForecast.start)}–${time(displayedForecast.end)}` : "Henüz hazır değil"}</Text>
+        <Text style={styles.body}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı. Bitirmek için aşağıdaki “Uyandı” kaydını kullanın.` : displayedForecast.explanation}</Text>
+        {!app.runningSleep && sleepWindowStatus ? <Text style={styles.awake}>{sleepWindowStatus}</Text> : null}
         {app.runningSleep ? <Text style={styles.awake}>{wakeEstimate.available && wakeEstimate.from && wakeEstimate.typical && wakeEstimate.to ? `Benzer uykulara göre olası uyanma ${time(wakeEstimate.from)}–${time(wakeEstimate.to)} (ortanca ${time(wakeEstimate.typical)}). ${wakeEstimate.sampleCount} kayıt.` : wakeEstimate.explanation}</Text> : null}
-        {!app.runningSleep && forecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{forecast.awakeMinutes} dakikadır uyanık</Text> : null}
+        {!app.runningSleep && displayedForecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{displayedForecast.awakeMinutes} dakikadır uyanık</Text> : null}
       </Card>
       <Card>
         <Text style={styles.cardTitle}>Sabah uyanışına göre uyku penceresi</Text>
@@ -415,6 +450,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWake ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
+        <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : <Text style={styles.hint}>Saat otomatik biçimlendirilir. Örnek: 0700.</Text>}
         <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
@@ -574,7 +610,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     const [hour, minute] = morningWake.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
-    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt);
+    return createSleepForecast(app.state.baby, app.state.events, now, wakeAt, todayCheckIn?.dayContext);
   })();
   const nightSpanMinutes = isValidClock(nightBedtime) && isValidClock(morningWake)
     ? (() => {
@@ -801,7 +837,8 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={setNightBedtime} style={styles.compactInput} placeholder="20:30" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" value={morningWake} onChangeText={updateCoachMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} /></View></View>
-        {morningWakeForecast ? <Text style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `Sabah uyanışına göre ilk uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
+        <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
+        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `Sabah uyanışına göre ilk uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
         <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() || undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
         <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
@@ -833,24 +870,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
 }
 
 function SleepMethodsModal({ visible, close, methods, activeMethod, choose }: { visible: boolean; close: () => void; methods: SleepMethod[]; activeMethod: SleepMethod; choose: (method: SleepMethod) => void }) {
-  const [date, setDate] = useState(localDateValue(new Date()));
-  const [clock, setClock] = useState(time(new Date()));
-  const [response, setResponse] = useState<NightWakeResponse | "">("");
-  useEffect(() => {
-    if (!visible) return;
-    const now = new Date();
-    setDate(localDateValue(now));
-    setClock(time(now));
-    setResponse("");
-  }, [visible]);
-  const submit = () => {
-    if (!response) return Alert.alert("Desteği seçin", "Bu uyanmada verdiğiniz desteği işaretleyin.");
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date) || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
-    const occurredAt = new Date(`${date}T${clock}:00`);
-    if (!Number.isFinite(occurredAt.getTime()) || localDateValue(occurredAt) !== date) return Alert.alert("Tarihi kontrol edin", "Gerçek bir takvim tarihi girin.");
-    if (occurredAt.getTime() > Date.now() || occurredAt.getTime() < Date.now() - 24 * 60 * 60_000) return Alert.alert("Zamanı kontrol edin", "Gece uyanmasını son 24 saat içinde kaydedebilirsiniz.");
-    save(response, occurredAt.toISOString());
-  };
+  if (!visible) return null;
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Uyku yaklaşımlarını karşılaştır</Text><Text style={styles.pageIntro}>Bir yaklaşım seçmek zorunlu değildir. Bebeğinizin ve ailenizin ihtiyaçlarına uyan adımı belirleyin; istediğiniz zaman duraklatıp daha fazla destek verebilirsiniz.</Text>
     {methods.map((method) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.inputLabel}>Bakım veren ne yapar?</Text><Text style={styles.body}>{methodDescription(method).caregiverRole}</Text><Text style={styles.inputLabel}>Gece uyanınca</Text><Text style={styles.body}>{methodDescription(method).nightResponse}</Text><Text style={styles.hint}>Bebek belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa denemeyi bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>)}
     <Card tone="peach"><Text style={styles.body}>Bu seçenekler genel bilgilendirmedir; her bebeğe uyan tek bir yöntem yoktur. Beslenme ihtiyacını ertelemeyin. Sağlık veya gelişim kaygısında çocuk doktorunuzla konuşun.</Text></Card><PrimaryButton label="Kapat" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
@@ -1383,10 +1403,10 @@ function NightWakeModal({ visible, close, save }: { visible: boolean; close: () 
       <View style={styles.sheetHandle} />
       <Text style={styles.pageTitle}>Gece uyanması</Text>
       <Text style={styles.pageIntro}>Saat otomatik dolar; hatırladığınız gerçek zamanla düzeltebilirsiniz.</Text>
-      <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Tarih</Text><TextInput accessibilityLabel="Uyanma tarihi" value={date} onChangeText={setDate} style={styles.compactInput} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Saat</Text><TextInput accessibilityLabel="Uyanma saati" value={clock} onChangeText={setClock} style={styles.compactInput} placeholder="02:15" keyboardType="numbers-and-punctuation" /></View></View><Text style={styles.inputLabel}>Verilen destek</Text><View style={styles.choiceRow}>{NIGHT_WAKE_RESPONSE_OPTIONS.map((item) => <Pill key={item.id} label={item.label} active={response === item.id} onPress={() => setResponse(item.id)} />)}</View>
+      <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Tarih</Text><TextInput accessibilityLabel="Uyanma tarihi" value={date} onChangeText={setDate} style={styles.compactInput} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Saat</Text><TextInput accessibilityLabel="Uyanma saati" value={clock} onChangeText={setClock} style={styles.compactInput} placeholder="02:15" keyboardType="numbers-and-punctuation" /></View></View>
+      <Text style={styles.inputLabel}>Verilen destek</Text><View style={styles.choiceRow}>{NIGHT_WAKE_RESPONSE_OPTIONS.map((item) => <Pill key={item.id} label={item.label} active={response === item.id} onPress={() => setResponse(item.id)} />)}</View>
       <Text style={styles.hint}>Bu kayıt toplam uyanma sayısından ayrıdır; son 30 kayıt saklanır.</Text>
       <View style={styles.spacer12} /><PrimaryButton label="Uyanma kaydını ekle" onPress={submit} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
-      <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
     </ScrollView>
   </Modal>;
 }
@@ -1796,7 +1816,7 @@ const styles = StyleSheet.create({
   planProgressSegment: { flex: 1, height: 7, borderRadius: 4, backgroundColor: "#E5EAE5" },
   planProgressComplete: { backgroundColor: colors.sageDark },
   planProgressCurrent: { backgroundColor: colors.sage, borderWidth: 1, borderColor: colors.sageDark },
-  nightGuideHeader: { flexDirection: "row", alignItems: "center" },
+  nightGuideHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   nightGuideHeaderText: { flex: 1, flexShrink: 1, minWidth: 0 },
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
   nightGuideContent: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
