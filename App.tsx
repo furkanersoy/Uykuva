@@ -118,6 +118,7 @@ export default function App() {
   const [nightMode, setNightMode] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
+  const [sleepEditorSuggestedWindow, setSleepEditorSuggestedWindow] = useState<{ start: string; end: string } | null>(null);
   const [eventEditor, setEventEditor] = useState<CareEvent | null>(null);
   const [promptedSleepWindow, setPromptedSleepWindow] = useState<number | null>(null);
   const [promptedRunningSleepId, setPromptedRunningSleepId] = useState<string | null>(null);
@@ -159,7 +160,7 @@ export default function App() {
       `Bebeğiniz tahmini ${time(forecast.start)}–${time(forecast.end)} aralığında uykuya daldı mı? Evet derseniz orta saat forma eklenir; kaydetmeden önce düzeltebilirsiniz.`,
       [
         { text: "Henüz değil", style: "cancel" },
-        { text: "Uyudu", onPress: () => { setSleepEditorSuggestedStart(suggestedStart); setSleepEditor("new"); } }
+        { text: "Uyudu", onPress: () => { setSleepEditorSuggestedStart(suggestedStart); setSleepEditorSuggestedWindow({ start: new Date(start).toISOString(), end: new Date(end).toISOString() }); setSleepEditor("new"); } }
       ]
     );
   }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, clockNow, forecast.available, forecast.start?.getTime(), forecast.end?.getTime(), sleepEditor, promptedSleepWindow]);
@@ -240,7 +241,7 @@ export default function App() {
         </View> : null}
 
         {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} />}
-        {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditor("new"); }} />}
+        {tab === "timeline" && <TimelineScreen events={app.state.events} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
@@ -260,7 +261,7 @@ export default function App() {
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} add={app.addCaregiver} />
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentBabyName={app.state.baby.name} restore={app.restoreData} />
-      <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
+      <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
     </SafeAreaView>
   );
@@ -1379,7 +1380,7 @@ function localDateValue(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function SleepEntryModal({ event, initialStartAt, visible, close, add, update, bedtime, wakeTime }: { event: CareEvent | null; initialStartAt?: string; visible: boolean; close: () => void; add: ReturnType<typeof useUykuvaState>["addEvent"]; update: ReturnType<typeof useUykuvaState>["updateEvent"]; bedtime: string; wakeTime: string }) {
+function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visible, close, add, update, bedtime, wakeTime }: { event: CareEvent | null; initialStartAt?: string; initialSuggestedWindow?: { start: string; end: string }; visible: boolean; close: () => void; add: ReturnType<typeof useUykuvaState>["addEvent"]; update: ReturnType<typeof useUykuvaState>["updateEvent"]; bedtime: string; wakeTime: string }) {
   const [startDate, setStartDate] = useState("");
   const [startClock, setStartClock] = useState("");
   const [endClock, setEndClock] = useState("");
@@ -1429,7 +1430,7 @@ function SleepEntryModal({ event, initialStartAt, visible, close, add, update, b
     }
     const patch = { startedAt: start.toISOString(), endedAt: end?.toISOString() };
     if (event) update(event.id, patch);
-    else add({ kind: "sleep", ...patch });
+    else add({ kind: "sleep", ...patch, ...(initialSuggestedWindow ? { suggestedSleepWindowStartAt: initialSuggestedWindow.start, suggestedSleepWindowEndAt: initialSuggestedWindow.end } : {}) });
     close();
   };
 
