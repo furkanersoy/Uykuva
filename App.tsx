@@ -22,7 +22,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/app/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, parseDataExport } from "./src/domain/export";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -160,12 +160,7 @@ export default function App() {
     wakeAt.setHours(hour!, minute!, 0, 0);
     return wakeAt;
   }, [clockNow, savedMorningWake]);
-  const hasSleepSinceMorningWake = savedMorningWakeAt ? app.state.events.some((event) => {
-    if (event.kind !== "sleep") return false;
-    const startedAt = new Date(event.startedAt).getTime();
-    const endedAt = event.endedAt ? new Date(event.endedAt).getTime() : Number.NaN;
-    return startedAt >= savedMorningWakeAt.getTime() || Number.isFinite(endedAt) && endedAt >= savedMorningWakeAt.getTime();
-  }) : false;
+  const hasSleepSinceMorningWake = savedMorningWakeAt ? hasSleepSinceWake(app.state.events, savedMorningWakeAt) : false;
   const forecastWakeAt = hasSleepSinceMorningWake ? undefined : savedMorningWakeAt;
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext), [app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext]);
   const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
@@ -388,7 +383,14 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     const [hour, minute] = morningWake.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
+    if (hasSleepSinceWake(app.state.events, wakeAt)) return undefined;
     return createSleepForecast(app.state.baby, app.state.events, now, wakeAt, todayCheckIn?.dayContext);
+  })();
+  const morningWakeSleepRecorded = isValidClock(morningWake) && (() => {
+    const [hour, minute] = morningWake.split(":").map(Number);
+    const wakeAt = new Date(now);
+    wakeAt.setHours(hour!, minute!, 0, 0);
+    return hasSleepSinceWake(app.state.events, wakeAt);
   })();
   const displayedForecast = morningWakeForecast ?? forecast;
   const saveMorningWake = () => {
@@ -451,7 +453,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
           </View>
         </View>
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
-        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : <Text style={styles.hint}>Saat otomatik biçimlendirilir. Örnek: 0700.</Text>}
+        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : morningWakeSleepRecorded ? <Text style={styles.hint}>İlk uyku kaydedildi; sonraki pencere son uyku kaydından hesaplanıyor.</Text> : <Text style={styles.hint}>Saat otomatik biçimlendirilir. Örnek: 0700.</Text>}
         <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
       <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
