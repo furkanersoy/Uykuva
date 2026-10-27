@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 52140)
+Warning: truncated output (original token count: 52146)
 Total output lines: 2118
 
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
@@ -262,7 +262,7 @@ export default function App() {
       app.state.preferences.quietStart,
       app.state.preferences.quietEnd
     );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.state.sleepPlan.bedtime, app.state.sleepPlan.routine, app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.state.sleepPlan.bedtime, app.state.sleepPlan.routine, app.state.preferences.routineRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, localDateValue(clockNow)]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -1096,7 +1096,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
         {maxDailySleep ? <View style={styles.weeklyChart}>{weeklySleep.map((day) => {
           const hours = Math.floor(day.totalMinutes / 60);
           const minutes = day.totalMinutes % 60;
-          return <View key={day.date} style={styles.weekly…2140 tokens truncated…ünün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
+          return <View key={day.…2146 tokens truncated…ünün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
     </ScrollView>
   );
 }
