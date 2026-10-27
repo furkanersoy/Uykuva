@@ -822,6 +822,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       `Yaklaşım özeti: ${methodDescription(coachingMethod).support}`,
       `Bakım veren uygulaması: ${methodDescription(coachingMethod).caregiverRole}`,
       `Gece uyanınca: ${methodDescription(coachingMethod).nightResponse}`,
+      `Yöntem özellikleri · huzursuzluk: ${methodDescription(coachingMethod).comparison.protest} · yakınlık: ${methodDescription(coachingMethod).comparison.presence} · uygulama yükü: ${methodDescription(coachingMethod).comparison.effort} · ilerleme: ${methodDescription(coachingMethod).comparison.pace}`,
       `Plan odağı: ${sleepFocusOptions.find((item) => item.id === app.state.sleepPlan.focus)?.label ?? "Akşam rutini"}`,
       `Program durumu: ${app.state.sleepPlan.paused ? "Duraklatıldı; günlük plan adımları beklemede." : programCompleted ? "14 günlük rehber tamamlandı." : `${app.state.sleepPlan.day}/14. gün`}`,
       `Günlük rehber: ${plan.title}`,
