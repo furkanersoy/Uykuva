@@ -1,8 +1,8 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
-import { CareEvent, CareTask, SleepForecast } from "../domain/types";
+import { CareEvent, CareTask, MilkExpiryReminderLead, SleepForecast } from "../domain/types";
 import { dailyReminderDatesBefore, isInQuietHours, isValidClock } from "../domain/time";
-import { createMilkInventory, milkStorageLabel } from "../domain/milk";
+import { createMilkInventory, milkExpiryReminderLeadMs, milkStorageLabel } from "../domain/milk";
 import { NOTIFICATION_KINDS } from "../domain/notificationRouting";
 
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
@@ -315,7 +315,8 @@ export async function scheduleMilkExpiryReminders(
   now = new Date(),
   babyName?: string,
   cancelExisting = true,
-  childId?: string
+  childId?: string,
+  leadPreference: MilkExpiryReminderLead = "adaptive"
 ) {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -333,11 +334,7 @@ export async function scheduleMilkExpiryReminders(
   let count = 0;
   for (const batch of batches) {
     const remainingMs = batch.useBy.getTime() - now.getTime();
-    const useByLeadMs = remainingMs <= 2 * 60 * 60_000 ? 30 * 60_000
-      : remainingMs <= 4 * 60 * 60_000 ? 60 * 60_000
-        : remainingMs <= 24 * 60 * 60_000 ? 2 * 60 * 60_000
-          : remainingMs <= 4 * 24 * 60 * 60_000 ? 12 * 60 * 60_000
-            : 24 * 60 * 60_000;
+    const useByLeadMs = milkExpiryReminderLeadMs(remainingMs, leadPreference);
     const milestones = [
       {
         type: "use-by",
