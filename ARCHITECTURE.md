@@ -97,6 +97,8 @@ Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamaml
 
 Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak isteğe bağlı yatış/uyanış saatleri ve kısa bağlam notu saklar. Bu check-in notları günlük doktor özetine dahil edilmez; cihaz verisi dışa aktarımında yer alır.
 
+Geçerli bir sabah uyanış saati girildiğinde, kaydetmeyi beklemeden yaşa ve yeterli geçmiş örnek varsa kişisel uyanıklık aralığına göre ilk uyku penceresi aynı check-in kartında hesaplanır. Check-in kaydedildikten sonra Bugün ekranındaki sıradaki uyku tahmini de bu uyanış saatini kullanır. Dokuz haftadan küçük düzeltilmiş yaşta mevcut tahmin politikası korunur ve saat aralığı yerine açıklama gösterilir.
+
 ### Uygulama durumu
 
 `useUykuvaState`, ekranların doğrudan depolama sistemiyle konuşmasını engeller. Şu eylemleri sağlar:
@@ -251,7 +253,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
 - [x] 14 günlük uyku eğitimi/alışkanlık planı eklendi.
 - [x] Altı nazik uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi.
-- [x] Hazır oluş koşulları tamamlandığında altı yaklaşımın açıklaması ve her yaklaşımda ebeveynin uygulayacağı destek biçimi karşılaştırma penceresinde sunuluyor; pencereden doğrudan seçim yapılabiliyor.
+- [x] Hazır oluş koşulları tamamlandığında altı yaklaşım; yöntemin özeti, bakım verenin uygulayacağı adım ve gece uyanmasına verilecek yanıtla karşılaştırma penceresinde sunuluyor; pencereden doğrudan seçim yapılabiliyor.
 - [x] Koçluk gün geçmişi, hazır oluş koşulları değişince kullanıcıya gösterilen etkin yaklaşımı kaydeder; check-in karşılaştırması aynı yaklaşım ve odağa göre yapılır.
 - [x] Uyku planında yatma zamanı, gece uyanmaları, gündüz uykuları veya akşam rutini odağı seçilip günlük rehber buna göre uyarlanabiliyor.
 - [x] Plan günü ilerletildiğinde yaklaşım/odak ve tamamlanan görev sayısı 14 günlük geçmişte korunuyor.
