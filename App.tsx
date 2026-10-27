@@ -353,6 +353,10 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => setMorningWake(todayCheckIn?.wakeTime ?? ""), [todayCheckIn?.wakeTime, today]);
+  const updateMorningWake = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+    setMorningWake(digits.length > 2 ? `${digits.slice(0, 2)}:${digits.slice(2)}` : digits);
+  };
   const morningWakeForecast = (() => {
     if (!isValidClock(morningWake)) return undefined;
     const [hour, minute] = morningWake.split(":").map(Number);
@@ -405,13 +409,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <View style={styles.timeFields}>
           <View style={styles.timeField}>
             <Text style={styles.inputLabel}>Bugün uyandığı saat</Text>
-            <TextInput accessibilityLabel="Bugün sabah uyanış saati" value={morningWake} onChangeText={setMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="numbers-and-punctuation" maxLength={5} />
+            <TextInput accessibilityLabel="Bugün sabah uyanış saati" value={morningWake} onChangeText={updateMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} />
           </View>
           <View style={[styles.timeField, { justifyContent: "flex-end" }]}>
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWake ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
-        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : <Text style={styles.hint}>Saati SS:DD biçiminde yazın. Örnek: 07:00.</Text>}
+        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `İlk uyku penceresi ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : <Text style={styles.hint}>Saat otomatik biçimlendirilir. Örnek: 0700.</Text>}
         <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
       <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
