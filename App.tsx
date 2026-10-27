@@ -316,6 +316,7 @@ export default function App() {
           <View>
             <Text style={styles.brand}>uykuva</Text>
             <Text style={styles.headerSub}>{app.state.baby.name} · bugün</Text>
+            {app.state.caregivers.length > 1 ? <Pressable accessibilityRole="button" accessibilityLabel={`Aktif bakım veren ${app.state.caregiverName}. Sonraki bakım verene geç`} onPress={switchCaregiver} style={styles.headerCaregiver}><Text style={styles.headerCaregiverText}>Kayıtları ekleyen: {app.state.caregiverName} · Değiştir</Text></Pressable> : null}
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
         </View> : null}
@@ -1963,6 +1964,8 @@ const styles = StyleSheet.create({
   header: { height: 72, paddingHorizontal: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   brand: { color: colors.ink, fontSize: 25, fontWeight: "800", letterSpacing: -1.2 },
   headerSub: { color: colors.inkSoft, fontSize: 12, marginTop: 1 },
+  headerCaregiver: { minHeight: 36, justifyContent: "center", paddingHorizontal: 2 },
+  headerCaregiverText: { color: colors.sageDark, fontSize: 12, fontWeight: "700" },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.peach, alignItems: "center", justifyContent: "center" },
   avatarText: { color: colors.ink, fontWeight: "800" },
   content: { flex: 1 },
