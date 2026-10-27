@@ -519,22 +519,24 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const summaryHealth = summaryEvents.filter((event) => event.kind === "health").length;
   const [morningWake, setMorningWake] = useState(todayCheckIn?.wakeTime ?? "");
   useEffect(() => setMorningWake(todayCheckIn?.wakeTime ?? ""), [todayCheckIn?.wakeTime, today]);
+  const morningWakeClock = normalizeClockInput(morningWake);
   const updateMorningWake = (value: string) => {
-    setMorningWake(normalizeClockInput(value));
+    // Keep digits raw while typing so four-digit times remain easy to enter.
+    setMorningWake(value.replace(/\D/g, "").slice(0, 4));
   };
-  const morningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWake)
+  const morningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
     : undefined;
   const morningWakeForecast = (() => {
-    if (!isValidClock(morningWake)) return undefined;
-    const [hour, minute] = morningWake.split(":").map(Number);
+    if (!isValidClock(morningWakeClock)) return undefined;
+    const [hour, minute] = morningWakeClock.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
     if (hasSleepSinceWake(app.state.events, wakeAt)) return undefined;
     return createSleepForecast(app.state.baby, app.state.events, now, wakeAt, todayCheckIn?.dayContext);
   })();
-  const morningWakeSleepRecorded = isValidClock(morningWake) && (() => {
-    const [hour, minute] = morningWake.split(":").map(Number);
+  const morningWakeSleepRecorded = isValidClock(morningWakeClock) && (() => {
+    const [hour, minute] = morningWakeClock.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
     return hasSleepSinceWake(app.state.events, wakeAt);
@@ -548,8 +550,9 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
       }
     : undefined;
   const saveMorningWake = () => {
-    if (!isValidClock(morningWake)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
-    app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWake });
+    if (!isValidClock(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
+    setMorningWake(morningWakeClock);
+    app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWakeClock });
   };
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[displayedForecast.confidence];
   const sleepWindowStatus = !displayedForecast.available || !displayedForecast.start || !displayedForecast.end
@@ -612,10 +615,10 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <View style={styles.timeFields}>
           <View style={styles.timeField}>
             <Text style={styles.inputLabel}>Bugün uyandığı saat</Text>
-            <TextInput accessibilityLabel="Bugün sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde ilk uyku penceresi hesaplanır." value={morningWake} onChangeText={updateMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} />
+            <TextInput accessibilityLabel="Bugün sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde ilk uyku penceresi hesaplanır." value={morningWake} onChangeText={updateMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} />
           </View>
           <View style={[styles.timeField, { justifyContent: "flex-end" }]}>
-            <PrimaryButton label={todayCheckIn?.wakeTime === morningWake ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
+            <PrimaryButton label={todayCheckIn?.wakeTime === morningWakeClock ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
         {morningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{morningWakeInputError}</Text> : null}
@@ -809,26 +812,26 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const updateCoachMorningWake = (value: string) => {
     setMorningWake(normalizeClockInput(value));
   };
-  const coachMorningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWake)
+  const coachMorningWakeInputError = morningWake.length >= 5 && !isValidClock(morningWakeClock)
     ? "Saat geçerli değil. 07:00 gibi 24 saat biçiminde girin."
     : undefined;
-  const morningWakeHasSleep = isValidClock(morningWake) && (() => {
-    const [hour, minute] = morningWake.split(":").map(Number);
+  const morningWakeHasSleep = isValidClock(morningWakeClock) && (() => {
+    const [hour, minute] = morningWakeClock.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
     return hasSleepSinceWake(app.state.events, wakeAt);
   })();
   const morningWakeForecast = (() => {
-    if (!isValidClock(morningWake)) return undefined;
-    const [hour, minute] = morningWake.split(":").map(Number);
+    if (!isValidClock(morningWakeClock)) return undefined;
+    const [hour, minute] = morningWakeClock.split(":").map(Number);
     const wakeAt = new Date(now);
     wakeAt.setHours(hour!, minute!, 0, 0);
     return createSleepForecast(app.state.baby, app.state.events, now, morningWakeHasSleep ? undefined : wakeAt, todayCheckIn?.dayContext);
   })();
-  const nightSpanMinutes = isValidClock(nightBedtime) && isValidClock(morningWake)
+  const nightSpanMinutes = isValidClock(nightBedtime) && isValidClock(morningWakeClock)
     ? (() => {
       const [bedHour, bedMinute] = nightBedtime.split(":").map(Number);
-      const [wakeHour, wakeMinute] = morningWake.split(":").map(Number);
+      const [wakeHour, wakeMinute] = morningWakeClock.split(":").map(Number);
       const span = (wakeHour! * 60 + wakeMinute! - bedHour! * 60 - bedMinute! + 1440) % 1440;
       return span > 0 ? span : undefined;
     })()
@@ -848,9 +851,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   };
   const saveNightSummary = () => {
     if (!nightBedtime.trim() && !morningWake.trim()) return Alert.alert("Saatleri girin", "İsterseniz yalnızca yatış veya sabah uyanış saatini de kaydedebilirsiniz.");
-    if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWake))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
+    if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWakeClock))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
     if (nightBedtime && morningWake && nightBedtime === morningWake) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
-    app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() || undefined });
+    app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() ? morningWakeClock : undefined });
   };
   const confirmDeleteNightWake = (id: string) => Alert.alert("Uyanma kaydını sil?", "Bu kayıt bakım devri ve doktor özetinden de kaldırılır.", [
     { text: "Vazgeç", style: "cancel" },
@@ -1080,7 +1083,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </View>
         <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
-        <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} style={styles.compactInput} placeholder="07:00" keyboardType="number-pad" maxLength={5} /></View></View>
+        <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} /></View></View>
         {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
