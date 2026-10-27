@@ -79,6 +79,7 @@ test("bedtime adjustment is capped at fifteen minutes", () => {
 test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   const state = createInitialState();
   state.careInstructions = "";
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", nightWakeLogs: [{ id: "wake", at: "2026-10-27T10:45:00", response: "feeding", caregiver: "Baba" }] }];
   state.events = [
     { id: "feed", kind: "feed", feedType: "bottle", amountMl: 90, startedAt: "2026-10-27T09:05:00", caregiver: "Baba" },
     { id: "diaper", kind: "diaper", diaperType: "wet", startedAt: "2026-10-27T09:10:00", caregiver: "Anne" },
@@ -88,6 +89,7 @@ test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   assert.match(summary, /Son beslenme 09:05 · biberon · 90 ml · Baba/);
   assert.match(summary, /Son bez 09:10 · ıslak · Anne/);
   assert.match(summary, /Son uyku 08:00–09:00 · Kucakta/);
+  assert.match(summary, /1 gece uyanması kaydı · son 10:45 Beslenme · Baba/);
 });
 test("sleep insights summarize recorded settling support neutrally", () => {
   const events: CareEvent[] = [
