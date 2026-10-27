@@ -160,8 +160,17 @@ export type DevelopmentCheckIn = {
   note?: string;
 };
 
+export type ChildProfile = {
+  baby: Baby;
+  careInstructions?: string;
+  developmentCheckIns?: DevelopmentCheckIn[];
+  events: CareEvent[];
+  careTasks: CareTask[];
+  sleepPlan: SleepPlan;
+};
+
 export type AppState = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
@@ -173,6 +182,8 @@ export type AppState = {
   careTasks: CareTask[];
   sleepPlan: SleepPlan;
   preferences: AppPreferences;
+  children: ChildProfile[];
+  activeChildId: string;
 };
 
 export type SleepForecast = {
@@ -191,4 +202,3 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
-
