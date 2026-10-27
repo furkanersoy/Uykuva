@@ -36,7 +36,7 @@ import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
-import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleSleepReminder } from "./src/services/notifications";
+import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -262,6 +262,16 @@ export default function App() {
     if (!app.hydrated) return;
     void scheduleMedicationReminders(app.state.onboardingComplete ? app.state.events : []);
   }, [app.hydrated, app.state.onboardingComplete, app.state.events]);
+
+  useEffect(() => {
+    if (!app.hydrated) return;
+    void scheduleMilkExpiryReminders(
+      app.state.onboardingComplete ? app.state.events : [],
+      app.state.onboardingComplete && app.state.preferences.milkExpiryRemindersEnabled,
+      app.state.preferences.quietStart,
+      app.state.preferences.quietEnd
+    );
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   const promptNightWake = () => setNightWakeOpen(true);
   const saveNightWake = (response: NightWakeResponse, occurredAt: string) => {
@@ -1289,6 +1299,15 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
     if (!granted) return Alert.alert("Bildirim izni kapalı", "Bez kontrol hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
     app.updatePreferences({ diaperRemindersEnabled: true });
   };
+  const toggleMilkExpiryNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ milkExpiryRemindersEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Süt kullanım süresi hatırlatmaları için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ milkExpiryRemindersEnabled: true });
+  };
   const saveQuietHours = () => {
     if (!isValidClock(quietStart) || !isValidClock(quietEnd)) return Alert.alert("Saatleri kontrol edin", "Saatleri 21:00 gibi SS:DD biçiminde yazın.");
     app.updatePreferences({ quietStart, quietEnd });
@@ -1342,11 +1361,13 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onRestoreData }: { a
       <Card>
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
-        {app.state.preferences.notificationsEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
+        {app.state.preferences.notificationsEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled || app.state.preferences.milkExpiryRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Aşı ve randevu hatırlatmaları</Text><Text style={styles.muted}>Yaklaşan görevleri seçtiğiniz zamanda hatırlatır.</Text></View><Switch accessibilityLabel="Aşı ve randevu hatırlatmaları" value={app.state.preferences.careTaskRemindersEnabled} onValueChange={(value) => void toggleCareTaskNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.careTaskRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.careTaskRemindersEnabled ? <><Text style={styles.inputLabel}>Ne zaman hatırlatılsın?</Text><View style={styles.choiceRow}>{([{ minutes: 30, label: "30 dk" }, { minutes: 120, label: "2 saat" }, { minutes: 1440, label: "1 gün" }] as const).map(({ minutes, label }) => <Pill key={minutes} label={label} active={app.state.preferences.careTaskReminderMinutes === minutes} onPress={() => app.updatePreferences({ careTaskReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Hatırlatmalar sessiz saatlere denk gelirse sessiz dönem bitiminde, görev saatinden önce gönderilir.</Text></> : null}
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Bez kontrol hatırlatması</Text><Text style={styles.muted}>Son bez kaydından sonra seçtiğiniz sürede bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Bez kontrol hatırlatması" value={app.state.preferences.diaperRemindersEnabled} onValueChange={(value) => void toggleDiaperNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.diaperRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.diaperRemindersEnabled ? <><Text style={styles.inputLabel}>Kaç saat sonra?</Text><View style={styles.choiceRow}>{([2, 3, 4] as const).map((hours) => <Pill key={hours} label={`${hours} saat`} active={app.state.preferences.diaperReminderHours === hours} onPress={() => app.updatePreferences({ diaperReminderHours: hours })} />)}</View><Text style={styles.hint}>Hatırlatma sessiz saate denk gelirse sessiz dönem bitiminde gelir. Bez kontrolü isteğe bağlıdır; uygulama bir bakım sıklığı önermez.</Text></> : null}
+        <View style={[styles.settingRow, { marginTop: 18 }]}><View style={styles.flex}><Text style={styles.eventTitle}>Sağılan süt kullanım süresi</Text><Text style={styles.muted}>Kullanım süresi yaklaşan ve stoğu kalan partiler için bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Sağılan süt kullanım süresi hatırlatması" value={app.state.preferences.milkExpiryRemindersEnabled} onValueChange={(value) => void toggleMilkExpiryNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.milkExpiryRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.milkExpiryRemindersEnabled ? <Text style={styles.hint}>Hatırlatma zamanı kalan süreye göre belirlenir ve sessiz saatler gözetilir. Parti süresi değişirse yeni saate göre yeniden planlanır. Uygulamadaki saklama aralıkları genel rehberdir; özel sağlık durumlarında sağlık uzmanınıza danışın.</Text> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
       <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Tüm profil, bakım ve plan verilerini ücretsiz JSON dosyasıyla paylaşabilir, başka cihazdaki aynı bebeğin kayıtlarıyla birleştirebilir veya yedeği bu cihaza tamamen geri yükleyebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="JSON yedeğini dosya olarak paylaş" quiet onPress={() => void exportBackupFile()} /><View style={styles.spacer12} /><PrimaryButton label="Yedek dosyasından aktar" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
