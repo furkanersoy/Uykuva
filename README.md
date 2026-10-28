@@ -1,4 +1,4 @@
-Y��x�6���u�%j���+ar�����_���j�"�v���ڮ&���j����ڲL�ל���w���'�۬zW�~��y�,�	�nW�j��nW�# Uykuva
+# Uykuva
 
 Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
 
@@ -66,7 +66,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Önceden kararlaştırılmış kısa kontroller yaklaşımı; Uykuva sabit aralık veya ağlama süresi önermez, beslenme ve sağlık ihtiyaçları her zaman önceliklidir
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
-- Çevrimdışı kısa uyku öğrenme rehberi; değişken bebek ritmi, sakin rutin, gece bakım yanıtı ve güvenli uyku için NHS, AAP ve CDC kaynak bağlantıları
+- Çevrimdışı kısa uyku öğrenme rehberi; bebek ritmi, esneyip bakışı kaçırma gibi değişken yorgunluk işaretleri, sakin rutin, gece bakım yanıtı ve güvenli uyku için NHS, AAP ve CDC kaynak bağlantıları
 - Uyku rehberinde uykuda solunum güçlüğü, sık horlama veya zor uyandırılma gibi durumlarda doktor ya da acil yardım gerektirebilecek belirtileri açıklama; AAP ve NHS kaynak bağlantıları
 - Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
@@ -151,3 +151,4 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
+
