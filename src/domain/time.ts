@@ -22,6 +22,12 @@ export function isValidClock(value: string) {
   return minutesOfDay(value) !== null;
 }
 
+export function isTodayTimeReached(value: string, now = new Date()): boolean {
+  const minutes = minutesOfDay(value);
+  if (minutes === null || !Number.isFinite(now.getTime())) return false;
+  return minutes <= now.getHours() * 60 + now.getMinutes();
+}
+
 export function dailyReminderDatesBefore(clock: string, leadMinutes: number, days: number, now = new Date()): Date[] {
   const targetMinutes = minutesOfDay(clock);
   if (targetMinutes === null || !Number.isInteger(leadMinutes) || leadMinutes < 0 || leadMinutes >= 1440 || !Number.isInteger(days) || days < 1 || days > 14 || !Number.isFinite(now.getTime())) return [];

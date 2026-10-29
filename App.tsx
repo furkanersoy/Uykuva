@@ -29,7 +29,7 @@ import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/repor
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
-import { clockInputDigits, isValidClock, normalizeClockInput } from "./src/domain/time";
+import { clockInputDigits, isTodayTimeReached, isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { notificationDestination } from "./src/domain/notificationRouting";
@@ -529,7 +529,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     setMorningWake(digits);
     const wakeTime = normalizeClockInput(digits);
     // Wait for four digits before saving so a partially typed time is not persisted.
-    if (digits.length === 4 && isValidClock(wakeTime) && todayCheckIn?.wakeTime !== wakeTime) {
+    if (digits.length === 4 && isTodayTimeReached(wakeTime) && todayCheckIn?.wakeTime !== wakeTime) {
       app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime });
     }
   };
@@ -557,8 +557,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     : undefined;
   const saveMorningWake = () => {
     if (!isValidClock(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
+    if (!isTodayTimeReached(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Bugünün uyanış saati henüz gelmemiş. Gerçek uyanış saatini girin.");
     setMorningWake(morningWakeClock);
     app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWakeClock });
+  };
+  const clearMorningWake = () => {
+    setMorningWake("");
+    if (todayCheckIn?.wakeTime) app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: undefined });
   };
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[displayedForecast.confidence];
   const sleepWindowStatus = !displayedForecast.available || !displayedForecast.start || !displayedForecast.end
@@ -627,6 +632,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWakeClock ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
+        {todayCheckIn?.wakeTime ? <><View style={styles.spacer12} /><PrimaryButton label="Uyanış saatini temizle" quiet onPress={clearMorningWake} /></> : null}
         {morningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{morningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         {morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end ? (
@@ -864,6 +870,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const saveNightSummary = () => {
     if (!nightBedtime.trim() && !morningWake.trim()) return Alert.alert("Saatleri girin", "İsterseniz yalnızca yatış veya sabah uyanış saatini de kaydedebilirsiniz.");
     if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWakeClock))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
+    if (morningWake.trim() && !isTodayTimeReached(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Bugünün uyanış saati henüz gelmemiş. Gerçek uyanış saatini girin.");
     if (nightBedtime && morningWakeClock && nightBedtime === morningWakeClock) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
     setMorningWake(morningWakeClock);
     app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() ? morningWakeClock : undefined });
