@@ -1,6 +1,8 @@
 # Uykuva — Ürün ve Teknik Mimari
 
-Son güncelleme: 27 Ekim 2026
+Son güncelleme: 29 Ekim 2026
+
+Uygulama açıldığında Bugün ekranı gösterilir. Gece uyanması kayıt formu başlangıçta kapalıdır ve Bugün ekranındaki Uyanma kısayoluyla açılır; formun görünürlüğü uygulama durumuna bağlıdır.
 
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
@@ -44,7 +46,7 @@ Android ana ekran uyku widget'ı `plugins/withUykuvaWidget.js` Expo config plugi
 ## 4. Dizin yapısı
 
 ```text
-SleepWell/
+Uykuva/
 ├── App.tsx                         # Uygulama kabuğu, sekmeler ve ekran bileşimi
 ├── app.json                        # Expo, iOS ve Android uygulama ayarları
 ├── package.json                    # Komutlar ve bağımlılıklar
