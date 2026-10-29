@@ -68,6 +68,25 @@ export function median(values: number[]): number {
 
 export type DailySleepTotal = { date: string; label: string; totalMinutes: number; sleepCount: number };
 
+export function sleepMinutesBetween(events: CareEvent[], start: Date, end: Date): number {
+  const startMs = start.getTime();
+  const endMs = end.getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return 0;
+  const intervals = events.flatMap((event) => {
+    if (event.kind !== "sleep") return [];
+    const from = Math.max(startMs, new Date(event.startedAt).getTime());
+    const to = Math.min(endMs, event.endedAt ? new Date(event.endedAt).getTime() : endMs);
+    return Number.isFinite(from) && Number.isFinite(to) && to > from ? [{ from, to }] : [];
+  }).sort((a, b) => a.from - b.from);
+  const merged: { from: number; to: number }[] = [];
+  for (const interval of intervals) {
+    const previous = merged[merged.length - 1];
+    if (previous && interval.from <= previous.to) previous.to = Math.max(previous.to, interval.to);
+    else merged.push({ ...interval });
+  }
+  return merged.reduce((sum, interval) => sum + interval.to - interval.from, 0) / 60_000;
+}
+
 export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailySleepTotal[] {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
@@ -76,7 +95,7 @@ export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailyS
     start.setDate(today.getDate() - (6 - index));
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
-    return { start, end, totalMinutes: 0, sleepCount: 0 };
+    return { start, end, sleepCount: 0 };
   });
   for (const event of events) {
     if (event.kind !== "sleep") continue;
@@ -86,14 +105,13 @@ export function weeklySleepTotals(events: CareEvent[], now = new Date()): DailyS
     for (const day of days) {
       const overlap = Math.min(end, day.end.getTime()) - Math.max(start, day.start.getTime());
       if (overlap <= 0) continue;
-      day.totalMinutes += overlap / 60_000;
       day.sleepCount += 1;
     }
   }
   return days.map((day) => ({
     date: `${day.start.getFullYear()}-${String(day.start.getMonth() + 1).padStart(2, "0")}-${String(day.start.getDate()).padStart(2, "0")}`,
     label: day.start.toLocaleDateString("tr-TR", { weekday: "short" }).replace(".", ""),
-    totalMinutes: Math.round(day.totalMinutes),
+    totalMinutes: Math.round(sleepMinutesBetween(events, day.start, new Date(Math.min(day.end.getTime(), now.getTime())))),
     sleepCount: day.sleepCount
   }));
 }
@@ -970,7 +988,7 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     const overlap = Math.max(0, end - Math.max(start, since));
     return overlap > 0 ? [{ minutes: overlap / 60_000, ongoing: !event.endedAt, startedAt: event.startedAt, endedAt: event.endedAt, sleepSupport: event.sleepSupport }] : [];
   });
-  const sleepMinutes = sleepSegments.reduce((sum, segment) => sum + segment.minutes, 0);
+  const sleepMinutes = sleepMinutesBetween(state.events, new Date(since), now);
   const sleepOngoing = sleepSegments.some((segment) => segment.ongoing);
   const lastSleep = [...sleepSegments].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
   const eventTime = (value: string) => new Date(value).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });

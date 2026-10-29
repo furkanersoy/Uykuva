@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -33,6 +33,22 @@ test("overlapping sleep records use the end of the combined sleep for awake wind
   const midday = createAwakeWindowInsights(events, new Date("2026-10-27T15:00:00")).find((item) => item.part === "midday");
   assert.equal(midday?.sampleCount, 5);
   assert.equal(midday?.medianMinutes, 60);
+});
+
+test("sleep totals merge overlapping and ongoing records across midnight", () => {
+  const events: CareEvent[] = [
+    { id: "night", kind: "sleep", startedAt: "2026-10-26T23:00:00", endedAt: "2026-10-27T02:00:00", caregiver: "Anne" },
+    { id: "nested", kind: "sleep", startedAt: "2026-10-27T00:30:00", endedAt: "2026-10-27T01:00:00", caregiver: "Baba" },
+    { id: "ongoing", kind: "sleep", startedAt: "2026-10-27T01:30:00", caregiver: "Anne" }
+  ];
+  const now = new Date("2026-10-27T02:30:00");
+  assert.equal(sleepMinutesBetween(events, new Date("2026-10-27T00:00:00"), now), 150);
+  const totals = weeklySleepTotals(events, now);
+  assert.equal(totals.find((day) => day.date === "2026-10-26")?.totalMinutes, 60);
+  assert.equal(totals.find((day) => day.date === "2026-10-27")?.totalMinutes, 150);
+  const state = createInitialState();
+  state.events = events;
+  assert.match(handoffSummary(state, now, 4), /Son 4 saatte 210 dk uyku/);
 });
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
 

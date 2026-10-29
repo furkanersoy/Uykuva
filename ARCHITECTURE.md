@@ -12,6 +12,8 @@ Uyku zamanlayıcısı çalışırken Bugün ve Uyku planı ekranları eski sonra
 
 Kişisel uyanıklık aralıkları çıkarılırken zamanları çakışan tamamlanmış uyku kayıtları hesaplama için birleştirilir. Böylece iç içe kayıtlar aradaki uyanıklığı olduğundan uzun göstermez; orijinal kayıtlar değiştirilmez.
 
+Bugün ve Özet ekranlarındaki uyku süresi, haftalık grafik ve bakım devri toplamı, çakışan uyku aralıklarını yalnızca bir kez sayar. Gece yarısını aşan uykular yerel günlere bölünür; devam eden uyku o anki zamana kadar hesaplanır. Kayıt sayısı ayrı olay sayısı olarak kalır.
+
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
 Randevu gorevleri istege bagli note alaninda hazirlik notlarini saklar. Notlar gorev kartinda gorunur ve paylasilan doktor ozetine en yakin bes gelecek randevuyla birlikte eklenir; tamamlanmis veya gecmis randevular ozete alinmaz.

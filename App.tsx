@@ -24,7 +24,7 @@ import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
@@ -503,17 +503,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     const start = new Date(event.startedAt).getTime();
     return Number.isFinite(start) && start >= summaryStart.getTime() && start <= now.getTime();
   });
-  const summarySleepEvents = app.state.events.filter((event) => {
-    if (event.kind !== "sleep") return false;
-    const start = new Date(event.startedAt).getTime();
-    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
-    return Number.isFinite(start) && start < now.getTime() && end > summaryStart.getTime();
-  });
-  const summarySleepMinutes = summarySleepEvents.reduce((sum, event) => {
-    const start = Math.max(new Date(event.startedAt).getTime(), summaryStart.getTime());
-    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
-    return sum + Math.max(0, end - start) / 60_000;
-  }, 0);
+  const summarySleepMinutes = sleepMinutesBetween(app.state.events, summaryStart, now);
   const summaryFeeding = todayFeedingTotals(app.state.events, now, newbornSummary);
   const summaryDiapers = summaryEvents.filter((event) => event.kind === "diaper").length;
   const summaryHealth = summaryEvents.filter((event) => event.kind === "health").length;
@@ -1244,18 +1234,12 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
   if (newbornSummary) periodStart.setTime(now.getTime() - 24 * 60 * 60 * 1000);
   else periodStart.setHours(0, 0, 0, 0);
   const recent = events.filter((event) => new Date(event.startedAt).getTime() >= periodStart.getTime() && new Date(event.startedAt).getTime() <= now.getTime());
-  const periodEnd = now.getTime();
-  const sleeps = events.filter((event) => event.kind === "sleep" && new Date(event.startedAt).getTime() < periodEnd && (event.endedAt ? new Date(event.endedAt).getTime() : periodEnd) > periodStart.getTime());
-  const sleepMinutes = sleeps.reduce((sum, event) => {
-    const start = Math.max(new Date(event.startedAt).getTime(), periodStart.getTime());
-    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : periodEnd, periodEnd);
-    return sum + Math.max(0, end - start) / 60_000;
-  }, 0);
+  const sleepMinutes = sleepMinutesBetween(events, periodStart, now);
   const feeds = recent.filter((event) => event.kind === "feed" && event.feedType !== "pump");
   const feedingTotals = todayFeedingTotals(events, now, newbornSummary);
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
-  const weeklySleep = weeklySleepTotals(events);
+  const weeklySleep = weeklySleepTotals(events, now);
   const weeklyDiapers = weeklyDiaperTotals(events, now);
   const maxDailyDiapers = Math.max(0, ...weeklyDiapers.map((day) => day.total));
   const maxDailySleep = Math.max(0, ...weeklySleep.map((day) => day.totalMinutes));
