@@ -144,9 +144,13 @@ test("forecast returns an explainable range after a completed sleep", () => {
 test("morning wake forecast advances after a sleep is recorded since wake", () => {
   const wakeAt = new Date("2026-10-26T07:00:00");
   const priorNight: CareEvent = { id: "prior", kind: "sleep", startedAt: "2026-10-25T20:00:00", endedAt: "2026-10-26T06:30:00", caregiver: "Anne" };
+  const nightEndingAtWake: CareEvent = { ...priorNight, id: "night-at-wake", endedAt: "2026-10-26T07:00:00" };
+  const overlap: CareEvent = { ...priorNight, id: "overlap", endedAt: "2026-10-26T07:01:00" };
   const firstNap: CareEvent = { id: "nap", kind: "sleep", startedAt: "2026-10-26T09:00:00", endedAt: "2026-10-26T09:40:00", caregiver: "Anne" };
   const ongoingNap: CareEvent = { id: "ongoing", kind: "sleep", startedAt: "2026-10-26T09:00:00", caregiver: "Anne" };
   assert.equal(hasSleepSinceWake([priorNight], wakeAt), false);
+  assert.equal(hasSleepSinceWake([nightEndingAtWake], wakeAt), false);
+  assert.equal(hasSleepSinceWake([overlap], wakeAt), true);
   assert.equal(hasSleepSinceWake([firstNap], wakeAt), true);
   assert.equal(hasSleepSinceWake([ongoingNap], wakeAt), true);
 });
