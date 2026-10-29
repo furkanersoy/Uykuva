@@ -1,4 +1,4 @@
-YªçŠx±6¬“¬uç%j·Â+ar‰ì¶ë•ë_¢ºŞjË"‚v›•ëÚ®&›•ëj¹ââ•äÚ²L±×œ•ªŞw­…Ê'²Û¬zW­~Šëy«,Š	ÚnW¯j¸šnW¬# Uykuva â€” ÃœrÃ¼n ve Teknik Mimari
+# Uykuva â€” ÃœrÃ¼n ve Teknik Mimari
 
 Son gÃ¼ncelleme: 27 Ekim 2026
 

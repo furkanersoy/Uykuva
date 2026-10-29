@@ -1,4 +1,4 @@
-YªçŠx±6¬“¬uç%j·Â+ar‰ì¶ë•ë_¢ºÞjË"‚v›•ëÚ®&›•ëj¹âžâ•äÚ²L±×œ•ªÞw­…Ê'²Û¬zW­~Šëy«,Š	ÚnW¯j¸šnW¬import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -1782,7 +1782,7 @@ function NightWakeModal({ visible, close, save }: { visible: boolean; close: () 
     if (occurredAt.getTime() > Date.now() || occurredAt.getTime() < Date.now() - 24 * 60 * 60_000) return Alert.alert("ZamanÄ± kontrol edin", "Gece uyanmasÄ±nÄ± son 24 saat iÃ§inde kaydedebilirsiniz.");
     save(response, occurredAt.toISOString());
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}>
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
     <Pressable style={styles.backdrop} onPress={close} />
     <ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset}>
       <View style={styles.sheetHandle} />
