@@ -528,8 +528,8 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     const digits = clockInputDigits(value);
     setMorningWake(digits);
     const wakeTime = normalizeClockInput(digits);
-    // Show the forecast while typing and persist as soon as the entered time is valid.
-    if (isValidClock(wakeTime) && todayCheckIn?.wakeTime !== wakeTime) {
+    // Wait for four digits before saving so a partially typed time is not persisted.
+    if (digits.length === 4 && isValidClock(wakeTime) && todayCheckIn?.wakeTime !== wakeTime) {
       app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime });
     }
   };
