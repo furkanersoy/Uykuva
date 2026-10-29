@@ -264,6 +264,20 @@ test("care handoff includes the next sleep window based on today's wake time or 
   assert.match(summary, new RegExp(`Tahmini sonraki uyku penceresi ${expectedWindow} · ${confidenceLabel}`));
 });
 
+test("care handoff keeps the first wake window when overnight sleep ends exactly at wake time", () => {
+  const state = createInitialState();
+  state.baby = { ...termBaby, birthDate: "2026-10-10" };
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", wakeTime: "07:00" }];
+  state.events = [{ id: "night", kind: "sleep", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T07:00:00", caregiver: "Anne" }];
+  const now = new Date("2026-10-27T08:00:00");
+  const wakeAt = new Date("2026-10-27T07:00:00");
+  const expected = createSleepForecast(state.baby, state.events, now, wakeAt);
+  assert.equal(expected.available, true);
+  assert.ok(expected.start && expected.end);
+  const expectedWindow = `${expected.start.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}–${expected.end.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
+  assert.ok(handoffSummary(state, now, 4).includes(`Tahmini sonraki uyku penceresi ${expectedWindow}`));
+});
+
 test("care handoff says how much expressed milk is usable and which batch to use first", () => {
   const state = createInitialState();
   state.events = [
