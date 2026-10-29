@@ -690,7 +690,7 @@ export type SleepCoachGuidance = {
 export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Date()): SleepCoachGuidance | undefined {
   const today = localDayKey(now);
   const recent = checkIns
-    .filter((item) => item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)))
+    .filter((item) => item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.nightWakings !== undefined))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
   const latest = recent[0];
@@ -851,7 +851,7 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
       return date.getHours() * 60 + date.getMinutes();
     });
   const recentCheckIns = checkIns
-    .filter((item) => typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now))
+    .filter((item) => typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now) && (item.ease !== undefined || item.nightWakings !== undefined || Boolean(item.bedtime)))
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
     .slice(0, 7);
   const checkInBedtimes = recentCheckIns.flatMap((item) => {

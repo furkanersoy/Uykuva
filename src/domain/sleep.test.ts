@@ -1,9 +1,25 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
+test("wake-time-only check-ins do not hide a recent difficult night", () => {
+  const guidance = createSleepCoachGuidance([
+    { date: "2026-10-30", wakeTime: "07:00" },
+    { date: "2026-10-29", nightWakings: 5 }
+  ], new Date(2026, 9, 30, 12));
+  assert.equal(guidance?.title, "Sık uyanma bildirildi");
+  assert.equal(createSleepCoachGuidance([{ date: "2026-10-30" }], new Date(2026, 9, 30, 12)), undefined);
+});
+
+test("empty check-ins do not displace the last recorded sleep ratings", () => {
+  const empty = Array.from({ length: 7 }, (_, index) => ({ date: `2026-10-${String(30 - index).padStart(2, "0")}` }));
+  const insights = createSleepCoachInsights([], "20:00", [...empty, { date: "2026-10-23", ease: 2, nightWakings: 3, bedtime: "20:30" }], new Date(2026, 9, 30, 12));
+  assert.equal(insights.checkInAverage, 2);
+  assert.equal(insights.nightWakingsAverage, 3);
+  assert.equal(insights.actualBedtime, "20:30");
+});
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
 
 test("median handles odd and even sets", () => {
