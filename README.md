@@ -39,6 +39,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Yeterli geçmiş kayıt olduğunda sıradaki gündüz uykularını 24 saatlik planda tarihsel aralıklarla görme
 - İki haftanın kayıtlı gündüz uykusu örüntüsünü karşılaştırma; uyku geçişi tanısı veya kesin tahmin üretmez
 - Devam eden uykunun canlı süresini gösterme
+- İsteğe bağlı olası uyanış hatırlatması: devam eden uyku için en az beş benzer kayıt olduğunda tahmini uyanıştan 5, 10, 15, 20 veya 30 dakika önce yerel bildirim; sessiz saatlere uyar ve uyku bitince iptal edilir
 - Düşük parlaklıklı arayüzle uyku sayacı, beslenme ve bez kayıtlarına hızlı erişim sağlayan gece modu
 - Yeterli benzer kayıt varsa devam eden uyku için geçmiş sürelerden uyanma aralığı gösterme
 - Uyku, beslenme, bez ve bakım notu kaydı
@@ -151,4 +152,3 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
-

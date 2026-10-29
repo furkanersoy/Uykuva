@@ -345,7 +345,7 @@ export function estimateSleepWakeWindow(events: CareEvent[], runningSleep?: Care
     const end = new Date(event.endedAt);
     const duration = (end.getTime() - start.getTime()) / 60_000;
     const inRange = night ? duration >= 120 && duration <= 900 : duration >= 20 && duration <= 240;
-    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start.getTime() < cutoff || start.getTime() > now.getTime() || !inRange || startsAtNight(start) !== night) return [];
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start.getTime() < cutoff || end.getTime() > now.getTime() || !inRange || startsAtNight(start) !== night) return [];
     return [{ start: start.getTime(), duration }];
   }).sort((a, b) => b.start - a.start).slice(0, 10).map((item) => item.duration).sort((a, b) => a - b);
 

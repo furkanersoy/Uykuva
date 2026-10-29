@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -49,6 +49,20 @@ test("sleep totals merge overlapping and ongoing records across midnight", () =>
   const state = createInitialState();
   state.events = events;
   assert.match(handoffSummary(state, now, 4), /Son 4 saatte 210 dk uyku/);
+});
+
+test("wake estimates require five completed similar sleeps and ignore future endings", () => {
+  const now = new Date("2026-10-27T12:10:00");
+  const running: CareEvent = { id: "running", kind: "sleep", startedAt: "2026-10-27T12:00:00", caregiver: "Anne" };
+  const past: CareEvent[] = Array.from({ length: 5 }, (_, index) => ({ id: `past-${index}`, kind: "sleep", startedAt: `2026-10-${20 + index}T12:00:00`, endedAt: `2026-10-${20 + index}T13:00:00`, caregiver: "Anne" }));
+  const futureEnding: CareEvent = { id: "future-ending", kind: "sleep", startedAt: "2026-10-27T12:05:00", endedAt: "2026-10-27T13:00:00", caregiver: "Anne" };
+  const insufficient = estimateSleepWakeWindow([...past.slice(0, 4), futureEnding], running, now);
+  assert.equal(insufficient.available, false);
+  assert.equal(insufficient.sampleCount, 4);
+  const enough = estimateSleepWakeWindow(past, running, now);
+  assert.equal(enough.available, true);
+  assert.equal(enough.typical?.getTime(), new Date("2026-10-27T13:00:00").getTime());
+  assert.equal(estimateSleepWakeWindow(past, undefined, now).available, false);
 });
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
 

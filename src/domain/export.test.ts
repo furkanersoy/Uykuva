@@ -25,6 +25,23 @@ test("backup round-trips milk reminder lead preferences and rejects invalid valu
   assert.throws(() => parseDataExport(createDataExport(state)), /tercih bilgileri eksik/i);
 });
 
+test("wake reminder preferences round-trip and older backups remain valid", () => {
+  const state = createInitialState();
+  state.preferences.wakeReminderEnabled = true;
+  state.preferences.wakeReminderMinutes = 20;
+  const restored = parseDataExport(createDataExport(state));
+  assert.equal(restored.preferences.wakeReminderEnabled, true);
+  assert.equal(restored.preferences.wakeReminderMinutes, 20);
+  const older = JSON.parse(createDataExport(state));
+  delete older.preferences.wakeReminderEnabled;
+  delete older.preferences.wakeReminderMinutes;
+  const migrated = parseDataExport(JSON.stringify(older));
+  assert.equal(migrated.preferences.wakeReminderEnabled, false);
+  assert.equal(migrated.preferences.wakeReminderMinutes, 10);
+  state.preferences.wakeReminderMinutes = 3 as never;
+  assert.throws(() => parseDataExport(createDataExport(state)), /uyanma hatırlatması/i);
+});
+
 test("backup merge combines records and check-ins while preserving current device settings", () => {
   const current = createInitialState();
   const incoming = createInitialState();

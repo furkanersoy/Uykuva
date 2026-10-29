@@ -108,6 +108,9 @@ export function parseDataExport(raw: string): AppState {
   if (!isRecord(preferences) || (preferences.handoffHours !== undefined && ![2, 4, 6, 8].includes(Number(preferences.handoffHours))) || typeof preferences.notificationsEnabled !== "boolean" || ![5, 10, 15, 20, 30].includes(Number(preferences.sleepReminderMinutes)) || typeof preferences.careTaskRemindersEnabled !== "boolean" || ![15, 30, 60, 120, 180, 1440].includes(Number(preferences.careTaskReminderMinutes)) || (preferences.diaperRemindersEnabled !== undefined && typeof preferences.diaperRemindersEnabled !== "boolean") || (preferences.diaperReminderHours !== undefined && ![2, 3, 4].includes(Number(preferences.diaperReminderHours))) || (preferences.milkExpiryRemindersEnabled !== undefined && typeof preferences.milkExpiryRemindersEnabled !== "boolean") || (preferences.milkExpiryReminderLead !== undefined && !["adaptive", "2", "6", "12", "24", "48"].includes(String(preferences.milkExpiryReminderLead))) || !isClockString(preferences.quietStart) || !isClockString(preferences.quietEnd) || typeof parsed.caregiverName !== "string" || (parsed.careInstructions !== undefined && (typeof parsed.careInstructions !== "string" || parsed.careInstructions.length > 1000)) || !Array.isArray(parsed.caregivers) || !parsed.caregivers.length || !parsed.caregivers.every((caregiver) => isRecord(caregiver) && typeof caregiver.id === "string" && typeof caregiver.name === "string" && ["parent", "family", "caregiver"].includes(String(caregiver.role)))) {
     throw new Error("Uyku planı veya tercih bilgileri eksik.");
   }
+  if ((preferences.wakeReminderEnabled !== undefined && typeof preferences.wakeReminderEnabled !== "boolean") || (preferences.wakeReminderMinutes !== undefined && ![5, 10, 15, 20, 30].includes(Number(preferences.wakeReminderMinutes)))) {
+    throw new Error("Uyanma hatırlatması tercihleri geçersiz.");
+  }
   let children: AppState["children"] | undefined;
   if (parsed.children !== undefined) {
     if (!Array.isArray(parsed.children)) throw new Error("Yedekteki çocuk profili sayısı geçersiz.");
@@ -261,4 +264,3 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
     activeChildId: active.baby.id
   };
 }
-

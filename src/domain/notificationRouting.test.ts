@@ -3,7 +3,7 @@ import test from "node:test";
 import { notificationDestination, NOTIFICATION_KINDS } from "./notificationRouting";
 
 test("sleep, routine, and diaper reminders open Today for the matching child", () => {
-  for (const kind of [NOTIFICATION_KINDS.sleepWindow, NOTIFICATION_KINDS.routine, NOTIFICATION_KINDS.diaper]) {
+  for (const kind of [NOTIFICATION_KINDS.sleepWindow, NOTIFICATION_KINDS.sleepWake, NOTIFICATION_KINDS.routine, NOTIFICATION_KINDS.diaper]) {
     assert.deepEqual(notificationDestination({ kind, childId: "baby-2" }), { tab: "today", childId: "baby-2" });
   }
 });
@@ -27,4 +27,3 @@ test("unknown or malformed notification data is ignored", () => {
   assert.equal(notificationDestination([]), null);
   assert.equal(notificationDestination({ kind: "other" }), null);
 });
-

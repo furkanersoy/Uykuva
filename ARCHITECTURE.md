@@ -10,6 +10,8 @@ Gece uykusu tam sabah uyanışında bitiyorsa ilk gündüz uykusu gerçekleşmi�
 
 Uyku zamanlayıcısı çalışırken Bugün ve Uyku planı ekranları eski sonraki uyku penceresi yerine uyanışın kaydedilmesini bekleyen açıklamayı gösterir; Bugün planına tahmini sonraki uyku aralığı eklenmez.
 
+Olası uyanış hatırlatması varsayılan olarak kapalıdır ve Aile ekranından açılır. Devam eden uyku için aynı gündüz/gece diliminde son 30 günden en az beş tamamlanmış benzer uyku varsa, geçmiş sürelerin ortancasından tahmini uyanış hesaplanır. Kullanıcının seçtiği 5–30 dakikalık ön bildirim cihazda planlanır; zamanı geçmiş veya sessiz saatlere denk gelen bildirim atlanır. İlgili çocuk için hastalık, seyahat, diş çıkarma veya düzen değişikliği günü işaretliyse bildirim planlanmaz. Uyku bitince, ayar kapanınca veya tahmin değişince bekleyen uyanış bildirimleri yeniden düzenlenir. Her çocuk kendi geçmişiyle değerlendirilir ve bildirime dokunmak ilgili çocuğun Bugün ekranını açar. Bu bir uyanma alarmı veya kesin saat değildir.
+
 Kişisel uyanıklık aralıkları çıkarılırken zamanları çakışan tamamlanmış uyku kayıtları hesaplama için birleştirilir. Böylece iç içe kayıtlar aradaki uyanıklığı olduğundan uzun göstermez; orijinal kayıtlar değiştirilmez.
 
 Bugün ve Özet ekranlarındaki uyku süresi, haftalık grafik ve bakım devri toplamı, çakışan uyku aralıklarını yalnızca bir kez sayar. Gece yarısını aşan uykular yerel günlere bölünür; devam eden uyku o anki zamana kadar hesaplanır. Kayıt sayısı ayrı olay sayısı olarak kalır.

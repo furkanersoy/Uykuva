@@ -39,7 +39,7 @@ import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
-import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
+import { cancelSleepReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -176,14 +176,18 @@ export default function App() {
     const wakeAt = wakeMinutes ? new Date(clockNow) : undefined;
     if (wakeAt && wakeMinutes) wakeAt.setHours(wakeMinutes[0]!, wakeMinutes[1]!, 0, 0);
     const forecastWake = wakeAt && !hasSleepSinceWake(child.events, wakeAt) ? wakeAt : undefined;
+    const runningSleep = child.events.find((event) => event.kind === "sleep" && !event.endedAt);
     return {
       childId: child.baby.id,
       babyName: child.baby.name,
-      isSleeping: child.events.some((event) => event.kind === "sleep" && !event.endedAt),
+      isSleeping: Boolean(runningSleep),
+      unusualDay: Boolean(checkIn?.dayContext),
+      wakeEstimate: estimateSleepWakeWindow(child.events, runningSleep, clockNow),
       forecast: createSleepForecast(child.baby, child.events, clockNow, forecastWake, checkIn?.dayContext)
     };
   }), [app.state.children, clockNow]);
   const childSleepReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.forecast.available}:${child.forecast.start?.getTime() ?? ""}:${child.forecast.end?.getTime() ?? ""}:${child.forecast.explanation}`).join("|");
+  const childWakeReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.unusualDay}:${child.wakeEstimate.available}:${child.wakeEstimate.typical && child.wakeEstimate.typical > clockNow ? child.wakeEstimate.typical.getTime() : ""}`).join("|");
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -298,6 +302,13 @@ export default function App() {
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childSleepReminderKey]);
+
+  useEffect(() => {
+    if (!app.hydrated) return;
+    const enabled = app.state.onboardingComplete && app.state.preferences.wakeReminderEnabled;
+    const estimates = enabled ? childSleepReminders.flatMap((child) => child.isSleeping && !child.unusualDay && child.wakeEstimate.available && child.wakeEstimate.typical ? [{ childId: child.childId, babyName: child.babyName, typical: child.wakeEstimate.typical }] : []) : [];
+    void replaceWakeReminders(estimates, app.state.preferences.wakeReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd).catch(() => console.warn("Uyanış hatırlatmaları planlanamadı."));
+  }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.wakeReminderEnabled, app.state.preferences.wakeReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childWakeReminderKey]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -1517,6 +1528,15 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
     if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
     app.updatePreferences({ notificationsEnabled: true });
   };
+  const toggleWakeNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ wakeReminderEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyanış hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ wakeReminderEnabled: true });
+  };
   const toggleCareTaskNotifications = async (enabled: boolean) => {
     if (!enabled) {
       app.updatePreferences({ careTaskRemindersEnabled: false });
@@ -1629,7 +1649,9 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
         {app.state.preferences.routineRemindersEnabled ? <Text style={styles.hint}>Önümüzdeki 7 gün için yerel bildirim kurulur. Etkin rutin adımı yoksa veya hatırlatma sessiz saate denk gelirse bildirim gönderilmez; hedef yatış ve rutin süresini Uyku sekmesinden değiştirebilirsiniz.</Text> : null}
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch accessibilityLabel="Uyku penceresi bildirimi" accessibilityState={{ checked: app.state.preferences.notificationsEnabled }} value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
-        {app.state.preferences.notificationsEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled || app.state.preferences.milkExpiryRemindersEnabled || app.state.preferences.routineRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput accessibilityLabel="Sessiz saat başlangıcı" value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput accessibilityLabel="Sessiz saat bitişi" value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Olası uyanış hatırlatması</Text><Text style={styles.muted}>Devam eden uyku için en az beş benzer kayıt varsa tahmini uyanıştan önce haber verir.</Text></View><Switch accessibilityLabel="Olası uyanış hatırlatması" accessibilityState={{ checked: app.state.preferences.wakeReminderEnabled }} value={app.state.preferences.wakeReminderEnabled} onValueChange={(value) => void toggleWakeNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.wakeReminderEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.wakeReminderEnabled ? <><Text style={styles.inputLabel}>Uyanış tahmininden kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.wakeReminderMinutes === minutes} onPress={() => app.updatePreferences({ wakeReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Bu saat geçmiş kayıtlara dayalı bir tahmindir; bebeğinizi uyandırmak için alarm değildir.</Text></> : null}
+        {app.state.preferences.notificationsEnabled || app.state.preferences.wakeReminderEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled || app.state.preferences.milkExpiryRemindersEnabled || app.state.preferences.routineRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput accessibilityLabel="Sessiz saat başlangıcı" value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput accessibilityLabel="Sessiz saat bitişi" value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Aşı ve randevu hatırlatmaları</Text><Text style={styles.muted}>Yaklaşan görevleri seçtiğiniz zamanda hatırlatır.</Text></View><Switch accessibilityLabel="Aşı ve randevu hatırlatmaları" accessibilityState={{ checked: app.state.preferences.careTaskRemindersEnabled }} value={app.state.preferences.careTaskRemindersEnabled} onValueChange={(value) => void toggleCareTaskNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.careTaskRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.careTaskRemindersEnabled ? <><Text style={styles.inputLabel}>Ne zaman hatırlatılsın?</Text><View style={styles.choiceRow}>{([{ minutes: 15, label: "15 dk" }, { minutes: 30, label: "30 dk" }, { minutes: 60, label: "1 saat" }, { minutes: 120, label: "2 saat" }, { minutes: 180, label: "3 saat" }, { minutes: 1440, label: "1 gün" }] as const).map(({ minutes, label }) => <Pill key={minutes} label={label} active={app.state.preferences.careTaskReminderMinutes === minutes} onPress={() => app.updatePreferences({ careTaskReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Hatırlatmalar sessiz saatlere denk gelirse sessiz dönem bitiminde, görev saatinden önce gönderilir.</Text></> : null}
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Bez kontrol hatırlatması</Text><Text style={styles.muted}>Son bez kaydından sonra seçtiğiniz sürede bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Bez kontrol hatırlatması" accessibilityState={{ checked: app.state.preferences.diaperRemindersEnabled }} value={app.state.preferences.diaperRemindersEnabled} onValueChange={(value) => void toggleDiaperNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.diaperRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>

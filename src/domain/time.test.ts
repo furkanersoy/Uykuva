@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { clockInputDigits, dailyReminderDatesBefore, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput } from "./time";
+import { clockInputDigits, dailyReminderDatesBefore, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput, sleepWakeReminderDate } from "./time";
 
 test("quiet hours work across midnight", () => {
   assert.equal(isInQuietHours(new Date("2026-10-26T23:00:00"), "21:00", "07:00"), true);
@@ -21,6 +21,16 @@ test("today's actual wake time cannot be later than the current local minute", (
   assert.equal(isTodayTimeReached("23:59", now), false);
   assert.equal(isTodayTimeReached("25:00", now), false);
   assert.equal(isTodayTimeReached("07:00", new Date(NaN)), false);
+});
+
+test("wake reminder uses the selected lead and skips past and quiet times", () => {
+  const now = new Date(2026, 9, 30, 12, 0);
+  const typical = new Date(2026, 9, 30, 13, 0);
+  assert.deepEqual(sleepWakeReminderDate(typical, 15, "21:00", "07:00", now), new Date(2026, 9, 30, 12, 45));
+  assert.equal(sleepWakeReminderDate(typical, 15, "12:00", "14:00", now), undefined);
+  assert.equal(sleepWakeReminderDate(typical, 15, "21:00", "07:00", new Date(2026, 9, 30, 12, 45)), undefined);
+  assert.equal(sleepWakeReminderDate(undefined, 15, "21:00", "07:00", now), undefined);
+  assert.equal(sleepWakeReminderDate(typical, 3, "21:00", "07:00", now), undefined);
 });
 
 test("morning wake input accepts common clock formats", () => {

@@ -85,6 +85,8 @@ function migrateSingleState(value: unknown): AppState {
       ...initial.preferences,
       ...candidate.preferences,
       handoffHours: [2, 4, 6, 8].includes(Number(candidate.preferences?.handoffHours)) ? Number(candidate.preferences?.handoffHours) as 2 | 4 | 6 | 8 : 4,
+      wakeReminderEnabled: candidate.preferences?.wakeReminderEnabled === true,
+      wakeReminderMinutes: [5, 10, 15, 20, 30].includes(Number(candidate.preferences?.wakeReminderMinutes)) ? Number(candidate.preferences?.wakeReminderMinutes) as 5 | 10 | 15 | 20 | 30 : 10,
       careTaskRemindersEnabled: candidate.preferences?.careTaskRemindersEnabled ?? false,
       careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120,
       diaperRemindersEnabled: candidate.preferences?.diaperRemindersEnabled ?? false,
@@ -142,4 +144,3 @@ export function migrateState(value: unknown): AppState {
     activeChildId: active.baby.id
   };
 }
-

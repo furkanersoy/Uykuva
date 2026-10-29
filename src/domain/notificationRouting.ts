@@ -1,5 +1,6 @@
 export const NOTIFICATION_KINDS = {
   sleepWindow: "uykuva-sleep-window",
+  sleepWake: "uykuva-sleep-wake",
   routine: "uykuva-evening-routine",
   careTask: "uykuva-care-task",
   diaper: "uykuva-diaper-check",
@@ -24,6 +25,7 @@ export function notificationDestination(data: unknown): NotificationDestination 
 
   switch (fields.kind) {
     case NOTIFICATION_KINDS.sleepWindow:
+    case NOTIFICATION_KINDS.sleepWake:
     case NOTIFICATION_KINDS.routine:
     case NOTIFICATION_KINDS.diaper:
       return { tab: "today", ...shared };
@@ -36,4 +38,3 @@ export function notificationDestination(data: unknown): NotificationDestination 
       return null;
   }
 }
-
