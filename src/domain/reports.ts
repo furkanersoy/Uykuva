@@ -1,12 +1,7 @@
-import { ageInDays, nightWakeResponseLabel } from "./sleep";
+import { ageInDays, nightWakeResponseLabel, sleepMinutesBetween } from "./sleep";
 import { completedFeedMinutes } from "./feeding";
-import { AppState, CareEvent } from "./types";
+import { AppState } from "./types";
 import { DEVELOPMENT_CHECKPOINTS } from "../data/developmentMilestones";
-
-function minutesBetween(event: CareEvent) {
-  if (!event.endedAt) return 0;
-  return Math.max(0, (new Date(event.endedAt).getTime() - new Date(event.startedAt).getTime()) / 60_000);
-}
 
 function trDate(value: string | Date) {
   return new Date(value).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
@@ -15,7 +10,12 @@ function trDate(value: string | Date) {
 export function createDoctorSummary(state: AppState, now = new Date()): string {
   const since = now.getTime() - 7 * 86_400_000;
   const events = state.events.filter((event) => new Date(event.startedAt).getTime() >= since);
-  const sleeps = events.filter((event) => event.kind === "sleep" && event.endedAt);
+  const sleeps = state.events.filter((event) => {
+    if (event.kind !== "sleep" || !event.endedAt) return false;
+    const start = new Date(event.startedAt).getTime();
+    const end = new Date(event.endedAt).getTime();
+    return Number.isFinite(start) && Number.isFinite(end) && end > start && end > since && end <= now.getTime();
+  });
   const feeds = events.filter((event) => event.kind === "feed" && event.feedType !== "pump");
   const pumping = events.filter((event) => event.kind === "feed" && event.feedType === "pump");
   const solidMeals = feeds.filter((event) => event.feedType === "solid");
@@ -24,7 +24,7 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const growth = state.events.find((event) => event.kind === "growth");
   const latestDevelopment = [...(state.developmentCheckIns ?? [])].sort((a, b) => b.checkedAt.localeCompare(a.checkedAt))[0];
   const developmentCheckpoint = latestDevelopment && DEVELOPMENT_CHECKPOINTS.find((item) => item.ageMonths === latestDevelopment.ageMonths);
-  const totalSleepHours = sleeps.reduce((sum, event) => sum + minutesBetween(event), 0) / 60;
+  const totalSleepHours = sleepMinutesBetween(sleeps, new Date(since), now) / 60;
   const bottleMl = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
   const breastMinutes = feeds.reduce((sum, event) => sum + completedFeedMinutes(event), 0);
   const lines = [
@@ -40,7 +40,7 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   if (pumping.length) lines.push(`Sağım: ${pumping.length} kayıt · toplam ${pumping.reduce((sum, event) => sum + (event.amountMl ?? 0), 0)} ml`);
   const nightWakeLogs = state.sleepPlan.checkIns.flatMap((checkIn) => checkIn.nightWakeLogs ?? [])
     .filter((log) => new Date(log.at).getTime() >= since && new Date(log.at).getTime() <= now.getTime())
-    .sort((x, y) => new Date(x.at).getTime() - new Date(y.at).getTime());
+    .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   if (nightWakeLogs.length) {
     lines.push(`Gece uyanmaları: ${nightWakeLogs.length} yapılandırılmış kayıt`);
     nightWakeLogs.slice(-30).forEach((log) => lines.push(`- ${trDate(log.at)} · ${nightWakeResponseLabel(log.response)} · ${log.caregiver}`));
@@ -134,4 +134,3 @@ export function createDoctorSummaryHtml(state: AppState, now = new Date()): stri
     .notice { margin-top: 22px; border-top: 1px solid #d9e0dc; padding-top: 10px; font-size: 10px; color: #66746d; }
   </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva bakım özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
 }
-
