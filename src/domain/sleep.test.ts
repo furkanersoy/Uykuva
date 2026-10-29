@@ -20,6 +20,20 @@ test("empty check-ins do not displace the last recorded sleep ratings", () => {
   assert.equal(insights.nightWakingsAverage, 3);
   assert.equal(insights.actualBedtime, "20:30");
 });
+
+test("overlapping sleep records use the end of the combined sleep for awake windows", () => {
+  const events: CareEvent[] = Array.from({ length: 5 }, (_, index) => {
+    const date = `2026-10-${23 + index}`;
+    return [
+      { id: `long-${index}`, kind: "sleep" as const, startedAt: `${date}T09:00:00`, endedAt: `${date}T12:00:00`, caregiver: "Anne" },
+      { id: `nested-${index}`, kind: "sleep" as const, startedAt: `${date}T10:00:00`, endedAt: `${date}T10:30:00`, caregiver: "Baba" },
+      { id: `next-${index}`, kind: "sleep" as const, startedAt: `${date}T13:00:00`, endedAt: `${date}T13:30:00`, caregiver: "Anne" }
+    ];
+  }).flat();
+  const midday = createAwakeWindowInsights(events, new Date("2026-10-27T15:00:00")).find((item) => item.part === "midday");
+  assert.equal(midday?.sampleCount, 5);
+  assert.equal(midday?.medianMinutes, 60);
+});
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
 
 test("median handles odd and even sets", () => {

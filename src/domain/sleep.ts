@@ -141,14 +141,23 @@ function recentAwakeWindowsByDayPart(events: CareEvent[], now = new Date()): Rec
     })
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
 
+  const mergedSleeps: { start: number; end: number }[] = [];
+  for (const sleep of sleeps) {
+    const start = new Date(sleep.startedAt).getTime();
+    const end = new Date(sleep.endedAt!).getTime();
+    const previous = mergedSleeps[mergedSleeps.length - 1];
+    if (previous && start <= previous.end) previous.end = Math.max(previous.end, end);
+    else mergedSleeps.push({ start, end });
+  }
+
   const windows: Record<DayPart, number[]> = {
     night: [], earlyMorning: [], morning: [], midday: [], afternoon: [], evening: []
   };
-  for (let index = 1; index < sleeps.length; index += 1) {
-    const previous = sleeps[index - 1]!;
-    const current = sleeps[index]!;
-    const minutes = (new Date(current.startedAt).getTime() - new Date(previous.endedAt!).getTime()) / 60_000;
-    if (minutes >= 25 && minutes <= 480) windows[dayPartFor(new Date(current.startedAt))].push(minutes);
+  for (let index = 1; index < mergedSleeps.length; index += 1) {
+    const previous = mergedSleeps[index - 1]!;
+    const current = mergedSleeps[index]!;
+    const minutes = (current.start - previous.end) / 60_000;
+    if (minutes >= 25 && minutes <= 480) windows[dayPartFor(new Date(current.start))].push(minutes);
   }
   for (const part of Object.keys(windows) as DayPart[]) windows[part] = windows[part].slice(-10);
   return windows;
