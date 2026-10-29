@@ -12,6 +12,8 @@ Uyku zamanlayıcısı çalışırken Bugün ve Uyku planı ekranları eski sonra
 
 Olası uyanış hatırlatması varsayılan olarak kapalıdır ve Aile ekranından açılır. Devam eden uyku için aynı gündüz/gece diliminde son 30 günden en az beş tamamlanmış benzer uyku varsa, geçmiş sürelerin ortancasından tahmini uyanış hesaplanır. Kullanıcının seçtiği 5–30 dakikalık ön bildirim cihazda planlanır; zamanı geçmiş veya sessiz saatlere denk gelen bildirim atlanır. İlgili çocuk için hastalık, seyahat, diş çıkarma veya düzen değişikliği günü işaretliyse bildirim planlanmaz. Uyku bitince, ayar kapanınca veya tahmin değişince bekleyen uyanış bildirimleri yeniden düzenlenir. Her çocuk kendi geçmişiyle değerlendirilir ve bildirime dokunmak ilgili çocuğun Bugün ekranını açar. Bu bir uyanma alarmı veya kesin saat değildir.
 
+Uyanış bildirimi planlaması `src/domain/wakeReminders.ts` içindeki sıralı koordinatörle yürütülür. Yeni ayar, sürmekte olan planlama tamamlandıktan sonra eski uyanış bildirimlerini iptal eder; böylece hızlı kapatma sırasında geç eklenen bir bildirimin kalması önlenir. Cihaz API çağrıları `src/services/notifications.ts` üzerinden yapılır; koordinatörün çoklu çocuk ve eş zamanlı kapatma davranışı sahte bildirim adaptörüyle test edilir.
+
 Kişisel uyanıklık aralıkları çıkarılırken zamanları çakışan tamamlanmış uyku kayıtları hesaplama için birleştirilir. Böylece iç içe kayıtlar aradaki uyanıklığı olduğundan uzun göstermez; orijinal kayıtlar değiştirilmez.
 
 Bugün ve Özet ekranlarındaki uyku süresi, haftalık grafik ve bakım devri toplamı, çakışan uyku aralıklarını yalnızca bir kez sayar. Gece yarısını aşan uykular yerel günlere bölünür; devam eden uyku o anki zamana kadar hesaplanır. Kayıt sayısı ayrı olay sayısı olarak kalır.

@@ -1,7 +1,8 @@
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { CareEvent, CareTask, MilkExpiryReminderLead, SleepForecast } from "../domain/types";
-import { dailyReminderDatesBefore, isInQuietHours, isValidClock, sleepWakeReminderDate } from "../domain/time";
+import { dailyReminderDatesBefore, isInQuietHours, isValidClock } from "../domain/time";
+import { createWakeReminderCoordinator } from "../domain/wakeReminders";
 import { createMilkInventory, milkExpiryReminderLeadMs, milkStorageLabel } from "../domain/milk";
 import { NOTIFICATION_KINDS } from "../domain/notificationRouting";
 
@@ -93,38 +94,24 @@ export async function cancelSleepReminders() {
   );
 }
 
-let wakeReminderGeneration = 0;
-let wakeReminderQueue: Promise<void> = Promise.resolve();
-
-export function replaceWakeReminders(
-  estimates: { childId: string; babyName: string; typical: Date }[],
-  leadMinutes: number,
-  quietStart: string,
-  quietEnd: string
-): Promise<void> {
-  const generation = ++wakeReminderGeneration;
-  wakeReminderQueue = wakeReminderQueue.catch(() => undefined).then(async () => {
-    if (generation !== wakeReminderGeneration) return;
+export const replaceWakeReminders = createWakeReminderCoordinator({
+  list: async () => {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    await Promise.all(scheduled.filter((item) => item.content.data?.kind === NOTIFICATION_KINDS.sleepWake).map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
-    if (generation !== wakeReminderGeneration || !estimates.length) return;
+    return scheduled.filter((item) => item.content.data?.kind === NOTIFICATION_KINDS.sleepWake).map((item) => item.identifier);
+  },
+  cancel: (id) => Notifications.cancelScheduledNotificationAsync(id),
+  schedule: async (estimate, date, leadMinutes) => {
     await ensureAndroidChannel();
-    for (const estimate of estimates) {
-      if (generation !== wakeReminderGeneration) return;
-      const date = sleepWakeReminderDate(estimate.typical, leadMinutes, quietStart, quietEnd);
-      if (!date) continue;
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: `${estimate.babyName} için olası uyanış yaklaşıyor`,
-          body: `Önceki benzer uyku kayıtlarına göre yaklaşık ${leadMinutes} dakika içinde uyanabilir; bu yalnızca bir tahmindir.`,
-          data: { kind: NOTIFICATION_KINDS.sleepWake, childId: estimate.childId }
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: Platform.OS === "android" ? "sleep-reminders" : undefined }
-      });
-    }
-  });
-  return wakeReminderQueue;
-}
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${estimate.babyName} için olası uyanış yaklaşıyor`,
+        body: `Önceki benzer uyku kayıtlarına göre yaklaşık ${leadMinutes} dakika içinde uyanabilir; bu yalnızca bir tahmindir.`,
+        data: { kind: NOTIFICATION_KINDS.sleepWake, childId: estimate.childId }
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: Platform.OS === "android" ? "sleep-reminders" : undefined }
+    });
+  }
+});
 
 export async function cancelAllCareReminders() {
   await Promise.all([
