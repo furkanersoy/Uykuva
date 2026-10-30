@@ -86,6 +86,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Etkin akşam rutini adımlarını sırayla uygulama ve tamamlanma özetini zaman çizelgesine kaydetme
 - Günlük bakım özeti
 - Gece yarısını aşan kayıtları günlere dağıtan yedi günlük uyku süresi grafiği
+- Gece yarısını aşan uykuları günlere bölen; günlük süre, ebeveyn check-in'i ve plan durumunu birleştiren 7 günlük uyku özeti PDF'i
 - Düzeltilmiş yaşı 9 haftadan küçük bebekler için kayan son 24 saat özeti
 - İlk kurulum ve düzenlenebilir bebek/bakım veren profili
 - Profil ve plan için SQLite saklama, bakım kayıtları için indeksli SQLite olay tablosu ve çevrimdışı göç
