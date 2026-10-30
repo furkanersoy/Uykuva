@@ -6,6 +6,8 @@ Durum: İsteğe bağlı istemci temeli eklendi; bulut eşitlemesi varsayılan ol
 
 `src/services/cloudSync.ts` yalnızca `EXPO_PUBLIC_SUPABASE_URL` ve `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` geçerliyse istemci kurar. `.env.example` değişken adlarını gösterir; gerçek değerler `.env` içinde tutulur ve Git'e eklenmez. Eşitleme Aile ekranında açıkça onaylanıp elle başlatılır; arka planda otomatik yükleme yoktur. Her cihazda aynı aile anahtarı gerekir. Anahtar SecureStore'da saklanır, uygulama sunucusuna yollanmaz ve davet kodundan ayrı, uçtan uca şifreli bir kanalla paylaşılır. Eşitleme mevcut uzak belgeyi önce indirir, yerel kayıtlarla birleştirir, ardından sunucu revision numarasına karşı yazar; aynı anda başka cihaz yazmışsa sunucu çakışmayı reddeder. Bulut aile alanını silme yalnızca bulut kopyasını ve üyeliği kaldırır; bu cihazdaki veriye dokunmaz.
 
+Aile sahibi davet oluşturabilir, aile şifreleme anahtarını bu cihazdan tekrar gösterebilir ve bulut aile alanını silebilir. Bakıcı üyeleri eşitleme yazma hakkına sahiptir; salt okunur aile üyeleri yalnızca indirebilir. Bu roller sunucudaki yetkilerle aynı tutulur. Aile anahtarının kaybolması halinde sunucudan kurtarılamaz; mevcut sahip cihazda SecureStore'dan gösterilip güvenli kanaldan yeniden paylaşılabilir.
+
 ## Amaç
 
 Ebeveyn ve bakıcıların farklı telefonlardan aynı bebeğin bakım kayıtlarını görüp ekleyebilmesi. Mevcut SQLite depolaması çevrimdışı çalışmaya devam eder; ağ bağlantısı geldiğinde değişiklikler eşitlenir. Eşitleme isteğe bağlı olur ve kullanıcı açmadan hiçbir bebek verisi cihazdan çıkmaz.
