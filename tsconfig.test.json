@@ -12,6 +12,6 @@
     "rootDir": "src",
     "outDir": ".test-build"
   },
-  "include": ["src/domain/**/*.ts", "src/data/seed.ts", "src/data/migrations.ts", "src/data/storage.test.ts", "src/data/sleepGuides.ts", "src/data/sleepGuides.test.ts", "src/services/notifications.ts"],
+  "include": ["src/domain/**/*.ts", "src/data/seed.ts", "src/data/migrations.ts", "src/data/storage.test.ts", "src/data/sleepGuides.ts", "src/data/sleepGuides.test.ts", "src/services/notifications.ts", "src/services/cloudSync.ts", "src/services/cryptoPolyfill.ts"],
   "exclude": ["node_modules"]
 }
