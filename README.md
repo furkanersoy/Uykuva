@@ -77,6 +77,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Son check-in'lere göre desteği artırmayı veya mevcut rutini korumayı öneren, planı otomatik değiştirmeyen uyku koçu rehberi
 - Saatli gece uyanması kayıtlarında son 7 günün verilen destek türlerini ve kayıtlı geceleri tarafsız biçimde özetleme; beslenmeyi erteleme veya plan değiştirme önerisi üretmez
 - Check-in'deki gece yatış saati ile ilk uyku kaydını eşleştirerek son ve önceki 7 günün uykuya dalma süresi ortancasını gösterme; en az üç eşleşme gerekir ve tek başına plan değişikliği önermez
+- Her iki haftada da en az üç eşleşen gece olduğunda uykuya dalma süresi ortancaları arasındaki farkı dakika olarak gösterme; yalnızca kayıt özeti sunar
 - Tamamlanan 14 günlük plan döngülerinin görev toplamlarıyla arşivi (en çok 10 döngü)
 - Akşam rutini ve günlük görevler
 - İsteğe bağlı akşam rutini hatırlatması; hedef yatış ve etkin rutin süresinden hesaplanır, sessiz saatleri gözetir ve önümüzdeki yedi gün için cihazda planlanır

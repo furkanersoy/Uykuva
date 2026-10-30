@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 62472)
-Total output lines: 2423
+Warning: truncated output (original token count: 62599)
+Total output lines: 2424
 
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
@@ -837,7 +837,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const completedTodayCount = plan.tasks.filter((task) => app.state.sleepPlan.completedToday.includes(task)).length;
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
-  const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
+  const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns, now);
   const nightWakeResponseSummary = summarizeNightWakeResponses(app.state.sleepPlan.checkIns, now);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
@@ -976,7 +976,326 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </Pressable>
         {nightGuideOpen ? <View style={styles.nightGuideContent}>
           {nightGuide.steps.map((step, index) => <View key={index} style={styles.nightGuideStep}><Text style={styles.nightGuideNumber}>{index + 1}</Text><Text style={[styles.body, styles.nightGuideStepText]}>{step}</Text></View>)}
-          {…22472 tokens truncated…Label="Olası uyanış hatırlatması" accessibilityState={{ checked: app.state.preferences.wakeReminderEnabled }} value={app.state.preferences.wakeReminderEnabled} onValueChange={(value) => void toggleWakeNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.wakeReminderEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+          {correctedAgeDays(app.state.baby) < 365 ? <Text style={styles.hint}>Her uykuda sırtüstü, sert ve düz, ayrı bir uyku yüzeyi kullanın. İlk 6 ay aynı odada ama ayrı uyku alanında uyuması önerilir; yatağı paylaşmayın, başını örtmeyin ve aşırı sıcak tutmayın.</Text> : null}
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx")}><Text style={styles.linkText}>AAP güvenli uyku rehberini aç</Text></Pressable>
+        </View> : null}
+      </Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sleepBasicsOpen }} onPress={() => setSleepBasicsOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Uyku hakkında kısa rehber</Text><Text style={styles.body}>Rutin, gece uyanmaları ve güvenli uyku</Text></View>
+          <Text style={styles.nightGuideChevron}>{sleepBasicsOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {sleepBasicsOpen ? <View style={styles.nightGuideContent}>
+          <Text style={styles.inputLabel}>Her bebeğin ritmi farklıdır</Text>
+          <Text style={styles.body}>Uyku süresi ve uyanma düzeni bebekler arasında değişir. Özellikle ilk aylarda kısa uyku aralıkları ve beslenme için uyanmalar olağandır; tek bir saat çizelgesi her aileye uymaz.</Text>
+          <Text style={styles.inputLabel}>Yorgunluk işaretlerine bakın</Text>
+          <Text style={styles.body}>Esneme, bakışı kaçırma, göz kapaklarının düşmesi, gözleri ovuşturma veya oyuna ilgide azalma bazı bebeklerde görülebilir. İşaretler bebekten bebeğe ve yaşla değişir; tek başına kesin uyku zamanı sayılmaz. Fark ettiğinizde ortamı sakinleştirin ve açlık ya da rahatsızlık gibi diğer ihtiyaçları da kontrol edin.</Text>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/pages/How-Do-Infants-Learn.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP bebek işaretleri bilgisine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Bebeğinizin uyku işaretlerini tanıma</Text></Pressable>
+          <Text style={styles.inputLabel}>Sakin, tekrarlanabilir bir rutin deneyin</Text>
+          <Text style={styles.body}>Benzer sırayla yapılan kısa ve sakin adımlar uykuya geçişi kolaylaştırabilir. Ailenize uyan adımları seçin; bebeğinizin işaretlerine göre rutini kısaltabilir veya ara verebilirsiniz.</Text>
+          <Text style={styles.inputLabel}>Gece uyanınca önce ihtiyacı değerlendirin</Text>
+          <Text style={styles.body}>Açlık, bez, rahatsızlık ve yakınlık ihtiyacını kontrol edin. Gece bakımını düşük ışıkta ve sakin tutmak yardımcı olabilir; beslenmeyi veya gerekli bakımı uyku planı uğruna ertelemeyin.</Text>
+          <Text style={styles.inputLabel}>Bebekler için güvenli uyku</Text>
+          <Text style={styles.body}>Bebeği her uykuda sırtüstü, sert ve düz, ayrı bir uyku yüzeyine yatırın. İlk 6 ay aynı odada ama ayrı uyku alanında uyuması önerilir. Yastık, yorgan, oyuncak ve gevşek örtüleri uyku alanından çıkarın. Başını örtmeyin, aşırı sıcak tutmayın ve yetişkin yatağını paylaşmayın.</Text>
+          <Text style={styles.inputLabel}>Ne zaman sağlık yardımı alınmalı?</Text>
+          <Text style={styles.body}>Nefes almada güçlük, uzayan veya tekrarlayan nefes duraklamaları, sık ya da yüksek sesli horlama, beslenmeyi zorlaştıran nefes sorunu veya alışılmadık uykuya meyil fark ederseniz çocuk doktorunuzla görüşün. Nefes alamama, soluk ya da morarma veya bebeğin zor uyandırılması acil yardım gerektirir. Böyle bir durumda uyku planını uygulamaya devam etmeyin.</Text>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Sleep-Apnea-Detection.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP sağlık bilgisine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Uykuda solunum belirtileri ve ne zaman yardım alınmalı</Text></Pressable>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.nhs.uk/baby/health/when-to-get-urgent-medical-help-for-babies-and-children-under-5/").catch(() => Alert.alert("Bağlantı açılamadı", "NHS acil yardım rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>NHS · Bebeklerde acil yardım gerektiren belirtiler</Text></Pressable>
+          <Text style={styles.inputLabel}>Bir yaklaşımı tüm bakım verenlerle konuşun</Text>
+          <Text style={styles.body}>Kimlerin hangi desteği vereceğini, beslenme ve rahatlatma ihtiyaçlarına nasıl yanıt verileceğini ve hangi durumda planı bırakacağınızı önceden konuşun. Aynı yaklaşımda buluşamıyorsanız seçim yapmak zorunda değilsiniz; duyarlı rutinle devam edebilir veya konuyu daha sonra yeniden değerlendirebilirsiniz.</Text>
+          <Text style={styles.inputLabel}>Zor günlerde ara verin</Text>
+          <Text style={styles.body}>Hastalık, ağrı, seyahat veya düzen değişikliği olduğunda koçluk planını erteleyin. Uyku ekranındaki gün bağlamı seçimi günlük koçluk adımlarını bekletir; bakım kayıtları sürer ve olağan güne dönünce plan kaldığı yerden devam eder.</Text>
+          {!stage.canReduceSupport ? <Text style={styles.hint}>Bu yaş aşamasında desteği azaltma yaklaşımı sunulmuyor. Uyku işaretleri, güvenli uyku ve duyarlı bakım önceliklidir.</Text> : null}
+          {trainingReady ? <><View style={styles.spacer12} /><PrimaryButton label="Uyku yaklaşımlarını karşılaştır" quiet onPress={() => { setSleepBasicsOpen(false); setMethodGuideOpen(true); }} /></> : null}
+          <Text style={styles.hint}>Uyku eğitimi zorunlu değildir. Uyku yaklaşımı seçseniz bile beslenme, hastalık, güvenlik ve yoğun huzursuzluk işaretleri her zaman önceliklidir. Kişisel sağlık sorularında çocuk doktorunuza danışın.</Text>
+          <Text style={styles.inputLabel}>Kaynaklar</Text>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/").catch(() => Alert.alert("Bağlantı açılamadı", "NHS uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>NHS · Bebeğinizin uyumasına yardımcı olma</Text></Pressable>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Bebeğinizi uyutmaya yardımcı olma</Text></Pressable>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/sudden-infant-death/sleep-safely/").catch(() => Alert.alert("Bağlantı açılamadı", "CDC güvenli uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>CDC · Güvenli uyku alanı</Text></Pressable>
+        </View> : null}
+      </Card>
+      <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: wakeWindowGuideOpen }} onPress={() => setWakeWindowGuideOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Yaşa göre uyanıklık aralıkları</Text><Text style={styles.body}>Bebeğiniz için rehber aralığı ve diğer yaş grupları</Text></View>
+          <Text style={styles.nightGuideChevron}>{wakeWindowGuideOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {wakeWindowGuideOpen ? <View style={styles.nightGuideContent}>
+          {wakeWindows.map((window) => <View key={window.ageLabel} style={[styles.methodCompareRow, window.current && styles.currentWakeWindow]}><Text style={[styles.methodCompareLabel, window.current && styles.currentWakeWindowText]}>{window.ageLabel}{window.current ? " · bebeğiniz" : ""}</Text><Text style={[styles.methodCompareText, window.current && styles.currentWakeWindowText]}>{window.minMinutes}–{window.maxMinutes} dk</Text></View>)}
+          <Text style={styles.hint}>Bunlar genel başlangıç aralıklarıdır; bebeğin uyku işaretleri ve kendi kayıtları önceliklidir. Erken doğan bebeklerde ilk 2 yıl düzeltilmiş yaş kullanılır. Kesin saat veya sağlık önerisi değildir.</Text>
+        </View> : null}
+      </Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: awakePatternOpen }} onPress={() => setAwakePatternOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Bebeğinizin uyanıklık örüntüsü</Text><Text style={styles.body}>Son 30 gündeki tamamlanmış uyku kayıtları</Text></View>
+          <Text style={styles.nightGuideChevron}>{awakePatternOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {awakePatternOpen ? <View style={styles.nightGuideContent}>
+          {awakeWindowInsights.map((insight) => <View key={insight.part} style={styles.awakeWindowRow}>
+            <Text style={styles.awakeWindowLabel}>{insight.label}</Text>
+            <Text style={styles.awakeWindowValue}>{insight.medianMinutes !== undefined ? `${insight.medianMinutes} dk medyan · ${insight.sampleCount} kayıt` : `${insight.sampleCount}/${insight.requiredSamples} kayıt · yaş rehberi kullanılıyor`}</Text>
+          </View>)}
+          <Text style={styles.hint}>Bu süreler birbirini izleyen tamamlanmış uyku kayıtlarından hesaplanır. Gündüz diliminde en az 5, gece diliminde en az 2 örnek olmadan kişisel medyan kullanılmaz. Aralıklar hedef veya kesin program değildir.</Text>
+        </View> : null}
+      </Card>
+      {app.state.baby.gestationalWeek < 37 ? <Card tone="peach"><Text style={styles.cardTitle}>Erken doğum yaşı hesaba katılıyor</Text><Text style={styles.body}>Uyku penceresi ve koçluk aşaması, ilk iki yılda doğum haftasına göre düzeltilmiş yaşı kullanır. Aşı ve randevu tarihleri gerçek doğum tarihine bağlı kalır. Bu yaş bilgisi yalnızca genel rehber içindir; bebeğinizin bakım planını sağlık uzmanınızla belirleyin.</Text></Card> : null}
+      <Card tone={coachingPausedToday ? "peach" : "white"}>
+        <Text style={styles.cardTitle}>{todayCheckIn?.dayContext ? "Bugün uyku planı beklemede" : app.state.sleepPlan.paused ? "Uyku planı duraklatıldı" : "Planı istediğiniz zaman duraklatabilirsiniz"}</Text>
+        <Text style={styles.body}>{todayCheckIn?.dayContext ? `${sleepDayContextLabel(todayCheckIn.dayContext)} seçildi. Bugün koçluk adımları tamamlanmaz ve plan günü ilerlemez. Uyku, beslenme ve bakım kayıtları sürer; olağan güne döndüğünüzde günlük rehbere devam edebilirsiniz.` : app.state.sleepPlan.paused ? "Koçluk adımları ve plan günü beklemede. Uyku, beslenme ve bakım kayıtlarınız normal şekilde devam eder." : "Hastalık, seyahat veya ailenizin ihtiyaçları değiştiğinde planı durdurup daha sonra kaldığınız günden sürdürebilirsiniz."}</Text>
+        {!todayCheckIn?.dayContext ? <><View style={styles.spacer12} /><PrimaryButton label={app.state.sleepPlan.paused ? "Kaldığım yerden devam et" : "Uyku planını duraklat"} quiet={!app.state.sleepPlan.paused} onPress={app.toggleSleepPlanPaused} /></> : null}
+      </Card>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
+        {methods.map((method) => <Pill key={method} label={methodDescription(method).name} active={coachingMethod === method} onPress={() => app.setMethod(method)} />)}
+      </ScrollView>
+      {trainingReady ? <><View style={styles.spacer12} /><PrimaryButton label="Uyku yaklaşımlarını karşılaştır" quiet onPress={() => setMethodGuideOpen(true)} /></> : null}
+      {!trainingReady ? <Text style={styles.readinessNote}>{stage.canReduceSupport ? "Kademeli yaklaşım seçenekleri dört hazırlık maddesi tamamlandığında açılır. O zamana kadar duyarlı rutin gösterilir." : stage.guidance}</Text> : null}
+      {trainingReady ? <>
+        <SectionTitle title="Planın odağı" action="Günlük rehber kişiselleşir" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
+          {sleepFocusOptions.map((item) => <Pill key={item.id} label={item.label} active={app.state.sleepPlan.focus === item.id} onPress={() => app.setSleepFocus(item.id)} />)}
+        </ScrollView>
+        <Text style={styles.readinessNote}>Odağı değiştirdiğinizde günün görev işaretleri temizlenir; böylece yeni adımları ayrı takip edebilirsiniz.</Text>
+      </> : null}
+      <Card tone="lavender">
+        <Text style={styles.eyebrow}>{(coachingPausedToday ? "PLAN BEKLEMEDE · " : "") + plan.title.toUpperCase()}</Text>
+        <Text style={styles.heroSmall}>{coachingPausedToday ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>
+        <Text style={styles.body}>{coachingPausedToday ? "Bu sırada günlük bakım kayıtlarını tutabilir, akşam rutininizi kullanabilirsiniz. Plan günü ilerlemez." : methodDescription(coachingMethod).support}</Text>
+      </Card>
+      <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
+      <SectionTitle title="Kayıtlarına göre gün taslağı" action="Son 14 gün" />
+      <Card>
+        {napOutline.length ? napOutline.map((nap) => <View key={nap.order} style={styles.eventRow}><View style={styles.flex}><Text style={styles.eventTitle}>{nap.order}. gündüz uykusu</Text><Text style={styles.muted}>{nap.actualStart ? `${nap.inProgress ? "Şu an uyuyor" : "Bugün kaydedildi"} · ${time(nap.actualStart)}` : `${time(nap.from)}–${time(nap.to)} · ortanca ${time(nap.typical)}`}</Text></View><Text style={styles.taskDate}>{nap.sampleCount} gün</Text></View>) : <Text style={styles.body}>Kişisel gündüz uykusu taslağı için son 14 günde en az üç farklı günde kayıt gerekir.</Text>}
+        <Text style={styles.hint}>Bu aralıklar bebeğinizin önceki kayıtlarının özeti; bugünün kesin programı değildir. Uyku işaretleri ve sıradaki uyku penceresi önceliklidir.</Text>
+      </Card>
+      <SectionTitle title="Kestirme örüntüsü" action="İki haftayı karşılaştır" />
+      <Card>
+        {napPattern.available ? <>
+          <View style={styles.measureRow}><Measure value={napPattern.recentMedian.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} label={`Son 7 gün · ${napPattern.recentLoggedDays} kayıtlı gün`} /><Measure value={napPattern.previousMedian.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} label={`Önceki 7 gün · ${napPattern.previousLoggedDays} kayıtlı gün`} /></View>
+          <Text style={styles.body}>Kayıt bulunan günlerde gündüz uykusu sayısı {napPattern.trend === "fewer" ? "azalmış" : napPattern.trend === "more" ? "artmış" : "benzer"} görünüyor. {napPattern.trend === "fewer" ? "Bu değişiklik tek başına uyku geçişinin başladığını göstermez." : "Kısa süreli değişimler tek başına uyku geçişi anlamına gelmez."}</Text>
+        </> : <Text style={styles.body}>İki haftayı karşılaştırmak için her haftada en az 4 farklı gündeki gündüz uykusunu kaydedin. Şu an kayıt olan günler: son hafta {napPattern.recentLoggedDays}, önceki hafta {napPattern.previousLoggedDays}.</Text>}
+        <Text style={styles.hint}>Yalnızca kaydedilmiş 15 dakika–4 saatlik gündüz uykuları sayılır. Eksik kayıtlar örüntüyü değiştirebilir; bu bir geçiş tahmini değildir.</Text>
+      </Card>
+      <SectionTitle title="Kayıtlardan öneri" action={`${insights.nightsUsed} gece`} />
+      <Card>
+        <View style={styles.measureRow}><Measure value={insights.actualBedtime ?? "—"} label="Gerçek medyan" /><Measure value={insights.targetBedtime} label="Hedef" /><Measure value={insights.suggestedBedtime} label="Bu gece" /></View>
+        <Text style={styles.body}>{insights.nightsUsed ? insights.adjustmentMinutes === 0 ? "Kayıtlı yatış saati hedefle uyumlu görünüyor." : `Hedefe doğru bu gece yalnızca ${Math.abs(insights.adjustmentMinutes)} dakikalık küçük bir değişim öneriliyor.` : "En az bir uzun gece uykusu kaydedildiğinde hedefle karşılaştırma yapılacak."}</Text>
+        {insights.checkInAverage ? <Text style={styles.awake}>Son check-in ortalaması: {insights.checkInAverage.toFixed(1)}/5</Text> : null}
+        {insights.nightWakingsAverage !== undefined ? <Text style={styles.awake}>Son değerlendirmelerde gece uyanma ortalaması: {insights.nightWakingsAverage.toFixed(1)}</Text> : null}
+        {insights.sleepSupportSummary ? <Text style={styles.awake}>Son {insights.sleepSupportSamples} işaretli uyku kaydında geçiş desteği: {insights.sleepSupportSummary}</Text> : <Text style={styles.hint}>Uyku kayıtlarına geçiş desteği eklediğinizde son 7 işaretli kaydın dağılımı burada görünür.</Text>}
+        {insights.routineToSleepMedianMinutes !== undefined ? <Text style={styles.awake}>Rutin bitişinden uyku başlangıcına ortanca {Math.round(insights.routineToSleepMedianMinutes)} dk · {insights.routineToSleepSamples} eşleşen gece</Text> : <Text style={styles.hint}>Rutin çalıştırıcısı tamamlanıp ardından gece uykusu kaydedildiğinde rutin–uyku aralığı burada görünür.</Text>}
+        {insights.sleepOnsetMedianMinutes !== undefined ? <Text style={styles.awake}>Yatış saatinden uyku başlangıcına son 7 gün ortancası {Math.round(insights.sleepOnsetMedianMinutes)} dk · {insights.sleepOnsetSamples} eşleşen gece</Text> : <Text style={styles.hint}>Sabah check-in'indeki yatış saati ve ilk gece uykusu kaydı eşleştikçe, en az 3 gecelik son hafta ortancası burada görünür ({insights.sleepOnsetSamples}/3 eşleşme).</Text>}
+        {insights.previousSleepOnsetMedianMinutes !== undefined ? <Text style={styles.awake}>Önceki 7 gün ortancası {Math.round(insights.previousSleepOnsetMedianMinutes)} dk · bu fark tek başına planı değiştirme nedeni değildir.</Text> : null}
+        {insights.sleepOnsetChangeMinutes !== undefined ? <Text style={styles.body}>İki dönemin kayıtlı ortancaları arasında {Math.abs(insights.sleepOnsetChangeMinutes)} dk fark var; son hafta {insights.sleepOnsetChangeMinutes < -5 ? "daha kısa" : insights.sleepOnsetChangeMinutes > 5 ? "daha uzun" : "benzer"} görünüyor ({insights.sleepOnsetSamples} ve {insights.previousSleepOnsetSamples} eşleşen gece). Bu kayıt özeti tek başına planı değiştirme nedeni değildir.</Text> : null}
+      </Card>
+      <SectionTitle title="Saatli gece uyanmaları" action="Son 7 gün" />
+      <Card>
+        {nightWakeResponseSummary.total ? <>
+          <Text style={styles.body}>{nightWakeResponseSummary.total} kayıt · {nightWakeResponseSummary.daysWithLogs} gecede</Text>
+          {NIGHT_WAKE_RESPONSE_OPTIONS.filter((item) => nightWakeResponseSummary.counts[item.id] > 0).map((item) => <View key={item.id} style={styles.eventRow}><Text style={[styles.eventTitle, styles.flex]}>{item.label}</Text><Text style={styles.taskDate}>{nightWakeResponseSummary.counts[item.id]}</Text></View>)}
+          <Text style={styles.hint}>Bu özet yalnızca kaydedilen yanıt türlerini sayar; beslenme ihtiyacını erteleme veya uyku yöntemini değiştirme önerisi değildir.</Text>
+        </> : <Text style={s…12599 tokens truncated… accessibilityLabel="Süt stoğunu çıkar" onPress={() => discard(batch.event)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable>
+        </View>;
+      }) : <Text style={styles.body}>Henüz sağım stoğu yok. Beslenme kaydından “Sağım” seçerek miktarı ve saklama yerini ekleyebilirsiniz.</Text>}
+      <Text style={styles.hint}>Önerilen süreler taze sağılmış süt ve uygun sıcaklık koşulları içindir. Tamamen çözündürülmüş süt 24 saat içinde, ısıtılmış veya oda sıcaklığına gelmiş süt 2 saat içinde kullanılmalıdır. CDC kuralları sağlıklı ve zamanında doğan bebeklere yöneliktir; bebeğiniz prematüre veya hastaysa sağlık uzmanınıza danışın.</Text>
+      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/breastfeeding/breast-milk-preparation-and-storage/handling-breastmilk.html")}><Text style={styles.linkText}>CDC saklama rehberini aç</Text></Pressable>
+    </Card>
+  </>;
+}
+
+function Measure({ value, label }: { value: string; label: string }) {
+  return <View style={styles.measure}><Text style={styles.measureValue}>{value}</Text><Text style={styles.muted}>{label}</Text></View>;
+}
+
+function GrowthMetricChart({ indicator, measurements, baby }: { indicator: GrowthIndicator; measurements: CareEvent[]; baby: ReturnType<typeof useUykuvaState>["state"]["baby"] }) {
+  const [width, setWidth] = useState(0);
+  const entries = [...measurements].sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+    .map((event) => ({ event, score: whoGrowthScore(baby, event, indicator) }))
+    .filter((item): item is { event: CareEvent; score: GrowthScore } => Boolean(item.score));
+  const label = { weight: "Kilo · kg", length: "Boy · cm", head: "Baş çevresi · cm" }[indicator];
+  if (!entries.length) return null;
+  const plotHeight = 106, left = 28, right = 8, top = 8;
+  const minAge = entries[0]!.score.ageDays, maxAge = entries.at(-1)!.score.ageDays;
+  const points = entries.map((item, index) => ({
+    ...item,
+    x: left + (maxAge === minAge ? (width - left - right) / 2 : (width - left - right) * (item.score.ageDays - minAge) / (maxAge - minAge)),
+    y: top + (plotHeight - top) * (1 - (Math.max(-3, Math.min(3, item.score.z)) + 3) / 6)
+  }));
+  const guides = [{ z: 1.2816, label: "P90" }, { z: 0, label: "P50" }, { z: -1.2816, label: "P10" }];
+  return <View style={styles.growthChartBlock}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <View style={styles.growthChart} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+      {guides.map((guide) => { const y = top + (plotHeight - top) * (1 - (guide.z + 3) / 6); return <View key={guide.label} style={[styles.growthGuide, { top: y, left, right }]}><Text style={styles.growthGuideLabel}>{guide.label}</Text></View>; })}
+      {points.slice(1).map((point, index) => {
+        const previous = points[index]!; const dx = point.x - previous.x; const dy = point.y - previous.y;
+        const length = Math.sqrt(dx * dx + dy * dy); const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        return <View key={`line-${point.event.id}`} style={[styles.growthLine, { left: (previous.x + point.x - length) / 2, top: (previous.y + point.y) / 2, width: length, transform: [{ rotate: `${angle}deg` }] }]} />;
+      })}
+      {points.map((point) => <View key={point.event.id} style={[styles.growthPoint, { left: point.x - 4, top: point.y - 4 }]} />)}
+    </View>
+    <View style={styles.growthChartDates}><Text style={styles.muted}>{growthAgeLabel(baby, entries[0]!.event)}</Text><Text style={styles.muted}>{growthAgeLabel(baby, entries.at(-1)!.event)}</Text></View>
+    <Text style={styles.hint}>Son ölçüm: P{Math.round(entries.at(-1)!.score.percentile)} · z {entries.at(-1)!.score.z.toFixed(1)}</Text>
+  </View>;
+}
+
+function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; baby: ReturnType<typeof useUykuvaState>["state"]["baby"] }) {
+  if (!measurements.length) return null;
+  const rows = measurements.slice(0, 8);
+  return <>
+    <SectionTitle title="Büyüme geçmişi" action={`${measurements.length} ölçüm`} />
+    <Card tone="mint">
+      {baby.growthChartSex ? <>
+        <Text style={styles.cardTitle}>WHO büyüme eğrileri · {baby.growthChartSex === "female" ? "Kız çocuk" : "Erkek çocuk"}</Text>
+        <GrowthMetricChart indicator="weight" measurements={measurements} baby={baby} />
+        <GrowthMetricChart indicator="length" measurements={measurements} baby={baby} />
+        <GrowthMetricChart indicator="head" measurements={measurements} baby={baby} />
+      </> : <Text style={styles.hint}>WHO persentil eğrilerini görmek için Profil’den kız/erkek çocuk eğrisini seçin. Seçim yapmadan da ölçümlerinizi kaydedebilirsiniz.</Text>}
+      {rows.map((event) => <View key={event.id} style={styles.growthHistoryRow}>
+        <Text style={styles.muted}>{new Date(event.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })}</Text>
+        <View style={styles.measureRow}><Measure value={event.weightG ? `${event.weightG} g` : "—"} label="Kilo" /><Measure value={event.lengthCm ? `${event.lengthCm} cm` : "—"} label="Boy" /><Measure value={event.headCm ? `${event.headCm} cm` : "—"} label="Baş" /></View>
+      </View>)}
+      {measurements.length > rows.length ? <Text style={styles.hint}>Son 8 ölçüm gösteriliyor.</Text> : null}
+      <Text style={styles.hint}>WHO eğrileri 0–5 yaş standardını gösterir; tek bir persentil tıbbi değerlendirme veya tanı değildir. Ölçüm değişimini çocuk sağlığı uzmanıyla birlikte değerlendirin.</Text>
+    </Card>
+  </>;
+}
+
+function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onAddChild: () => void; onRestoreData: () => void }) {
+  const summary = handoffSummary(app.state, new Date(), app.state.preferences.handoffHours);
+  const [encryptedBackupOpen, setEncryptedBackupOpen] = useState(false);
+  const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
+  const [quietEnd, setQuietEnd] = useState(app.state.preferences.quietEnd);
+  const toggleNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ notificationsEnabled: false });
+      await cancelSleepReminders();
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ notificationsEnabled: true });
+  };
+  const toggleWakeNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ wakeReminderEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyanış hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ wakeReminderEnabled: true });
+  };
+  const toggleCareTaskNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ careTaskRemindersEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Aşı ve randevu hatırlatmaları için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ careTaskRemindersEnabled: true });
+  };
+  const toggleDiaperNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ diaperRemindersEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Bez kontrol hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ diaperRemindersEnabled: true });
+  };
+  const toggleMilkExpiryNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ milkExpiryRemindersEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Süt kullanım süresi hatırlatmaları için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ milkExpiryRemindersEnabled: true });
+  };
+  const toggleRoutineNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ routineRemindersEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Akşam rutini hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ routineRemindersEnabled: true });
+  };
+  const saveQuietHours = () => {
+    if (!isValidClock(quietStart) || !isValidClock(quietEnd)) return Alert.alert("Saatleri kontrol edin", "Saatleri 21:00 gibi SS:DD biçiminde yazın.");
+    app.updatePreferences({ quietStart, quietEnd });
+    Alert.alert("Kaydedildi", "Bu saatler arasında sessiz bildirim tercihleri uygulanacak.");
+  };
+  const exportPlainBackupFile = async () => {
+    try {
+      const file = new File(Paths.cache, `uykuva-yedek-${localDateValue(new Date())}.json`);
+      file.create({ overwrite: true });
+      await file.write(createDataExport(app.state));
+      if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "Bu cihazda dosya paylaşımı açılamadı.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/json", dialogTitle: "Uykuva yedeğini paylaş" });
+    } catch {
+      Alert.alert("Yedek oluşturulamadı", "JSON yedeği hazırlanırken bir sorun oluştu. Daha sonra yeniden deneyin.");
+    }
+  };
+  const exportEncryptedBackupFile = async (password: string) => {
+    try {
+      const contents = await createEncryptedDataExport(app.state, password);
+      const file = new File(Paths.cache, `uykuva-sifreli-yedek-${localDateValue(new Date())}.json`);
+      file.create({ overwrite: true });
+      await file.write(contents);
+      if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "Bu cihazda dosya paylaşımı açılamadı.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/json", dialogTitle: "Uykuva parola korumalı yedeğini paylaş" });
+      setEncryptedBackupOpen(false);
+    } catch (error) {
+      Alert.alert("Şifreli yedek oluşturulamadı", error instanceof Error ? error.message : "Daha sonra yeniden deneyin.");
+    }
+  };
+  const confirmDelete = () => Alert.alert(
+    "Tüm cihaz verileri silinsin mi?",
+    "Bebek profili, bakım kayıtları, uyku planı ve Uykuva'nın oluşturduğu yedek dosyaları bu cihazdan silinir. Planlı hatırlatmalar da kaldırılır.",
+    [{ text: "Vazgeç", style: "cancel" }, { text: "Tümünü sil", style: "destructive", onPress: () => { void app.clearAllData().then(({ remindersCancelled, backupsDeleted }) => { const remaining = [!backupsDeleted ? "önbellekteki yedek dosyaları" : "", !remindersCancelled ? "planlı bildirimler" : ""].filter(Boolean); Alert.alert("Veriler silindi", remaining.length ? `Kayıtlar temizlendi; ancak ${remaining.join(" ve ")} kaldı.` : "Kayıtlar, yedek dosyaları ve planlı bildirimler bu cihazdan kaldırıldı."); }).catch(() => Alert.alert("Veriler silinemedi", "Cihaz kayıtları temizlenirken bir sorun oluştu. Yeniden deneyin.")); } }]
+  );
+  return (
+    <>
+    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
+      <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
+      <SectionTitle title="Çocuk profilleri" action={`${app.state.children.length} çocuk`} />
+      <Card>{app.state.children.map((child) => {
+        const active = child.baby.id === app.state.activeChildId;
+        return <Pressable key={child.baby.id} accessibilityRole="radio" accessibilityLabel={`${child.baby.name}, ${active ? "aktif profil" : "profili seç"}`} accessibilityState={{ selected: active }} onPress={() => app.setActiveChild(child.baby.id)} onLongPress={() => { if (app.state.children.length > 1) Alert.alert("Çocuk profilini sil", `${child.baby.name} profili, uyku planı ve kayıtları bu cihazdan silinsin mi?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Profili sil", style: "destructive", onPress: () => app.deleteChild(child.baby.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{child.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{child.baby.name}</Text><Text style={styles.muted}>{active ? "Aktif profil" : "Dokunarak geçiş yap"}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
+      })}<View style={styles.spacer12} /><PrimaryButton label="Çocuk profili ekle" quiet onPress={onAddChild} /><Text style={styles.hint}>Her çocuğun uyku planı, bakım kayıtları, gelişim gözlemleri ve talimatları ayrı tutulur. Silmek için profile basılı tutun.</Text></Card>
+      <Card tone="mint"><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.cardTitle}>{app.state.baby.name} profili</Text><Text style={styles.body}>Aktif bakım veren: {app.state.caregiverName}</Text></View><Pressable onPress={onEditProfile}><Text style={styles.editLink}>Profili düzenle</Text></Pressable></View></Card>
+      <SectionTitle title="Bu cihazdaki bakım verenler" action={`${app.state.caregivers.length} kişi`} />
+      <Card>{app.state.caregivers.map((caregiver) => {
+        const active = caregiver.id === app.state.activeCaregiverId;
+        const role = { parent: "Ebeveyn", family: "Aile", caregiver: "Bakıcı" }[caregiver.role];
+        return <Pressable accessibilityRole="radio" accessibilityState={{ selected: active }} key={caregiver.id} onPress={() => app.setActiveCaregiver(caregiver.id)} onLongPress={() => { if (app.state.caregivers.length > 1) Alert.alert("Bakım vereni sil", `${caregiver.name} bu cihazdan kaldırılsın mı?`, [{ text: "Vazgeç", style: "cancel" }, { text: "Sil", style: "destructive", onPress: () => app.deleteCaregiver(caregiver.id) }]); }} style={styles.caregiverRow}><View style={[styles.caregiverAvatar, active && styles.caregiverAvatarActive]}><Text style={[styles.avatarText, active && styles.activeAvatarText]}>{caregiver.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></View><View style={styles.flex}><Text style={styles.eventTitle}>{caregiver.name}</Text><Text style={styles.muted}>{role}{active ? " · aktif" : ""}</Text></View><View style={[styles.radio, active && styles.radioActive]} /></Pressable>;
+      })}<View style={styles.spacer12} /><PrimaryButton label="Bu cihaza bakım veren ekle" quiet onPress={onAddCaregiver} /><Text style={styles.hint}>Kişiyi seçtiğinizde yeni kayıtlar onun adına yazılır. Silmek için basılı tutun.</Text></Card>
+      <Card>
+        <Text style={styles.cardTitle}>Bakım verene özel notlar</Text>
+        <Text style={styles.body}>Beslenme düzeni, sakinleşmesine yardımcı olanlar ve aile talimatları gibi bilgileri yazın.</Text>
+        <TextInput accessibilityLabel="Bakım verene özel aile talimatları" value={app.state.careInstructions ?? ""} onChangeText={app.updateCareInstructions} style={[styles.input, { minHeight: 112, textAlignVertical: "top" }]} multiline maxLength={1000} placeholder="Örn. Uykudan önce kısa ninni iyi geliyor; biberon miktarını bakım planındaki gibi verin." placeholderTextColor="#93A09C" />
+        <Text style={styles.hint}>Bu not bu cihazda saklanır ve yalnızca “Bakım özetini paylaş” düğmesine bastığınızda devir metnine eklenir.</Text>
+      </Card>
+      <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
+      <Card>
+        <Text style={styles.cardTitle}>Bakım devri aralığı</Text>
+        <Text style={styles.body}>Paylaşılan özetin kapsayacağı süreyi aile nöbetlerinize göre seçin.</Text>
+        <View style={styles.choiceRow}>{([2, 4, 6, 8] as const).map((hours) => <Pill key={hours} label={`${hours} saat`} active={app.state.preferences.handoffHours === hours} onPress={() => app.updatePreferences({ handoffHours: hours })} />)}</View>
+      </Card>
+      <Card>
+        <Text style={styles.cardTitle}>Başka telefona veri aktar</Text>
+        <Text style={styles.body}>Bebek ve sağlık kayıtlarını içeren yedek, parola korumalı olarak aktarılabilir. Bu tek seferlik kopyadır; değişiklikler cihazlar arasında otomatik eşitlenmez. Diğer telefonda geri yüklerken aynı parolayı kullanın.</Text>
+        <View style={styles.spacer12} />
+        <PrimaryButton label="Parola korumalı yedeği paylaş" onPress={() => setEncryptedBackupOpen(true)} />
+        <View style={styles.spacer12} />
+        <PrimaryButton label="Şifresiz JSON yedeği paylaş" quiet onPress={() => Alert.alert("Şifresiz yedek", "Bu dosya bebek profili ve sağlık kayıtlarını okunabilir JSON olarak içerir. Yalnızca güvenli bir yerde saklayacağınızdan eminseniz paylaşın.", [{ text: "Vazgeç", style: "cancel" }, { text: "Şifresiz yedeği oluştur", onPress: () => void exportPlainBackupFile() }])} />
+      </Card>
+      <SectionTitle title="Hatırlatmalar" />
+      <Card>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Akşam rutini hatırlatması</Text><Text style={styles.muted}>Hedef yatış saatiniz ve etkin rutin sürenizden hesaplanır.</Text></View><Switch accessibilityLabel="Akşam rutini hatırlatması" accessibilityState={{ checked: app.state.preferences.routineRemindersEnabled }} value={app.state.preferences.routineRemindersEnabled} onValueChange={(value) => void toggleRoutineNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.routineRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.routineRemindersEnabled ? <Text style={styles.hint}>Önümüzdeki 7 gün için yerel bildirim kurulur. Etkin rutin adımı yoksa veya hatırlatma sessiz saate denk gelirse bildirim gönderilmez; hedef yatış ve rutin süresini Uyku sekmesinden değiştirebilirsiniz.</Text> : null}
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch accessibilityLabel="Uyku penceresi bildirimi" accessibilityState={{ checked: app.state.preferences.notificationsEnabled }} value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Olası uyanış hatırlatması</Text><Text style={styles.muted}>Devam eden uyku için en az beş benzer kayıt varsa tahmini uyanıştan önce haber verir.</Text></View><Switch accessibilityLabel="Olası uyanış hatırlatması" accessibilityState={{ checked: app.state.preferences.wakeReminderEnabled }} value={app.state.preferences.wakeReminderEnabled} onValueChange={(value) => void toggleWakeNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.wakeReminderEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.wakeReminderEnabled ? <><Text style={styles.inputLabel}>Uyanış tahmininden kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.wakeReminderMinutes === minutes} onPress={() => app.updatePreferences({ wakeReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Bu saat geçmiş kayıtlara dayalı bir tahmindir; bebeğinizi uyandırmak için alarm değildir.</Text></> : null}
         {app.state.preferences.notificationsEnabled || app.state.preferences.wakeReminderEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled || app.state.preferences.milkExpiryRemindersEnabled || app.state.preferences.routineRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput accessibilityLabel="Sessiz saat başlangıcı" value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput accessibilityLabel="Sessiz saat bitişi" value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
         <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Aşı ve randevu hatırlatmaları</Text><Text style={styles.muted}>Yaklaşan görevleri seçtiğiniz zamanda hatırlatır.</Text></View><Switch accessibilityLabel="Aşı ve randevu hatırlatmaları" accessibilityState={{ checked: app.state.preferences.careTaskRemindersEnabled }} value={app.state.preferences.careTaskRemindersEnabled} onValueChange={(value) => void toggleCareTaskNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.careTaskRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>

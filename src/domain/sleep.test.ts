@@ -306,6 +306,7 @@ test("sleep coach summarizes bedtime-to-sleep onset time across matching nights"
   assert.equal(insight.sleepOnsetMedianMinutes, 30);
   assert.equal(insight.previousSleepOnsetSamples, 3);
   assert.equal(insight.previousSleepOnsetMedianMinutes, 80);
+  assert.equal(insight.sleepOnsetChangeMinutes, -50);
 });
 
 test("sleep insights summarize recorded settling support neutrally", () => {

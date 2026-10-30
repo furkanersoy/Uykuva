@@ -826,6 +826,7 @@ export type SleepCoachInsights = {
   sleepOnsetSamples: number;
   previousSleepOnsetMedianMinutes?: number;
   previousSleepOnsetSamples: number;
+  sleepOnsetChangeMinutes?: number;
   sleepSupportSummary?: string;
   sleepSupportSamples: number;
   nightsUsed: number;
@@ -1007,6 +1008,8 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
   }
   const recentOnset = onsetSamples.filter((item) => item.date >= recentOnsetStart);
   const previousOnset = onsetSamples.filter((item) => item.date >= previousOnsetStart && item.date <= previousOnsetEnd);
+  const sleepOnsetMedianMinutes = recentOnset.length >= 3 ? median(recentOnset.map((item) => item.minutes)) : undefined;
+  const previousSleepOnsetMedianMinutes = previousOnset.length >= 3 ? median(previousOnset.map((item) => item.minutes)) : undefined;
   return {
     actualBedtime: actual === undefined ? undefined : formatClock(actual),
     targetBedtime: formatClock(target),
@@ -1016,10 +1019,13 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     nightWakingsAverage,
     routineToSleepMedianMinutes: routineLatencies.length ? median(routineLatencies) : undefined,
     routineToSleepSamples: routineLatencies.length,
-    sleepOnsetMedianMinutes: recentOnset.length >= 3 ? median(recentOnset.map((item) => item.minutes)) : undefined,
+    sleepOnsetMedianMinutes,
     sleepOnsetSamples: recentOnset.length,
-    previousSleepOnsetMedianMinutes: previousOnset.length >= 3 ? median(previousOnset.map((item) => item.minutes)) : undefined,
+    previousSleepOnsetMedianMinutes,
     previousSleepOnsetSamples: previousOnset.length,
+    sleepOnsetChangeMinutes: sleepOnsetMedianMinutes !== undefined && previousSleepOnsetMedianMinutes !== undefined
+      ? Math.round(sleepOnsetMedianMinutes - previousSleepOnsetMedianMinutes)
+      : undefined,
     sleepSupportSummary: sleepSupportSummary || undefined,
     sleepSupportSamples: supportEvents.length,
     nightsUsed: bedtimeSample.length
