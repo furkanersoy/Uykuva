@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const Module = require("node:module");
+const path = require("node:path");
 
 test("Expo adapter schedules wake reminders and cancels only its own notifications", async () => {
   const scheduled = new Map([
@@ -26,7 +27,8 @@ test("Expo adapter schedules wake reminders and cancels only its own notificatio
   };
   let service;
   try {
-    service = require("../../.test-build/services/notifications.js");
+    const buildDirectory = process.env.UYKUVA_TEST_BUILD || path.resolve(__dirname, "../../.test-build");
+    service = require(path.join(buildDirectory, "services", "notifications.js"));
   } finally {
     Module._load = originalLoad;
   }
@@ -45,6 +47,26 @@ test("Expo adapter schedules wake reminders and cancels only its own notificatio
   assert.deepEqual(channels, ["sleep-reminders"]);
 
   await service.replaceWakeReminders([], 10, "00:00", "00:00");
+  assert.equal(scheduled.has("new-wake"), false);
+  assert.equal(scheduled.has("sleep-window"), true);
+  assert.equal(scheduled.has("other"), true);
+
+  scheduled.set("old-open-sleep", { content: { data: { kind: "uykuva-open-sleep-check" } } });
+  const checkNow = new Date(2026, 9, 30, 0, 0, 0);
+  await service.replaceOpenSleepCheckReminders([{
+    childId: "baby-2",
+    babyName: "Deneme",
+    eventId: "sleep-1",
+    startedAt: new Date(checkNow.getTime() - 7 * 60 * 60_000).toISOString()
+  }], "22:00", "07:00", checkNow);
+  assert.equal(scheduled.has("old-open-sleep"), false);
+  const openSleepCheck = scheduled.get("new-wake");
+  assert.equal(openSleepCheck.content.data.kind, "uykuva-open-sleep-check");
+  assert.equal(openSleepCheck.content.data.childId, "baby-2");
+  assert.equal(openSleepCheck.content.data.eventId, "sleep-1");
+  assert.equal(openSleepCheck.trigger.date.getTime(), new Date(2026, 9, 30, 7, 0, 0).getTime());
+
+  await service.replaceOpenSleepCheckReminders([], "22:00", "07:00", checkNow);
   assert.equal(scheduled.has("new-wake"), false);
   assert.equal(scheduled.has("sleep-window"), true);
   assert.equal(scheduled.has("other"), true);
