@@ -385,6 +385,23 @@ test("care handoff names the person assigned to an upcoming appointment", () => 
   assert.match(summary, /Çocuk doktoru.*sorumlu Anne/);
 });
 
+test("care handoff shares unfinished sleep coaching tasks with the next caregiver", () => {
+  const state = createInitialState();
+  state.baby.birthDate = "2025-01-01";
+  state.sleepPlan.method = "gradual";
+  state.sleepPlan.readinessCompleted = [...SLEEP_READINESS_ITEMS];
+  const todayPlan = coachingDay(state.sleepPlan.day, "gradual", true, correctedAgeDays(state.baby, new Date("2026-10-30T12:00:00")), state.sleepPlan.focus);
+  state.sleepPlan.completedToday = [todayPlan.tasks[0]!];
+  const summary = handoffSummary(state, new Date("2026-10-30T12:00:00"), 4);
+
+  assert.match(summary, /Uyku yaklaşımı: Kademeli destek/);
+  assert.ok(summary.includes(todayPlan.tasks[1]!));
+  assert.ok(!summary.includes(todayPlan.tasks[0]!));
+
+  state.sleepPlan.paused = true;
+  assert.doesNotMatch(handoffSummary(state, new Date("2026-10-30T12:00:00"), 4), /Bugünün uyku planı/);
+});
+
 test("care handoff includes the next sleep window based on today's wake time or latest nap", () => {
   const state = createInitialState();
   state.baby = termBaby;

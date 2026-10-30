@@ -66,7 +66,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
 - Uyku kaydında uykuya geçiş desteğini isteğe bağlı işaretleme; zaman çizelgesi ve son 7 işaretli kayıtta tarafsız sıklık özeti
 - Zaman çizelgesinden beslenme, bez ve diğer kayıtların saatini düzeltme
-- Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; son beslenme/bez/uyku saatlerini, kaydı giren kişiyi ve pencere dışında başlamış açık emzirmenin sol/sağ sürelerini gösterme
+- Aile nöbetine göre 2, 4, 6 veya 8 saatlik bakım devri özeti; son beslenme/bez/uyku saatlerini, kaydı giren kişiyi, açık emzirme sürelerini ve duraklatılmamışsa bugünün kalan uyku koçluğu adımlarını gösterme
 - Bakım devri özetinde kullanılabilir sağılan süt stoğu, önce kullanılması gereken parti ve kullanım son saatini gösterme
 - Bakım devrinde hedef yatış saatini, etkin uyku yaklaşımını ve kapalı olmayan akşam rutini adımlarını madde madde paylaşma
 - Bakım devri özetinde seçilen zaman aralığına düşen, kullanıcı tarafından girilmiş sonraki ilaç planı kontrol saatlerini gösterme

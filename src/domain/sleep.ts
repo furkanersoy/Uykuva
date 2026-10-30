@@ -1132,6 +1132,13 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     const trainingReady = stage.canReduceSupport && SLEEP_READINESS_ITEMS.every((item) => state.sleepPlan.readinessCompleted.includes(item));
     const activeMethod = trainingReady ? state.sleepPlan.method : "responsive";
     parts.push(`Uyku yaklaşımı: ${methodDescription(activeMethod).name}`);
+    if (!state.sleepPlan.completedDate) {
+      const todayPlan = coachingDay(state.sleepPlan.day, activeMethod, trainingReady, correctedAgeDays(state.baby, now), state.sleepPlan.focus);
+      const remainingTasks = todayPlan.tasks.filter((task) => !state.sleepPlan.completedToday.includes(task));
+      parts.push(remainingTasks.length
+        ? `Bugünün uyku planı (${todayPlan.title}): ${remainingTasks.join("; ")}`
+        : `Bugünün uyku planı tamamlandı (${todayPlan.title})`);
+    }
   }
   const enabledRoutine = state.sleepPlan.routine.filter((step) => step.enabled && step.label.trim()).map((step) => step.label.trim());
   if (enabledRoutine.length) parts.push(`Etkin akşam rutini: ${enabledRoutine.join(" → ")}`);
