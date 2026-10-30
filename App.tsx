@@ -1642,7 +1642,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       <DevelopmentTrackerCard app={app} now={now} />
       <SectionTitle title="Kayıtlardan anılar" action="İsteğe bağlı" />
       <Card>
-        {milestones.length ? milestones.slice(0, 8).map((milestone) => <View key={milestone.id} style={styles.eventRow}>
+        {milestones.length ? milestones.map((milestone) => <View key={milestone.id} style={styles.eventRow}>
           <View style={styles.flex}>
             <Text style={styles.eventTitle}>{milestone.title}</Text>
             <Text style={styles.muted}>{new Date(milestone.occurredAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} · {milestone.detail}</Text>
