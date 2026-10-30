@@ -23,6 +23,8 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 
 ## Mevcut özellikler
 
+- İsteğe bağlı aile hesabıyla farklı telefonlardan el ile eşitleme hazırlığı: hesap ve davet akışı, çakışma denetimli revizyon, SecureStore'da saklanan oturum/aile anahtarı ve sunucuya çıkmadan önce cihazda AES-GCM şifreleme. Eşitleme varsayılan olarak kapalıdır; sunucu adresi ve anahtarı olmadan yerel uygulama çalışmaya devam eder.
+
 - Açıklanabilir uyku penceresi tahmini
 - Uyku sekmesinde, erken doğumda düzeltilmiş yaşa göre geçerli aralığı vurgulayan, yaş gruplarına göre uyanıklık aralığı rehberi
 - Bugün ekranında kaydedilen uyku, beslenme, bez ve sağlık kayıtlarının hızlı özeti; ilk dokuz haftada kayan 24 saat, sonrasında yerel gün
@@ -162,4 +164,3 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
-
