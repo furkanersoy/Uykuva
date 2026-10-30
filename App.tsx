@@ -682,7 +682,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
       <Pressable accessibilityRole="button" accessibilityLabel="Gece moduna geç" accessibilityHint="Gece ekranında uyku sayacını, beslenmeyi ve bez kaydını hızlıca açabilirsiniz." onPress={onToggleNightMode} style={styles.nightEntry}><Text style={styles.nightEntryText}>Gece moduna geç  ☾</Text></Pressable>
       <View style={styles.quickRow}>
         <QuickAction glyph={app.runningSleep ? "■" : "☾"} label={app.runningSleep ? "Uyandı" : "Uyku"} onPress={app.toggleSleep} active={Boolean(app.runningSleep)} />
-        <QuickAction glyph="◉" label="Uyanma" onPress={onLogNightWake} />
+        <QuickAction glyph="◉" label="Gece uyanması" onPress={onLogNightWake} />
         <QuickAction glyph="◒" label={app.runningFeed ? "Emzirme sürüyor" : "Beslenme"} onPress={() => openLog("feed")} active={Boolean(app.runningFeed)} />
         <QuickAction glyph="◇" label="Bez" onPress={() => openLog("diaper")} />
         <QuickAction glyph="＋" label="Sağlık" onPress={() => openLog("health")} />
