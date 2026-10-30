@@ -32,10 +32,10 @@ import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, cre
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
-import { clockInputDigits, isTodayTimeReached, isValidClock, normalizeClockInput } from "./src/domain/time";
+import { clockInputDigits, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
-import { notificationDestination } from "./src/domain/notificationRouting";
+import { NOTIFICATION_KINDS, notificationDestination } from "./src/domain/notificationRouting";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
@@ -43,7 +43,7 @@ import { SLEEP_GUIDES } from "./src/data/sleepGuides";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
-import { cancelSleepReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
+import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -159,6 +159,7 @@ export default function App() {
   const [promptedRunningSleepId, setPromptedRunningSleepId] = useState<string | null>(null);
   const [foregroundCycle, setForegroundCycle] = useState(0);
   const lastNotificationResponseId = useRef<string | null>(null);
+  const openSleepCheckHandledId = useRef<string | null>(null);
   const initializedHome = useRef(false);
   const [homeInitialized, setHomeInitialized] = useState(false);
   useEffect(() => {
@@ -204,6 +205,7 @@ export default function App() {
     return {
       childId: child.baby.id,
       babyName: child.baby.name,
+      runningSleep,
       isSleeping: Boolean(runningSleep),
       unusualDay: Boolean(checkIn?.dayContext),
       wakeEstimate: estimateSleepWakeWindow(child.events, runningSleep, clockNow),
@@ -211,6 +213,7 @@ export default function App() {
     };
   }), [app.state.children, clockNow]);
   const childSleepReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.forecast.available}:${child.forecast.start?.getTime() ?? ""}:${child.forecast.end?.getTime() ?? ""}:${child.forecast.explanation}`).join("|");
+  const childOpenSleepCheckKey = childSleepReminders.map((child) => [child.childId, child.babyName, child.runningSleep?.id ?? "", child.runningSleep?.startedAt ?? ""].join(":")).join("|");
   const childWakeReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.unusualDay}:${child.wakeEstimate.available}:${child.wakeEstimate.typical && child.wakeEstimate.typical > clockNow ? child.wakeEstimate.typical.getTime() : ""}`).join("|");
 
   useEffect(() => {
@@ -232,6 +235,10 @@ export default function App() {
       if (destination.childId && !child) {
         void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
         return;
+      }
+      if (request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck && destination.eventId) {
+        openSleepCheckHandledId.current = destination.eventId;
+        setPromptedRunningSleepId(destination.eventId);
       }
       if (destination.childId && child) app.setActiveChild(child.baby.id);
       setNightMode(false);
@@ -298,9 +305,9 @@ export default function App() {
 
   useEffect(() => {
     const running = app.runningSleep;
-    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || logMode || taskMode || sleepEditor || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen) return;
+    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || openSleepCheckHandledId.current === running.id || logMode || taskMode || sleepEditor || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen) return;
     const startedAt = new Date(running.startedAt).getTime();
-    if (!Number.isFinite(startedAt) || Date.now() - startedAt < 12 * 60 * 60_000) return;
+    if (!Number.isFinite(startedAt) || Date.now() - startedAt < 12 * 60 * 60_000 || isInQuietHours(clockNow, app.state.preferences.quietStart, app.state.preferences.quietEnd)) return;
     setPromptedRunningSleepId(running.id);
     Alert.alert(
       "Uyku sayacı hâlâ çalışıyor mu?",
@@ -310,7 +317,7 @@ export default function App() {
         { text: "Uyanış saatini düzelt", onPress: () => { const current = app.state.events.find((item) => item.id === running.id); if (current) setSleepEditor(current); } }
       ]
     );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor, nightWakeOpen, restoreOpen, profileOpen, caregiverOpen, vaccineSuggestionsOpen]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, app.state.preferences.quietStart, app.state.preferences.quietEnd, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor, nightWakeOpen, restoreOpen, profileOpen, caregiverOpen, vaccineSuggestionsOpen]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -326,6 +333,13 @@ export default function App() {
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childSleepReminderKey]);
+
+  useEffect(() => {
+    if (!app.hydrated) return;
+    const enabled = app.state.onboardingComplete && app.state.preferences.notificationsEnabled;
+    const openSleeps = enabled ? childSleepReminders.flatMap((child) => child.runningSleep ? [{ childId: child.childId, babyName: child.babyName, eventId: child.runningSleep.id, startedAt: child.runningSleep.startedAt }] : []) : [];
+    void replaceOpenSleepCheckReminders(openSleeps, app.state.preferences.quietStart, app.state.preferences.quietEnd).catch(() => console.warn("Açık uyku kaydı hatırlatması planlanamadı."));
+  }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, childOpenSleepCheckKey]);
 
   useEffect(() => {
     if (!app.hydrated) return;
