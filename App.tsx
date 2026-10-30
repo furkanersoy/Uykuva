@@ -374,10 +374,11 @@ export default function App() {
     void (async () => {
       for (let index = 0; index < app.state.children.length; index += 1) {
         const child = app.state.children[index]!;
-        await scheduleCareTaskReminders(child.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, child.baby.name, index === 0, child.baby.id);
+        const caregiverNames = Object.fromEntries(app.state.caregivers.map((caregiver) => [caregiver.id, caregiver.name]));
+        await scheduleCareTaskReminders(child.careTasks, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, child.baby.name, index === 0, child.baby.id, caregiverNames);
       }
     })();
-  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.caregivers, app.state.preferences.careTaskRemindersEnabled, app.state.preferences.careTaskReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
   useEffect(() => {
     if (!app.hydrated) return;

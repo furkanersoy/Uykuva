@@ -81,4 +81,16 @@ test("Expo adapter schedules wake reminders and cancels only its own notificatio
   assert.equal(scheduled.has("new-wake"), false);
   assert.equal(scheduled.has("sleep-window"), true);
   assert.equal(scheduled.has("other"), true);
+
+  const taskDueAt = new Date(Date.now() + 60 * 60_000);
+  await service.scheduleCareTaskReminders([{
+    id: "appointment-1",
+    type: "appointment",
+    title: "Kontrol",
+    dueAt: taskDueAt.toISOString(),
+    assignedCaregiverId: "caregiver-2"
+  }], true, 15, "00:00", "00:00", "Deniz", true, "baby-2", { "caregiver-2": "Baba" });
+  const taskReminder = scheduled.get("new-wake");
+  assert.match(taskReminder.content.body, /Sorumlu: Baba/);
+  assert.equal(taskReminder.content.data.taskId, "appointment-1");
 });

@@ -260,7 +260,8 @@ export async function scheduleCareTaskReminders(
   quietEnd: string,
   babyName?: string,
   cancelExisting = true,
-  childId?: string
+  childId?: string,
+  caregiverNames: Record<string, string> = {}
 ) {
   if (cancelExisting) {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -286,7 +287,7 @@ export async function scheduleCareTaskReminders(
     await Notifications.scheduleNotificationAsync({
       content: {
         title: task.type === "vaccine" ? "Aşı hatırlatması" : "Randevu hatırlatması",
-        body: `${babyName ? `${babyName} · ` : ""}${task.title} · ${dueAt.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}`,
+        body: `${babyName ? `${babyName} · ` : ""}${task.title} · ${dueAt.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "short" })}${caregiverNames[task.assignedCaregiverId ?? ""] ? ` · Sorumlu: ${caregiverNames[task.assignedCaregiverId!]}` : ""}`,
         data: { kind: NOTIFICATION_KINDS.careTask, taskId: task.id, ...(childId ? { childId } : {}) }
       },
       trigger: {

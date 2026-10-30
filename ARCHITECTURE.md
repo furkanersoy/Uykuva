@@ -22,7 +22,7 @@ Doktorla paylaşılan yedi günlük özette yalnızca tamamlanmış uykular say�
 
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
-Randevu görevleri isteğe bağlı not alanında hazırlık notlarını saklar. Notlar görev kartında görünür ve paylaşılan doktor özetine en yakın beş gelecek randevuyla birlikte eklenir; tamamlanmış veya geçmiş randevular özete alınmaz. Aşı ve randevulara bakım veren atanabilir; görev listesinde ve devir özetinde sorumlu kişi görünür. Tekrarlanan randevu yeni tarihe geçerken atamayı korur.
+Randevu görevleri isteğe bağlı not alanında hazırlık notlarını saklar. Notlar görev kartında görünür ve paylaşılan doktor özetine en yakın beş gelecek randevuyla birlikte eklenir; tamamlanmış veya geçmiş randevular özete alınmaz. Aşı ve randevulara bakım veren atanabilir; görev listesinde, hatırlatma bildiriminde ve devir özetinde sorumlu kişi görünür. Tekrarlanan randevu yeni tarihe geçerken atamayı korur.
 
 ## 1. Ürün amacı
 
