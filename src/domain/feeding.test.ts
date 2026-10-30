@@ -62,3 +62,14 @@ test("feeding forecast ignores malformed timestamps", () => {
 test("next breast side alternates the latest recorded side", () => {
   assert.equal(nextBreastSide([feed(8, "left"), feed(10, "right")]), "left");
 });
+test("next breast side uses the last timed side when a feed contains multiple sessions", () => {
+  const event: CareEvent = {
+    id: "multi-side", kind: "feed", feedType: "breast", breastSide: "both", startedAt: "2026-10-26T08:00:00", caregiver: "Anne",
+    breastSessions: [
+      { side: "left", startedAt: "2026-10-26T08:00:00", endedAt: "2026-10-26T08:08:00" },
+      { side: "right", startedAt: "2026-10-26T08:09:00", endedAt: "2026-10-26T08:17:00" }
+    ]
+  };
+  assert.equal(nextBreastSide([event]), "left");
+});
+
