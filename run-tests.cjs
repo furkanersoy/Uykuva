@@ -16,7 +16,8 @@ const compiledTests = [
   "domain/time.test.js",
   "domain/vaccineSchedule.test.js",
   "domain/wakeReminders.test.js",
-  "data/storage.test.js"
+  "data/storage.test.js",
+  "data/sleepGuides.test.js"
 ].map((file) => path.join(outputDirectory, file));
 const testFiles = [
   ...compiledTests,
