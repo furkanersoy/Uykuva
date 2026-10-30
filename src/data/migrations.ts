@@ -63,7 +63,8 @@ function migrateSingleState(value: unknown): AppState {
     careTasks: Array.isArray(candidate.careTasks) ? candidate.careTasks.map((task) => {
       const repeat = task.type === "appointment" && ["weekly", "monthly"].includes(String(task.repeat)) ? task.repeat : undefined;
       const date = new Date(task.dueAt);
-      return { ...task, repeat, recurrenceId: repeat ? task.recurrenceId || `recurrence-${task.id}` : undefined, recurrenceDay: repeat ? Number.isInteger(task.recurrenceDay) && task.recurrenceDay! >= 1 && task.recurrenceDay! <= 31 ? task.recurrenceDay : date.getDate() : undefined, generated: repeat ? task.generated === true : undefined };
+      const assignedCaregiverId = caregivers.some((caregiver) => caregiver.id === task.assignedCaregiverId) ? task.assignedCaregiverId : undefined;
+      return { ...task, assignedCaregiverId, repeat, recurrenceId: repeat ? task.recurrenceId || `recurrence-${task.id}` : undefined, recurrenceDay: repeat ? Number.isInteger(task.recurrenceDay) && task.recurrenceDay! >= 1 && task.recurrenceDay! <= 31 ? task.recurrenceDay : date.getDate() : undefined, generated: repeat ? task.generated === true : undefined };
     }) : [],
     sleepPlan: {
       ...initial.sleepPlan,

@@ -127,7 +127,15 @@ export function useUykuvaState() {
       if (current.caregivers.length <= 1) return current;
       const caregivers = current.caregivers.filter((item) => item.id !== caregiverId);
       const active = caregiverId === current.activeCaregiverId ? caregivers[0]! : caregivers.find((item) => item.id === current.activeCaregiverId)!;
-      return { ...current, caregivers, activeCaregiverId: active.id, caregiverName: active.name };
+      const clearAssignee = (task: CareTask) => task.assignedCaregiverId === caregiverId ? { ...task, assignedCaregiverId: undefined } : task;
+      return {
+        ...current,
+        caregivers,
+        activeCaregiverId: active.id,
+        caregiverName: active.name,
+        careTasks: current.careTasks.map(clearAssignee),
+        children: current.children.map((child) => ({ ...child, careTasks: child.careTasks.map(clearAssignee) }))
+      };
     });
   }, []);
 

@@ -44,6 +44,18 @@ test("backup validation accepts the expanded appointment reminder options", () =
   assert.throws(() => parseDataExport(createDataExport(state)), /tercih bilgileri eksik/i);
 });
 
+test("assigned care tasks round-trip and reject malformed caregiver IDs", () => {
+  const state = createInitialState();
+  state.caregivers.push({ id: "caregiver-2", name: "Baba", role: "parent" });
+  state.careTasks = [{ id: "appointment-1", type: "appointment", title: "Kontrol", dueAt: "2026-11-02T10:00:00.000Z", assignedCaregiverId: "caregiver-2" }];
+  const restored = parseDataExport(createDataExport(state));
+  assert.equal(restored.careTasks[0]?.assignedCaregiverId, "caregiver-2");
+
+  const invalid = JSON.parse(createDataExport(state));
+  invalid.careTasks[0].assignedCaregiverId = "x".repeat(101);
+  assert.throws(() => parseDataExport(JSON.stringify(invalid)), /aşı veya randevu kayıtları/i);
+});
+
 test("backup round-trips milk reminder lead preferences and rejects invalid values", () => {
   const state = createInitialState();
   for (const lead of ["adaptive", 2, 6, 12, 24, 48] as const) {
@@ -102,7 +114,7 @@ test("backup merge combines records and check-ins while preserving current devic
     { id: "already-ended", kind: "sleep", startedAt: "2026-10-27T07:00:00", caregiver: "Anne" },
     { id: "new-feed", kind: "feed", feedType: "bottle", amountMl: 90, startedAt: "2026-10-27T09:00:00", caregiver: "Baba" }
   ];
-  current.careTasks = [{ id: "task", type: "appointment", title: "Doktor", dueAt: "2026-10-28T10:00:00", completedAt: "2026-10-27T12:00:00" }];
+  current.careTasks = [{ id: "task", type: "appointment", title: "Doktor", dueAt: "2026-10-28T10:00:00", completedAt: "2026-10-27T12:00:00", assignedCaregiverId: "caregiver-1" }];
   incoming.careTasks = [{ id: "task", type: "appointment", title: "Doktor", dueAt: "2026-10-28T10:00:00" }];
   current.careInstructions = "Biberonu ısıtmayın.";
   incoming.careInstructions = "Uyku öncesi kısa ninni.";
@@ -117,11 +129,25 @@ test("backup merge combines records and check-ins while preserving current devic
   assert.equal(merged.events.find((event) => event.id === "shared")?.endedAt, "2026-10-27T08:45:00");
   assert.equal(merged.events.find((event) => event.id === "already-ended")?.endedAt, "2026-10-27T07:30:00");
   assert.equal(merged.careTasks[0]?.completedAt, "2026-10-27T12:00:00");
+  assert.equal(merged.careTasks[0]?.assignedCaregiverId, "caregiver-1");
   assert.equal(merged.careInstructions, "Biberonu ısıtmayın.\nUyku öncesi kısa ninni.");
   assert.equal(merged.sleepPlan.checkIns[0]?.wakeTime, "07:00");
   assert.deepEqual(merged.sleepPlan.checkIns[0]?.nightWakeLogs?.map((log) => log.id), ["wake-1", "wake-2"]);
   assert.equal(merged.sleepPlan.checkIns[0]?.note, "Gece sakindi.");
   assert.equal(merged.preferences.handoffHours, 2);
+});
+
+test("backup merge remaps care-task assignments when caregiver IDs collide", () => {
+  const current = createInitialState();
+  const incoming = createInitialState();
+  current.caregivers.push({ id: "caregiver-2", name: "Baba", role: "parent" });
+  incoming.caregivers.push({ id: "caregiver-2", name: "Ece", role: "caregiver" });
+  incoming.careTasks = [{ id: "imported-task", type: "appointment", title: "Kontrol", dueAt: "2026-11-02T10:00:00.000Z", assignedCaregiverId: "caregiver-2" }];
+
+  const merged = mergeDataStates(current, incoming);
+  const task = merged.careTasks.find((item) => item.id === "imported-task");
+  assert.ok(task?.assignedCaregiverId);
+  assert.equal(merged.caregivers.find((caregiver) => caregiver.id === task?.assignedCaregiverId)?.name, "Ece");
 });
 
 test("backup merge rejects a different child profile", () => {

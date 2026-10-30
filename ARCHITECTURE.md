@@ -22,7 +22,7 @@ Doktorla paylaşılan yedi günlük özette yalnızca tamamlanmış uykular say�
 
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
-Randevu gorevleri istege bagli note alaninda hazirlik notlarini saklar. Notlar gorev kartinda gorunur ve paylasilan doktor ozetine en yakin bes gelecek randevuyla birlikte eklenir; tamamlanmis veya gecmis randevular ozete alinmaz.
+Randevu görevleri isteğe bağlı not alanında hazırlık notlarını saklar. Notlar görev kartında görünür ve paylaşılan doktor özetine en yakın beş gelecek randevuyla birlikte eklenir; tamamlanmış veya geçmiş randevular özete alınmaz. Aşı ve randevulara bakım veren atanabilir; görev listesinde ve devir özetinde sorumlu kişi görünür. Tekrarlanan randevu yeni tarihe geçerken atamayı korur.
 
 ## 1. Ürün amacı
 
@@ -425,6 +425,7 @@ Uyku koçu son üç geçerli yerel gün içinde kolaylık, uyanma sayısı veya 
 - [x] İsteğe bağlı hesap ve elle eşitleme istemcisi; yerel migration ve pgTAP doğrulandı; barındırılan proje ve iki cihazlı gerçek eşitleme bekliyor.
 - [x] Süreli aile daveti, aile sahibi izinleri, salt okunur rolü, davet iptali ve bulut aile verisini silme istemcisi; yerel Supabase üzerinde 17 pgTAP RLS testi geçti; barındırılan veritabanında RLS henüz çalıştırılmadı.
 - [x] Randevular için haftalık/aylık tekrar; tamamlanan her örnekten sonra sıradaki örnek açılır ve geçmiş kayıt saklanır.
+- [x] Aşı ve randevular bakım veren profiline atanabilir; görev kartı ve devir özeti sorumluyu gösterir, yinelenen randevu atamayı korur ve atanan kişi silinince görev ataması temizlenir.
 - [x] Ayrı uyku penceresi, olası uyanış, akşam rutini, bakım görevi, bez ve süt saklama hatırlatmaları; olay türüne göre süre seçimi ve gece sessiz saatleri
 - [x] Android ana ekran uyku widget'ı eklendi; Android dışındaki widget/Live Activity desteği açık
 - [x] Tamamlanan 14 günlük uyku planı döngülerinin tamamı, başlangıç/bitiş tarihleri ve görev geçmişiyle saklanır, birleştirilebilir ve koç ekranında listelenir.

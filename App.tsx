@@ -477,7 +477,7 @@ export default function App() {
         </View> : null}
       </View>
       <QuickLogModal mode={logMode} close={() => setLogMode(null)} app={app} now={clockNow} />
-      <CareTaskModal mode={taskMode} task={taskToEdit} close={() => { setTaskMode(null); setTaskToEdit(null); }} add={app.addCareTask} update={app.updateCareTask} />
+      <CareTaskModal mode={taskMode} task={taskToEdit} caregivers={app.state.caregivers} close={() => { setTaskMode(null); setTaskToEdit(null); }} add={app.addCareTask} update={app.updateCareTask} />
       <VaccineSuggestionsModal visible={vaccineSuggestionsOpen} close={() => setVaccineSuggestionsOpen(false)} birthDate={app.state.baby.birthDate} tasks={app.state.careTasks} add={app.addCareTask} now={clockNow} />
       <ProfileModal visible={profileOpen} close={() => setProfileOpen(false)} app={app} />
       <ChildProfileModal visible={childOpen} close={() => setChildOpen(false)} add={app.addChild} />
@@ -857,7 +857,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
       <SectionTitle title="Önümüzdeki 24 saat" action={`${agenda.length} planlı aralık`} />
       <Card>
         {agenda.length ? agenda.map((item) => item.task
-          ? <CareTaskRow key={item.id} task={item.task} onToggle={() => app.toggleCareTask(item.task!.id)} onDelete={() => app.deleteCareTask(item.task!.id)} />
+          ? <CareTaskRow key={item.id} task={item.task} assignedCaregiverName={app.state.caregivers.find((caregiver) => caregiver.id === item.task!.assignedCaregiverId)?.name} onToggle={() => app.toggleCareTask(item.task!.id)} onDelete={() => app.deleteCareTask(item.task!.id)} />
           : <View key={item.id} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: item.kind === "sleep" ? colors.sage : item.kind === "feed" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{item.label}</Text><Text style={styles.muted}>{item.detail}</Text></View><Text style={styles.taskDate}>{time(item.at)}{item.endAt ? `–${time(item.endAt)}` : ""}</Text></View>) : <Text style={styles.body}>Kişisel tahmin için kayıtlar öğreniliyor. Uyku ve beslenme kaydı ekledikçe olası aralıklar burada görünür.</Text>}
         {!feedingForecast.available ? <Text style={styles.hint}>Süt beslenmesi tahmini: {feedingForecast.explanation}</Text> : null}
         <Text style={styles.hint}>Uyku ve beslenme aralıkları tahmindir; kesin program değildir. Aşı ve randevu tarihlerini sağlık uzmanınızla belirleyin.</Text>
@@ -1652,8 +1652,8 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
-      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
-      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
+      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} assignedCaregiverName={app.state.caregivers.find((caregiver) => caregiver.id === task.assignedCaregiverId)?.name} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
+      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} assignedCaregiverName={app.state.caregivers.find((caregiver) => caregiver.id === task.assignedCaregiverId)?.name} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Paylaşılacak kayıt aralığını seçin. Uyku, beslenme, bez ve sağlık bilgileri seçtiğiniz döneme göre hazırlanır.</Text><View style={styles.spacer12} /><View style={styles.choiceRow}>{([7, 14, 30] as const).map((days) => <Pill key={days} label={`${days} gün`} active={doctorSummaryPeriod === days} onPress={() => setDoctorSummaryPeriod(days)} />)}</View><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state, doctorSummaryPeriod)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state, now, doctorSummaryPeriod) })} /></View></View></Card>
     </ScrollView>
@@ -1711,7 +1711,7 @@ function DevelopmentTrackerCard({ app, now }: { app: ReturnType<typeof useUykuva
   </>;
 }
 
-function CareTaskRow({ task, onToggle, onDelete, onEdit }: { task: CareTask; onToggle: () => void; onDelete: () => void; onEdit?: () => void }) {
+function CareTaskRow({ task, assignedCaregiverName, onToggle, onDelete, onEdit }: { task: CareTask; assignedCaregiverName?: string; onToggle: () => void; onDelete: () => void; onEdit?: () => void }) {
   const taskType = task.type === "vaccine" ? "Aşı" : "Randevu";
   const taskDate = new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
   const completedDate = task.completedAt ? new Date(task.completedAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }) : undefined;
@@ -1719,7 +1719,7 @@ function CareTaskRow({ task, onToggle, onDelete, onEdit }: { task: CareTask; onT
     { text: "Vazgeç", style: "cancel" },
     { text: "Sil", style: "destructive", onPress: onDelete }
   ]);
-  return <View style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><Pressable accessibilityRole="button" accessibilityLabel={`${task.title}, ${taskType}${task.repeat ? `, ${task.repeat === "weekly" ? "haftalık" : "aylık"} tekrarlı` : ""}, ${task.completedAt ? `uygulamada tamamlandı ${completedDate}; yeniden aç` : `${taskDate}; tamamla`}. Silmek için basılı tutun ve onaylayın.`} onPress={onToggle} onLongPress={confirmDelete} style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{taskType}{task.repeat ? ` · ${task.repeat === "weekly" ? "Haftalık" : "Aylık"} tekrar` : ""} · {task.completedAt ? `uygulamada tamamlandı ${completedDate} · dokununca yeniden aç` : "dokununca tamamla"}</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</Pressable><View style={{ alignItems: "flex-end", marginLeft: 8 }}><Text style={styles.taskDate}>{taskDate}</Text>{onEdit ? <Pressable accessibilityRole="button" accessibilityLabel={`${task.title} kaydını düzenle`} onPress={onEdit} hitSlop={8}><Text style={styles.taskDate}>Düzenle</Text></Pressable> : null}</View></View>;
+  return <View style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><Pressable accessibilityRole="button" accessibilityLabel={`${task.title}, ${taskType}${task.repeat ? `, ${task.repeat === "weekly" ? "haftalık" : "aylık"} tekrarlı` : ""}${assignedCaregiverName ? `, sorumlu ${assignedCaregiverName}` : ""}, ${task.completedAt ? `uygulamada tamamlandı ${completedDate}; yeniden aç` : `${taskDate}; tamamla`}. Silmek için basılı tutun ve onaylayın.`} onPress={onToggle} onLongPress={confirmDelete} style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{taskType}{task.repeat ? ` · ${task.repeat === "weekly" ? "Haftalık" : "Aylık"} tekrar` : ""}{assignedCaregiverName ? ` · Sorumlu: ${assignedCaregiverName}` : ""} · {task.completedAt ? `uygulamada tamamlandı ${completedDate} · dokununca yeniden aç` : "dokununca tamamla"}</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</Pressable><View style={{ alignItems: "flex-end", marginLeft: 8 }}><Text style={styles.taskDate}>{taskDate}</Text>{onEdit ? <Pressable accessibilityRole="button" accessibilityLabel={`${task.title} kaydını düzenle`} onPress={onEdit} hitSlop={8}><Text style={styles.taskDate}>Düzenle</Text></Pressable> : null}</View></View>;
 }
 
 function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
@@ -2412,7 +2412,7 @@ function Stat({ value, label, tone }: { value: string; label: string; tone: "whi
   return <View style={styles.stat}><Card tone={tone}><Text style={styles.statValue}>{value}</Text><Text style={styles.muted}>{label}</Text></Card></View>;
 }
 
-function CareTaskModal({ mode, task, close, add, update }: { mode: TaskMode; task: CareTask | null; close: () => void; add: ReturnType<typeof useUykuvaState>["addCareTask"]; update: ReturnType<typeof useUykuvaState>["updateCareTask"] }) {
+function CareTaskModal({ mode, task, caregivers, close, add, update }: { mode: TaskMode; task: CareTask | null; caregivers: Caregiver[]; close: () => void; add: ReturnType<typeof useUykuvaState>["addCareTask"]; update: ReturnType<typeof useUykuvaState>["updateCareTask"] }) {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const [title, setTitle] = useState("");
@@ -2420,6 +2420,7 @@ function CareTaskModal({ mode, task, close, add, update }: { mode: TaskMode; tas
   const [clock, setClock] = useState("10:00");
   const [note, setNote] = useState("");
   const [repeat, setRepeat] = useState<"weekly" | "monthly" | undefined>(undefined);
+  const [assignedCaregiverId, setAssignedCaregiverId] = useState<string | undefined>(undefined);
   useEffect(() => {
     if (!mode) return;
     setTitle(task?.title ?? "");
@@ -2427,18 +2428,19 @@ function CareTaskModal({ mode, task, close, add, update }: { mode: TaskMode; tas
     setClock(task ? time(task.dueAt) : "10:00");
     setNote(task?.note ?? "");
     setRepeat(task?.repeat);
+    setAssignedCaregiverId(task?.assignedCaregiverId);
   }, [mode, task?.id]);
   if (!mode) return null;
   const save = () => {
     const dueAt = new Date(`${date}T${clock}:00`);
     if (!title.trim()) return Alert.alert("Başlık gerekli", mode === "vaccine" ? "Aşının adını yazın." : "Randevuyu tanımlayın.");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(dueAt.getTime()) || localDateValue(dueAt) !== date || !isValidClock(clock)) return Alert.alert("Tarih ve saati kontrol edin", "Gerçek bir tarihi YYYY-AA-GG, saati SS:DD biçiminde yazın.");
-    const changes = { type: mode, title: title.trim(), dueAt: dueAt.toISOString(), note: note.trim() || undefined, repeat: mode === "appointment" ? repeat : undefined };
+    const changes = { type: mode, title: title.trim(), dueAt: dueAt.toISOString(), note: note.trim() || undefined, repeat: mode === "appointment" ? repeat : undefined, assignedCaregiverId: caregivers.some((caregiver) => caregiver.id === assignedCaregiverId) ? assignedCaregiverId : undefined };
     if (task) update(task.id, changes);
     else add(changes);
     setTitle(""); setNote(""); close();
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{task ? "Kaydı düzenle" : mode === "vaccine" ? "Aşı ekle" : "Randevu ekle"}</Text><Text style={styles.pageIntro}>Uykuva resmi takvim yerine sizin girdiğiniz tarihi hatırlar; sağlık kararını uzmanınızla verin.</Text><Field label={mode === "vaccine" ? "Aşı adı" : "Randevu başlığı"} value={title} onChangeText={setTitle} placeholder={mode === "vaccine" ? "Örn. 6. ay aşıları" : "Örn. Çocuk doktoru kontrolü"} /><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Saat" value={clock} onChangeText={setClock} keyboardType="numbers-and-punctuation" placeholder="10:00" />{mode === "appointment" ? <><Text style={styles.inputLabel}>Tekrarlama</Text><View style={styles.choiceRow}><Pill label="Tek seferlik" active={!repeat} onPress={() => setRepeat(undefined)} /><Pill label="Haftalık" active={repeat === "weekly"} onPress={() => setRepeat("weekly")} /><Pill label="Aylık" active={repeat === "monthly"} onPress={() => setRepeat("monthly")} /></View><Text style={styles.hint}>Tekrarlı randevunun sonraki tarihi, bu kayıt tamamlandığında oluşturulur.</Text></> : null}<Field label={mode === "appointment" ? "Doktora sorularınız ve notlar" : "Not (isteğe bağlı)"} value={note} onChangeText={setNote} placeholder={mode === "appointment" ? "Örn. Uyku, beslenme veya büyüme hakkında sorular" : "İsteğe bağlı ek not"} /><PrimaryButton label={task ? "Değişiklikleri kaydet" : "Takvime ekle"} onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{task ? "Kaydı düzenle" : mode === "vaccine" ? "Aşı ekle" : "Randevu ekle"}</Text><Text style={styles.pageIntro}>Uykuva resmi takvim yerine sizin girdiğiniz tarihi hatırlar; sağlık kararını uzmanınızla verin.</Text><Field label={mode === "vaccine" ? "Aşı adı" : "Randevu başlığı"} value={title} onChangeText={setTitle} placeholder={mode === "vaccine" ? "Örn. 6. ay aşıları" : "Örn. Çocuk doktoru kontrolü"} /><Field label="Tarih" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Saat" value={clock} onChangeText={setClock} keyboardType="numbers-and-punctuation" placeholder="10:00" />{mode === "appointment" ? <><Text style={styles.inputLabel}>Tekrarlama</Text><View style={styles.choiceRow}><Pill label="Tek seferlik" active={!repeat} onPress={() => setRepeat(undefined)} /><Pill label="Haftalık" active={repeat === "weekly"} onPress={() => setRepeat("weekly")} /><Pill label="Aylık" active={repeat === "monthly"} onPress={() => setRepeat("monthly")} /></View><Text style={styles.hint}>Tekrarlı randevunun sonraki tarihi, bu kayıt tamamlandığında oluşturulur.</Text></> : null}<Text style={styles.inputLabel}>Sorumlu bakım veren · isteğe bağlı</Text><View style={styles.choiceRow}><Pill label="Atanmamış" active={!assignedCaregiverId} onPress={() => setAssignedCaregiverId(undefined)} />{caregivers.map((caregiver) => <Pill key={caregiver.id} label={caregiver.name} active={assignedCaregiverId === caregiver.id} onPress={() => setAssignedCaregiverId(caregiver.id)} />)}</View><Field label={mode === "appointment" ? "Doktora sorularınız ve notlar" : "Not (isteğe bağlı)"} value={note} onChangeText={setNote} placeholder={mode === "appointment" ? "Örn. Uyku, beslenme veya büyüme hakkında sorular" : "İsteğe bağlı ek not"} /><PrimaryButton label={task ? "Değişiklikleri kaydet" : "Takvime ekle"} onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function VaccineSuggestionsModal({ visible, close, birthDate, tasks, add, now }: { visible: boolean; close: () => void; birthDate: string; tasks: CareTask[]; add: ReturnType<typeof useUykuvaState>["addCareTask"]; now: Date }) {

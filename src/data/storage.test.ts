@@ -99,6 +99,21 @@ test("caregiver migration preserves the active identity", () => {
   assert.equal(migrated.caregivers.length, 2);
 });
 
+test("care task migration keeps assignments to known caregivers only", () => {
+  const state = createInitialState();
+  state.caregivers.push({ id: "caregiver-2", name: "Baba", role: "parent" });
+  const migrated = migrateState({
+    ...state,
+    children: undefined,
+    careTasks: [
+      { id: "known", type: "appointment", title: "Kontrol", dueAt: "2026-11-02T10:00:00.000Z", assignedCaregiverId: "caregiver-2" },
+      { id: "removed", type: "vaccine", title: "Aşı", dueAt: "2026-11-02T10:00:00.000Z", assignedCaregiverId: "deleted-caregiver" }
+    ]
+  });
+  assert.equal(migrated.careTasks.find((task) => task.id === "known")?.assignedCaregiverId, "caregiver-2");
+  assert.equal(migrated.careTasks.find((task) => task.id === "removed")?.assignedCaregiverId, undefined);
+});
+
 test("sleep and night-wake details survive export and invalid values are rejected", () => {
   const state = createInitialState();
   state.events = [

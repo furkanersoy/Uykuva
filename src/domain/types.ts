@@ -144,6 +144,7 @@ export type CareTask = {
   title: string;
   dueAt: string;
   note?: string;
+  assignedCaregiverId?: string;
   completedAt?: string;
   repeat?: "weekly" | "monthly";
   recurrenceId?: string;

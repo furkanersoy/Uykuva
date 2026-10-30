@@ -378,6 +378,13 @@ test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   assert.match(summary, /Son 7 günde saatli uyanma yanıtları: Beslenme 1, Sakinleştirme \/ yakınlık 1/);
 });
 
+test("care handoff names the person assigned to an upcoming appointment", () => {
+  const state = createInitialState();
+  state.careTasks = [{ id: "appointment", type: "appointment", title: "Çocuk doktoru", dueAt: "2026-10-30T13:00:00", assignedCaregiverId: "caregiver-1" }];
+  const summary = handoffSummary(state, new Date("2026-10-30T12:00:00"), 4);
+  assert.match(summary, /Çocuk doktoru.*sorumlu Anne/);
+});
+
 test("care handoff includes the next sleep window based on today's wake time or latest nap", () => {
   const state = createInitialState();
   state.baby = termBaby;

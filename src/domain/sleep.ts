@@ -1207,7 +1207,10 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     parts.push(`Kullanıcının girdiği ilaç planı kontrol saati: ${upcomingMedicationReminders.map((event) => `${event.medicineName} · ${new Date(event.medicationReminderAt!).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
   }
   if (notes.length) parts.push(`Not: ${notes.map((event) => event.note!.trim().slice(0, 70)).join("; ")}`);
-  if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`).join(", ")}`);
+  if (nextTasks.length) parts.push(`Yaklaşan: ${nextTasks.map((task) => {
+    const assignee = state.caregivers.find((caregiver) => caregiver.id === task.assignedCaregiverId)?.name;
+    return `${task.title} · ${new Date(task.dueAt).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}${assignee ? ` · sorumlu ${assignee}` : ""}`;
+  }).join(", ")}`);
   return parts.length > 1
     ? `${parts[0]}.\n${parts.slice(1).map((part) => `• ${part}`).join("\n")}`
     : `${parts[0]}.`;

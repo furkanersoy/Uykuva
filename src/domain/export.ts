@@ -93,7 +93,7 @@ export function parseDataExport(raw: string): AppState {
   if (!Array.isArray(parsed.events) || !parsed.events.every((event) => isRecord(event) && typeof event.id === "string" && ["sleep", "feed", "diaper", "note", "health", "growth", "memory"].includes(String(event.kind)) && isDateString(event.startedAt) && typeof event.caregiver === "string" && (event.endedAt === undefined || isDateString(event.endedAt)) && (event.sleepSupport === undefined || ["feeding", "held", "rocked", "nearby", "cribSupport", "independent", "other"].includes(String(event.sleepSupport))) && (event.breastSessions === undefined || isBreastSessions(event.breastSessions)) && (event.memoryTitle === undefined || typeof event.memoryTitle === "string") && (event.memoryPhotoData === undefined || event.kind === "memory" && typeof event.memoryPhotoData === "string" && event.memoryPhotoData.length <= 1_100_000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(event.memoryPhotoData)) && (event.milestoneId === undefined || typeof event.milestoneId === "string") && (event.feedType === undefined || ["breast", "bottle", "solid", "pump"].includes(String(event.feedType))) && (event.bottleSource === undefined || ["formula", "expressed"].includes(String(event.bottleSource))) && (event.milkStorageLocation === undefined || ["room", "fridge", "freezer"].includes(String(event.milkStorageLocation))) && (event.milkLabel === undefined || typeof event.milkLabel === "string") && (event.milkDiscardedAt === undefined || isDateString(event.milkDiscardedAt)) && (event.milkThawedAt === undefined || isDateString(event.milkThawedAt)) && (event.milkWarmedAt === undefined || isDateString(event.milkWarmedAt)) && (event.medicationReminderAt === undefined || isDateString(event.medicationReminderAt)))) {
     throw new Error("Yedekte okunamayan veya eksik bakım kayıtları var.");
   }
-  if (!Array.isArray(parsed.careTasks) || !parsed.careTasks.every((task) => isRecord(task) && typeof task.id === "string" && ["vaccine", "appointment"].includes(String(task.type)) && typeof task.title === "string" && isDateString(task.dueAt) && (task.completedAt === undefined || isDateString(task.completedAt)) && (task.note === undefined || typeof task.note === "string") && (task.repeat === undefined || task.type === "appointment" && ["weekly", "monthly"].includes(String(task.repeat))) && (task.recurrenceId === undefined || typeof task.recurrenceId === "string") && (task.recurrenceDay === undefined || Number.isInteger(task.recurrenceDay) && Number(task.recurrenceDay) >= 1 && Number(task.recurrenceDay) <= 31) && (task.generated === undefined || typeof task.generated === "boolean"))) {
+  if (!Array.isArray(parsed.careTasks) || !parsed.careTasks.every((task) => isRecord(task) && typeof task.id === "string" && ["vaccine", "appointment"].includes(String(task.type)) && typeof task.title === "string" && isDateString(task.dueAt) && (task.completedAt === undefined || isDateString(task.completedAt)) && (task.note === undefined || typeof task.note === "string") && (task.assignedCaregiverId === undefined || typeof task.assignedCaregiverId === "string" && task.assignedCaregiverId.length > 0 && task.assignedCaregiverId.length <= 100) && (task.repeat === undefined || task.type === "appointment" && ["weekly", "monthly"].includes(String(task.repeat))) && (task.recurrenceId === undefined || typeof task.recurrenceId === "string") && (task.recurrenceDay === undefined || Number.isInteger(task.recurrenceDay) && Number(task.recurrenceDay) >= 1 && Number(task.recurrenceDay) <= 31) && (task.generated === undefined || typeof task.generated === "boolean"))) {
     throw new Error("Yedekte okunamayan aşı veya randevu kayıtları var.");
   }
   const plan = parsed.sleepPlan;
@@ -156,17 +156,23 @@ function mergeCheckIns(current: AppState["sleepPlan"]["checkIns"], incoming: App
 
 function mergeCaregivers(current: AppState["caregivers"], incoming: AppState["caregivers"]) {
   const result = [...current];
+  const incomingIdMap = new Map<string, string>();
   const usedIds = new Set(result.map((item) => item.id));
   const normalizedName = (name: string) => name.trim().toLocaleLowerCase("tr-TR");
   for (const caregiver of incoming) {
-    if (result.some((item) => normalizedName(item.name) === normalizedName(caregiver.name))) continue;
+    const samePerson = result.find((item) => normalizedName(item.name) === normalizedName(caregiver.name));
+    if (samePerson) {
+      incomingIdMap.set(caregiver.id, samePerson.id);
+      continue;
+    }
     let id = caregiver.id;
     let suffix = 2;
     while (usedIds.has(id)) id = `${caregiver.id}-import-${suffix++}`;
     usedIds.add(id);
     result.push({ ...caregiver, id });
+    incomingIdMap.set(caregiver.id, id);
   }
-  return result;
+  return { caregivers: result, incomingIdMap };
 }
 
 function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
@@ -184,15 +190,18 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     return { ...merged, endedAt };
   })
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  const careTasks = mergeById(current.careTasks, incoming.careTasks, (previous, imported) => {
+  const caregiverMerge = mergeCaregivers(current.caregivers, incoming.caregivers);
+  const incomingTasks = incoming.careTasks.map((task) => task.assignedCaregiverId === undefined
+    ? task
+    : { ...task, assignedCaregiverId: caregiverMerge.incomingIdMap.get(task.assignedCaregiverId) });
+  const mergedCareTasks = mergeById(current.careTasks, incomingTasks, (previous, imported) => {
     const merged = { ...previous, ...imported };
     const completedAt = [previous.completedAt, imported.completedAt]
       .filter((value): value is string => Boolean(value))
       .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
       .at(-1);
     return { ...merged, completedAt };
-  })
-    .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  }).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   const developmentCheckIns = new Map((current.developmentCheckIns ?? []).map((item) => [item.ageMonths, item]));
   for (const item of incoming.developmentCheckIns ?? []) {
     const previous = developmentCheckIns.get(item.ageMonths);
@@ -211,10 +220,10 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     caregiverName: current.caregiverName,
     careInstructions: instructions.join("\n").slice(0, 1000),
     developmentCheckIns: [...developmentCheckIns.values()].sort((a, b) => b.ageMonths - a.ageMonths).slice(0, 12),
-    caregivers: mergeCaregivers(current.caregivers, incoming.caregivers),
+    caregivers: caregiverMerge.caregivers,
     activeCaregiverId: current.activeCaregiverId,
     events,
-    careTasks,
+    careTasks: mergedCareTasks,
     sleepPlan: {
       ...current.sleepPlan,
       checkIns: mergeCheckIns(current.sleepPlan.checkIns, incoming.sleepPlan.checkIns),
@@ -257,7 +266,7 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
   return {
     ...current,
     ...active,
-    caregivers: mergeCaregivers(current.caregivers, incoming.caregivers),
+    caregivers: mergeCaregivers(current.caregivers, incoming.caregivers).caregivers,
     caregiverName: current.caregiverName,
     activeCaregiverId: current.activeCaregiverId,
     preferences: current.preferences,
