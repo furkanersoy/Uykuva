@@ -40,3 +40,19 @@ test("doctor summary clips and merges completed sleep within the seven-day windo
   const summary = createDoctorSummary(state, new Date("2026-10-27T00:00:00Z"));
   assert.match(summary, /Uyku: 2 tamamlanmış kayıt · toplam 1\.0 saat/);
 });
+
+test("doctor summary excludes future care events and uses the latest past growth measurement", () => {
+  const state = createInitialState();
+  state.events = [
+    { id: "growth-new", kind: "growth", startedAt: "2026-10-26T10:00:00Z", weightG: 6500, caregiver: "Anne" },
+    { id: "feed-future", kind: "feed", feedType: "bottle", amountMl: 200, startedAt: "2026-10-28T10:00:00Z", caregiver: "Baba" },
+    { id: "growth-old", kind: "growth", startedAt: "2026-10-20T10:00:00Z", weightG: 6200, caregiver: "Baba" },
+    { id: "health-future", kind: "health", healthType: "symptom", note: "future event", startedAt: "2026-10-28T11:00:00Z", caregiver: "Anne" }
+  ];
+  const summary = createDoctorSummary(state, new Date("2026-10-27T12:00:00Z"));
+  assert.match(summary, /Beslenme: 0 kayıt/);
+  assert.match(summary, /Sağlık: 0 kullanıcı kaydı/);
+  assert.match(summary, /Son ölçüm .*6500 g/);
+  assert.doesNotMatch(summary, /6\.200 g/);
+});
+

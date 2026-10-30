@@ -9,7 +9,10 @@ function trDate(value: string | Date) {
 
 export function createDoctorSummary(state: AppState, now = new Date()): string {
   const since = now.getTime() - 7 * 86_400_000;
-  const events = state.events.filter((event) => new Date(event.startedAt).getTime() >= since);
+  const events = state.events.filter((event) => {
+    const startedAt = new Date(event.startedAt).getTime();
+    return Number.isFinite(startedAt) && startedAt >= since && startedAt <= now.getTime();
+  });
   const sleeps = state.events.filter((event) => {
     if (event.kind !== "sleep" || !event.endedAt) return false;
     const start = new Date(event.startedAt).getTime();
@@ -21,8 +24,12 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const solidMeals = feeds.filter((event) => event.feedType === "solid");
   const diapers = events.filter((event) => event.kind === "diaper");
   const health = events.filter((event) => event.kind === "health");
-  const growth = state.events.find((event) => event.kind === "growth");
-  const latestDevelopment = [...(state.developmentCheckIns ?? [])].sort((a, b) => b.checkedAt.localeCompare(a.checkedAt))[0];
+  const growth = state.events
+    .filter((event) => event.kind === "growth" && Number.isFinite(new Date(event.startedAt).getTime()) && new Date(event.startedAt).getTime() <= now.getTime())
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
+  const latestDevelopment = [...(state.developmentCheckIns ?? [])]
+    .filter((item) => Number.isFinite(new Date(item.checkedAt).getTime()) && new Date(item.checkedAt).getTime() <= now.getTime())
+    .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())[0];
   const developmentCheckpoint = latestDevelopment && DEVELOPMENT_CHECKPOINTS.find((item) => item.ageMonths === latestDevelopment.ageMonths);
   const totalSleepHours = sleepMinutesBetween(sleeps, new Date(since), now) / 60;
   const bottleMl = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
@@ -134,3 +141,4 @@ export function createDoctorSummaryHtml(state: AppState, now = new Date()): stri
     .notice { margin-top: 22px; border-top: 1px solid #d9e0dc; padding-top: 10px; font-size: 10px; color: #66746d; }
   </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva bakım özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
 }
+
