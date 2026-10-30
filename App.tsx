@@ -44,7 +44,7 @@ import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
-import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, encryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudSyncAccount, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, saveEncryptedFamilyDocument, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
+import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, saveEncryptedFamilyDocument, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -1903,7 +1903,12 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
   const createFamily = () => void run(async () => {
     if (!requireConsent()) return;
     const id = await createCloudFamily();
-    const key = await createFamilyEncryptionKey(id);
+    let key: string;
+    try { key = await createFamilyEncryptionKey(id); }
+    catch (error) {
+      await removeCloudFamily(id).catch(() => undefined);
+      throw error;
+    }
     setFamilyKey(key);
     setFamilyId(id);
     await refreshFamilies();
@@ -1973,8 +1978,43 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
         <Card><Text style={styles.cardTitle}>Bulut ve gizlilik onayı</Text><Text style={styles.body}>Eşitleme açılırsa bu cihazdaki Uykuva profili ve tüm çocukların bakım kayıtları, anı fotoğrafları dâhil, şifrelenmiş olarak Supabase sunucusunda saklanabilir. Şifreleme anahtarı sunucuya gönderilmez; yalnızca aile üyeleriyle paylaştığınız anahtara sahip cihazlar veriyi açabilir. Hesap/e-posta bilgisi kimlik doğrulama sağlayıcısında işlenir. Ücretsiz hizmet kotaları dolabilir veya ücretsiz proje duraklatılabilir. Yerel kayıtlar çevrimdışı kullanılmaya devam eder.</Text><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: consent }} onPress={() => setConsent((value) => !value)} style={[styles.settingRow, { marginTop: 14 }]}><Text style={styles.body}>{consent ? "☑" : "□"} Bu veri aktarımını anladım ve isteyerek onaylıyorum.</Text></Pressable></Card>
       {!accountEmail ? <Card><Text style={styles.cardTitle}>Ücretsiz aile hesabı</Text><Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" /><Field label="Parola · en az 12 karakter" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoCorrect={false} /><View style={styles.spacer12} /><PrimaryButton label={busy ? "İşleniyor…" : "Giriş yap"} onPress={() => submitAuth(false)} /><View style={styles.spacer12} /><PrimaryButton label="Hesap oluştur" quiet onPress={() => submitAuth(true)} /></Card> : <>
         <Card><Text style={styles.cardTitle}>Oturum</Text><Text style={styles.body}>{accountEmail}</Text><View style={styles.spacer12} /><PrimaryButton label="Oturumu kapat" quiet onPress={() => void run(async () => { await Promise.all(families.map((item) => removeFamilyEncryptionKey(item.family_id))); await signOutOfCloudSync(); setAccountEmail(null); setFamilies([]); setFamilyId(""); setFamilyKey(""); })} /></Card>
-        <Card><Text style={styles.cardTitle}>Aile alanı</Text>{families.length ? <View style={styles.choiceRow}>{families.map((item) => <Pill key={item.family_id} label={`${item.role === "family" ? "Aile · salt okunur" : item.role === "parent" ? "Ebeveyn" : "Bakıcı"} · ${item.family_id.slice(0, 8)}`} active={familyId === item.family_id} onPress={() => { setFamilyId(item.family_id); setFamilyKey(""); setInviteToken(""); }} />)}</View> : <Text style={styles.body}>Henüz bir aile alanına katılmadınız.</Text>}<View style={styles.spacer12} /><PrimaryButton label="Aile alanı oluştur" quiet onPress={createFamily} /><Text style={styles.inputLabel}>Davet kodu</Text><TextInput accessibilityLabel="Aile davet kodu" value={inviteToken} onChangeText={setInviteToken} style={styles.input} autoCapitalize="none" autoCorrect={false} placeholder="64 karakterli davet kodu" />{inviteToken.length === 64 || familyId ? <><Text style={styles.inputLabel}>Aile şifreleme anahtarı · ayrı ve güvenli kanaldan alın</Text><TextInput accessibilityLabel="Aile şifreleme anahtarı" value={familyKey} onChangeText={setFamilyKey} style={styles.input} autoCapitalize="none" autoCorrect={false} placeholder="Aile sahibinin oluşturduğu 256 bit anahtar" />{inviteToken.length === 64 ? <><View style={styles.spacer12} /><PrimaryButton label="Daveti kabul et" quiet onPress={acceptInvite} /></> : null}{familyId ? <><View style={styles.spacer12} /><PrimaryButton label="Anahtarı bu cihaza güvenle kaydet" quiet onPress={() => void run(async () => { if (!requireConsent()) return; await storeSharedFamilyEncryptionKey(familyId, familyKey); setMessage("Aile anahtarı bu cihazın güvenli deposuna kaydedildi."); })} /></> : null}</> : null}</Card>
-        {familyId ? <Card><Text style={styles.cardTitle}>Üyelik ve veriler</Text>{selectedMembership?.role === "family" ? <Text style={styles.hint}>Bu üyelik salt okunurdur. Buluttaki kayıtları indirebilirsiniz.</Text> : <><Text style={styles.inputLabel}>Davet edilecek e-posta</Text><TextInput accessibilityLabel="Davet e-postası" value={inviteEmail} onChangeText={setInviteEmail} style={styles.input} keyboardType="email-address" autoCapitalize="none" /><View style={styles.choiceRow}>{([{ id: "caregiver", label: "Bakıcı" }, { id: "parent", label: "Ebeveyn" }, { id: "family", label: "Salt okunur aile" }] as const).map((item) => <Pill key={item.id} label={item.label} active={inviteRole === item.id} onPress={() => setInviteRole(item.id)} />)}</View><View style={styles.spacer12} /><PrimaryButton label="Süreli davet oluştur" quiet onPress={createInvite} />{inviteToken ? <><Text style={styles.hint}>Davet kodu · 7 gün geçerli</Text><Text selectable style={styles.body}>{inviteToken}</Text></> : null}{familyKey ? <><Text style={styles.hint}>Aile şifreleme anahtarı · yalnızca güvenli, uçtan uca şifreli kanaldan paylaşın</Text><Text selectable style={styles.body}>{familyKey}</Text></> : null}<View style={styles.spacer12} /><PrimaryButton label={busy ? "Şifreleniyor…" : "Yerel ve bulut kayıtlarını birleştirip eşitle"} onPress={syncNow} /></>}{selectedMembership?.role === "family" ? <><View style={styles.spacer12} /><PrimaryButton label="Buluttan indir ve yerel kayıtlarla birleştir" quiet onPress={download} /></> : <><View style={styles.spacer12} /><PrimaryButton label="Buluttan indir ve yerel kayıtlarla birleştir" quiet onPress={download} /><View style={styles.spacer12} /><Pressable onPress={deleteFamily} style={styles.dangerButton}><Text style={styles.dangerText}>Bulut aile alanını ve kopyasını sil</Text></Pressable></>}</Card> : null}
+        <Card>
+          <Text style={styles.cardTitle}>Aile alanı</Text>
+          {families.length ? <View style={styles.choiceRow}>{families.map((item) => {
+            const roleLabel = item.role === "family" ? "Aile · salt okunur" : item.role === "parent" ? "Ebeveyn" : "Bakıcı";
+            return <Pill key={item.family_id} label={`${item.isOwner ? "Sahip · " : ""}${roleLabel} · ${item.family_id.slice(0, 8)}`} active={familyId === item.family_id} onPress={() => { setFamilyId(item.family_id); setFamilyKey(""); setInviteToken(""); }} />;
+          })}</View> : <Text style={styles.body}>Henüz bir aile alanına katılmadınız.</Text>}
+          <View style={styles.spacer12} /><PrimaryButton label="Aile alanı oluştur" quiet onPress={createFamily} />
+          <Text style={styles.inputLabel}>Davet kodu</Text>
+          <TextInput accessibilityLabel="Aile davet kodu" value={inviteToken} onChangeText={setInviteToken} style={styles.input} autoCapitalize="none" autoCorrect={false} placeholder="64 karakterli davet kodu" />
+          {inviteToken.length === 64 || familyId ? <>
+            <Text style={styles.inputLabel}>Aile şifreleme anahtarı · ayrı ve güvenli kanaldan alın</Text>
+            <TextInput accessibilityLabel="Aile şifreleme anahtarı" value={familyKey} onChangeText={setFamilyKey} style={styles.input} autoCapitalize="none" autoCorrect={false} placeholder="Aile sahibinin oluşturduğu 256 bit anahtar" />
+            {inviteToken.length === 64 ? <><View style={styles.spacer12} /><PrimaryButton label="Daveti kabul et" quiet onPress={acceptInvite} /></> : null}
+            {familyId ? <>
+              <View style={styles.spacer12} />
+              <PrimaryButton label="Anahtarı bu cihaza güvenle kaydet" quiet onPress={() => void run(async () => { if (!requireConsent()) return; await storeSharedFamilyEncryptionKey(familyId, familyKey); setMessage("Aile anahtarı bu cihazın güvenli deposuna kaydedildi."); })} />
+              <View style={styles.spacer12} />
+              <PrimaryButton label="Bu cihazdaki aile anahtarını göster" quiet onPress={() => void run(async () => { const stored = await getFamilyEncryptionKey(familyId); if (!stored) { setMessage("Bu cihazda bu aile için kayıtlı anahtar yok."); return; } setFamilyKey(stored); setMessage("Anahtarı yalnızca güvenli, uçtan uca şifreli bir kanaldan paylaşın."); })} />
+            </> : null}
+          </> : null}
+        </Card>
+        {familyId ? <Card>
+          <Text style={styles.cardTitle}>Üyelik ve veriler</Text>
+          {selectedMembership?.role === "family" ? <Text style={styles.hint}>Bu üyelik salt okunurdur. Buluttaki kayıtları indirebilirsiniz.</Text> : <>
+            {selectedMembership?.isOwner ? <>
+              <Text style={styles.inputLabel}>Davet edilecek e-posta</Text>
+              <TextInput accessibilityLabel="Davet e-postası" value={inviteEmail} onChangeText={setInviteEmail} style={styles.input} keyboardType="email-address" autoCapitalize="none" />
+              <View style={styles.choiceRow}>{([{ id: "caregiver", label: "Bakıcı" }, { id: "parent", label: "Ebeveyn" }, { id: "family", label: "Salt okunur aile" }] as const).map((item) => <Pill key={item.id} label={item.label} active={inviteRole === item.id} onPress={() => setInviteRole(item.id)} />)}</View>
+              <View style={styles.spacer12} /><PrimaryButton label="Süreli davet oluştur" quiet onPress={createInvite} />
+              {inviteToken ? <><Text style={styles.hint}>Davet kodu · 7 gün geçerli</Text><Text selectable style={styles.body}>{inviteToken}</Text></> : null}
+              {familyKey ? <><Text style={styles.hint}>Aile şifreleme anahtarı · yalnızca güvenli, uçtan uca şifreli kanaldan paylaşın</Text><Text selectable style={styles.body}>{familyKey}</Text></> : null}
+            </> : <Text style={styles.hint}>Bu ailede davet ve bulut alanı silme işlemleri yalnızca aile sahibine açıktır.</Text>}
+            <View style={styles.spacer12} /><PrimaryButton label={busy ? "Şifreleniyor…" : "Yerel ve bulut kayıtlarını birleştirip eşitle"} onPress={syncNow} />
+          </>}
+          <View style={styles.spacer12} /><PrimaryButton label="Buluttan indir ve yerel kayıtlarla birleştir" quiet onPress={download} />
+          {selectedMembership?.isOwner ? <><View style={styles.spacer12} /><Pressable onPress={deleteFamily} style={styles.dangerButton}><Text style={styles.dangerText}>Bulut aile alanını ve kopyasını sil</Text></Pressable></> : null}
+        </Card> : null}
       </>}
       {message ? <Text accessibilityLiveRegion="polite" style={styles.hint}>{message}</Text> : null}<View style={styles.spacer12} /><PrimaryButton label="Kapat" quiet onPress={close} />
     </>}
