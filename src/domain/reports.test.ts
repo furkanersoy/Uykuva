@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createInitialState } from "../data/seed";
-import { createDoctorSummary, createDoctorSummaryHtml, createSleepWeekSummary, createSleepWeekSummaryHtml } from "./reports";
+import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, createSleepWeekSummary, createSleepWeekSummaryHtml } from "./reports";
 
 test("doctor summary labels medicine dose as user-entered and avoids advice", () => {
   const state = createInitialState();
@@ -96,3 +96,40 @@ test("weekly sleep PDF escapes names and presents missing data without health cl
   assert.match(html, /sağlık değerlendirmesi veya uyku hedefi değildir/);
 });
 
+
+
+test("memory book PDF orders saved memories, excludes future events, and escapes user content", () => {
+  const state = createInitialState();
+  state.baby.name = "<Bebek>";
+  state.events = [
+    { id: "late", kind: "memory", memoryTitle: "İlk gülüş", note: "Güzel <an>", startedAt: "2026-10-26T12:00:00", caregiver: "Anne & Baba" },
+    { id: "early", kind: "memory", memoryTitle: "İlk gün", startedAt: "2026-10-20T12:00:00", caregiver: "Anne" },
+    { id: "future", kind: "memory", memoryTitle: "Gelecek anı", startedAt: "2026-10-28T12:00:00", caregiver: "Anne" },
+    { id: "feed", kind: "feed", note: "Anı değil", startedAt: "2026-10-22T12:00:00", caregiver: "Baba" }
+  ];
+  const html = createMemoryBookHtml(state, new Date("2026-10-27T12:00:00"));
+  assert.ok(html.indexOf("İlk gün") < html.indexOf("İlk gülüş"));
+  assert.match(html, /&lt;Bebek&gt; için kaydedilen 2 an/);
+  assert.match(html, /Güzel &lt;an&gt;/);
+  assert.match(html, /Anne &amp; Baba/);
+  assert.doesNotMatch(html, /Gelecek anı|Anı değil/);
+});
+
+test("memory book embeds only valid JPEG data and handles an empty journal", () => {
+  const state = createInitialState();
+  state.events = [{
+    id: "photo",
+    kind: "memory",
+    memoryTitle: "Fotoğraflı anı",
+    memoryPhotoData: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+    startedAt: "2026-10-26T12:00:00",
+    caregiver: "Anne"
+  }];
+  const photoHtml = createMemoryBookHtml(state, new Date("2026-10-27T12:00:00"));
+  assert.match(photoHtml, /<img src="data:image\/jpeg;base64,\/9j\/4AAQSkZJRg=="/);
+  state.events[0]!.memoryPhotoData = "data:image/jpeg;base64,<script>";
+  const invalidPhotoHtml = createMemoryBookHtml(state, new Date("2026-10-27T12:00:00"));
+  assert.doesNotMatch(invalidPhotoHtml, /<img src=/);
+  state.events = [];
+  assert.match(createMemoryBookHtml(state), /Henüz anı eklenmemiş/);
+});
