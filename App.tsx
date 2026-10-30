@@ -35,7 +35,7 @@ import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, cre
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
-import { clockInputDigits, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput } from "./src/domain/time";
+import { clockInputDigits, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput, timelinePeriodStart, type TimelinePeriod } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
 import { NOTIFICATION_KINDS, notificationDestination, OPEN_SLEEP_WAKE_NOW_ACTION } from "./src/domain/notificationRouting";
@@ -481,7 +481,7 @@ export default function App() {
         </View> : null}
 
         {tab === "today" && <TodayScreen key={app.state.activeChildId} app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} onSwitchCaregiver={switchCaregiver} onSwitchChild={switchChild} />}
-        {tab === "timeline" && <TimelineScreen events={app.state.events} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
+        {tab === "timeline" && <TimelineScreen events={app.state.events} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} now={clockNow} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen key={app.state.activeChildId} app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
         {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onAddChild={() => setChildOpen(true)} onRestoreData={() => setRestoreOpen(true)} onOpenCloudSync={() => setCloudSyncOpen(true)} />}
@@ -956,11 +956,13 @@ function NightModeScreen({ app, now, onExit, openLog, onLogNightWake, onSwitchCa
   );
 }
 
-function TimelineScreen({ events, caregivers, onDelete, onEditSleep, onEditRecord, onAddSleep }: { events: CareEvent[]; caregivers: string[]; onDelete: (id: string) => void; onEditSleep: (event: CareEvent) => void; onEditRecord: (event: CareEvent) => void; onAddSleep: () => void }) {
+function TimelineScreen({ events, caregivers, now, onDelete, onEditSleep, onEditRecord, onAddSleep }: { events: CareEvent[]; caregivers: string[]; now: Date; onDelete: (id: string) => void; onEditSleep: (event: CareEvent) => void; onEditRecord: (event: CareEvent) => void; onAddSleep: () => void }) {
   const [filter, setFilter] = useState<TimelineFilter>("all");
+  const [period, setPeriod] = useState<TimelinePeriod>("all");
   const [caregiverFilter, setCaregiverFilter] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const caregiverOptions = [...new Set([...caregivers, ...events.map((event) => event.caregiver)])].filter(Boolean);
+  const periodStart = timelinePeriodStart(period, now);
   const filtered = events.filter((event) => {
     const matchesFilter = filter === "all"
       || filter === "sleep" && event.kind === "sleep"
@@ -972,6 +974,10 @@ function TimelineScreen({ events, caregivers, onDelete, onEditSleep, onEditRecor
       || filter === "notes" && event.kind === "note"
       || filter === "memories" && event.kind === "memory";
     if (!matchesFilter || (caregiverFilter !== null && event.caregiver !== caregiverFilter)) return false;
+    if (periodStart !== undefined) {
+      const eventTime = new Date(event.startedAt).getTime();
+      if (!Number.isFinite(eventTime) || eventTime < periodStart || eventTime > now.getTime()) return false;
+    }
     const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
     if (!normalizedQuery) return true;
     const searchable = [eventTitle(event), event.caregiver, event.note, event.medicineName, event.memoryTitle, event.foods?.join(" ")].filter(Boolean).join(" ").toLocaleLowerCase("tr-TR");
@@ -982,6 +988,10 @@ function TimelineScreen({ events, caregivers, onDelete, onEditSleep, onEditRecor
       <Text style={styles.pageTitle}>Günün akışı</Text>
       <Text style={styles.pageIntro}>Kayıtları türüne veya bakım veren adına göre bulun. Kayda dokunup saatini düzenleyin; silmek için basılı tutup onaylayın.</Text>
       <TextInput accessibilityLabel="Zaman çizelgesinde kayıt veya bakım veren ara" value={query} onChangeText={setQuery} style={styles.input} placeholder="Kayıt veya bakım veren ara" placeholderTextColor="#93A09C" />
+      <Text style={styles.inputLabel}>Tarih aralığı</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>
+        {([{ id: "all", label: "Tümü" }, { id: "today", label: "Bugün" }, { id: "week", label: "Son 7 gün" }, { id: "month", label: "Son 30 gün" }] as const).map((item) => <Pill key={item.id} label={item.label} active={period === item.id} onPress={() => setPeriod(item.id)} />)}
+      </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>{timelineFilters.map((item) => <Pill key={item.id} label={item.label} active={filter === item.id} onPress={() => setFilter(item.id)} />)}</ScrollView>
       {caregiverOptions.length > 1 ? <><Text style={styles.inputLabel}>Bakım veren</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}><Pill label="Tümü" active={caregiverFilter === null} onPress={() => setCaregiverFilter(null)} />{caregiverOptions.map((name) => <Pill key={name} label={name} active={caregiverFilter === name} onPress={() => setCaregiverFilter(name)} />)}</ScrollView></> : null}
       <PrimaryButton label="Geçmiş uyku ekle" quiet onPress={onAddSleep} />

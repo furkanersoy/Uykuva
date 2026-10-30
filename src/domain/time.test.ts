@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { clockInputDigits, dailyReminderDatesBefore, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput, sleepWakeReminderDate } from "./time";
+import { clockInputDigits, dailyReminderDatesBefore, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput, sleepWakeReminderDate, timelinePeriodStart } from "./time";
 
 test("quiet hours work across midnight", () => {
   assert.equal(isInQuietHours(new Date("2026-10-26T23:00:00"), "21:00", "07:00"), true);
@@ -21,6 +21,15 @@ test("today's actual wake time cannot be later than the current local minute", (
   assert.equal(isTodayTimeReached("23:59", now), false);
   assert.equal(isTodayTimeReached("25:00", now), false);
   assert.equal(isTodayTimeReached("07:00", new Date(NaN)), false);
+});
+
+test("timeline periods start at local midnight and include today", () => {
+  const now = new Date(2026, 9, 30, 14, 25, 40);
+  assert.equal(timelinePeriodStart("today", now), new Date(2026, 9, 30, 0, 0, 0, 0).getTime());
+  assert.equal(timelinePeriodStart("week", now), new Date(2026, 9, 24, 0, 0, 0, 0).getTime());
+  assert.equal(timelinePeriodStart("month", now), new Date(2026, 9, 1, 0, 0, 0, 0).getTime());
+  assert.equal(timelinePeriodStart("all", now), undefined);
+  assert.equal(timelinePeriodStart("today", new Date(NaN)), undefined);
 });
 
 test("wake reminder uses the selected lead and skips past and quiet times", () => {

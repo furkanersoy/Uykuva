@@ -28,6 +28,17 @@ export function isTodayTimeReached(value: string, now = new Date()): boolean {
   return minutes <= now.getHours() * 60 + now.getMinutes();
 }
 
+export type TimelinePeriod = "all" | "today" | "week" | "month";
+
+export function timelinePeriodStart(period: TimelinePeriod, now = new Date()): number | undefined {
+  if (period === "all" || !Number.isFinite(now.getTime())) return undefined;
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (period === "week") start.setDate(start.getDate() - 6);
+  if (period === "month") start.setDate(start.getDate() - 29);
+  return start.getTime();
+}
+
 export function sleepWakeReminderDate(typical: Date | undefined, leadMinutes: number, quietStart: string, quietEnd: string, now = new Date()): Date | undefined {
   if (!typical || !Number.isFinite(typical.getTime()) || !Number.isFinite(now.getTime()) || ![5, 10, 15, 20, 30].includes(leadMinutes)) return undefined;
   const reminder = new Date(typical.getTime() - leadMinutes * 60_000);
