@@ -46,10 +46,12 @@ export function breastfeedingSideMinutes(event: CareEvent, now = new Date()) {
 
 export function nextBreastSide(events: CareEvent[]): "left" | "right" | null {
   const latest = events
-    .filter((event) => event.kind === "feed" && event.feedType === "breast" && event.breastSide && event.breastSide !== "both")
+    .filter((event) => event.kind === "feed" && event.feedType === "breast")
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())[0];
-  if (!latest?.breastSide) return null;
-  return latest.breastSide === "left" ? "right" : "left";
+  const lastSession = latest?.breastSessions?.[latest.breastSessions.length - 1];
+  const lastSide = lastSession?.side ?? latest?.breastSide;
+  if (lastSide !== "left" && lastSide !== "right") return null;
+  return lastSide === "left" ? "right" : "left";
 }
 
 export function createFeedingForecast(events: CareEvent[], now = new Date()): FeedingForecast {
