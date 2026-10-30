@@ -499,9 +499,16 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npm.cmd test`: 98/98 test başarılı.
 - `npx.cmd expo run:android --no-bundler --device emulator-5554`: native Android build başarılı; `expo-secure-store` derlemeye dahil edildi ve APK emülatöre yüklendi.
 - Emülatörde uygulamanın açılışında Bugün ana ekranı görüntülendi; Gece uyanması formu yalnızca kısayola dokunulduğunda açıldı.
-- Android SDK yolu gitignore kapsamındaki yerel `android/local.properties` dosyasında ayarlandı.- `npm.cmd run db:start`: yerel Supabase yığını başladı ve Postgres 17 migration'ı uygulandı.
+- Android SDK yolu gitignore kapsamındaki yerel `android/local.properties` dosyasında ayarlandı.
+- `npm.cmd run db:start`: yerel Supabase yığını başladı ve Postgres 17 migration'ı uygulandı.
 - `npm.cmd run db:test`: 17/17 pgTAP aile/RLS testi başarılı.
 - `npm.cmd exec -- supabase db lint --local`: şema hatası yok.
 - `npm.cmd audit fix`: Expo 58.0.21 ve uyumlu transitif patch'ler yüklendi; `node-forge` yüksek bulgusu giderildi.
 - Güncelleme sonrası `npm.cmd run typecheck`: başarılı; `npm.cmd test`: 98/98 başarılı.
 - Güncelleme sonrası Android native build başarılı; emülatör Bugün ana ekranını açtı ve SecureStore kırmızı ekranı görünmedi.
+
+### 30 Ekim 2026 açılış ve güncel test doğrulaması
+
+- `npm.cmd run typecheck`: başarılı.
+- `npm.cmd test`: 116/116 test başarılı.
+- Android emülatöründe uygulama soğuk başlatıldı; başlangıçta Bugün ana ekranı açıldı. Gece uyanması formu yalnızca Bugün veya gece modu kısayolu seçildiğinde açılıyor.
