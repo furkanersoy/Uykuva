@@ -71,7 +71,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Çevrimdışı kısa uyku öğrenme rehberi; bebek ritmi, esneyip bakışı kaçırma gibi değişken yorgunluk işaretleri, sakin rutin, gece bakım yanıtı ve güvenli uyku için NHS, AAP ve CDC kaynak bağlantıları
-- Uyku ekranında yaklaşık 4 aylık uyku döngüsü değişimi, gece-gündüz işaretleri, rutin, gece uyanmaları ve bakım veren desteği hakkında altı çevrimdışı kısa okuma; her konu için NHS veya AAP kaynak bağlantısı
+- Uyku ekranında yaklaşık 4 aylık uyku döngüsü değişimi, gece-gündüz işaretleri, rutin, gece uyanmaları, zor günler ve bakım veren desteği hakkında yedi çevrimdışı kısa okuma; her konu için NHS veya AAP kaynak bağlantısı
 - Uyku rehberinde uykuda solunum güçlüğü, sık horlama veya zor uyandırılma gibi durumlarda doktor ya da acil yardım gerektirebilecek belirtileri açıklama; AAP ve NHS kaynak bağlantıları
 - Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
