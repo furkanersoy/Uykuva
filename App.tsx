@@ -39,6 +39,7 @@ import { notificationDestination } from "./src/domain/notificationRouting";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
+import { SLEEP_GUIDES } from "./src/data/sleepGuides";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
@@ -905,6 +906,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const [nightGuideOpen, setNightGuideOpen] = useState(false);
   const [methodGuideOpen, setMethodGuideOpen] = useState(false);
   const [sleepBasicsOpen, setSleepBasicsOpen] = useState(false);
+  const [sleepReadingsOpen, setSleepReadingsOpen] = useState(false);
   const [wakeWindowGuideOpen, setWakeWindowGuideOpen] = useState(false);
   const [awakePatternOpen, setAwakePatternOpen] = useState(false);
   const wakeWindows = wakeWindowGuide(app.state.baby, now);
@@ -1050,6 +1052,23 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/").catch(() => Alert.alert("Bağlantı açılamadı", "NHS uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>NHS · Bebeğinizin uyumasına yardımcı olma</Text></Pressable>
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Bebeğinizi uyutmaya yardımcı olma</Text></Pressable>
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/sudden-infant-death/sleep-safely/").catch(() => Alert.alert("Bağlantı açılamadı", "CDC güvenli uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>CDC · Güvenli uyku alanı</Text></Pressable>
+        </View> : null}
+      </Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sleepReadingsOpen }} onPress={() => setSleepReadingsOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Ebeveynler için kısa okumalar</Text><Text style={styles.body}>Uyku değişimleri, rutinler ve bakım veren desteği · {SLEEP_GUIDES.length} konu</Text></View>
+          <Text style={styles.nightGuideChevron}>{sleepReadingsOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {sleepReadingsOpen ? <View style={styles.nightGuideContent}>
+          {SLEEP_GUIDES.map((guide) => <View key={guide.id} style={styles.sleepGuideItem}>
+            <Text style={styles.inputLabel}>{guide.title}</Text>
+            <Text style={styles.eyebrow}>{guide.age}</Text>
+            <Text style={styles.body}>{guide.summary}</Text>
+            <Pressable accessibilityRole="link" accessibilityLabel={`${guide.source} kaynağını aç`} onPress={() => void Linking.openURL(guide.url).catch(() => Alert.alert("Bağlantı açılamadı", "Kaynak sayfaya şu anda ulaşılamıyor. Kısa özet uygulamada çevrimdışı okunabilir."))}>
+              <Text style={styles.linkText}>{guide.source} · kaynağı aç</Text>
+            </Pressable>
+          </View>)}
+          <Text style={styles.hint}>Bu kısa özetler genel bilgilendirmedir; tıbbi değerlendirme yerine geçmez. Kaynak sayfalar güncellenebilir. Sağlık veya beslenme endişenizde çocuk doktorunuza danışın. İçerik gözden geçirme: 30 Ekim 2026.</Text>
         </View> : null}
       </Card>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
@@ -2379,6 +2398,7 @@ const styles = StyleSheet.create({
   nightGuideHeaderText: { flex: 1, flexShrink: 1, minWidth: 0, maxWidth: "100%" },
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
   nightGuideContent: { width: "100%", maxWidth: "100%", alignSelf: "stretch", borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
+  sleepGuideItem: { width: "100%", maxWidth: "100%", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line, gap: 4 },
   nightGuideStep: { width: "100%", maxWidth: "100%", alignSelf: "stretch", flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 8 },
   nightGuideStepText: { flex: 1, flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, maxWidth: "100%", fontSize: 12, lineHeight: 18 },
   methodCompare: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 12, paddingTop: 10, gap: 7 },
