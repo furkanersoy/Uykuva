@@ -28,7 +28,7 @@ import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
 import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
-import { createDoctorSummary, createDoctorSummaryHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
+import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -1350,6 +1350,16 @@ async function shareSleepWeekPdf(state: ReturnType<typeof useUykuvaState>["state
   }
 }
 
+async function shareMemoryBookPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
+  try {
+    const file = await Print.printToFileAsync({ html: createMemoryBookHtml(state), base64: false });
+    if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "Anı defteri PDF olarak hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva anı defterini paylaş" });
+  } catch {
+    Alert.alert("PDF oluşturulamadı", "Anı defteri hazırlanırken bir sorun oluştu.");
+  }
+}
+
 function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openEditTask: (task: CareTask) => void; openVaccineSuggestions: () => void; now: Date }) {
   const state = app.state;
   const [doctorSummaryPeriod, setDoctorSummaryPeriod] = useState<DoctorSummaryPeriod>(7);
@@ -1371,7 +1381,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
   const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
   const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-  const milestones = detectRecordedMilestones(events, now);
+  const milestones = detectRecordedMilestones(events, now);\n  const memories = events.filter((event) => event.kind === "memory" && Number.isFinite(new Date(event.startedAt).getTime()) && new Date(event.startedAt).getTime() <= now.getTime());
   const solidHistory = summarizeSolidFoodHistory(events);
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   const completedCareTasks = [...state.careTasks].filter((task) => task.completedAt).sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
@@ -1462,6 +1472,12 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
       {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
       {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
+      <SectionTitle title="Anı defteri" action="${memories.length} kayıt" />
+      <Card>
+        <Text style={styles.body}>{memories.length ? "Kaydettiğiniz anları ve fotoğrafları PDF anı defteri olarak dışa aktarın." : "Zaman çizelgesine anı ekledikçe burada PDF anı defteri oluşturabilirsiniz."}</Text>
+        {memories.length ? <><View style={styles.spacer12} /><PrimaryButton label="Anı defterini PDF paylaş" quiet onPress={() => void shareMemoryBookPdf(state)} /></> : null}
+        <Text style={styles.hint}>PDF cihazda hazırlanır. Fotoğraflar PDF’ye eklenir; paylaşım menüsünden nereye göndereceğinizi siz seçersiniz.</Text>
+      </Card>
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Paylaşılacak kayıt aralığını seçin. Uyku, beslenme, bez ve sağlık bilgileri seçtiğiniz döneme göre hazırlanır.</Text><View style={styles.spacer12} /><View style={styles.choiceRow}>{([7, 14, 30] as const).map((days) => <Pill key={days} label={`${days} gün`} active={doctorSummaryPeriod === days} onPress={() => setDoctorSummaryPeriod(days)} />)}</View><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state, doctorSummaryPeriod)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state, now, doctorSummaryPeriod) })} /></View></View></Card>
     </ScrollView>
