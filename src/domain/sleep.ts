@@ -730,7 +730,7 @@ export type SleepCoachGuidance = {
 export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Date()): SleepCoachGuidance | undefined {
   const today = localDayKey(now);
   const recent = checkIns
-    .filter((item) => isLocalDayKey(item.date) && item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.nightWakings !== undefined))
+    .filter((item) => isLocalDayKey(item.date) && item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.nightWakings !== undefined || Boolean(item.nightWakeLogs?.length)))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
   const latest = recent[0];
@@ -757,6 +757,30 @@ export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Dat
     body: `Son ${recent.length} check-in'in ${easierNights} tanesi daha kolay olarak işaretlendi. Aynı yaklaşımı sürdürün; daha az destek vermek zorunlu değildir.`,
     tone: "mint"
   };
+  const responseCounts: Record<NightWakeResponse, number> = { feeding: 0, comfort: 0, diaper: 0, other: 0 };
+  const seenLogIds = new Set<string>();
+  const wakeCutoff = now.getTime() - 3 * DAY;
+  for (const checkIn of checkIns) {
+    if (!isLocalDayKey(checkIn.date) || checkIn.date > today) continue;
+    for (const log of checkIn.nightWakeLogs ?? []) {
+      if (!log || typeof log.id !== "string" || !log.id || seenLogIds.has(log.id)) continue;
+      const at = new Date(log.at).getTime();
+      if (!Number.isFinite(at) || at < wakeCutoff || at > now.getTime()) continue;
+      if (!Object.prototype.hasOwnProperty.call(responseCounts, log.response)) continue;
+      seenLogIds.add(log.id);
+      responseCounts[log.response] += 1;
+    }
+  }
+  const repeatedResponse = (Object.entries(responseCounts) as [NightWakeResponse, number][])
+    .sort((a, b) => b[1] - a[1])[0];
+  if (repeatedResponse && repeatedResponse[1] >= 2) {
+    const responseLabel = nightWakeResponseLabel(repeatedResponse[0]).toLocaleLowerCase("tr-TR");
+    return {
+      title: "Gece yanıtlarını bakım verenle gözden geçirin",
+      body: `Son 3 gündeki saatli uyanma kayıtlarında ${responseLabel} ${repeatedResponse[1]} kez işaretlendi. Bu kayıt nedeni belirlemez veya yöntemi değiştirmez; bebeğinizin işaretlerine yanıt vermeyi sürdürün ve bu bilgiyi bakım devrinde paylaşın. Beslenme ya da sağlık ihtiyacını uyku planına göre geciktirmeyin.`,
+      tone: "mint"
+    };
+  }
   return undefined;
 }
 

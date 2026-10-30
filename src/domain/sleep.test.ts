@@ -30,6 +30,29 @@ test("sleep coaching ignores impossible calendar dates in check-ins", () => {
   assert.equal(insights.actualBedtime, undefined);
 });
 
+test("repeated logged night responses give neutral caregiver handoff guidance", () => {
+  const guidance = createSleepCoachGuidance([
+    { date: "2026-10-30", nightWakeLogs: [
+      { id: "feed-1", at: "2026-10-30T01:00:00", response: "feeding", caregiver: "Anne" },
+      { id: "feed-2", at: "2026-10-30T03:00:00", response: "feeding", caregiver: "Baba" },
+      { id: "feed-2", at: "2026-10-30T03:00:00", response: "comfort", caregiver: "Baba" }
+    ] }
+  ], new Date(2026, 9, 30, 7));
+  assert.equal(guidance?.title, "Gece yanıtlarını bakım verenle gözden geçirin");
+  assert.match(guidance?.body ?? "", /beslenme 2 kez/);
+  assert.match(guidance?.body ?? "", /geciktirmeyin/);
+});
+
+test("night response guidance ignores future wake logs", () => {
+  const guidance = createSleepCoachGuidance([
+    { date: "2026-10-30", nightWakeLogs: [
+      { id: "future-1", at: "2026-10-30T08:00:00", response: "comfort", caregiver: "Anne" },
+      { id: "future-2", at: "2026-10-30T09:00:00", response: "comfort", caregiver: "Baba" }
+    ] }
+  ], new Date(2026, 9, 30, 7));
+  assert.equal(guidance, undefined);
+});
+
 test("overlapping sleep records use the end of the combined sleep for awake windows", () => {
   const events: CareEvent[] = Array.from({ length: 5 }, (_, index) => {
     const date = `2026-10-${23 + index}`;
