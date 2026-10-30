@@ -42,7 +42,7 @@ import { NOTIFICATION_KINDS, notificationDestination, OPEN_SLEEP_WAKE_NOW_ACTION
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
-import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, SleepGuideCategory } from "./src/data/sleepGuides";
+import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, sleepGuidesForAge, SleepGuideCategory } from "./src/data/sleepGuides";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
@@ -997,9 +997,10 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
 }
 
 function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
-  const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all" | "saved">("all");
+  const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all" | "saved" | "age">("all");
   const savedGuideIds = app.state.sleepPlan.savedGuideIds ?? [];
-  const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : sleepGuideFilter === "saved" ? SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)) : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
+  const ageRelevantGuides = sleepGuidesForAge(correctedAgeMonths(app.state.baby, now));
+  const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : sleepGuideFilter === "saved" ? SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)) : sleepGuideFilter === "age" ? ageRelevantGuides : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const coachingPausedToday = isSleepPlanPausedToday(app.state.sleepPlan, today);
@@ -1245,9 +1246,11 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.inputLabel}>Konular</Text>
           <View style={styles.choiceRow}>
             <Pill label={`Tümü · ${SLEEP_GUIDES.length}`} active={sleepGuideFilter === "all"} onPress={() => setSleepGuideFilter("all")} />
+            <Pill label={`Bebeğime uygun · ${ageRelevantGuides.length}`} active={sleepGuideFilter === "age"} onPress={() => setSleepGuideFilter("age")} />
             <Pill label={`Kaydedilen · ${SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)).length}`} active={sleepGuideFilter === "saved"} onPress={() => setSleepGuideFilter("saved")} />
             {SLEEP_GUIDE_CATEGORIES.map((category) => <Pill key={category.id} label={`${category.label} · ${SLEEP_GUIDES.filter((guide) => guide.category === category.id).length}`} active={sleepGuideFilter === category.id} onPress={() => setSleepGuideFilter(category.id)} />)}
           </View>
+          {sleepGuideFilter === "age" ? <Text style={styles.hint}>Yaş eşleştirmesi bebeğinizin düzeltilmiş takvim yaşını kullanır. Genel bakım veren rehberleri de listede kalır.</Text> : null}
           {visibleSleepGuides.map((guide) => <View key={guide.id} style={styles.sleepGuideItem}>
             <Text style={styles.inputLabel}>{guide.title}</Text>
             <Text style={styles.eyebrow}>{guide.age}</Text>

@@ -429,6 +429,8 @@ Gece modu girişinde ekran okuyucu etiketi ve eylem ipucu bulunur. Alt gezinme h
 
 Uyku koçu son üç geçerli yerel gün içinde kolaylık, uyanma sayısı veya saatli gece uyanması içeren check-in'leri inceler. Takvimde olmayan tarihler ve yalnızca saat ya da not içeren kayıtlar rehbere katılmaz. 5+ uyanma veya tekrarlayan zor gecelerde daha fazla destek ve temel ihtiyaç kontrolü önerir; daha kolay gecelerde mevcut rutini korumayı söyler. Belirli bir saatli uyanma yanıtı son 72 saatte en az iki kez kaydedilmişse, nedeni yorumlamadan bu bilgiyi bakım devrinde konuşmayı önerir. Gelecek saatler ve yinelenen kayıt kimlikleri sayılmaz. Bu rehber plan yöntemini otomatik değiştirmez, beslenmeyi ertelemez ve uyku başarısı/sağlık sonucu iddiasında bulunmaz.
 
+Kısa rehber kitaplığındaki “Bebeğime uygun” filtresi profilin düzeltilmiş takvim yaşını kullanır. Yaşla sınırlı olmayan bakım veren ve genel güvenlik içerikleri sonuçlarda kalır; “Tümü”, konu ve kaydedilenler filtreleri de kullanılabilir. Eşik ayları dahil olarak eşleşir.
+
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
 - [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
 - [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
