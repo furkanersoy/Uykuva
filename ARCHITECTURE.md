@@ -52,6 +52,7 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | Mobil | Expo SDK 58, React Native 0.88 | iOS ve Android için ortak kod tabanı |
 | Dil | TypeScript | Veri modeli ve özelliklerde tip güvenliği |
 | Yerel saklama | Expo SQLite (`uykuva.db`) | `app_state`, indeksli `care_events` ve `care_tasks` tabloları; eski SQLite KV/AsyncStorage verisinden güvenli geçiş |
+| Anı fotoğrafları | Expo Image Picker + Image Manipulator | Kullanıcının seçtiği fotoğrafı 1280 piksel sınırına ve yaklaşık 0,8 MB boyuta küçültür; veri URI'si olayın SQLite JSON yükünde saklanır |
 | Test | TypeScript derleyicisi + Node test runner | Uyku motorunu arayüzden bağımsız test etme |
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
@@ -165,6 +166,8 @@ Durum `uykuva.db` dosyasında tutulur. Profil, tercih ve uyku planı JSON olarak
 İlk açılışta depolama göçü eski `ExpoSQLiteStorage` anahtar deposundaki `uykuva:state:v3` / v2 veya önceki `uykvua:state:v1` AsyncStorage kaydını okur; durum ve olayları yeni veritabanına yazdıktan sonra eski anahtarları temizler. Göç tamamlanamazsa kayıt kurtarma ekranı yeniden deneme sunar; uygulama boş başlangıç durumunu eski verinin üzerine yazmaz.
 
 JSON dışa aktarımı, `app_state` ile `care_events` satırlarını tam `AppState` olarak birleştirir. Böylece yedek şeması uygulama içi SQLite tablolarından bağımsız kalır.
+
+Anı fotoğrafları ayrıca dosya yoluna bağlı kalmamak için JPEG veri URI'si olarak anı olayına yazılır. Bu sayede uygulama önbelleği temizlense de fotoğraf bağlantısı kopmaz ve standart/şifreli yedeklerde olayla beraber taşınır. Her görsel 1,1 milyon Base64 karakteriyle, yedek metni 12 milyon karakterle sınırlıdır; içe aktarma MIME türünü ve Base64 biçimini doğrular.
 
 Durum şeması 4 ile `AppState.children` her çocuk için ayrı `ChildProfile` saklar: bebek bilgileri, bakım talimatları, gelişim check-in'leri, bakım kayıtları, görevler ve uyku planı. `activeChildId` seçili çalışma alanını belirtir; mevcut ekranlar bu alanın düz değerleriyle çalışır. Her durum değişiminde etkin çocuk anlık görüntüsü güncellenir; profil değiştirirken önce açık çalışma alanı kaydedilir. Bakım verenler ve bildirim tercihleri aile/cihaz genelinde ortaktır. Önceki tek çocuk şemaları tek profilli duruma kayıpsız taşınır. Uyku, rutin, bakım görevi, bez, ilaç ve süt hatırlatmaları bütün çocukların ayrı kayıtlarından yeniden planlanır; bildirim metni ilgili çocuğun adını taşır. JSON yedekleri tüm çocuk profillerini içerir; birleştirme aynı kimlikli çocuğun kayıtlarını bir araya getirir ve diğer profilleri korur.
 
