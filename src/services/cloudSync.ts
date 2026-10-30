@@ -32,6 +32,7 @@ type FamilyMembership = {
   family_id: string;
   role: "parent" | "caregiver" | "family";
   joined_at: string;
+  isOwner: boolean;
 };
 
 function supabaseUrl() {
@@ -132,9 +133,20 @@ export async function getCloudSyncAccount() {
 }
 
 export async function getMyCloudFamilies() {
-  const { data, error } = await getClient().from("family_members").select("family_id, role, joined_at").order("joined_at", { ascending: true });
+  const api = getClient();
+  const [{ data, error }, { data: userData, error: userError }] = await Promise.all([
+    api.from("family_members").select("family_id, role, joined_at").order("joined_at", { ascending: true }),
+    api.auth.getUser()
+  ]);
   if (error) throw error;
-  return (data ?? []) as FamilyMembership[];
+  if (userError) throw userError;
+  const rows = data ?? [];
+  if (!rows.length || !userData.user) return [];
+  const familyIds = rows.map((row) => row.family_id);
+  const { data: familyData, error: familyError } = await api.from("families").select("id, owner_id").in("id", familyIds);
+  if (familyError) throw familyError;
+  const owners = new Map((familyData ?? []).map((family) => [family.id, family.owner_id]));
+  return rows.map((row) => ({ ...row, isOwner: owners.get(row.family_id) === userData.user.id })) as FamilyMembership[];
 }
 
 export async function removeCloudFamily(familyId: string) {
@@ -191,6 +203,10 @@ export async function createFamilyEncryptionKey(familyId: string) {
   } finally {
     clean(bytes);
   }
+}
+
+export async function getFamilyEncryptionKey(familyId: string) {
+  return SecureStore.getItemAsync(`${FAMILY_KEY_PREFIX}${familyId}`);
 }
 
 export async function storeSharedFamilyEncryptionKey(familyId: string, encodedKey: string) {
