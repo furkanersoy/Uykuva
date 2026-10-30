@@ -159,6 +159,7 @@ export default function App() {
   const [foregroundCycle, setForegroundCycle] = useState(0);
   const lastNotificationResponseId = useRef<string | null>(null);
   const initializedHome = useRef(false);
+  const [homeInitialized, setHomeInitialized] = useState(false);
   useEffect(() => {
     let awayFromApp = AppState.currentState !== "active";
     const subscription = AppState.addEventListener("change", (nextState) => {
@@ -177,6 +178,7 @@ export default function App() {
     setTab("today");
     setNightMode(false);
     setNightWakeOpen(false);
+    setHomeInitialized(true);
   }, [app.hydrated, app.state.onboardingComplete]);
   const todaySleepCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow));
   const savedMorningWake = todaySleepCheckIn?.wakeTime;
@@ -447,7 +449,7 @@ export default function App() {
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
-      {nightWakeOpen ? <NightWakeModal visible close={() => setNightWakeOpen(false)} save={saveNightWake} /> : null}
+      {homeInitialized && nightWakeOpen ? <NightWakeModal visible close={() => setNightWakeOpen(false)} save={saveNightWake} /> : null}
     </SafeAreaView>
   );
 }
