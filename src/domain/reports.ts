@@ -7,8 +7,10 @@ function trDate(value: string | Date) {
   return new Date(value).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
 }
 
-export function createDoctorSummary(state: AppState, now = new Date()): string {
-  const since = now.getTime() - 7 * 86_400_000;
+export type DoctorSummaryPeriod = 7 | 14 | 30;
+
+export function createDoctorSummary(state: AppState, now = new Date(), periodDays: DoctorSummaryPeriod = 7): string {
+  const since = now.getTime() - periodDays * 86_400_000;
   const events = state.events.filter((event) => {
     const startedAt = new Date(event.startedAt).getTime();
     return Number.isFinite(startedAt) && startedAt >= since && startedAt <= now.getTime();
@@ -35,7 +37,7 @@ export function createDoctorSummary(state: AppState, now = new Date()): string {
   const bottleMl = feeds.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
   const breastMinutes = feeds.reduce((sum, event) => sum + completedFeedMinutes(event), 0);
   const lines = [
-    `UYKUVA · 7 GÜNLÜK BAKIM ÖZETİ`,
+    `UYKUVA · ${periodDays} GÜNLÜK BAKIM ÖZETİ`,
     `${state.baby.name} · ${ageInDays(state.baby.birthDate, now)} günlük · ${state.baby.gestationalWeek}. gebelik haftasında doğdu`,
     `Hazırlanma: ${trDate(now)}`,
     "",
@@ -119,8 +121,8 @@ function escapeHtml(value: string) {
   })[character] ?? character);
 }
 
-export function createDoctorSummaryHtml(state: AppState, now = new Date()): string {
-  const lines = createDoctorSummary(state, now).split("\n");
+export function createDoctorSummaryHtml(state: AppState, now = new Date(), periodDays: DoctorSummaryPeriod = 7): string {
+  const lines = createDoctorSummary(state, now, periodDays).split("\n");
   const [title, subtitle, prepared, ...details] = lines;
   const detailMarkup = details.map((line) => {
     if (!line.trim()) return "";

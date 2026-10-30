@@ -56,3 +56,15 @@ test("doctor summary excludes future care events and uses the latest past growth
   assert.doesNotMatch(summary, /6\.200 g/);
 });
 
+test("doctor summary can include a caregiver-selected 14-day period", () => {
+  const state = createInitialState();
+  state.events = [{ id: "feed-10-days", kind: "feed", feedType: "bottle", amountMl: 120, startedAt: "2026-10-17T10:00:00Z", caregiver: "Anne" }];
+  const now = new Date("2026-10-27T12:00:00Z");
+  const weekly = createDoctorSummary(state, now, 7);
+  const fortnight = createDoctorSummary(state, now, 14);
+  assert.match(weekly, /UYKUVA · 7 GÜNLÜK BAKIM ÖZETİ/);
+  assert.match(weekly, /Beslenme: 0 kayıt/);
+  assert.match(fortnight, /UYKUVA · 14 GÜNLÜK BAKIM ÖZETİ/);
+  assert.match(fortnight, /Beslenme: 1 kayıt · kayıtlı biberon toplamı 120 ml/);
+});
+
