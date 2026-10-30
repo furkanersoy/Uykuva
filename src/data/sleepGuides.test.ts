@@ -25,3 +25,10 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "toddler-bedtime-resistance"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "screens-before-bed"));
 });
+
+test("safe sleep guide covers sitting products and points to AAP guidance", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "safe-sleep-space");
+  assert.ok(guide);
+  assert.match(guide.summary, /araba koltuğu, puset, salıncak veya taşıyıcıda uyuyakalırsa/i);
+  assert.equal(guide.url, "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx");
+});
