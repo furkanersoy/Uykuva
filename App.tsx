@@ -1106,6 +1106,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       .slice(-7);
     const comparisonLines = planCheckInComparison.available ? [
       `Kolaylık karşılaştırması (ilk 3 / son 3 plan günü): ${planCheckInComparison.firstEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.firstEaseAverage.toFixed(1)}/5`} / ${planCheckInComparison.recentEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.recentEaseAverage.toFixed(1)}/5`}`,
+      `Aile için sürdürülebilirlik (ilk 3 / son 3 plan günü): ${planCheckInComparison.firstSustainabilityAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.firstSustainabilityAverage.toFixed(1)}/5`} / ${planCheckInComparison.recentSustainabilityAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.recentSustainabilityAverage.toFixed(1)}/5`}`,
       `Gece uyanma ortalaması: ${planCheckInComparison.firstWakingsAverage === undefined ? "ilk dönemde kayıt yok" : planCheckInComparison.firstWakingsAverage.toFixed(1)} / ${planCheckInComparison.recentWakingsAverage === undefined ? "son dönemde kayıt yok" : planCheckInComparison.recentWakingsAverage.toFixed(1)} (5+ uyanma sayıları ortalamaya katılmaz)`
     ] : [];
     return [
@@ -1124,7 +1125,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       ...enabledRoutine.map((item, index) => `${index + 1}. ${item.label} (${item.minutes} dk)`),
       ...(!app.state.sleepPlan.paused && !programCompleted ? ["Bugünün adımları:", ...plan.tasks.map((task) => `• ${task}`)] : []),
       ...comparisonLines,
-      ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}`)] : []),
+      ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.sustainability === undefined ? "" : ` · aile için sürdürülebilirlik ${item.sustainability}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
   };
@@ -1390,11 +1391,15 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
             <Measure value={`${planCheckInComparison.firstEaseAverage.toFixed(1)}/5`} label={`İlk 3 gün · kolaylık (${planCheckInComparison.firstEaseCount} kayıt)`} />
             <Measure value={`${planCheckInComparison.recentEaseAverage.toFixed(1)}/5`} label={`Son 3 gün · kolaylık (${planCheckInComparison.recentEaseCount} kayıt)`} />
           </View> : <Text style={styles.body}>Kolaylık karşılaştırması için ilk ve son üç günde en az ikişer check-in kaydı gerekir.</Text>}
+          {planCheckInComparison.firstSustainabilityAverage !== undefined && planCheckInComparison.recentSustainabilityAverage !== undefined ? <View style={styles.measureRow}>
+            <Measure value={`${planCheckInComparison.firstSustainabilityAverage.toFixed(1)}/5`} label={`İlk 3 gün · aileye uyum (${planCheckInComparison.firstSustainabilityCount} kayıt)`} />
+            <Measure value={`${planCheckInComparison.recentSustainabilityAverage.toFixed(1)}/5`} label={`Son 3 gün · aileye uyum (${planCheckInComparison.recentSustainabilityCount} kayıt)`} />
+          </View> : null}
           {planCheckInComparison.firstWakingsAverage !== undefined && planCheckInComparison.recentWakingsAverage !== undefined ? <View style={styles.measureRow}>
             <Measure value={planCheckInComparison.firstWakingsAverage.toFixed(1)} label={`İlk 3 gün · uyanma (${planCheckInComparison.firstWakingsCount} kayıt)`} />
             <Measure value={planCheckInComparison.recentWakingsAverage.toFixed(1)} label={`Son 3 gün · uyanma (${planCheckInComparison.recentWakingsCount} kayıt)`} />
           </View> : null}
-          <Text style={styles.hint}>Yalnızca aynı plan yaklaşımı ve odakla eşleşen günler karşılaştırılır. Check-in'de farklı uygulanan yaklaşım belirtilmişse o gece dışarıda kalır; eski ve yaklaşımı belirtilmemiş kayıtlar korunur. “5+ uyanma” ortalamaya katılmaz. Bu bir kayıt karşılaştırmasıdır, sonuç veya sağlık değerlendirmesi değildir.</Text>
+          <Text style={styles.hint}>Yalnızca aynı plan yaklaşımı ve odakla eşleşen günler karşılaştırılır. Check-in'de farklı uygulanan yaklaşım belirtilmişse o gece dışarıda kalır; eski ve yaklaşımı belirtilmemiş kayıtlar korunur. “5+ uyanma” ortalamaya katılmaz. Aileye uyum puanı isteğe bağlıdır ve bir başarı, bakım kalitesi ya da sağlık ölçüsü değildir. Bu yalnızca kayıt karşılaştırmasıdır.</Text>
         </Card>
       </> : null}
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
@@ -1432,6 +1437,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.inputLabel}>Uykuya geçişin kolaylığı</Text>
         <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
         <Text style={styles.easeLabels}><Text>Zordu</Text><Text>                                      Kolaydı</Text></Text>
+        <Text style={styles.inputLabel}>Bu yaklaşım aileniz için ne kadar sürdürülebilirdi? (isteğe bağlı)</Text>
+        <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((score) => <Pressable accessibilityRole="button" accessibilityLabel={`Aileye uyum ${score}/5`} key={score} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, sustainability: score })} style={[styles.easeButton, todayCheckIn?.sustainability === score && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.sustainability === score && styles.easeTextActive]}>{score}</Text></Pressable>)}</View>
+        <Text style={styles.easeLabels}><Text>Zor</Text><Text>                                      Kolay</Text></Text>
+        <Text style={styles.hint}>Bu puan sizin deneyiminizi kaydeder; bebeğinizin uykusunu veya bakım kalitesini değerlendirmez. Yanıtlamak zorunda değilsiniz.</Text>
         <Text style={styles.inputLabel}>Gece uyanma sayısı</Text>
         <View style={styles.easeRow}>{([0, 1, 2, 3, 4, 5] as const).map((count) => <Pressable accessibilityRole="button" accessibilityLabel={count === 5 ? "5 veya daha fazla uyanma" : `${count} gece uyanması`} key={count} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, nightWakings: count })} style={[styles.easeButton, todayCheckIn?.nightWakings === count && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.nightWakings === count && styles.easeTextActive]}>{count === 5 ? "5+" : count}</Text></Pressable>)}</View>
         <Text style={styles.hint}>Bildirilen toplam sayı ile saatli uyanma kayıtları ayrı tutulur; ikisi de isteğe bağlıdır.</Text>

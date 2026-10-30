@@ -713,6 +713,10 @@ export type SleepPlanCheckInComparison = {
   recentEaseAverage?: number;
   firstEaseCount: number;
   recentEaseCount: number;
+  firstSustainabilityAverage?: number;
+  recentSustainabilityAverage?: number;
+  firstSustainabilityCount: number;
+  recentSustainabilityCount: number;
   firstWakingsAverage?: number;
   recentWakingsAverage?: number;
   firstWakingsCount: number;
@@ -795,6 +799,8 @@ export function compareSleepPlanCheckIns(records: SleepPlanDayRecord[], checkIns
       recentDays: Math.min(3, matchingDays.length),
       firstEaseCount: 0,
       recentEaseCount: 0,
+      firstSustainabilityCount: 0,
+      recentSustainabilityCount: 0,
       firstWakingsCount: 0,
       recentWakingsCount: 0,
       firstCappedWakings: 0,
@@ -809,11 +815,14 @@ export function compareSleepPlanCheckIns(records: SleepPlanDayRecord[], checkIns
     const logs = days.map((day) => checkInsByDate.get(day.date))
       .filter((item): item is SleepCheckIn => item !== undefined && (!item.appliedMethod || item.appliedMethod === method));
     const easeValues = logs.flatMap((item) => item.ease === undefined ? [] : [item.ease]);
+    const sustainabilityValues = logs.flatMap((item) => item.sustainability === undefined ? [] : [item.sustainability]);
     const uncappedWakingValues = logs.flatMap((item) => item.nightWakings === undefined || item.nightWakings >= 5 ? [] : [item.nightWakings]);
     const cappedWakings = logs.filter((item) => item.nightWakings === 5).length;
     return {
       easeAverage: easeValues.length >= 2 ? easeValues.reduce((sum, value) => sum + value, 0) / easeValues.length : undefined,
       easeCount: easeValues.length,
+      sustainabilityAverage: sustainabilityValues.length >= 2 ? sustainabilityValues.reduce((sum, value) => sum + value, 0) / sustainabilityValues.length : undefined,
+      sustainabilityCount: sustainabilityValues.length,
       wakingsAverage: uncappedWakingValues.length >= 2 ? uncappedWakingValues.reduce((sum, value) => sum + value, 0) / uncappedWakingValues.length : undefined,
       wakingsCount: uncappedWakingValues.length,
       cappedWakings
@@ -829,6 +838,10 @@ export function compareSleepPlanCheckIns(records: SleepPlanDayRecord[], checkIns
     recentEaseAverage: recent.easeAverage,
     firstEaseCount: first.easeCount,
     recentEaseCount: recent.easeCount,
+    firstSustainabilityAverage: first.sustainabilityAverage,
+    recentSustainabilityAverage: recent.sustainabilityAverage,
+    firstSustainabilityCount: first.sustainabilityCount,
+    recentSustainabilityCount: recent.sustainabilityCount,
     firstWakingsAverage: first.wakingsAverage,
     recentWakingsAverage: recent.wakingsAverage,
     firstWakingsCount: first.wakingsCount,

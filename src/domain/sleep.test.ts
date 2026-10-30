@@ -491,6 +491,7 @@ test("sleep plan comparisons exclude explicitly reported nights using another ap
     date: record.date,
     appliedMethod: index === 0 || index === 3 ? "routineFirst" as const : "gradual" as const,
     ease: 3 as const,
+    sustainability: 4 as const,
     nightWakings: 2
   }));
 
@@ -499,6 +500,10 @@ test("sleep plan comparisons exclude explicitly reported nights using another ap
   assert.equal(comparison.recentEaseCount, 2);
   assert.equal(comparison.firstWakingsCount, 2);
   assert.equal(comparison.recentWakingsCount, 2);
+  assert.equal(comparison.firstSustainabilityCount, 2);
+  assert.equal(comparison.recentSustainabilityCount, 2);
+  assert.equal(comparison.firstSustainabilityAverage, 4);
+  assert.equal(comparison.recentSustainabilityAverage, 4);
 });
 
 test("sleep plan comparisons retain older check-ins without a reported approach", () => {
