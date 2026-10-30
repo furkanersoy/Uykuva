@@ -498,6 +498,13 @@ export const SLEEP_READINESS_ITEMS = [
   "Bakım verenler aynı nazik yaklaşımı uygulamayı kabul ediyor"
 ] as const;
 
+export const SLEEP_READINESS_GUIDANCE: Record<(typeof SLEEP_READINESS_ITEMS)[number], string> = {
+  "Bebek bugün hasta görünmüyor ve belirgin ağrı belirtisi yok": "Rahatsızlık veya ağrı varsa önce bebeğin ihtiyacına odaklanın ve uyku planını bekletin.",
+  "Beslenme veya kilo alımıyla ilgili çözümlenmemiş bir endişe yok": "Beslenmeyi uyku planı için azaltmayın ya da ertelemeyin; kaygınızı çocuk doktoruyla görüşün.",
+  "Uyku alanı güvenli, düz ve boş; bebek sırtüstü yatırılıyor": "Her uykuda güvenli uyku düzeni önceliklidir. Uyku yaklaşımı bunu değiştirmez.",
+  "Bakım verenler aynı nazik yaklaşımı uygulamayı kabul ediyor": "Fikir birliği yoksa yöntem seçmek zorunda değilsiniz; duyarlı rutine devam edip sonra yeniden konuşabilirsiniz."
+};
+
 export function sleepProgramStage(baby: Baby, now = new Date()): SleepProgramStage {
   const age = correctedAgeDays(baby, now);
   if (age < 112) {
