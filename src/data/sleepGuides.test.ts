@@ -22,6 +22,7 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "caregiver-rest"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nap-transitions"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "night-feeds-and-sleep-plans"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "separation-anxiety-and-sleep"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "when-to-pause-sleep-plan"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "toddler-bedtime-resistance"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "screens-before-bed"));
@@ -40,4 +41,12 @@ test("swaddling guidance makes the rolling and weighted-product limits clear", (
   assert.match(guide.summary, /dönmeye çalıştığını gösterir göstermez sarmayı bırakın/i);
   assert.match(guide.summary, /Ağırlıklı kundak.*kullanmayın/i);
   assert.match(guide.summary, /ani bebek ölümü riskini azalttığı gösterilmemiştir/i);
+});
+
+test("separation anxiety reading frames sleep changes as a normal optional-care phase", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "separation-anxiety-and-sleep");
+  assert.ok(guide);
+  assert.match(guide.summary, /gelişimin olağan bir dönemidir/i);
+  assert.match(guide.summary, /uyku eğitimine başlama zorunluluğu değildir/i);
+  assert.match(guide.url, /healthychildren\.org/);
 });

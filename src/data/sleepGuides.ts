@@ -104,6 +104,15 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
   },
   {
+    id: "separation-anxiety-and-sleep",
+    title: "Ayrılık kaygısı ve gece uyanmaları",
+    age: "Yaklaşık 6 ay–3 yaş",
+    summary: "İlk yılın ikinci yarısından itibaren ayrılık kaygısı geceleri uykuyu geçici olarak bölebilir; çocuğunuz sizi veya daha sık yanında olan bir bakım vereni arayabilir. Bu çoğunlukla gelişimin olağan bir dönemidir. Sakin ve sevgi dolu yanıt verin; bakım verenler benzer bir yaklaşım belirleyebilir. Bu dönem uyku eğitimine başlama zorunluluğu değildir. Kaygı yoğun sürüyor veya günlük yaşamı belirgin etkiliyorsa çocuk doktorunuzla görüşün.",
+    category: "night",
+    source: "AAP · Ayrılık kaygısı ve uyku güçlüğü",
+    url: "https://www.healthychildren.org/English/healthy-living/sleep/Pages/Separation-Anxiety-and-Sleeping.aspx"
+  },
+  {
     id: "caregiver-rest",
     title: "Zor gecelerde bakım veren desteği",
     age: "Ebeveynler ve bakıcılar",
