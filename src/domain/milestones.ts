@@ -29,8 +29,18 @@ export function detectRecordedMilestones(events: CareEvent[], now = new Date()):
 
   add("first_sleep_log", "İlk uyku kaydı", "Uyku zamanlayıcısı ilk kez kullanıldı.", firstEvent(recorded, (event) => event.kind === "sleep"));
   add("first_feed_log", "İlk beslenme kaydı", "Beslenme kaydı ilk kez eklendi.", firstEvent(recorded, (event) => event.kind === "feed" && event.feedType !== "pump"));
+  add("first_breastfeed_log", "İlk emzirme kaydı", "Emzirme kaydı ilk kez eklendi.", firstEvent(recorded, (event) => event.kind === "feed" && event.feedType === "breast"));
+  add("first_bottle_log", "İlk biberon kaydı", "Biberon kaydı ilk kez eklendi.", firstEvent(recorded, (event) => event.kind === "feed" && event.feedType === "bottle"));
   add("first_solid_log", "İlk ek gıda kaydı", "Ek gıda kaydı ilk kez eklendi.", firstEvent(recorded, (event) => event.kind === "feed" && event.feedType === "solid"));
+  add("first_pumping_log", "İlk süt sağma kaydı", "Süt sağma kaydı ilk kez eklendi.", firstEvent(recorded, (event) => event.kind === "feed" && event.feedType === "pump"));
+  add("first_diaper_log", "İlk bez kaydı", "Bez değişimi ilk kez kaydedildi.", firstEvent(recorded, (event) => event.kind === "diaper"));
+  add("first_health_log", "İlk sağlık kaydı", "Bir sağlık gözlemi veya ölçümü ilk kez kaydedildi.", firstEvent(recorded, (event) => event.kind === "health"));
   add("first_growth_log", "İlk büyüme ölçümü", "Bir büyüme ölçümü ilk kez kaydedildi.", firstEvent(recorded, (event) => event.kind === "growth"));
+
+  const sleepLogs = recorded.filter((event) => event.kind === "sleep");
+  const diaperLogs = recorded.filter((event) => event.kind === "diaper");
+  add("tenth_sleep_log", "10. uyku kaydı", "Uygulamaya onuncu uyku dönemi kaydedildi.", sleepLogs[9]);
+  add("tenth_diaper_log", "10. bez kaydı", "Uygulamaya onuncu bez değişimi kaydedildi.", diaperLogs[9]);
 
   const firstFourHourSleep = firstEvent(recorded, (event) => {
     if (event.kind !== "sleep" || !event.endedAt) return false;

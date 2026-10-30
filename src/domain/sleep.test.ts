@@ -3,6 +3,7 @@ import test from "node:test";
 import { coachingDay, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
+import { detectRecordedMilestones } from "./milestones";
 
 test("wake-time-only check-ins do not hide a recent difficult night", () => {
   const guidance = createSleepCoachGuidance([
@@ -513,4 +514,26 @@ test("sleep plan comparisons retain older check-ins without a reported approach"
   const comparison = compareSleepPlanCheckIns(records, checkIns, "gradual", "bedtime");
   assert.equal(comparison.firstEaseCount, 3);
   assert.equal(comparison.recentEaseCount, 3);
+});
+
+test("memory suggestions include thirteen factual care-log milestones", () => {
+  const start = new Date("2026-10-01T08:00:00");
+  const events = [
+    { id: "breast", kind: "feed" as const, feedType: "breast" as const, startedAt: start.toISOString(), caregiver: "Anne" },
+    { id: "bottle", kind: "feed" as const, feedType: "bottle" as const, startedAt: new Date(start.getTime() + 60_000).toISOString(), caregiver: "Anne" },
+    { id: "solid", kind: "feed" as const, feedType: "solid" as const, startedAt: new Date(start.getTime() + 120_000).toISOString(), caregiver: "Anne" },
+    { id: "pump", kind: "feed" as const, feedType: "pump" as const, startedAt: new Date(start.getTime() + 180_000).toISOString(), caregiver: "Anne" },
+    { id: "diaper", kind: "diaper" as const, diaperType: "wet" as const, startedAt: new Date(start.getTime() + 240_000).toISOString(), caregiver: "Anne" },
+    { id: "health", kind: "health" as const, healthType: "symptom" as const, startedAt: new Date(start.getTime() + 300_000).toISOString(), caregiver: "Anne" },
+    { id: "growth", kind: "growth" as const, weightG: 5000, startedAt: new Date(start.getTime() + 360_000).toISOString(), caregiver: "Anne" },
+    ...Array.from({ length: 10 }, (_, index) => ({ id: `sleep-${index}`, kind: "sleep" as const, startedAt: new Date(start.getTime() + (index + 1) * 3_600_000).toISOString(), endedAt: new Date(start.getTime() + (index + 1) * 3_600_000 + (index === 0 ? 4 : 1) * 3_600_000).toISOString(), caregiver: "Anne" })),
+    ...Array.from({ length: 10 }, (_, index) => ({ id: `diaper-${index}`, kind: "diaper" as const, startedAt: new Date(start.getTime() + (index + 1) * 7_200_000).toISOString(), caregiver: "Anne" })),
+    ...Array.from({ length: 99 }, (_, index) => ({ id: `feed-${index}`, kind: "feed" as const, feedType: "bottle" as const, startedAt: new Date(start.getTime() + (index + 1) * 60_000).toISOString(), caregiver: "Anne" }))
+  ];
+  const milestones = detectRecordedMilestones(events, new Date("2026-11-01T12:00:00"));
+  const milestoneIds = new Set(milestones.map((milestone) => milestone.id));
+  assert.equal(milestones.length, 13);
+  for (const id of ["first_sleep_log", "first_feed_log", "first_breastfeed_log", "first_bottle_log", "first_solid_log", "first_pumping_log", "first_diaper_log", "first_health_log", "first_growth_log", "first_four_hour_sleep_log", "tenth_sleep_log", "tenth_diaper_log", "hundredth_feed_log"]) {
+    assert.ok(milestoneIds.has(id), `missing milestone ${id}`);
+  }
 });

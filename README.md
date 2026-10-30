@@ -114,6 +114,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Son yedi check-in gecesinin kaydedilen uyku toplamı ve bildirilen uyanma sayısına göre geçmişini görme
 - Uyku planı yaklaşımını yaş aşaması ve hazırlık listesine göre gösterme
 - Sabah check-in'inde o gece gerçekte uygulanan uyku yaklaşımını isteğe bağlı kaydetme; yaklaşım açıkça farklıysa o geceyi plan karşılaştırmasından çıkarma
+- Kayıtlı bakım etkinliklerinden 13 olgusal anı önerisi çıkarma; ebeveyn seçerse bunları anı defterine ekleme
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi; hastalık/ağrı, beslenme kaygısı, güvenli uyku ve bakım verenlerin ortak kararı için madde başına açıklama
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
