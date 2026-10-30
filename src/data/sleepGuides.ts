@@ -56,6 +56,13 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     summary: "Sık bölünen geceler yorucu olabilir. Mümkünse bakım işlerini paylaşın; emzirme varsa diğer bakım veren bez veya sabah bakımını devralabilir. Tek başınaysanız güvendiğiniz birinden destek isteyin.",
     source: "NHS · Bölünen gecelerle baş etme",
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
-  }
+  },
+  {
+    id: "sleep-on-unusual-days",
+    title: "Hastalık ve düzen değişikliğinde uyku",
+    age: "Değişen günler",
+    summary: "Hastalık, diş çıkarma ve günlük düzen değişiklikleri uykuyu etkileyebilir. Bu günlerde bebeğinizin işaretlerini izleyin. Uykuva'da gün bağlamını seçerek koçluk adımlarını bekletebilir, uyku ve bakım kayıtlarını sürdürebilirsiniz. Sağlık kaygınız varsa çocuk doktorunuza danışın.",
+    source: "NHS · Uyku örüntüsündeki değişiklikler",
+    url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
 ];
 
