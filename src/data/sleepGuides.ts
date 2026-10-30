@@ -305,3 +305,27 @@ export function sleepGuidesForAge(ageMonths: number, isPremature = false): Sleep
     && (guide.maxAgeMonths === undefined || ageMonths <= guide.maxAgeMonths)
   );
 }
+
+function normalizeGuideSearchText(value: string): string {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ı/g, "i");
+}
+
+export function searchSleepGuides(guides: SleepGuide[], query: string): SleepGuide[] {
+  const terms = normalizeGuideSearchText(query).trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return guides;
+  return guides.filter((guide) => {
+    const searchable = normalizeGuideSearchText([
+      guide.id,
+      guide.title,
+      guide.age,
+      guide.summary,
+      guide.category,
+      guide.source
+    ].join(" "));
+    return terms.every((term) => searchable.includes(term));
+  });
+}

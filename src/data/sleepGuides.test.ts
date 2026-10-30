@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, sleepGuidesForAge } from "./sleepGuides";
+import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, searchSleepGuides, sleepGuidesForAge } from "./sleepGuides";
 
 test("offline sleep guides have unique IDs, age labels, summaries, and HTTPS sources", () => {
   assert.ok(SLEEP_GUIDES.length > 0);
@@ -33,6 +33,14 @@ test("age-filtered sleep readings use inclusive ranges and keep general caregive
   assert.equal(sleepGuidesForAge(5).some((guide) => guide.id === "four-month-pattern"), true);
   assert.equal(sleepGuidesForAge(4).some((guide) => guide.id === "corrected-age-for-preemies"), false);
   assert.equal(sleepGuidesForAge(4, true).some((guide) => guide.id === "corrected-age-for-preemies"), true);
+});
+
+test("sleep guide search matches Turkish text, accents, sources, and all query words", () => {
+  assert.deepEqual(searchSleepGuides(SLEEP_GUIDES, "   "), SLEEP_GUIDES);
+  assert.ok(searchSleepGuides(SLEEP_GUIDES, "uykuya gecis").some((guide) => guide.id === "settling-supports"));
+  assert.ok(searchSleepGuides(SLEEP_GUIDES, "HASTALIK düzen").some((guide) => guide.id === "sleep-on-unusual-days"));
+  assert.ok(searchSleepGuides(SLEEP_GUIDES, "raising children").some((guide) => guide.id === "responsive-settling-under-six-months"));
+  assert.ok(!searchSleepGuides(SLEEP_GUIDES, "uyku emzirme xyz-no-match").length);
 });
 
 test("sleep education includes infant age changes and caregiver support", () => {

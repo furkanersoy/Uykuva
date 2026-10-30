@@ -42,7 +42,7 @@ import { NOTIFICATION_KINDS, notificationDestination, OPEN_SLEEP_WAKE_NOW_ACTION
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
-import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, sleepGuidesForAge, SleepGuideCategory } from "./src/data/sleepGuides";
+import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, searchSleepGuides, sleepGuidesForAge, SleepGuideCategory } from "./src/data/sleepGuides";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
@@ -1014,9 +1014,11 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
 
 function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
   const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all" | "saved" | "age">("all");
+  const [sleepGuideSearch, setSleepGuideSearch] = useState("");
   const savedGuideIds = app.state.sleepPlan.savedGuideIds ?? [];
   const ageRelevantGuides = sleepGuidesForAge(correctedAgeMonths(app.state.baby, now), app.state.baby.gestationalWeek < 37);
   const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : sleepGuideFilter === "saved" ? SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)) : sleepGuideFilter === "age" ? ageRelevantGuides : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
+  const searchedSleepGuides = searchSleepGuides(visibleSleepGuides, sleepGuideSearch);
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const coachingPausedToday = isSleepPlanPausedToday(app.state.sleepPlan, today);
@@ -1259,6 +1261,8 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.nightGuideChevron}>{sleepReadingsOpen ? "−" : "+"}</Text>
         </Pressable>
         {sleepReadingsOpen ? <View style={styles.nightGuideContent}>
+          <TextInput accessibilityLabel="Uyku rehberlerinde ara" value={sleepGuideSearch} onChangeText={setSleepGuideSearch} style={[styles.input, { marginBottom: 12 }]} maxLength={80} autoCapitalize="none" autoCorrect={false} returnKeyType="search" placeholder="Konu, yaş veya kaynak ara" placeholderTextColor="#93A09C" />
+          {sleepGuideSearch.trim() ? <Text accessibilityLiveRegion="polite" style={styles.hint}>{searchedSleepGuides.length ? `${searchedSleepGuides.length} rehber bulundu.` : "Bu aramayla eşleşen rehber yok."}</Text> : null}
           <Text style={styles.inputLabel}>Konular</Text>
           <View style={styles.choiceRow}>
             <Pill label={`Tümü · ${SLEEP_GUIDES.length}`} active={sleepGuideFilter === "all"} onPress={() => setSleepGuideFilter("all")} />
@@ -1267,7 +1271,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
             {SLEEP_GUIDE_CATEGORIES.map((category) => <Pill key={category.id} label={`${category.label} · ${SLEEP_GUIDES.filter((guide) => guide.category === category.id).length}`} active={sleepGuideFilter === category.id} onPress={() => setSleepGuideFilter(category.id)} />)}
           </View>
           {sleepGuideFilter === "age" ? <Text style={styles.hint}>Yaş eşleştirmesi bebeğinizin düzeltilmiş takvim yaşını kullanır. Genel bakım veren rehberleri de listede kalır.</Text> : null}
-          {visibleSleepGuides.map((guide) => <View key={guide.id} style={styles.sleepGuideItem}>
+          {searchedSleepGuides.map((guide) => <View key={guide.id} style={styles.sleepGuideItem}>
             <Text style={styles.inputLabel}>{guide.title}</Text>
             <Text style={styles.eyebrow}>{guide.age}</Text>
             <Text style={styles.body}>{guide.summary}</Text>
@@ -1281,6 +1285,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
               <Text style={styles.linkText}>Özeti bakım verenle paylaş</Text>
             </Pressable>
           </View>)}
+          {searchedSleepGuides.length === 0 && sleepGuideSearch.trim() ? <Pressable accessibilityRole="button" onPress={() => setSleepGuideSearch("")}><Text style={styles.linkText}>Aramayı temizle</Text></Pressable> : null}
           <Text style={styles.hint}>Bu kısa özetler genel bilgilendirmedir; tıbbi değerlendirme yerine geçmez. Kaynak sayfalar güncellenebilir. Sağlık veya beslenme endişenizde çocuk doktorunuza danışın. İçerik gözden geçirme: 30 Ekim 2026.</Text>
         </View> : null}
       </Card>
