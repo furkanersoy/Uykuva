@@ -252,7 +252,10 @@ export default function App() {
       }
       if (destination.eventId && child) {
         const event = child.events.find((item) => item.id === destination.eventId);
-        if (event) setEventEditor(event);
+        if (event) {
+          if (request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck && event.kind === "sleep") setSleepEditor(event);
+          else setEventEditor(event);
+        }
       }
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     };
