@@ -19,7 +19,28 @@
       "expo-sqlite",
       "expo-notifications",
       "expo-sharing",
-      "./plugins/withUykuvaWidget"
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Uykuva, seçtiğiniz fotoğrafı anı kaydınıza eklemek için kullanır.",
+          "cameraPermission": false,
+          "microphonePermission": "Uykuva, siz sesli not oluştururken konuşmanızı metne dönüştürmek için mikrofonu kullanır."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Uykuva, siz sesli not oluştururken konuşmanızı metne dönüştürmek için mikrofonu kullanır.",
+          "speechRecognitionPermission": "Uykuva, istediğiniz sesli notu metne çevirmek için konuşma tanımayı kullanır.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.tts",
+            "com.google.android.as"
+          ]
+        }
+      ],
+      "./plugins/withUykuvaWidget",
+      "expo-secure-store"
     ]
   }
 }

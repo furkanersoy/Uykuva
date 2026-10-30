@@ -124,4 +124,3 @@ export const DEVELOPMENT_CHECKPOINTS: DevelopmentCheckpoint[] = [
 export function developmentCheckpointForAge(ageMonths: number) {
   return DEVELOPMENT_CHECKPOINTS.filter((item) => item.ageMonths <= ageMonths).at(-1);
 }
-

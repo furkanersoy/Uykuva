@@ -2,6 +2,7 @@ node_modules/
 .expo/
 dist/
 .test-build/
+supabase/.temp/
 web-build/
 *.log
 .DS_Store

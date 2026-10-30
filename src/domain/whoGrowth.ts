@@ -61,4 +61,3 @@ export function growthAgeLabel(baby: Baby, event: CareEvent) {
   const months = Math.floor(days / 30.4375);
   return `${Math.floor(months / 12)}y ${months % 12}a`;
 }
-

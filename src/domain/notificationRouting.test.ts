@@ -3,7 +3,7 @@ import test from "node:test";
 import { notificationDestination, NOTIFICATION_KINDS } from "./notificationRouting";
 
 test("sleep, routine, and diaper reminders open Today for the matching child", () => {
-  for (const kind of [NOTIFICATION_KINDS.sleepWindow, NOTIFICATION_KINDS.routine, NOTIFICATION_KINDS.diaper]) {
+  for (const kind of [NOTIFICATION_KINDS.sleepWindow, NOTIFICATION_KINDS.sleepWake, NOTIFICATION_KINDS.routine, NOTIFICATION_KINDS.diaper]) {
     assert.deepEqual(notificationDestination({ kind, childId: "baby-2" }), { tab: "today", childId: "baby-2" });
   }
 });
@@ -12,6 +12,13 @@ test("care-task reminders open their task in Insights", () => {
   assert.deepEqual(notificationDestination({ kind: NOTIFICATION_KINDS.careTask, childId: "baby-2", taskId: "visit-1" }), {
     tab: "insights", childId: "baby-2", taskId: "visit-1"
   });
+});
+
+test("open sleep check reminders open the matching sleep record for correction", () => {
+  assert.deepEqual(notificationDestination({ kind: NOTIFICATION_KINDS.openSleepCheck, childId: "baby-2", eventId: "sleep-1" }), {
+    tab: "timeline", childId: "baby-2", eventId: "sleep-1"
+  });
+  assert.equal(notificationDestination({ kind: NOTIFICATION_KINDS.openSleepCheck, childId: "baby-2" }), null);
 });
 
 test("medicine and milk reminders open their recorded event in the timeline", () => {
@@ -27,4 +34,3 @@ test("unknown or malformed notification data is ignored", () => {
   assert.equal(notificationDestination([]), null);
   assert.equal(notificationDestination({ kind: "other" }), null);
 });
-

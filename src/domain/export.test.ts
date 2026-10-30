@@ -3,6 +3,21 @@ import test from "node:test";
 import { createInitialState } from "../data/seed";
 import { createDataExport, mergeDataStates, parseDataExport } from "./export";
 
+test("memory photos round-trip in local backups and reject invalid or oversized image data", () => {
+  const state = createInitialState();
+  state.events = [{ id: "memory-photo", kind: "memory", memoryTitle: "İlk gülüş", memoryPhotoData: "data:image/jpeg;base64,AQID", startedAt: "2026-10-28T12:00:00.000Z", caregiver: "Anne" }];
+  const restored = parseDataExport(createDataExport(state));
+  assert.equal(restored.events[0]?.memoryPhotoData, state.events[0]?.memoryPhotoData);
+
+  const invalidType = JSON.parse(createDataExport(state));
+  invalidType.events[0].memoryPhotoData = "file:///private/photo.jpg";
+  assert.throws(() => parseDataExport(JSON.stringify(invalidType)), /bakım kayıtları/i);
+
+  const tooLarge = JSON.parse(createDataExport(state));
+  tooLarge.events[0].memoryPhotoData = `data:image/jpeg;base64,${"A".repeat(1_100_001)}`;
+  assert.throws(() => parseDataExport(JSON.stringify(tooLarge)), /bakım kayıtları/i);
+});
+
 test("backup validation accepts the expanded appointment reminder options", () => {
   const state = createInitialState();
   for (const minutes of [15, 30, 60, 120, 180, 1440] as const) {
@@ -23,6 +38,41 @@ test("backup round-trips milk reminder lead preferences and rejects invalid valu
   }
   state.preferences.milkExpiryReminderLead = 5 as never;
   assert.throws(() => parseDataExport(createDataExport(state)), /tercih bilgileri eksik/i);
+});
+
+test("wake reminder preferences round-trip and older backups remain valid", () => {
+  const state = createInitialState();
+  state.preferences.wakeReminderEnabled = true;
+  state.preferences.wakeReminderMinutes = 20;
+  const restored = parseDataExport(createDataExport(state));
+  assert.equal(restored.preferences.wakeReminderEnabled, true);
+  assert.equal(restored.preferences.wakeReminderMinutes, 20);
+  const older = JSON.parse(createDataExport(state));
+  delete older.preferences.wakeReminderEnabled;
+  delete older.preferences.wakeReminderMinutes;
+  const migrated = parseDataExport(JSON.stringify(older));
+  assert.equal(migrated.preferences.wakeReminderEnabled, false);
+  assert.equal(migrated.preferences.wakeReminderMinutes, 10);
+  state.preferences.wakeReminderMinutes = 3 as never;
+  assert.throws(() => parseDataExport(createDataExport(state)), /uyanma hatırlatması/i);
+});
+
+test("completed sleep plan history is not capped during export, restore, or merge", () => {
+  const runs = Array.from({ length: 12 }, (_, index) => {
+    const start = new Date(Date.UTC(2025, 0, 1 + index * 28)).toISOString().slice(0, 10);
+    const end = new Date(Date.UTC(2025, 0, 15 + index * 28)).toISOString().slice(0, 10);
+    return { id: `run-${index}`, startDate: start, completedDate: end, days: [] };
+  });
+  const current = createInitialState();
+  current.sleepPlan.completedRuns = runs;
+  const restored = parseDataExport(createDataExport(current));
+  assert.equal(restored.sleepPlan.completedRuns.length, 12);
+
+  const incoming = createInitialState();
+  incoming.sleepPlan.completedRuns = [...runs, { id: "run-12", startDate: "2025-12-03", completedDate: "2025-12-17", days: [] }];
+  const merged = mergeDataStates(current, incoming);
+  assert.equal(merged.sleepPlan.completedRuns.length, 13);
+  assert.equal(new Set(merged.sleepPlan.completedRuns.map((run) => run.id)).size, 13);
 });
 
 test("backup merge combines records and check-ins while preserving current device settings", () => {

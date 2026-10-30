@@ -1,9 +1,78 @@
-YªçŠx±6¬“¬uç%j·Â+ar‰ì¶ë•ë_¢ºÞjË"‚v›•ëÚ®&›•ëj¹âžâ•äÚ²L±×œ•ªÞw­…Ê'²Û¬zW­~Šëy«,Š	ÚnW¯j¸šnW¬import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachInsights, createSleepForecast, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
+test("wake-time-only check-ins do not hide a recent difficult night", () => {
+  const guidance = createSleepCoachGuidance([
+    { date: "2026-10-30", wakeTime: "07:00" },
+    { date: "2026-10-29", nightWakings: 5 }
+  ], new Date(2026, 9, 30, 12));
+  assert.equal(guidance?.title, "SÄ±k uyanma bildirildi");
+  assert.equal(createSleepCoachGuidance([{ date: "2026-10-30" }], new Date(2026, 9, 30, 12)), undefined);
+});
+
+test("empty check-ins do not displace the last recorded sleep ratings", () => {
+  const empty = Array.from({ length: 7 }, (_, index) => ({ date: `2026-10-${String(30 - index).padStart(2, "0")}` }));
+  const insights = createSleepCoachInsights([], "20:00", [...empty, { date: "2026-10-23", ease: 2, nightWakings: 3, bedtime: "20:30" }], new Date(2026, 9, 30, 12));
+  assert.equal(insights.checkInAverage, 2);
+  assert.equal(insights.nightWakingsAverage, 3);
+  assert.equal(insights.actualBedtime, "20:30");
+});
+
+test("sleep coaching ignores impossible calendar dates in check-ins", () => {
+  const now = new Date(2026, 2, 3, 12);
+  assert.equal(createSleepCoachGuidance([{ date: "2026-03-03", ease: 4 }, { date: "2026-02-31", nightWakings: 5 }], now)?.title, undefined);
+  const insights = createSleepCoachInsights([], "20:00", [{ date: "2026-02-31", ease: 1, nightWakings: 5, bedtime: "19:00" }], now);
+  assert.equal(insights.checkInAverage, undefined);
+  assert.equal(insights.nightWakingsAverage, undefined);
+  assert.equal(insights.actualBedtime, undefined);
+});
+
+test("overlapping sleep records use the end of the combined sleep for awake windows", () => {
+  const events: CareEvent[] = Array.from({ length: 5 }, (_, index) => {
+    const date = `2026-10-${23 + index}`;
+    return [
+      { id: `long-${index}`, kind: "sleep" as const, startedAt: `${date}T09:00:00`, endedAt: `${date}T12:00:00`, caregiver: "Anne" },
+      { id: `nested-${index}`, kind: "sleep" as const, startedAt: `${date}T10:00:00`, endedAt: `${date}T10:30:00`, caregiver: "Baba" },
+      { id: `next-${index}`, kind: "sleep" as const, startedAt: `${date}T13:00:00`, endedAt: `${date}T13:30:00`, caregiver: "Anne" }
+    ];
+  }).flat();
+  const midday = createAwakeWindowInsights(events, new Date("2026-10-27T15:00:00")).find((item) => item.part === "midday");
+  assert.equal(midday?.sampleCount, 5);
+  assert.equal(midday?.medianMinutes, 60);
+});
+
+test("sleep totals merge overlapping and ongoing records across midnight", () => {
+  const events: CareEvent[] = [
+    { id: "night", kind: "sleep", startedAt: "2026-10-26T23:00:00", endedAt: "2026-10-27T02:00:00", caregiver: "Anne" },
+    { id: "nested", kind: "sleep", startedAt: "2026-10-27T00:30:00", endedAt: "2026-10-27T01:00:00", caregiver: "Baba" },
+    { id: "ongoing", kind: "sleep", startedAt: "2026-10-27T01:30:00", caregiver: "Anne" }
+  ];
+  const now = new Date("2026-10-27T02:30:00");
+  assert.equal(sleepMinutesBetween(events, new Date("2026-10-27T00:00:00"), now), 150);
+  const totals = weeklySleepTotals(events, now);
+  assert.equal(totals.find((day) => day.date === "2026-10-26")?.totalMinutes, 60);
+  assert.equal(totals.find((day) => day.date === "2026-10-27")?.totalMinutes, 150);
+  const state = createInitialState();
+  state.events = events;
+  assert.match(handoffSummary(state, now, 4), /Son 4 saatte 210 dk uyku/);
+});
+
+test("wake estimates require five completed similar sleeps and ignore future endings", () => {
+  const now = new Date("2026-10-27T12:10:00");
+  const running: CareEvent = { id: "running", kind: "sleep", startedAt: "2026-10-27T12:00:00", caregiver: "Anne" };
+  const past: CareEvent[] = Array.from({ length: 5 }, (_, index) => ({ id: `past-${index}`, kind: "sleep", startedAt: `2026-10-${20 + index}T12:00:00`, endedAt: `2026-10-${20 + index}T13:00:00`, caregiver: "Anne" }));
+  const futureEnding: CareEvent = { id: "future-ending", kind: "sleep", startedAt: "2026-10-27T12:05:00", endedAt: "2026-10-27T13:00:00", caregiver: "Anne" };
+  const insufficient = estimateSleepWakeWindow([...past.slice(0, 4), futureEnding], running, now);
+  assert.equal(insufficient.available, false);
+  assert.equal(insufficient.sampleCount, 4);
+  const enough = estimateSleepWakeWindow(past, running, now);
+  assert.equal(enough.available, true);
+  assert.equal(enough.typical?.getTime(), new Date("2026-10-27T13:00:00").getTime());
+  assert.equal(estimateSleepWakeWindow(past, undefined, now).available, false);
+});
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };
 
 test("median handles odd and even sets", () => {
@@ -90,6 +159,26 @@ test("all seven sleep coaching approaches include caregiver and night-waking gui
   }
 });
 
+test("each sleep-plan readiness item explains its safety and caregiver context", () => {
+  assert.deepEqual(Object.keys(SLEEP_READINESS_GUIDANCE).sort(), [...SLEEP_READINESS_ITEMS].sort());
+  for (const item of SLEEP_READINESS_ITEMS) assert.ok(SLEEP_READINESS_GUIDANCE[item].length > 20);
+});
+
+test("night-wake response summary counts unique recent logs and ignores future or malformed entries", () => {
+  const summary = summarizeNightWakeResponses([
+    { nightWakeLogs: [
+      { id: "feed", at: "2026-10-30T02:00:00", response: "feeding", caregiver: "Anne" },
+      { id: "comfort", at: "2026-10-29T23:00:00", response: "comfort", caregiver: "Baba" },
+      { id: "duplicate", at: "2026-10-30T03:00:00", response: "diaper", caregiver: "Anne" },
+      { id: "bad-time", at: "invalid", response: "other", caregiver: "Anne" },
+      { id: "future", at: "2026-10-30T13:00:00", response: "other", caregiver: "Anne" },
+      { id: "old", at: "2026-10-23T23:59:00", response: "diaper", caregiver: "Anne" }
+    ] },
+    { nightWakeLogs: [{ id: "duplicate", at: "2026-10-30T03:00:00", response: "diaper", caregiver: "Anne" }] }
+  ], new Date(2026, 9, 30, 12));
+  assert.deepEqual(summary, { total: 3, daysWithLogs: 2, counts: { feeding: 1, comfort: 1, diaper: 1, other: 0 } });
+});
+
 test("forecast stays unavailable before week nine", () => {
   const baby: Baby = { ...termBaby, birthDate: "2026-09-15" };
   const result = createSleepForecast(baby, [], new Date("2026-10-26T12:00:00"));
@@ -128,9 +217,13 @@ test("forecast returns an explainable range after a completed sleep", () => {
 test("morning wake forecast advances after a sleep is recorded since wake", () => {
   const wakeAt = new Date("2026-10-26T07:00:00");
   const priorNight: CareEvent = { id: "prior", kind: "sleep", startedAt: "2026-10-25T20:00:00", endedAt: "2026-10-26T06:30:00", caregiver: "Anne" };
+  const nightEndingAtWake: CareEvent = { ...priorNight, id: "night-at-wake", endedAt: "2026-10-26T07:00:00" };
+  const overlap: CareEvent = { ...priorNight, id: "overlap", endedAt: "2026-10-26T07:01:00" };
   const firstNap: CareEvent = { id: "nap", kind: "sleep", startedAt: "2026-10-26T09:00:00", endedAt: "2026-10-26T09:40:00", caregiver: "Anne" };
   const ongoingNap: CareEvent = { id: "ongoing", kind: "sleep", startedAt: "2026-10-26T09:00:00", caregiver: "Anne" };
   assert.equal(hasSleepSinceWake([priorNight], wakeAt), false);
+  assert.equal(hasSleepSinceWake([nightEndingAtWake], wakeAt), false);
+  assert.equal(hasSleepSinceWake([overlap], wakeAt), true);
   assert.equal(hasSleepSinceWake([firstNap], wakeAt), true);
   assert.equal(hasSleepSinceWake([ongoingNap], wakeAt), true);
 });
@@ -201,6 +294,35 @@ test("bedtime adjustment is capped at fifteen minutes", () => {
   assert.equal(insight.checkInAverage, 3);
 });
 
+test("sleep coach summarizes bedtime-to-sleep onset time across matching nights", () => {
+  const records = [
+    { date: "2026-10-30", bedtime: "20:00" },
+    { date: "2026-10-29", bedtime: "20:00" },
+    { date: "2026-10-28", bedtime: "20:00" },
+    { date: "2026-10-23", bedtime: "20:00" },
+    { date: "2026-10-22", bedtime: "20:00" },
+    { date: "2026-10-21", bedtime: "20:00" },
+    { date: "2026-10-31", bedtime: "20:00" },
+    { date: "2026-10-24", bedtime: "25:00" }
+  ];
+  const minutes = [30, 45, 15, 80, 70, 90];
+  const events: CareEvent[] = records.slice(0, 6).map((record, index) => {
+    const bedtime = new Date(`${record.date}T12:00:00`);
+    bedtime.setDate(bedtime.getDate() - 1);
+    bedtime.setHours(20, 0, 0, 0);
+    const start = new Date(bedtime.getTime() + minutes[index]! * 60_000);
+    return { id: `onset-${index}`, kind: "sleep", startedAt: start.toISOString(), endedAt: new Date(start.getTime() + 5 * 60 * 60_000).toISOString(), caregiver: "Anne" };
+  });
+
+  const insight = createSleepCoachInsights(events, "20:00", records, new Date(2026, 9, 30, 12));
+
+  assert.equal(insight.sleepOnsetSamples, 3);
+  assert.equal(insight.sleepOnsetMedianMinutes, 30);
+  assert.equal(insight.previousSleepOnsetSamples, 3);
+  assert.equal(insight.previousSleepOnsetMedianMinutes, 80);
+  assert.equal(insight.sleepOnsetChangeMinutes, -50);
+});
+
 test("sleep insights summarize recorded settling support neutrally", () => {
   const events: CareEvent[] = [
     { id: "s1", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T01:00:00", caregiver: "Anne" },
@@ -215,7 +337,10 @@ test("sleep insights summarize recorded settling support neutrally", () => {
 test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   const state = createInitialState();
   state.careInstructions = "";
-  state.sleepPlan.checkIns = [{ date: "2026-10-27", nightWakeLogs: [{ id: "wake", at: "2026-10-27T10:45:00", response: "feeding", caregiver: "Baba" }] }];
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", nightWakeLogs: [
+    { id: "wake", at: "2026-10-27T10:45:00", response: "feeding", caregiver: "Baba" },
+    { id: "wake-before", at: "2026-10-26T23:00:00", response: "comfort", caregiver: "Anne" }
+  ] }];
   state.events = [
     { id: "feed", kind: "feed", feedType: "bottle", amountMl: 90, startedAt: "2026-10-27T09:05:00", caregiver: "Baba" },
     { id: "diaper", kind: "diaper", diaperType: "wet", startedAt: "2026-10-27T09:10:00", caregiver: "Anne" },
@@ -227,6 +352,7 @@ test("care handoff calls out the latest feed, diaper, and sleep times", () => {
   assert.match(summary, /Son bez 09:10 Â· Ä±slak Â· Anne/);
   assert.match(summary, /Son uyku 08:00â€“09:00 Â· Kucakta/);
   assert.match(summary, /1 gece uyanmasÄ± kaydÄ± Â· son 10:45 Beslenme Â· Baba/);
+  assert.match(summary, /Son 7 gÃ¼nde saatli uyanma yanÄ±tlarÄ±: Beslenme 1, SakinleÅŸtirme \/ yakÄ±nlÄ±k 1/);
 });
 
 test("care handoff includes the next sleep window based on today's wake time or latest nap", () => {
@@ -242,6 +368,20 @@ test("care handoff includes the next sleep window based on today's wake time or 
   const expectedWindow = `${expected.start.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}â€“${expected.end.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
   const confidenceLabel = { low: "ilk tahmin", medium: "kiÅŸiselleÅŸiyor", high: "kiÅŸisel ritim" }[expected.confidence];
   assert.match(summary, new RegExp(`Tahmini sonraki uyku penceresi ${expectedWindow} Â· ${confidenceLabel}`));
+});
+
+test("care handoff keeps the first wake window when overnight sleep ends exactly at wake time", () => {
+  const state = createInitialState();
+  state.baby = { ...termBaby, birthDate: "2026-10-10" };
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", wakeTime: "07:00" }];
+  state.events = [{ id: "night", kind: "sleep", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T07:00:00", caregiver: "Anne" }];
+  const now = new Date("2026-10-27T08:00:00");
+  const wakeAt = new Date("2026-10-27T07:00:00");
+  const expected = createSleepForecast(state.baby, state.events, now, wakeAt);
+  assert.equal(expected.available, true);
+  assert.ok(expected.start && expected.end);
+  const expectedWindow = `${expected.start.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}â€“${expected.end.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}`;
+  assert.ok(handoffSummary(state, now, 4).includes(`Tahmini sonraki uyku penceresi ${expectedWindow}`));
 });
 
 test("care handoff says how much expressed milk is usable and which batch to use first", () => {

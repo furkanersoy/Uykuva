@@ -56,6 +56,8 @@ export function createInitialState(): AppState {
       handoffHours: 4,
       notificationsEnabled: false,
       sleepReminderMinutes: 15,
+      wakeReminderEnabled: false,
+      wakeReminderMinutes: 10,
       careTaskRemindersEnabled: false,
       careTaskReminderMinutes: 120,
       diaperRemindersEnabled: false,

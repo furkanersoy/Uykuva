@@ -1,12 +1,14 @@
-Y��x�6���u�%j���+ar�����_���j�"�v���ڮ&���j����ڲL�ל���w���'�۬zW�~��y�,�	�nW�j��nW�import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+﻿import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
   AppState,
   Alert,
   Linking,
+  Image,
   Modal,
   NativeModules,
   Pressable,
+  Platform,
   SafeAreaView,
   ScrollView,
   Share,
@@ -21,25 +23,30 @@ import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import * as Notifications from "expo-notifications";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from "expo-speech-recognition";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
-import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
+import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
-import { clockInputDigits, isValidClock, normalizeClockInput } from "./src/domain/time";
+import { clockInputDigits, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
-import { notificationDestination } from "./src/domain/notificationRouting";
+import { NOTIFICATION_KINDS, notificationDestination } from "./src/domain/notificationRouting";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
+import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, SleepGuideCategory } from "./src/data/sleepGuides";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
-import { cancelSleepReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
+import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
+import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudFamilyInvites, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, revokeCloudFamilyInvite, saveEncryptedFamilyDocument, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -47,6 +54,16 @@ type Tab = "today" | "timeline" | "coach" | "insights" | "family";
 type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | "memory" | null;
 type TaskMode = "vaccine" | "appointment" | null;
 type TimelineFilter = "all" | "sleep" | "feeding" | "pumping" | "diaper" | "health" | "growth" | "notes" | "memories";
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[character] ?? character);
+}
 
 const timelineFilters: { id: TimelineFilter; label: string }[] = [
   { id: "all", label: "Tümü" }, { id: "sleep", label: "Uyku" }, { id: "feeding", label: "Beslenme" },
@@ -136,6 +153,7 @@ export default function App() {
   const [caregiverOpen, setCaregiverOpen] = useState(false);
   const [nightWakeOpen, setNightWakeOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [cloudSyncOpen, setCloudSyncOpen] = useState(false);
   const [nightMode, setNightMode] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
@@ -145,10 +163,18 @@ export default function App() {
   const [promptedRunningSleepId, setPromptedRunningSleepId] = useState<string | null>(null);
   const [foregroundCycle, setForegroundCycle] = useState(0);
   const lastNotificationResponseId = useRef<string | null>(null);
+  const openSleepCheckHandledId = useRef<string | null>(null);
+  const initializedHome = useRef(false);
+  const [homeInitialized, setHomeInitialized] = useState(false);
   useEffect(() => {
     let awayFromApp = AppState.currentState !== "active";
     const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active" && awayFromApp) setForegroundCycle((cycle) => cycle + 1);
+      if (nextState === "active") {
+        if (awayFromApp) setForegroundCycle((cycle) => cycle + 1);
+        // Returning to Uykuva always lands on the main screen; the wake form
+        // is opened only by the user's "Gece uyanması" action.
+        setNightWakeOpen(false);
+      }
       awayFromApp = nextState !== "active";
     });
     return () => subscription.remove();
@@ -157,6 +183,14 @@ export default function App() {
     const timer = setInterval(() => setClockNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
+  useEffect(() => {
+    if (!app.hydrated || !app.state.onboardingComplete || initializedHome.current) return;
+    initializedHome.current = true;
+    setTab("today");
+    setNightMode(false);
+    setNightWakeOpen(false);
+    setHomeInitialized(true);
+  }, [app.hydrated, app.state.onboardingComplete]);
   const todaySleepCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow));
   const savedMorningWake = todaySleepCheckIn?.wakeTime;
   const savedMorningWakeAt = useMemo(() => {
@@ -176,14 +210,20 @@ export default function App() {
     const wakeAt = wakeMinutes ? new Date(clockNow) : undefined;
     if (wakeAt && wakeMinutes) wakeAt.setHours(wakeMinutes[0]!, wakeMinutes[1]!, 0, 0);
     const forecastWake = wakeAt && !hasSleepSinceWake(child.events, wakeAt) ? wakeAt : undefined;
+    const runningSleep = child.events.find((event) => event.kind === "sleep" && !event.endedAt);
     return {
       childId: child.baby.id,
       babyName: child.baby.name,
-      isSleeping: child.events.some((event) => event.kind === "sleep" && !event.endedAt),
+      runningSleep,
+      isSleeping: Boolean(runningSleep),
+      unusualDay: Boolean(checkIn?.dayContext),
+      wakeEstimate: estimateSleepWakeWindow(child.events, runningSleep, clockNow),
       forecast: createSleepForecast(child.baby, child.events, clockNow, forecastWake, checkIn?.dayContext)
     };
   }), [app.state.children, clockNow]);
   const childSleepReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.forecast.available}:${child.forecast.start?.getTime() ?? ""}:${child.forecast.end?.getTime() ?? ""}:${child.forecast.explanation}`).join("|");
+  const childOpenSleepCheckKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.runningSleep?.id ?? ""}:${child.runningSleep?.startedAt ?? ""}`).join("|");
+  const childWakeReminderKey = childSleepReminders.map((child) => `${child.childId}:${child.babyName}:${child.isSleeping}:${child.unusualDay}:${child.wakeEstimate.available}:${child.wakeEstimate.typical && child.wakeEstimate.typical > clockNow ? child.wakeEstimate.typical.getTime() : ""}`).join("|");
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -205,6 +245,10 @@ export default function App() {
         void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
         return;
       }
+      if (request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck && destination.eventId) {
+        openSleepCheckHandledId.current = destination.eventId;
+        setPromptedRunningSleepId(destination.eventId);
+      }
       if (destination.childId && child) app.setActiveChild(child.baby.id);
       setNightMode(false);
       setTab(destination.tab);
@@ -217,7 +261,10 @@ export default function App() {
       }
       if (destination.eventId && child) {
         const event = child.events.find((item) => item.id === destination.eventId);
-        if (event) setEventEditor(event);
+        if (event) {
+          if (request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck && event.kind === "sleep") setSleepEditor(event);
+          else setEventEditor(event);
+        }
       }
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     };
@@ -270,9 +317,9 @@ export default function App() {
 
   useEffect(() => {
     const running = app.runningSleep;
-    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || logMode || taskMode || sleepEditor || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen) return;
+    if (!app.hydrated || !app.state.onboardingComplete || !running || promptedRunningSleepId === running.id || openSleepCheckHandledId.current === running.id || logMode || taskMode || sleepEditor || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen) return;
     const startedAt = new Date(running.startedAt).getTime();
-    if (!Number.isFinite(startedAt) || Date.now() - startedAt < 12 * 60 * 60_000) return;
+    if (!Number.isFinite(startedAt) || Date.now() - startedAt < 12 * 60 * 60_000 || isInQuietHours(clockNow, app.state.preferences.quietStart, app.state.preferences.quietEnd)) return;
     setPromptedRunningSleepId(running.id);
     Alert.alert(
       "Uyku sayacı hâlâ çalışıyor mu?",
@@ -282,7 +329,7 @@ export default function App() {
         { text: "Uyanış saatini düzelt", onPress: () => { const current = app.state.events.find((item) => item.id === running.id); if (current) setSleepEditor(current); } }
       ]
     );
-  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor, nightWakeOpen, restoreOpen, profileOpen, caregiverOpen, vaccineSuggestionsOpen]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.events, app.runningSleep, app.state.preferences.quietStart, app.state.preferences.quietEnd, promptedRunningSleepId, foregroundCycle, clockNow, logMode, taskMode, sleepEditor, eventEditor, nightWakeOpen, restoreOpen, profileOpen, caregiverOpen, vaccineSuggestionsOpen]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -298,6 +345,20 @@ export default function App() {
       }
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.sleepReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childSleepReminderKey]);
+
+  useEffect(() => {
+    if (!app.hydrated) return;
+    const enabled = app.state.onboardingComplete && app.state.preferences.notificationsEnabled;
+    const openSleeps = enabled ? childSleepReminders.flatMap((child) => child.runningSleep ? [{ childId: child.childId, babyName: child.babyName, eventId: child.runningSleep.id, startedAt: child.runningSleep.startedAt }] : []) : [];
+    void replaceOpenSleepCheckReminders(openSleeps, app.state.preferences.quietStart, app.state.preferences.quietEnd).catch(() => console.warn("Açık uyku kaydı hatırlatması planlanamadı."));
+  }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.notificationsEnabled, app.state.preferences.quietStart, app.state.preferences.quietEnd, childOpenSleepCheckKey]);
+
+  useEffect(() => {
+    if (!app.hydrated) return;
+    const enabled = app.state.onboardingComplete && app.state.preferences.wakeReminderEnabled;
+    const estimates = enabled ? childSleepReminders.flatMap((child) => child.isSleeping && !child.unusualDay && child.wakeEstimate.available && child.wakeEstimate.typical ? [{ childId: child.childId, babyName: child.babyName, typical: child.wakeEstimate.typical }] : []) : [];
+    void replaceWakeReminders(estimates, app.state.preferences.wakeReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd).catch(() => console.warn("Uyanış hatırlatmaları planlanamadı."));
+  }, [app.hydrated, app.state.onboardingComplete, app.state.preferences.wakeReminderEnabled, app.state.preferences.wakeReminderMinutes, app.state.preferences.quietStart, app.state.preferences.quietEnd, childWakeReminderKey]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete) return;
@@ -391,11 +452,11 @@ export default function App() {
           <Pressable accessibilityRole="button" accessibilityLabel="Profili düzenle" onPress={() => setProfileOpen(true)} style={styles.avatar}><Text style={styles.avatarText}>{app.state.baby.name.slice(0, 1).toLocaleUpperCase("tr-TR")}</Text></Pressable>
         </View> : null}
 
-        {tab === "today" && <TodayScreen app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} onSwitchCaregiver={switchCaregiver} onSwitchChild={switchChild} />}
+        {tab === "today" && <TodayScreen key={app.state.activeChildId} app={app} forecast={forecast} feedingForecast={feedingForecast} openLog={setLogMode} now={clockNow} nightMode={nightMode} onToggleNightMode={() => setNightMode((value) => !value)} onLogNightWake={promptNightWake} onSwitchCaregiver={switchCaregiver} onSwitchChild={switchChild} />}
         {tab === "timeline" && <TimelineScreen events={app.state.events} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
-        {tab === "coach" && <CoachScreen app={app} now={clockNow} />}
+        {tab === "coach" && <CoachScreen key={app.state.activeChildId} app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
-        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onAddChild={() => setChildOpen(true)} onRestoreData={() => setRestoreOpen(true)} />}
+        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onAddChild={() => setChildOpen(true)} onRestoreData={() => setRestoreOpen(true)} onOpenCloudSync={() => setCloudSyncOpen(true)} />}
 
         {!nightMode ? <View style={styles.nav}>
           {tabs.map((item) => (
@@ -413,9 +474,10 @@ export default function App() {
       <ChildProfileModal visible={childOpen} close={() => setChildOpen(false)} add={app.addChild} />
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} add={app.addCaregiver} />
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
+      <CloudSyncModal visible={cloudSyncOpen} close={() => setCloudSyncOpen(false)} app={app} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
-      <NightWakeModal visible={nightWakeOpen} close={() => setNightWakeOpen(false)} save={saveNightWake} />
+      {homeInitialized && app.hydrated && app.state.onboardingComplete && nightWakeOpen ? <NightWakeModal visible close={() => setNightWakeOpen(false)} save={saveNightWake} /> : null}
     </SafeAreaView>
   );
 }
@@ -482,6 +544,130 @@ function Field({ label, ...props }: { label: string } & ComponentProps<typeof Te
   return <View style={styles.field}><Text style={styles.inputLabel}>{label}</Text><TextInput {...props} accessibilityLabel={props.accessibilityLabel ?? label} style={styles.input} placeholderTextColor="#93A09C" /></View>;
 }
 
+function VoiceNoteInput({ value, onChangeText }: { value: string; onChangeText: (value: string) => void }) {
+  const [listening, setListening] = useState(false);
+  const [partialTranscript, setPartialTranscript] = useState("");
+  const valueRef = useRef(value);
+  const mountedRef = useRef(true);
+  valueRef.current = value;
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      try {
+        ExpoSpeechRecognitionModule.abort();
+      } catch {
+        // The native recognizer may not have started.
+      }
+    };
+  }, []);
+
+  useSpeechRecognitionEvent("start", () => {
+    setListening(true);
+    setPartialTranscript("");
+  });
+  useSpeechRecognitionEvent("end", () => {
+    setListening(false);
+    setPartialTranscript("");
+  });
+  useSpeechRecognitionEvent("result", (event) => {
+    const transcript = event.results[0]?.transcript.trim();
+    if (!transcript) return;
+    if (!event.isFinal) {
+      setPartialTranscript(transcript);
+      return;
+    }
+    const current = valueRef.current.trimEnd();
+    const next = current ? `${current} ${transcript}` : transcript;
+    valueRef.current = next;
+    onChangeText(next);
+    setPartialTranscript("");
+  });
+  useSpeechRecognitionEvent("error", (event) => {
+    setListening(false);
+    setPartialTranscript("");
+    if (event.error === "aborted") return;
+    const message = event.error === "language-not-supported"
+      ? "Cihazda Türkçe konuşma tanıma kullanılamıyor. Sistem ayarlarından Türkçe dil modelini yükleyin veya tekrar deneyin."
+      : event.error === "not-allowed"
+        ? "Mikrofon veya konuşma tanıma izni verilmedi. İzni cihaz ayarlarından açabilirsiniz."
+        : "Konuşma tanınamadı. Mikrofonu, internet bağlantısını veya cihazın konuşma tanıma hizmetini kontrol edip yeniden deneyin.";
+    Alert.alert("Sesli not kullanılamadı", message);
+  });
+
+  const beginRecognition = async (requiresOnDeviceRecognition: boolean) => {
+    try {
+      const microphonePermission = await ExpoSpeechRecognitionModule.requestMicrophonePermissionsAsync();
+      if (!microphonePermission.granted) {
+        Alert.alert("Mikrofon izni gerekli", "Sesli notu metne çevirmek için mikrofon izni vermeniz gerekir. Ses kaydı Uykuva'da saklanmaz.");
+        return;
+      }
+      if (!requiresOnDeviceRecognition && Platform.OS === "ios") {
+        const speechPermission = await ExpoSpeechRecognitionModule.requestSpeechRecognizerPermissionsAsync();
+        if (!speechPermission.granted) {
+          Alert.alert("Konuşma tanıma izni gerekli", "Cihazın konuşma tanıma izni olmadan sesli not başlatılamaz.");
+          return;
+        }
+      }
+      if (!mountedRef.current) return;
+      ExpoSpeechRecognitionModule.start({
+        lang: "tr-TR",
+        interimResults: true,
+        continuous: false,
+        requiresOnDeviceRecognition,
+        addsPunctuation: true,
+        ...(requiresOnDeviceRecognition && Platform.OS === "android" ? { androidRecognitionServicePackage: "com.google.android.as" } : {})
+      });
+    } catch {
+      Alert.alert("Sesli not başlatılamadı", "Cihazın konuşma tanıma hizmeti kullanılamıyor. Mikrofon ve dil ayarlarını kontrol edin.");
+    }
+  };
+
+  const toggleListening = async () => {
+    if (listening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    try {
+      if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+        Alert.alert("Konuşma tanıma kullanılamıyor", "Cihazda etkin bir konuşma tanıma hizmeti bulunamadı.");
+        return;
+      }
+      let hasInstalledTurkishModel = false;
+      try {
+        const locales = await ExpoSpeechRecognitionModule.getSupportedLocales(
+          Platform.OS === "android" ? { androidRecognitionServicePackage: "com.google.android.as" } : {}
+        );
+        hasInstalledTurkishModel = locales.installedLocales.some((locale) => locale.toLocaleLowerCase().startsWith("tr"));
+      } catch {
+        hasInstalledTurkishModel = false;
+      }
+      if (hasInstalledTurkishModel) {
+        await beginRecognition(true);
+        return;
+      }
+      Alert.alert(
+        "Sesli not ve gizlilik",
+        "Cihazda çevrimdışı Türkçe dil modeli bulunamadı. Devam ederseniz konuşma, cihazınızın seçili konuşma tanıma hizmeti tarafından işlenebilir. Uykuva ses dosyası kaydetmez; tanınan metin yalnızca bu nota eklenir.",
+        [
+          { text: "Vazgeç", style: "cancel" },
+          { text: "Devam et", onPress: () => { void beginRecognition(false); } }
+        ]
+      );
+    } catch {
+      Alert.alert("Sesli not başlatılamadı", "Cihazın konuşma tanıma hizmeti kullanılamıyor.");
+    }
+  };
+
+  return <View style={styles.voiceNote}>
+    <Pressable accessibilityRole="button" accessibilityLabel={listening ? "Sesli notu bitir" : "Sesli not başlat"} accessibilityHint="Konuşmanız yazılı nota eklenir; ses dosyası Uykuva'da saklanmaz." accessibilityState={{ selected: listening }} onPress={() => { void toggleListening(); }} style={[styles.voiceButton, listening && styles.voiceButtonActive]}>
+      <Text style={[styles.voiceButtonText, listening && styles.voiceButtonTextActive]}>{listening ? "◼ Durdur" : "🎙 Sesli not ekle"}</Text>
+    </Pressable>
+    {listening ? <Text accessibilityLiveRegion="polite" style={styles.voiceStatus}>{partialTranscript ? `Duyuluyor: ${partialTranscript}` : "Dinliyor… Konuşmanız bittiğinde kısa süre sonra yazıya çevrilir."}</Text> : null}
+    <Text style={styles.hint}>Türkçe konuşun. Ses cihazın konuşma hizmetiyle işlenebilir; Uykuva ses dosyası saklamaz.</Text>
+  </View>;
+}
+
 function SleepDayContextPicker({ selected, onSelect }: { selected?: SleepDayContext; onSelect: (context?: SleepDayContext) => void }) {
   return <>
     <Text style={styles.inputLabel}>Bugünün durumu · isteğe bağlı</Text>
@@ -503,17 +689,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     const start = new Date(event.startedAt).getTime();
     return Number.isFinite(start) && start >= summaryStart.getTime() && start <= now.getTime();
   });
-  const summarySleepEvents = app.state.events.filter((event) => {
-    if (event.kind !== "sleep") return false;
-    const start = new Date(event.startedAt).getTime();
-    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
-    return Number.isFinite(start) && start < now.getTime() && end > summaryStart.getTime();
-  });
-  const summarySleepMinutes = summarySleepEvents.reduce((sum, event) => {
-    const start = Math.max(new Date(event.startedAt).getTime(), summaryStart.getTime());
-    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : now.getTime(), now.getTime());
-    return sum + Math.max(0, end - start) / 60_000;
-  }, 0);
+  const summarySleepMinutes = sleepMinutesBetween(app.state.events, summaryStart, now);
   const summaryFeeding = todayFeedingTotals(app.state.events, now, newbornSummary);
   const summaryDiapers = summaryEvents.filter((event) => event.kind === "diaper").length;
   const summaryHealth = summaryEvents.filter((event) => event.kind === "health").length;
@@ -525,7 +701,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     : undefined;
   const updateMorningWake = (value: string) => {
     // Keep digits raw while typing so `0700` is not reformatted after `070`.
-    setMorningWake(clockInputDigits(value));
+    const digits = clockInputDigits(value);
+    setMorningWake(digits);
+    const wakeTime = normalizeClockInput(digits);
+    // Wait for four digits before saving so a partially typed time is not persisted.
+    if (digits.length === 4 && isTodayTimeReached(wakeTime) && todayCheckIn?.wakeTime !== wakeTime) {
+      app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime });
+    }
   };
   const morningWakeForecast = (() => {
     if (!isValidClock(morningWakeClock)) return undefined;
@@ -551,8 +733,13 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     : undefined;
   const saveMorningWake = () => {
     if (!isValidClock(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Uyanış saatini 07:00 gibi SS:DD biçiminde girin.");
+    if (!isTodayTimeReached(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Bugünün uyanış saati henüz gelmemiş. Gerçek uyanış saatini girin.");
     setMorningWake(morningWakeClock);
     app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: morningWakeClock });
+  };
+  const clearMorningWake = () => {
+    setMorningWake("");
+    if (todayCheckIn?.wakeTime) app.saveCheckIn({ ...todayCheckIn, date: today, wakeTime: undefined });
   };
   const confidence = { low: "İlk tahmin", medium: "Kişiselleşiyor", high: "Kişisel ritim" }[displayedForecast.confidence];
   const sleepWindowStatus = !displayedForecast.available || !displayedForecast.start || !displayedForecast.end
@@ -583,8 +770,8 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   }
   const napOutline = createDailyNapOutline(app.state.events, now);
   const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care" | "medication"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
-  if (displayedForecast.available && displayedForecast.start && displayedForecast.end) agenda.push({ id: "next-sleep", at: displayedForecast.start, endAt: displayedForecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Sabah uyanış saati ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
-  if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı beslenme aralığı", detail: "Açlık işaretleri ve bebeğinizin ihtiyacı her zaman önceliklidir." });
+  if (!app.runningSleep && displayedForecast.available && displayedForecast.start && displayedForecast.end) agenda.push({ id: "next-sleep", at: displayedForecast.start, endAt: displayedForecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Sabah uyanış saati ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
+  if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı süt beslenmesi aralığı", detail: "Açlık ve doyma işaretleri ile bebeğinizin ihtiyacı her zaman önceliklidir." });
   if (bedtimeTarget && bedtimeTarget.getTime() <= careWindowEnd) agenda.push({ id: "bedtime", at: bedtimeTarget, kind: "bedtime", label: "Hedef yatış", detail: "Uyku planınızdaki esnek hedef saat." });
   for (const event of latestMedicationByName.values()) {
     const reminderAt = event.medicationReminderAt ? new Date(event.medicationReminderAt) : undefined;
@@ -598,7 +785,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     agenda.push({ id: `nap-outline-${nap.order}`, at: nap.from.getTime() > now.getTime() ? nap.from : now, endAt: nap.to, kind: "sleep", label: `${nap.order}. gündüz uykusu taslağı`, detail: `Son 14 günde ${nap.sampleCount} günde kaydedilen saatlerin ortancası ${time(nap.typical)}; kesin program değildir.` });
   });
   agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
-  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onSwitchCaregiver={onSwitchCaregiver} onSwitchChild={onSwitchChild} />;
+  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onLogNightWake={onLogNightWake} onSwitchCaregiver={onSwitchCaregiver} onSwitchChild={onSwitchChild} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
@@ -621,9 +808,12 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWakeClock ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
           </View>
         </View>
+        {todayCheckIn?.wakeTime ? <><View style={styles.spacer12} /><PrimaryButton label="Uyanış saatini temizle" quiet onPress={clearMorningWake} /></> : null}
         {morningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{morningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
-        {morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end ? (
+        {app.runningSleep ? (
+          <Text accessibilityLiveRegion="polite" style={styles.hint}>Uyku devam ediyor. Uyanış kaydedildiğinde sonraki uyku penceresi yeniden hesaplanır.</Text>
+        ) : morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end ? (
           <View accessibilityLiveRegion="polite" style={styles.wakeForecastPanel}>
             <Text style={styles.eyebrow}>İLK GÜNDÜZ UYKUSU</Text>
             <Text style={styles.wakeForecastTime}>{time(morningWakeForecast.start)}–{time(morningWakeForecast.end)}</Text>
@@ -660,6 +850,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         {agenda.length ? agenda.map((item) => item.task
           ? <CareTaskRow key={item.id} task={item.task} onToggle={() => app.toggleCareTask(item.task!.id)} onDelete={() => app.deleteCareTask(item.task!.id)} />
           : <View key={item.id} style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: item.kind === "sleep" ? colors.sage : item.kind === "feed" ? colors.peach : colors.lavender }]} /><View style={styles.flex}><Text style={styles.eventTitle}>{item.label}</Text><Text style={styles.muted}>{item.detail}</Text></View><Text style={styles.taskDate}>{time(item.at)}{item.endAt ? `–${time(item.endAt)}` : ""}</Text></View>) : <Text style={styles.body}>Kişisel tahmin için kayıtlar öğreniliyor. Uyku ve beslenme kaydı ekledikçe olası aralıklar burada görünür.</Text>}
+        {!feedingForecast.available ? <Text style={styles.hint}>Süt beslenmesi tahmini: {feedingForecast.explanation}</Text> : null}
         <Text style={styles.hint}>Uyku ve beslenme aralıkları tahmindir; kesin program değildir. Aşı ve randevu tarihlerini sağlık uzmanınızla belirleyin.</Text>
       </Card>
 
@@ -667,7 +858,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
       <Pressable accessibilityRole="button" accessibilityLabel="Gece moduna geç" accessibilityHint="Gece ekranında uyku sayacını, beslenmeyi ve bez kaydını hızlıca açabilirsiniz." onPress={onToggleNightMode} style={styles.nightEntry}><Text style={styles.nightEntryText}>Gece moduna geç  ☾</Text></Pressable>
       <View style={styles.quickRow}>
         <QuickAction glyph={app.runningSleep ? "■" : "☾"} label={app.runningSleep ? "Uyandı" : "Uyku"} onPress={app.toggleSleep} active={Boolean(app.runningSleep)} />
-        <QuickAction glyph="◉" label="Uyanma" onPress={onLogNightWake} />
+        <QuickAction glyph="◉" label="Gece uyanması" onPress={onLogNightWake} />
         <QuickAction glyph="◒" label={app.runningFeed ? "Emzirme sürüyor" : "Beslenme"} onPress={() => openLog("feed")} active={Boolean(app.runningFeed)} />
         <QuickAction glyph="◇" label="Bez" onPress={() => openLog("diaper")} />
         <QuickAction glyph="＋" label="Sağlık" onPress={() => openLog("health")} />
@@ -691,8 +882,17 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   );
 }
 
-function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
+function NightModeScreen({ app, now, onExit, openLog, onLogNightWake, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onLogNightWake: () => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
+  const [careNotesExpanded, setCareNotesExpanded] = useState(false);
   const elapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
+  const stage = sleepProgramStage(app.state.baby, now);
+  const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(now));
+  const trainingReady = stage.canReduceSupport
+    && SLEEP_READINESS_ITEMS.every((item) => app.state.sleepPlan.readinessCompleted.includes(item))
+    && !app.state.sleepPlan.paused
+    && !todayCheckIn?.dayContext;
+  const method = trainingReady ? app.state.sleepPlan.method : "responsive";
+  const nightResponse = methodDescription(method).nightResponse;
   return (
     <View style={styles.nightScreen}>
       <View style={styles.nightTop}>
@@ -706,10 +906,20 @@ function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver, onSwitc
         <Text style={styles.nightTimer}>{app.runningSleep ? `${Math.floor(elapsed / 60)} sa ${elapsed % 60} dk` : "Hazır"}</Text>
         <Text style={styles.nightHint}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı` : "Gece bakım kaydını buradan yönetebilirsin."}</Text>
       </View>
+      <View style={styles.nightResponseCard}>
+        <Text style={styles.nightEyebrow}>GECE YANITI · {methodDescription(method).name.toLocaleUpperCase("tr-TR")}</Text>
+        <Text style={styles.nightResponseText}>{nightResponse}</Text>
+      </View>
+      {app.state.careInstructions?.trim() ? <View style={styles.nightResponseCard}>
+        <Text style={styles.nightEyebrow}>AİLENİN BAKIM NOTU</Text>
+        <Text style={styles.nightResponseText} numberOfLines={careNotesExpanded ? undefined : 3}>{app.state.careInstructions.trim()}</Text>
+        {app.state.careInstructions.trim().length > 140 ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: careNotesExpanded }} onPress={() => setCareNotesExpanded((expanded) => !expanded)}><Text style={styles.nightResponseExpand}>{careNotesExpanded ? "Daha az göster" : "Notun tamamını göster"}</Text></Pressable> : null}
+      </View> : null}
       <View style={styles.nightActions}>
         <Pressable accessibilityRole="button" accessibilityLabel={app.runningSleep ? "Uykuyu bitir ve uyanma kaydı oluştur" : "Uyku zamanlayıcısını başlat"} accessibilityHint={app.runningSleep ? "Gerçek uyanış saatini şimdi kaydeder." : "Uyku başlangıç saatini kaydeder."} onPress={app.toggleSleep} style={[styles.nightAction, styles.nightActionPrimary]}>
           <Text style={styles.nightActionGlyph}>{app.runningSleep ? "■" : "☾"}</Text><Text style={styles.nightActionTitle}>{app.runningSleep ? "Uykuyu bitir" : "Uykuyu başlat"}</Text><Text style={styles.nightActionHint}>{app.runningSleep ? "Uyanma kaydı ekle" : "Uyku sayacını başlat"}</Text>
         </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Gece uyanmasını saatli kaydet" onPress={onLogNightWake} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Gece uyanması</Text><Text style={styles.nightActionHint}>Saatli kaydet</Text></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Beslenme kaydı aç" onPress={() => openLog("feed")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Beslenme</Text><Text style={styles.nightActionHint}>Beslenme kaydı aç</Text></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Bez kaydı aç" onPress={() => openLog("diaper")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◇</Text><Text style={styles.nightActionTitle}>Bez</Text><Text style={styles.nightActionHint}>Bez kaydı aç</Text></Pressable>
       </View>
@@ -743,7 +953,7 @@ function TimelineScreen({ events, caregivers, onDelete, onEditSleep, onEditRecor
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Günün akışı</Text>
       <Text style={styles.pageIntro}>Kayıtları türüne veya bakım veren adına göre bulun. Kayda dokunup saatini düzenleyin; silmek için basılı tutup onaylayın.</Text>
-      <TextInput value={query} onChangeText={setQuery} style={styles.input} placeholder="Kayıt veya bakım veren ara" placeholderTextColor="#93A09C" />
+      <TextInput accessibilityLabel="Zaman çizelgesinde kayıt veya bakım veren ara" value={query} onChangeText={setQuery} style={styles.input} placeholder="Kayıt veya bakım veren ara" placeholderTextColor="#93A09C" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}>{timelineFilters.map((item) => <Pill key={item.id} label={item.label} active={filter === item.id} onPress={() => setFilter(item.id)} />)}</ScrollView>
       {caregiverOptions.length > 1 ? <><Text style={styles.inputLabel}>Bakım veren</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}><Pill label="Tümü" active={caregiverFilter === null} onPress={() => setCaregiverFilter(null)} />{caregiverOptions.map((name) => <Pill key={name} label={name} active={caregiverFilter === name} onPress={() => setCaregiverFilter(name)} />)}</ScrollView></> : null}
       <PrimaryButton label="Geçmiş uyku ekle" quiet onPress={onAddSleep} />
@@ -775,6 +985,8 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
 }
 
 function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
+  const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all">("all");
+  const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const coachingPausedToday = isSleepPlanPausedToday(app.state.sleepPlan, today);
@@ -788,7 +1000,8 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const completedTodayCount = plan.tasks.filter((task) => app.state.sleepPlan.completedToday.includes(task)).length;
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
-  const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
+  const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns, now);
+  const nightWakeResponseSummary = summarizeNightWakeResponses(app.state.sleepPlan.checkIns, now);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
@@ -846,6 +1059,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const [nightGuideOpen, setNightGuideOpen] = useState(false);
   const [methodGuideOpen, setMethodGuideOpen] = useState(false);
   const [sleepBasicsOpen, setSleepBasicsOpen] = useState(false);
+  const [sleepReadingsOpen, setSleepReadingsOpen] = useState(false);
   const [wakeWindowGuideOpen, setWakeWindowGuideOpen] = useState(false);
   const [awakePatternOpen, setAwakePatternOpen] = useState(false);
   const wakeWindows = wakeWindowGuide(app.state.baby, now);
@@ -858,6 +1072,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const saveNightSummary = () => {
     if (!nightBedtime.trim() && !morningWake.trim()) return Alert.alert("Saatleri girin", "İsterseniz yalnızca yatış veya sabah uyanış saatini de kaydedebilirsiniz.");
     if ((nightBedtime.trim() && !isValidClock(nightBedtime)) || (morningWake.trim() && !isValidClock(morningWakeClock))) return Alert.alert("Saat biçimini kontrol edin", "Saatleri 20:30 gibi SS:DD biçiminde yazın.");
+    if (morningWake.trim() && !isTodayTimeReached(morningWakeClock)) return Alert.alert("Saati kontrol edin", "Bugünün uyanış saati henüz gelmemiş. Gerçek uyanış saatini girin.");
     if (nightBedtime && morningWakeClock && nightBedtime === morningWakeClock) return Alert.alert("Saatleri kontrol edin", "Yatış ve sabah uyanış saati aynı olamaz.");
     setMorningWake(morningWakeClock);
     app.saveCheckIn({ ...todayCheckIn, date: today, bedtime: nightBedtime.trim() || undefined, wakeTime: morningWake.trim() ? morningWakeClock : undefined });
@@ -871,7 +1086,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     if (!routineLabel.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 60) return Alert.alert("Adımı kontrol edin", "Bir ad ve 1–60 dakika arasında süre yazın.");
     app.addRoutineStep(routineLabel, minutes); setRoutineLabel(""); setRoutineMinutes("5");
   };
-  const sharePlan = () => {
+  const buildPlanMessage = () => {
     const enabledRoutine = app.state.sleepPlan.routine.filter((item) => item.enabled);
     const shareCheckIns = app.state.sleepPlan.checkIns
       .filter((item) => item.date >= localDateValue(oldestNight) && item.date <= today)
@@ -881,7 +1096,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       `Kolaylık karşılaştırması (ilk 3 / son 3 plan günü): ${planCheckInComparison.firstEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.firstEaseAverage.toFixed(1)}/5`} / ${planCheckInComparison.recentEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.recentEaseAverage.toFixed(1)}/5`}`,
       `Gece uyanma ortalaması: ${planCheckInComparison.firstWakingsAverage === undefined ? "ilk dönemde kayıt yok" : planCheckInComparison.firstWakingsAverage.toFixed(1)} / ${planCheckInComparison.recentWakingsAverage === undefined ? "son dönemde kayıt yok" : planCheckInComparison.recentWakingsAverage.toFixed(1)} (5+ uyanma sayıları ortalamaya katılmaz)`
     ] : [];
-    const message = [
+    return [
       `Uykuva · ${app.state.baby.name} için uyku planı`,
       `Yaş aşaması: ${stage.label}`,
       `Yaklaşım: ${methodDescription(coachingMethod).name}`,
@@ -900,7 +1115,36 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
+  };
+  const sharePlan = () => {
+    const message = buildPlanMessage();
     void Share.share({ title: `${app.state.baby.name} için uyku planı`, message });
+  };
+  const sharePlanPdf = async () => {
+    try {
+      const message = buildPlanMessage();
+      const [title, ...details] = message.split("\n");
+      const content = details.map((line) => {
+        if (!line.trim()) return "";
+        if (line.endsWith(":")) return `<h2>${escapeHtml(line.slice(0, -1))}</h2>`;
+        if (line.startsWith("• ") || /^\d+\. /.test(line)) return `<p class="bullet">${escapeHtml(line)}</p>`;
+        return `<p>${escapeHtml(line)}</p>`;
+      }).join("\n");
+      const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+        @page { size: A4; margin: 18mm 16mm; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263631; font-size: 12px; line-height: 1.55; }
+        header { border-bottom: 2px solid #718b7c; padding-bottom: 12px; margin-bottom: 18px; }
+        h1 { font-size: 22px; margin: 0; color: #3e594d; }
+        h2 { font-size: 13px; margin: 15px 0 4px; color: #3e594d; }
+        p { margin: 5px 0; }
+        .bullet { padding-left: 12px; }
+      </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva uyku planı")}</h1></header><main>${content}</main></body></html>`;
+      const file = await Print.printToFileAsync({ html, base64: false });
+      if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva uyku planını paylaş" });
+    } catch {
+      Alert.alert("PDF oluşturulamadı", "Uyku planı PDF olarak hazırlanırken bir sorun oluştu. Metin paylaşımını kullanabilirsiniz.");
+    }
   };
   const startRoutine = () => {
     if (!app.state.sleepPlan.routine.some((item) => item.enabled)) return Alert.alert("Etkin adım yok", "Önce akşam rutininize en az bir adım ekleyip etkinleştirin.");
@@ -937,6 +1181,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {sleepBasicsOpen ? <View style={styles.nightGuideContent}>
           <Text style={styles.inputLabel}>Her bebeğin ritmi farklıdır</Text>
           <Text style={styles.body}>Uyku süresi ve uyanma düzeni bebekler arasında değişir. Özellikle ilk aylarda kısa uyku aralıkları ve beslenme için uyanmalar olağandır; tek bir saat çizelgesi her aileye uymaz.</Text>
+          <Text style={styles.inputLabel}>Yorgunluk işaretlerine bakın</Text>
+          <Text style={styles.body}>Esneme, bakışı kaçırma, göz kapaklarının düşmesi, gözleri ovuşturma veya oyuna ilgide azalma bazı bebeklerde görülebilir. İşaretler bebekten bebeğe ve yaşla değişir; tek başına kesin uyku zamanı sayılmaz. Fark ettiğinizde ortamı sakinleştirin ve açlık ya da rahatsızlık gibi diğer ihtiyaçları da kontrol edin.</Text>
+          <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/pages/How-Do-Infants-Learn.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP bebek işaretleri bilgisine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Bebeğinizin uyku işaretlerini tanıma</Text></Pressable>
           <Text style={styles.inputLabel}>Sakin, tekrarlanabilir bir rutin deneyin</Text>
           <Text style={styles.body}>Benzer sırayla yapılan kısa ve sakin adımlar uykuya geçişi kolaylaştırabilir. Ailenize uyan adımları seçin; bebeğinizin işaretlerine göre rutini kısaltabilir veya ara verebilirsiniz.</Text>
           <Text style={styles.inputLabel}>Gece uyanınca önce ihtiyacı değerlendirin</Text>
@@ -958,6 +1205,31 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/").catch(() => Alert.alert("Bağlantı açılamadı", "NHS uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>NHS · Bebeğinizin uyumasına yardımcı olma</Text></Pressable>
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx").catch(() => Alert.alert("Bağlantı açılamadı", "AAP uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>AAP · Bebeğinizi uyutmaya yardımcı olma</Text></Pressable>
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/sudden-infant-death/sleep-safely/").catch(() => Alert.alert("Bağlantı açılamadı", "CDC güvenli uyku rehberine şu anda ulaşılamıyor."))}><Text style={styles.linkText}>CDC · Güvenli uyku alanı</Text></Pressable>
+        </View> : null}
+      </Card>
+      <Card>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: sleepReadingsOpen }} onPress={() => setSleepReadingsOpen((open) => !open)} style={styles.nightGuideHeader}>
+          <View style={styles.nightGuideHeaderText}><Text style={styles.cardTitle}>Ebeveynler için kısa okumalar</Text><Text style={styles.body}>Uyku değişimleri, rutinler ve bakım veren desteği · {SLEEP_GUIDES.length} konu</Text></View>
+          <Text style={styles.nightGuideChevron}>{sleepReadingsOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {sleepReadingsOpen ? <View style={styles.nightGuideContent}>
+          <Text style={styles.inputLabel}>Konular</Text>
+          <View style={styles.choiceRow}>
+            <Pill label={`Tümü · ${SLEEP_GUIDES.length}`} active={sleepGuideFilter === "all"} onPress={() => setSleepGuideFilter("all")} />
+            {SLEEP_GUIDE_CATEGORIES.map((category) => <Pill key={category.id} label={`${category.label} · ${SLEEP_GUIDES.filter((guide) => guide.category === category.id).length}`} active={sleepGuideFilter === category.id} onPress={() => setSleepGuideFilter(category.id)} />)}
+          </View>
+          {visibleSleepGuides.map((guide) => <View key={guide.id} style={styles.sleepGuideItem}>
+            <Text style={styles.inputLabel}>{guide.title}</Text>
+            <Text style={styles.eyebrow}>{guide.age}</Text>
+            <Text style={styles.body}>{guide.summary}</Text>
+            <Pressable accessibilityRole="link" accessibilityLabel={`${guide.source} kaynağını aç`} onPress={() => void Linking.openURL(guide.url).catch(() => Alert.alert("Bağlantı açılamadı", "Kaynak sayfaya şu anda ulaşılamıyor. Kısa özet uygulamada çevrimdışı okunabilir."))}>
+              <Text style={styles.linkText}>{guide.source} · kaynağı aç</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${guide.title} rehberini bakım verenle paylaş`} onPress={() => void Share.share({ message: `${guide.title} · ${guide.age}\n\n${guide.summary}\n\nKaynak: ${guide.url}\n\nGenel bilgilendirmedir; tıbbi değerlendirme yerine geçmez.` }).catch(() => Alert.alert("Paylaşım açılamadı", "Rehber özeti bu cihazda paylaşılamadı. Kaynak bağlantısını doğrudan açabilirsiniz."))}>
+              <Text style={styles.linkText}>Özeti bakım verenle paylaş</Text>
+            </Pressable>
+          </View>)}
+          <Text style={styles.hint}>Bu kısa özetler genel bilgilendirmedir; tıbbi değerlendirme yerine geçmez. Kaynak sayfalar güncellenebilir. Sağlık veya beslenme endişenizde çocuk doktorunuza danışın. İçerik gözden geçirme: 30 Ekim 2026.</Text>
         </View> : null}
       </Card>
       <Card tone="mint"><Text style={styles.eyebrow}>YAŞA UYGUN AŞAMA</Text><Text style={styles.heroSmall}>{stage.label}</Text><Text style={styles.body}>{stage.guidance}</Text></Card>
@@ -1007,7 +1279,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.heroSmall}>{coachingPausedToday ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>
         <Text style={styles.body}>{coachingPausedToday ? "Bu sırada günlük bakım kayıtlarını tutabilir, akşam rutininizi kullanabilirsiniz. Plan günü ilerlemez." : methodDescription(coachingMethod).support}</Text>
       </Card>
-      <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
+      <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={sharePlan} /></View><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void sharePlanPdf()} /></View></View>
       <SectionTitle title="Kayıtlarına göre gün taslağı" action="Son 14 gün" />
       <Card>
         {napOutline.length ? napOutline.map((nap) => <View key={nap.order} style={styles.eventRow}><View style={styles.flex}><Text style={styles.eventTitle}>{nap.order}. gündüz uykusu</Text><Text style={styles.muted}>{nap.actualStart ? `${nap.inProgress ? "Şu an uyuyor" : "Bugün kaydedildi"} · ${time(nap.actualStart)}` : `${time(nap.from)}–${time(nap.to)} · ortanca ${time(nap.typical)}`}</Text></View><Text style={styles.taskDate}>{nap.sampleCount} gün</Text></View>) : <Text style={styles.body}>Kişisel gündüz uykusu taslağı için son 14 günde en az üç farklı günde kayıt gerekir.</Text>}
@@ -1029,12 +1301,23 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {insights.nightWakingsAverage !== undefined ? <Text style={styles.awake}>Son değerlendirmelerde gece uyanma ortalaması: {insights.nightWakingsAverage.toFixed(1)}</Text> : null}
         {insights.sleepSupportSummary ? <Text style={styles.awake}>Son {insights.sleepSupportSamples} işaretli uyku kaydında geçiş desteği: {insights.sleepSupportSummary}</Text> : <Text style={styles.hint}>Uyku kayıtlarına geçiş desteği eklediğinizde son 7 işaretli kaydın dağılımı burada görünür.</Text>}
         {insights.routineToSleepMedianMinutes !== undefined ? <Text style={styles.awake}>Rutin bitişinden uyku başlangıcına ortanca {Math.round(insights.routineToSleepMedianMinutes)} dk · {insights.routineToSleepSamples} eşleşen gece</Text> : <Text style={styles.hint}>Rutin çalıştırıcısı tamamlanıp ardından gece uykusu kaydedildiğinde rutin–uyku aralığı burada görünür.</Text>}
+        {insights.sleepOnsetMedianMinutes !== undefined ? <Text style={styles.awake}>Yatış saatinden uyku başlangıcına son 7 gün ortancası {Math.round(insights.sleepOnsetMedianMinutes)} dk · {insights.sleepOnsetSamples} eşleşen gece</Text> : <Text style={styles.hint}>Sabah check-in'indeki yatış saati ve ilk gece uykusu kaydı eşleştikçe, en az 3 gecelik son hafta ortancası burada görünür ({insights.sleepOnsetSamples}/3 eşleşme).</Text>}
+        {insights.previousSleepOnsetMedianMinutes !== undefined ? <Text style={styles.awake}>Önceki 7 gün ortancası {Math.round(insights.previousSleepOnsetMedianMinutes)} dk · bu fark tek başına planı değiştirme nedeni değildir.</Text> : null}
+        {insights.sleepOnsetChangeMinutes !== undefined ? <Text style={styles.body}>İki dönemin kayıtlı ortancaları arasında {Math.abs(insights.sleepOnsetChangeMinutes)} dk fark var; son hafta {insights.sleepOnsetChangeMinutes < -5 ? "daha kısa" : insights.sleepOnsetChangeMinutes > 5 ? "daha uzun" : "benzer"} görünüyor ({insights.sleepOnsetSamples} ve {insights.previousSleepOnsetSamples} eşleşen gece). Bu kayıt özeti tek başına planı değiştirme nedeni değildir.</Text> : null}
+      </Card>
+      <SectionTitle title="Saatli gece uyanmaları" action="Son 7 gün" />
+      <Card>
+        {nightWakeResponseSummary.total ? <>
+          <Text style={styles.body}>{nightWakeResponseSummary.total} kayıt · {nightWakeResponseSummary.daysWithLogs} gecede</Text>
+          {NIGHT_WAKE_RESPONSE_OPTIONS.filter((item) => nightWakeResponseSummary.counts[item.id] > 0).map((item) => <View key={item.id} style={styles.eventRow}><Text style={[styles.eventTitle, styles.flex]}>{item.label}</Text><Text style={styles.taskDate}>{nightWakeResponseSummary.counts[item.id]}</Text></View>)}
+          <Text style={styles.hint}>Bu özet yalnızca kaydedilen yanıt türlerini sayar; beslenme ihtiyacını erteleme veya uyku yöntemini değiştirme önerisi değildir.</Text>
+        </> : <Text style={styles.body}>Son 7 günde saatli gece uyanması kaydı yok. İsterseniz Bugün ekranındaki veya gece modundaki kısayoldan ekleyebilirsiniz.</Text>}
       </Card>
       <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
       <Card>
         {SLEEP_READINESS_ITEMS.map((item) => {
           const done = app.state.sleepPlan.readinessCompleted.includes(item);
-          return <Pressable key={item} accessibilityRole="checkbox" accessibilityLabel={item} accessibilityState={{ checked: done }} onPress={() => app.toggleReadiness(item)} style={styles.taskRow}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><Text style={styles.taskText}>{item}</Text></Pressable>;
+          return <Pressable key={item} accessibilityRole="checkbox" accessibilityLabel={`${item}. ${SLEEP_READINESS_GUIDANCE[item]}`} accessibilityHint="Bu hazır oluş maddesini işaretler veya işaretini kaldırır." accessibilityState={{ checked: done }} onPress={() => app.toggleReadiness(item)} style={[styles.taskRow, styles.readinessRow]}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><View style={styles.flex}><Text style={styles.taskText}>{item}</Text><Text style={styles.readinessHelp}>{SLEEP_READINESS_GUIDANCE[item]}</Text></View></Pressable>;
         })}
         {!stage.canReduceSupport ? <Text style={styles.readinessNote}>Bu yaş aşamasında tüm maddeler tamamlansa bile desteği azaltma hedefi yoktur; rutin ve duyarlı bakım önceliklidir.</Text> : null}
       </Card>
@@ -1103,11 +1386,11 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <PrimaryButton label="Akşam rutinine başla" onPress={startRoutine} />
         <View style={styles.spacer12} />
         {app.state.sleepPlan.routine.map((item, index) => <View key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} accessibilityLabel={`${item.label}, ${item.enabled ? "etkin" : "devre dışı"}; silmek için basılı tutun`} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} style={styles.routineToggle}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable><View style={styles.routineControls}><Pressable accessibilityRole="button" accessibilityLabel={`${item.label} adımını yukarı taşı`} disabled={index === 0} onPress={() => app.moveRoutineStep(item.id, -1)} style={[styles.routineMove, index === 0 && styles.routineMoveDisabled]}><Text style={styles.routineMoveText}>↑</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`${item.label} adımını aşağı taşı`} disabled={index === app.state.sleepPlan.routine.length - 1} onPress={() => app.moveRoutineStep(item.id, 1)} style={[styles.routineMove, index === app.state.sleepPlan.routine.length - 1 && styles.routineMoveDisabled]}><Text style={styles.routineMoveText}>↓</Text></Pressable></View></View>)}
-        <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
+        <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput accessibilityLabel="Yeni rutin adımı adı" value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput accessibilityLabel="Rutin adımının süresi, dakika" value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
         <Text style={styles.hint}>Bir adımı etkinleştirmek için dokunun, sırayı oklarla değiştirin; silmek için adım adına basılı tutun.</Text>
       </Card>
       <SectionTitle title="Hedef saatler" />
-      <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput value={bedtime} onChangeText={(value) => setBedtime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput value={wakeTime} onChangeText={(value) => setWakeTime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
+      <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput accessibilityLabel="Hedef yatış saati" value={bedtime} onChangeText={(value) => setBedtime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput accessibilityLabel="Hedef sabah uyanış saati" value={wakeTime} onChangeText={(value) => setWakeTime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
       <Card tone="peach">
         <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
         <Text style={styles.inputLabel}>Dün gece özeti</Text>
@@ -1120,7 +1403,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} /></View></View>
         {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
-        {morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
+        {app.runningSleep ? <Text accessibilityLiveRegion="polite" style={styles.hint}>Uyku devam ediyor. Uyanış kaydedildiğinde sonraki uyku penceresi yeniden hesaplanır.</Text> : morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
         <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() ? morningWakeClock : undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
         <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
@@ -1132,7 +1415,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.hint}>Bildirilen toplam sayı ile saatli uyanma kayıtları ayrı tutulur; ikisi de isteğe bağlıdır.</Text>
         {todayCheckIn?.nightWakeLogs?.length ? <><Text style={styles.inputLabel}>Kaydedilen uyanmalar</Text>{todayCheckIn.nightWakeLogs.slice(-5).reverse().map((log) => <View key={log.id} style={styles.eventRow}><View style={styles.eventDot} /><View style={styles.flex}><Text style={styles.eventTitle}>{nightWakeResponseLabel(log.response)}</Text><Text style={styles.muted}>{log.caregiver}</Text></View><Text style={styles.taskDate}>{time(log.at)}</Text><Pressable accessibilityRole="button" accessibilityLabel={`${time(log.at)} uyanma kaydını sil`} onPress={() => confirmDeleteNightWake(log.id)} hitSlop={8}><Text style={styles.editLink}>Sil</Text></Pressable></View>)}{todayCheckIn.nightWakeLogs.length > 5 ? <Text style={styles.hint}>Son 5 kayıt gösteriliyor.</Text> : null}</> : <Text style={styles.hint}>Bugün henüz saatli gece uyanması kaydı yok. Bugün ekranındaki Uyanma kısayolundan ekleyebilirsiniz.</Text>}
         <Text style={styles.inputLabel}>Dünden farklı olan neydi? (isteğe bağlı)</Text>
-        <TextInput value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
+        <TextInput accessibilityLabel="Bugünkü uyku ve rutin hakkında not" value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
       </Card>
       <SectionTitle title="Son geceler" action="7 günlük görünüm" />
@@ -1161,7 +1444,7 @@ function SleepMethodsModal({ visible, close, methods, activeMethod, choose }: { 
   };
   const matches = preference === "all" ? methods : methods.filter((method) => preferenceMethods[preference].includes(method));
   const otherMethods = preference === "all" ? [] : methods.filter((method) => !matches.includes(method));
-  const methodCard = (method: SleepMethod) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.inputLabel}>Bakım veren ne yapar?</Text><Text style={styles.body}>{methodDescription(method).caregiverRole}</Text><Text style={styles.inputLabel}>Gece uyanınca</Text><Text style={styles.body}>{methodDescription(method).nightResponse}</Text><View style={styles.methodCompare}>{([["Huzursuzluk", methodDescription(method).comparison.protest], ["Bakım veren", methodDescription(method).comparison.presence], ["Uygulama yükü", methodDescription(method).comparison.effort], ["İlerleme", methodDescription(method).comparison.pace]] as const).map(([label, value]) => <View key={label} style={styles.methodCompareRow}><Text style={styles.methodCompareLabel}>{label}</Text><Text style={styles.methodCompareText}>{value}</Text></View>)}</View><Text style={styles.hint}>Bebek belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa denemeyi bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>;
+  const methodCard = (method: SleepMethod) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} accessibilityHint="Bu yaklaşımı uyku planınıza uygular ve karşılaştırmayı kapatır." accessibilityState={{ selected: method === activeMethod }} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.inputLabel}>Bakım veren ne yapar?</Text><Text style={styles.body}>{methodDescription(method).caregiverRole}</Text><Text style={styles.inputLabel}>Gece uyanınca</Text><Text style={styles.body}>{methodDescription(method).nightResponse}</Text><View style={styles.methodCompare}>{([["Huzursuzluk", methodDescription(method).comparison.protest], ["Bakım veren", methodDescription(method).comparison.presence], ["Uygulama yükü", methodDescription(method).comparison.effort], ["İlerleme", methodDescription(method).comparison.pace]] as const).map(([label, value]) => <View key={label} style={styles.methodCompareRow}><Text style={styles.methodCompareLabel}>{label}</Text><Text style={styles.methodCompareText}>{value}</Text></View>)}</View><Text style={styles.hint}>Bebek belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa denemeyi bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>;
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Uyku yaklaşımlarını karşılaştır</Text><Text style={styles.pageIntro}>Ölçütler yöntemleri konuşmayı kolaylaştıran genel bir karşılaştırmadır; bebeğinizin tepkisi ve gereken süre değişebilir. Bir yaklaşım seçmek zorunlu değildir, istediğiniz zaman duraklatabilirsiniz.</Text>
     <Text style={styles.inputLabel}>Ailenizin tercihine göre görünümü daraltın</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}><Pill label="Tümü" active={preference === "all"} onPress={() => setPreference("all")} /><Pill label="Yakınında kal" active={preference === "near"} onPress={() => setPreference("near")} /><Pill label="Desteği azalt" active={preference === "reduce"} onPress={() => setPreference("reduce")} /><Pill label="Kısa kontroller" active={preference === "checks"} onPress={() => setPreference("checks")} /></ScrollView><Text style={styles.hint}>Bu filtre yalnızca yöntemleri aile tercihinize göre gruplar; öneri veya sıralama değildir. Diğer yöntemler de aşağıda kalır.</Text>
     {preference !== "all" ? <Text style={styles.inputLabel}>Tercihinizle örtüşen yöntemler</Text> : null}{matches.map(methodCard)}{otherMethods.length ? <><Text style={styles.inputLabel}>Diğer yaklaşımlar</Text>{otherMethods.map(methodCard)}</> : null}
@@ -1207,9 +1490,9 @@ function BedtimeRoutineModal({ visible, steps, close, addEvent }: { visible: boo
   </View></Modal>;
 }
 
-async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
+async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"], periodDays: DoctorSummaryPeriod) {
   try {
-    const file = await Print.printToFileAsync({ html: createDoctorSummaryHtml(state), base64: false });
+    const file = await Print.printToFileAsync({ html: createDoctorSummaryHtml(state, new Date(), periodDays), base64: false });
     const canShare = await Sharing.isAvailableAsync();
     if (!canShare) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
     await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva doktor özetini paylaş" });
@@ -1218,26 +1501,41 @@ async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"])
   }
 }
 
+async function shareSleepWeekPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
+  try {
+    const file = await Print.printToFileAsync({ html: createSleepWeekSummaryHtml(state), base64: false });
+    if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva haftalık uyku özetini paylaş" });
+  } catch {
+    Alert.alert("PDF oluşturulamadı", "Haftalık uyku özeti hazırlanırken bir sorun oluştu.");
+  }
+}
+
+async function shareMemoryBookPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
+  try {
+    const file = await Print.printToFileAsync({ html: createMemoryBookHtml(state), base64: false });
+    if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "Anı defteri PDF olarak hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva anı defterini paylaş" });
+  } catch {
+    Alert.alert("PDF oluşturulamadı", "Anı defteri hazırlanırken bir sorun oluştu.");
+  }
+}
+
 function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openEditTask: (task: CareTask) => void; openVaccineSuggestions: () => void; now: Date }) {
   const state = app.state;
+  const [doctorSummaryPeriod, setDoctorSummaryPeriod] = useState<DoctorSummaryPeriod>(7);
   const events = state.events;
   const newbornSummary = correctedAgeDays(state.baby, now) < 63;
   const periodStart = new Date(now);
   if (newbornSummary) periodStart.setTime(now.getTime() - 24 * 60 * 60 * 1000);
   else periodStart.setHours(0, 0, 0, 0);
   const recent = events.filter((event) => new Date(event.startedAt).getTime() >= periodStart.getTime() && new Date(event.startedAt).getTime() <= now.getTime());
-  const periodEnd = now.getTime();
-  const sleeps = events.filter((event) => event.kind === "sleep" && new Date(event.startedAt).getTime() < periodEnd && (event.endedAt ? new Date(event.endedAt).getTime() : periodEnd) > periodStart.getTime());
-  const sleepMinutes = sleeps.reduce((sum, event) => {
-    const start = Math.max(new Date(event.startedAt).getTime(), periodStart.getTime());
-    const end = Math.min(event.endedAt ? new Date(event.endedAt).getTime() : periodEnd, periodEnd);
-    return sum + Math.max(0, end - start) / 60_000;
-  }, 0);
+  const sleepMinutes = sleepMinutesBetween(events, periodStart, now);
   const feeds = recent.filter((event) => event.kind === "feed" && event.feedType !== "pump");
   const feedingTotals = todayFeedingTotals(events, now, newbornSummary);
   const diapers = recent.filter((event) => event.kind === "diaper");
   const health = recent.filter((event) => event.kind === "health");
-  const weeklySleep = weeklySleepTotals(events);
+  const weeklySleep = weeklySleepTotals(events, now);
   const weeklyDiapers = weeklyDiaperTotals(events, now);
   const maxDailyDiapers = Math.max(0, ...weeklyDiapers.map((day) => day.total));
   const maxDailySleep = Math.max(0, ...weeklySleep.map((day) => day.totalMinutes));
@@ -1245,6 +1543,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
   const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
   const milestones = detectRecordedMilestones(events, now);
+  const memories = events.filter((event) => event.kind === "memory" && Number.isFinite(new Date(event.startedAt).getTime()) && new Date(event.startedAt).getTime() <= now.getTime());
   const solidHistory = summarizeSolidFoodHistory(events);
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   const completedCareTasks = [...state.careTasks].filter((task) => task.completedAt).sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
@@ -1265,6 +1564,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
           return <View key={day.date} style={styles.weeklyColumn} accessibilityLabel={day.sleepCount ? `${day.label}: ${hours} saat ${minutes} dakika uyku, ${day.sleepCount} dönem` : `${day.label}: uyku kaydı yok`}><View style={styles.weeklyTrack}><View style={[styles.weeklyBar, { height: day.totalMinutes ? `${Math.max(3, day.totalMinutes / maxDailySleep * 100)}%` : "0%" }]} /></View><Text style={styles.weeklyValue}>{day.sleepCount ? hours ? `${hours}s` : `${minutes}d` : "—"}</Text><Text style={styles.weeklyLabel}>{day.label}</Text></View>;
         })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
         <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
+        <View style={styles.spacer12} /><PrimaryButton label="7 günlük uyku özetini PDF paylaş" quiet onPress={() => void shareSleepWeekPdf(state)} />
       </Card>
       <SectionTitle title="Son 7 gün · bez kayıtları" action={maxDailyDiapers ? `${weeklyDiapers.reduce((sum, day) => sum + day.total, 0)} kayıt` : "Kayıt yok"} />
       <Card>
@@ -1329,13 +1629,19 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
         </View>) : <Text style={styles.body}>Uyku, beslenme veya ölçüm kaydı ekledikçe burada kayıtlara dayalı anlar görünür.</Text>}
         <Text style={styles.hint}>Bunlar yalnızca uygulamadaki kayıtlardan çıkarılır; gelişim basamağı veya sağlık değerlendirmesi değildir. Anı eklemek isteğe bağlıdır.</Text>
       </Card>
+      <SectionTitle title="Anı defteri" action={`${memories.length} kayıt`} />
+      <Card>
+        <Text style={styles.body}>{memories.length ? "Kaydettiğiniz anları ve fotoğrafları PDF anı defteri olarak dışa aktarın." : "Zaman çizelgesine anı ekledikçe burada PDF anı defteri oluşturabilirsiniz."}</Text>
+        {memories.length ? <><View style={styles.spacer12} /><PrimaryButton label="Anı defterini PDF paylaş" quiet onPress={() => void shareMemoryBookPdf(state)} /></> : null}
+        <Text style={styles.hint}>PDF cihazda hazırlanır. Büyük defterlerde boyut sınırı nedeniyle bazı fotoğraflar eklenmeyebilir; PDF paylaşım hedefini siz seçersiniz.</Text>
+      </Card>
       <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
       <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
       {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
       {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
       <SectionTitle title="Doktor görüşmesi" />
-      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Son yedi günün uyku, beslenme, bez, sağlık ve büyüme kayıtlarını tarafsız bir metinde toplayın.</Text><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state) })} /></View></View></Card>
+      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Paylaşılacak kayıt aralığını seçin. Uyku, beslenme, bez ve sağlık bilgileri seçtiğiniz döneme göre hazırlanır.</Text><View style={styles.spacer12} /><View style={styles.choiceRow}>{([7, 14, 30] as const).map((days) => <Pill key={days} label={`${days} gün`} active={doctorSummaryPeriod === days} onPress={() => setDoctorSummaryPeriod(days)} />)}</View><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state, doctorSummaryPeriod)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state, now, doctorSummaryPeriod) })} /></View></View></Card>
     </ScrollView>
   );
 }
@@ -1383,7 +1689,7 @@ function DevelopmentTrackerCard({ app, now }: { app: ReturnType<typeof useUykuva
         </View>)}
       </View>)}
       <Text style={styles.inputLabel}>Doktora veya diğer bakım verene sorularım</Text>
-      <TextInput value={note} onChangeText={setNote} style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} multiline maxLength={500} placeholder="İsterseniz merak ettiğiniz noktaları not edin." placeholderTextColor="#93A09C" />
+      <TextInput accessibilityLabel="Gelişim gözlemleri hakkında doktora veya bakıcıya not" value={note} onChangeText={setNote} style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} multiline maxLength={500} placeholder="İsterseniz merak ettiğiniz noktaları not edin." placeholderTextColor="#93A09C" />
       <PrimaryButton label="Gelişim notunu kaydet" quiet onPress={() => app.saveDevelopmentNote(checkpoint.ageMonths, note)} />
       <Text style={styles.hint}>“Henüz görmedim” veya “Emin değilim” yanıtlarını, beceri kaybını ya da başka bir endişeyi çocuk doktorunuzla paylaşın. Bu gözlemler doktor özeti paylaşımına eklenir.</Text>
       <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(checkpoint.sourceUrl)}><Text style={styles.linkText}>CDC {checkpoint.title} kaynak listesini aç</Text></Pressable>
@@ -1500,7 +1806,7 @@ function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; 
   </>;
 }
 
-function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestoreData }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onAddChild: () => void; onRestoreData: () => void }) {
+function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestoreData, onOpenCloudSync }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onAddChild: () => void; onRestoreData: () => void; onOpenCloudSync: () => void }) {
   const summary = handoffSummary(app.state, new Date(), app.state.preferences.handoffHours);
   const [encryptedBackupOpen, setEncryptedBackupOpen] = useState(false);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
@@ -1514,6 +1820,15 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
     const granted = await requestNotificationPermission();
     if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyku hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
     app.updatePreferences({ notificationsEnabled: true });
+  };
+  const toggleWakeNotifications = async (enabled: boolean) => {
+    if (!enabled) {
+      app.updatePreferences({ wakeReminderEnabled: false });
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) return Alert.alert("Bildirim izni kapalı", "Uyanış hatırlatması için cihaz ayarlarından Uykuva bildirimlerine izin verin.");
+    app.updatePreferences({ wakeReminderEnabled: true });
   };
   const toggleCareTaskNotifications = async (enabled: boolean) => {
     if (!enabled) {
@@ -1604,10 +1919,13 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
       <Card>
         <Text style={styles.cardTitle}>Bakım verene özel notlar</Text>
         <Text style={styles.body}>Beslenme düzeni, sakinleşmesine yardımcı olanlar ve aile talimatları gibi bilgileri yazın.</Text>
-        <TextInput value={app.state.careInstructions ?? ""} onChangeText={app.updateCareInstructions} style={[styles.input, { minHeight: 112, textAlignVertical: "top" }]} multiline maxLength={1000} placeholder="Örn. Uykudan önce kısa ninni iyi geliyor; biberon miktarını bakım planındaki gibi verin." placeholderTextColor="#93A09C" />
+        <VoiceNoteInput value={app.state.careInstructions ?? ""} onChangeText={app.updateCareInstructions} />
+        <TextInput accessibilityLabel="Bakım verene özel aile talimatları" value={app.state.careInstructions ?? ""} onChangeText={app.updateCareInstructions} style={[styles.input, { minHeight: 112, textAlignVertical: "top" }]} multiline maxLength={1000} placeholder="Örn. Uykudan önce kısa ninni iyi geliyor; biberon miktarını bakım planındaki gibi verin." placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not bu cihazda saklanır ve yalnızca “Bakım özetini paylaş” düğmesine bastığınızda devir metnine eklenir.</Text>
       </Card>
       <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
+      <SectionTitle title="Cihazlar arasında aile eşitlemesi" />
+      <Card tone="mint"><Text style={styles.cardTitle}>{isCloudSyncConfigured() ? "İsteğe bağlı bulut eşitlemesi" : "Güvenli eşitleme hazırlığı"}</Text><Text style={styles.body}>{cloudSyncSetupMessage()}</Text><View style={styles.spacer12} /><PrimaryButton label="Aile hesabı ve eşitleme" quiet onPress={onOpenCloudSync} /><Text style={styles.hint}>Hesap açana ve ilk eşitlemeyi açıkça onaylayana kadar hiçbir bakım verisi gönderilmez. Bulut kopyası uçtan uca şifrelenir; anahtar aile üyeleriyle ayrı ve güvenli bir kanaldan paylaşılır.</Text></Card>
       <Card>
         <Text style={styles.cardTitle}>Bakım devri aralığı</Text>
         <Text style={styles.body}>Paylaşılan özetin kapsayacağı süreyi aile nöbetlerinize göre seçin.</Text>
@@ -1623,16 +1941,18 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
       </Card>
       <SectionTitle title="Hatırlatmalar" />
       <Card>
-        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Akşam rutini hatırlatması</Text><Text style={styles.muted}>Hedef yatış saatiniz ve etkin rutin sürenizden hesaplanır.</Text></View><Switch accessibilityLabel="Akşam rutini hatırlatması" value={app.state.preferences.routineRemindersEnabled} onValueChange={(value) => void toggleRoutineNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.routineRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Akşam rutini hatırlatması</Text><Text style={styles.muted}>Hedef yatış saatiniz ve etkin rutin sürenizden hesaplanır.</Text></View><Switch accessibilityLabel="Akşam rutini hatırlatması" accessibilityState={{ checked: app.state.preferences.routineRemindersEnabled }} value={app.state.preferences.routineRemindersEnabled} onValueChange={(value) => void toggleRoutineNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.routineRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.routineRemindersEnabled ? <Text style={styles.hint}>Önümüzdeki 7 gün için yerel bildirim kurulur. Etkin rutin adımı yoksa veya hatırlatma sessiz saate denk gelirse bildirim gönderilmez; hedef yatış ve rutin süresini Uyku sekmesinden değiştirebilirsiniz.</Text> : null}
-        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku penceresi bildirimi</Text><Text style={styles.muted}>Tahmini pencere yaklaşırken sessizce hatırlatır.</Text></View><Switch accessibilityLabel="Uyku penceresi bildirimi" accessibilityState={{ checked: app.state.preferences.notificationsEnabled }} value={app.state.preferences.notificationsEnabled} onValueChange={(value) => void toggleNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.notificationsEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.notificationsEnabled ? <><Text style={styles.inputLabel}>Kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.sleepReminderMinutes === minutes} onPress={() => app.updatePreferences({ sleepReminderMinutes: minutes })} />)}</View></> : null}
-        {app.state.preferences.notificationsEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled || app.state.preferences.milkExpiryRemindersEnabled || app.state.preferences.routineRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
-        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Aşı ve randevu hatırlatmaları</Text><Text style={styles.muted}>Yaklaşan görevleri seçtiğiniz zamanda hatırlatır.</Text></View><Switch accessibilityLabel="Aşı ve randevu hatırlatmaları" value={app.state.preferences.careTaskRemindersEnabled} onValueChange={(value) => void toggleCareTaskNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.careTaskRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Olası uyanış hatırlatması</Text><Text style={styles.muted}>Devam eden uyku için en az beş benzer kayıt varsa tahmini uyanıştan önce haber verir.</Text></View><Switch accessibilityLabel="Olası uyanış hatırlatması" accessibilityState={{ checked: app.state.preferences.wakeReminderEnabled }} value={app.state.preferences.wakeReminderEnabled} onValueChange={(value) => void toggleWakeNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.wakeReminderEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        {app.state.preferences.wakeReminderEnabled ? <><Text style={styles.inputLabel}>Uyanış tahmininden kaç dakika önce?</Text><View style={styles.choiceRow}>{([5, 10, 15, 20, 30] as const).map((minutes) => <Pill key={minutes} label={`${minutes} dk`} active={app.state.preferences.wakeReminderMinutes === minutes} onPress={() => app.updatePreferences({ wakeReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Bu saat geçmiş kayıtlara dayalı bir tahmindir; bebeğinizi uyandırmak için alarm değildir.</Text></> : null}
+        {app.state.preferences.notificationsEnabled || app.state.preferences.wakeReminderEnabled || app.state.preferences.careTaskRemindersEnabled || app.state.preferences.diaperRemindersEnabled || app.state.preferences.milkExpiryRemindersEnabled || app.state.preferences.routineRemindersEnabled ? <><Text style={styles.inputLabel}>Sessiz saatler</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Başlangıç</Text><TextInput accessibilityLabel="Sessiz saat başlangıcı" value={quietStart} onChangeText={setQuietStart} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View><View style={styles.timeField}><Text style={styles.muted}>Bitiş</Text><TextInput accessibilityLabel="Sessiz saat bitişi" value={quietEnd} onChangeText={setQuietEnd} style={styles.compactInput} keyboardType="numbers-and-punctuation" /></View></View><View style={styles.spacer12} /><PrimaryButton label="Sessiz saatleri kaydet" quiet onPress={saveQuietHours} /></> : null}
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Aşı ve randevu hatırlatmaları</Text><Text style={styles.muted}>Yaklaşan görevleri seçtiğiniz zamanda hatırlatır.</Text></View><Switch accessibilityLabel="Aşı ve randevu hatırlatmaları" accessibilityState={{ checked: app.state.preferences.careTaskRemindersEnabled }} value={app.state.preferences.careTaskRemindersEnabled} onValueChange={(value) => void toggleCareTaskNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.careTaskRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.careTaskRemindersEnabled ? <><Text style={styles.inputLabel}>Ne zaman hatırlatılsın?</Text><View style={styles.choiceRow}>{([{ minutes: 15, label: "15 dk" }, { minutes: 30, label: "30 dk" }, { minutes: 60, label: "1 saat" }, { minutes: 120, label: "2 saat" }, { minutes: 180, label: "3 saat" }, { minutes: 1440, label: "1 gün" }] as const).map(({ minutes, label }) => <Pill key={minutes} label={label} active={app.state.preferences.careTaskReminderMinutes === minutes} onPress={() => app.updatePreferences({ careTaskReminderMinutes: minutes })} />)}</View><Text style={styles.hint}>Hatırlatmalar sessiz saatlere denk gelirse sessiz dönem bitiminde, görev saatinden önce gönderilir.</Text></> : null}
-        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Bez kontrol hatırlatması</Text><Text style={styles.muted}>Son bez kaydından sonra seçtiğiniz sürede bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Bez kontrol hatırlatması" value={app.state.preferences.diaperRemindersEnabled} onValueChange={(value) => void toggleDiaperNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.diaperRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        <View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Bez kontrol hatırlatması</Text><Text style={styles.muted}>Son bez kaydından sonra seçtiğiniz sürede bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Bez kontrol hatırlatması" accessibilityState={{ checked: app.state.preferences.diaperRemindersEnabled }} value={app.state.preferences.diaperRemindersEnabled} onValueChange={(value) => void toggleDiaperNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.diaperRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.diaperRemindersEnabled ? <><Text style={styles.inputLabel}>Kaç saat sonra?</Text><View style={styles.choiceRow}>{([2, 3, 4] as const).map((hours) => <Pill key={hours} label={`${hours} saat`} active={app.state.preferences.diaperReminderHours === hours} onPress={() => app.updatePreferences({ diaperReminderHours: hours })} />)}</View><Text style={styles.hint}>Hatırlatma sessiz saate denk gelirse sessiz dönem bitiminde gelir. Bez kontrolü isteğe bağlıdır; uygulama bir bakım sıklığı önermez.</Text></> : null}
-        <View style={[styles.settingRow, { marginTop: 18 }]}><View style={styles.flex}><Text style={styles.eventTitle}>Sağılan süt kullanım süresi</Text><Text style={styles.muted}>Kullanım süresi yaklaşan ve stoğu kalan partiler için bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Sağılan süt kullanım süresi hatırlatması" value={app.state.preferences.milkExpiryRemindersEnabled} onValueChange={(value) => void toggleMilkExpiryNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.milkExpiryRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
+        <View style={[styles.settingRow, { marginTop: 18 }]}><View style={styles.flex}><Text style={styles.eventTitle}>Sağılan süt kullanım süresi</Text><Text style={styles.muted}>Kullanım süresi yaklaşan ve stoğu kalan partiler için bir kez hatırlatır.</Text></View><Switch accessibilityLabel="Sağılan süt kullanım süresi hatırlatması" accessibilityState={{ checked: app.state.preferences.milkExpiryRemindersEnabled }} value={app.state.preferences.milkExpiryRemindersEnabled} onValueChange={(value) => void toggleMilkExpiryNotifications(value)} trackColor={{ true: colors.sage }} thumbColor={app.state.preferences.milkExpiryRemindersEnabled ? colors.sageDark : "#E2E2E2"} /></View>
         {app.state.preferences.milkExpiryRemindersEnabled ? <><Text style={styles.inputLabel}>Kullanım süresinden ne kadar önce?</Text><View style={styles.choiceRow}>{([{ lead: "adaptive", label: "Otomatik" }, { lead: 2, label: "2 saat" }, { lead: 6, label: "6 saat" }, { lead: 12, label: "12 saat" }, { lead: 24, label: "1 gün" }, { lead: 48, label: "2 gün" }] as const).map(({ lead, label }) => <Pill key={lead} label={label} active={app.state.preferences.milkExpiryReminderLead === lead} onPress={() => app.updatePreferences({ milkExpiryReminderLead: lead })} />)}</View><Text style={styles.hint}>{app.state.preferences.milkExpiryReminderLead === "adaptive" ? "Otomatik seçenek, kalan süreye göre hatırlatma zamanını ayarlar." : "Seçilen süre kullanım süresinden uzun kalırsa hatırlatma kalan sürenin yaklaşık yarısında gönderilir."} Dondurulmuş ve çözülmemiş süt için en iyi kalite önerisi ile tavsiye edilen son tarih ayrı hatırlatılır; sessiz saatler gözetilir.</Text><Text style={styles.hint}>Saklama aralıkları genel rehberdir; özel sağlık durumlarında sağlık uzmanınıza danışın.</Text></> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
@@ -1659,6 +1979,213 @@ function EncryptedBackupModal({ visible, close, exportBackup }: { visible: boole
     setBusy(false);
   };
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Parola korumalı yedek</Text><Text style={styles.pageIntro}>Yedek AES-GCM ile şifrelenir. En az 12 karakterli bir parola oluşturun; diğer cihazda içe aktarırken aynı parola gerekir. Parolayı kaybederseniz Uykuva yedeği açamaz.</Text><Text style={styles.inputLabel}>Yedek parolası</Text><TextInput accessibilityLabel="Yedek parolası" value={password} onChangeText={setPassword} style={styles.input} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} textContentType="newPassword" /><Text style={styles.inputLabel}>Parolayı tekrar yazın</Text><TextInput accessibilityLabel="Yedek parolasını tekrar yazın" value={confirmation} onChangeText={setConfirmation} style={styles.input} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} textContentType="newPassword" /><View style={styles.spacer12} /><PrimaryButton label={busy ? "Yedek şifreleniyor…" : "Şifrele ve paylaş"} onPress={() => void submit()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+}
+
+function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
+  const [families, setFamilies] = useState<Awaited<ReturnType<typeof getMyCloudFamilies>>>([]);
+  const [pendingInvites, setPendingInvites] = useState<Awaited<ReturnType<typeof getCloudFamilyInvites>>>([]);
+  const [familyId, setFamilyId] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"parent" | "caregiver" | "family">("caregiver");
+  const [inviteToken, setInviteToken] = useState("");
+  const [familyKey, setFamilyKey] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (!visible) { setConsent(false); setFamilyKey(""); return; }
+    setConsent(false);
+    setFamilyKey("");
+    setMessage("");
+    if (!isCloudSyncConfigured()) return;
+    void getCloudSyncAccount().then(async (user) => {
+      setAccountEmail(user?.email ?? null);
+      if (!user) return;
+      const memberships = await getMyCloudFamilies();
+      setFamilies(memberships);
+      setFamilyId((current) => current || memberships[0]?.family_id || "");
+    }).catch((error) => setMessage(error instanceof Error ? error.message : "Hesap durumu okunamadı."));
+  }, [visible]);
+  const selectedMembership = families.find((item) => item.family_id === familyId);
+  useEffect(() => {
+    if (!visible || !familyId || !selectedMembership?.isOwner) { setPendingInvites([]); return; }
+    let active = true;
+    void getCloudFamilyInvites(familyId)
+      .then((invites) => { if (active) setPendingInvites(invites); })
+      .catch((error) => { if (active) setMessage(error instanceof Error ? error.message : "Davetler yüklenemedi."); });
+    return () => { active = false; };
+  }, [visible, familyId, selectedMembership?.isOwner]);
+  if (!visible) return null;
+  const run = async (action: () => Promise<void>) => {
+    if (busy) return;
+    setBusy(true);
+    setMessage("");
+    try { await action(); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "İşlem tamamlanamadı. Bağlantıyı kontrol edip yeniden deneyin."); }
+    finally { setBusy(false); }
+  };
+  const requireConsent = () => {
+    if (consent) return true;
+    setMessage("Bulut işlemlerinden önce veri aktarımına ilişkin onayı işaretleyin.");
+    return false;
+  };
+  const refreshFamilies = async () => {
+    const memberships = await getMyCloudFamilies();
+    setFamilies(memberships);
+    setFamilyId((current) => memberships.some((item) => item.family_id === current) ? current : memberships[0]?.family_id ?? "");
+  };
+  const refreshInvites = async () => {
+    if (!familyId) return;
+    setPendingInvites(await getCloudFamilyInvites(familyId));
+  };
+  const submitAuth = (create: boolean) => void run(async () => {
+    if (!requireConsent()) return;
+    if (create) {
+      const result = await signUpForCloudSync(email, password);
+      setPassword("");
+      if (result.confirmationRequired) setMessage("Hesap oluşturuldu. E-postadaki doğrulama bağlantısını açıp sonra giriş yapın.");
+      else { setAccountEmail(email.trim()); await refreshFamilies(); }
+    } else {
+      const user = await signInToCloudSync(email, password);
+      setAccountEmail(user.email ?? email.trim());
+      setPassword("");
+      await refreshFamilies();
+    }
+  });
+  const createFamily = () => void run(async () => {
+    if (!requireConsent()) return;
+    const id = await createCloudFamily();
+    let key: string;
+    try { key = await createFamilyEncryptionKey(id); }
+    catch (error) {
+      await removeCloudFamily(id).catch(() => undefined);
+      throw error;
+    }
+    setFamilyKey(key);
+    setFamilyId(id);
+    await refreshFamilies();
+    setMessage("Aile alanı oluşturuldu. Anahtarı yalnızca güvenli, uçtan uca şifreli bir kanaldan diğer cihaz sahibine aktarın.");
+  });
+  const createInvite = () => void run(async () => {
+    if (!requireConsent() || !familyId) return;
+    const invite = await createCloudFamilyInvite(familyId, inviteEmail, inviteRole);
+    setInviteToken(invite.token);
+    await refreshInvites();
+    setMessage(`Davet 7 gün geçerli. Anahtarı davet kodundan ayrı, güvenli bir kanaldan paylaşın. Son geçerlilik: ${new Date(invite.expiresAt).toLocaleString("tr-TR")}.`);
+  });
+  const revokeInvite = (inviteId: string, invitedEmail: string) => Alert.alert("Daveti iptal et?", `${invitedEmail} için oluşturulan davet kodu artık kullanılamaz.`, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Davet kodunu iptal et", style: "destructive", onPress: () => void run(async () => {
+      if (!requireConsent()) return;
+      await revokeCloudFamilyInvite(familyId, inviteId);
+      setPendingInvites((current) => current.filter((invite) => invite.id !== inviteId));
+      setMessage("Davet iptal edildi.");
+    }) }
+  ]);
+  const acceptInvite = () => void run(async () => {
+    if (!requireConsent()) return;
+    const id = await acceptCloudFamilyInvite(inviteToken);
+    if (familyKey.trim()) await storeSharedFamilyEncryptionKey(id, familyKey.trim());
+    setFamilyId(id);
+    setInviteToken("");
+    await refreshFamilies();
+    setMessage(familyKey.trim() ? "Aileye katıldınız; şifreleme anahtarı bu cihazın güvenli deposuna kaydedildi." : "Aileye katıldınız. Eşitlemeden önce aile anahtarını güvenli kanaldan alıp kaydedin.");
+  });
+  const syncNow = () => void run(async () => {
+    if (!requireConsent() || !familyId) return;
+    if (selectedMembership?.role === "family") throw new Error("Bu aile üyeliği salt okunur; kayıtları indirebilirsiniz ancak yükleyemezsiniz.");
+    const remote = await fetchEncryptedFamilyDocument(familyId, "family-workspace");
+    let state = app.state;
+    let revision = 0;
+    if (remote) {
+      const remoteExport = await decryptFamilyDocument(familyId, "family-workspace", remote.ciphertext);
+      if (typeof remoteExport !== "string") throw new Error("Buluttaki aile kaydı geçerli bir Uykuva yedeği değil.");
+      const remoteState = parseDataExport(remoteExport);
+      state = mergeDataStates(app.state, remoteState);
+      revision = remote.revision;
+      app.restoreData(state);
+    }
+    const nextRevision = await saveEncryptedFamilyDocument(familyId, "family-workspace", revision, createDataExport(state));
+    setMessage(remote
+      ? `Yerel ve buluttaki kayıtlar birleştirildi ve şifrelenerek eşitlendi (revizyon ${nextRevision}).`
+      : `İlk şifreli aile yedeği yüklendi (revizyon ${nextRevision}).`);
+  });
+  const download = () => void run(async () => {
+    if (!requireConsent() || !familyId) return;
+    const remote = await fetchEncryptedFamilyDocument(familyId, "family-workspace");
+    if (!remote) { setMessage("Bu aile için henüz bulut kaydı yok."); return; }
+    const remoteExport = await decryptFamilyDocument(familyId, "family-workspace", remote.ciphertext);
+    if (typeof remoteExport !== "string") throw new Error("Buluttaki aile kaydı geçerli bir Uykuva yedeği değil.");
+    const merged = mergeDataStates(app.state, parseDataExport(remoteExport));
+    app.restoreData(merged);
+    setMessage(`Buluttaki veriler cihazdaki kayıtlarla birleştirildi. Revizyon: ${remote.revision}. Diğer cihazlara göndermek için “Şimdi eşitle”ye basın.`);
+  });
+  const deleteFamily = () => {
+    if (!familyId) return;
+    Alert.alert("Bulut aile alanını sil?", "Bu aileye ait şifreli bulut kopyası ve üyelikler sunucudan kaldırılır. Bu cihazdaki kayıtlar korunur.", [
+      { text: "Vazgeç", style: "cancel" },
+      { text: "Bulut verisini sil", style: "destructive", onPress: () => void run(async () => {
+        if (!requireConsent()) return;
+        await removeCloudFamily(familyId);
+        setFamilyId("");
+        setFamilyKey("");
+        await refreshFamilies();
+        setMessage("Aile ve şifreli bulut kopyası silindi. Bu cihazdaki kayıtlar korunuyor.");
+      }) }
+    ]);
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled">
+    <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Aile hesabı ve eşitleme</Text><Text style={styles.pageIntro}>{cloudSyncSetupMessage()}</Text>
+    {!isCloudSyncConfigured() ? <><Card><Text style={styles.cardTitle}>Bağlantı yapılandırması gerekiyor</Text><Text style={styles.body}>Uykuva'nın Supabase URL ve publishable anahtarı eklenmeden hesap açılamaz. Gizli service-role anahtarı mobil uygulamaya eklenmemelidir. Bu ayar yapılana kadar eşitleme kapalıdır.</Text></Card><PrimaryButton label="Kapat" quiet onPress={close} /></> : <>
+        <Card><Text style={styles.cardTitle}>Bulut ve gizlilik onayı</Text><Text style={styles.body}>Eşitleme açılırsa bu cihazdaki Uykuva profili ve tüm çocukların bakım kayıtları, anı fotoğrafları dâhil, şifrelenmiş olarak Supabase sunucusunda saklanabilir. Şifreleme anahtarı sunucuya gönderilmez; yalnızca aile üyeleriyle paylaştığınız anahtara sahip cihazlar veriyi açabilir. Hesap/e-posta bilgisi kimlik doğrulama sağlayıcısında işlenir. Ücretsiz hizmet kotaları dolabilir veya ücretsiz proje duraklatılabilir. Yerel kayıtlar çevrimdışı kullanılmaya devam eder.</Text><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: consent }} onPress={() => setConsent((value) => !value)} style={[styles.settingRow, { marginTop: 14 }]}><Text style={styles.body}>{consent ? "☑" : "□"} Bu veri aktarımını anladım ve isteyerek onaylıyorum.</Text></Pressable></Card>
+      {!accountEmail ? <Card><Text style={styles.cardTitle}>Ücretsiz aile hesabı</Text><Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" /><Field label="Parola · en az 12 karakter" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoCorrect={false} /><View style={styles.spacer12} /><PrimaryButton label={busy ? "İşleniyor…" : "Giriş yap"} onPress={() => submitAuth(false)} /><View style={styles.spacer12} /><PrimaryButton label="Hesap oluştur" quiet onPress={() => submitAuth(true)} /></Card> : <>
+        <Card><Text style={styles.cardTitle}>Oturum</Text><Text style={styles.body}>{accountEmail}</Text><View style={styles.spacer12} /><PrimaryButton label="Oturumu kapat" quiet onPress={() => void run(async () => { await Promise.all(families.map((item) => removeFamilyEncryptionKey(item.family_id))); await signOutOfCloudSync(); setAccountEmail(null); setFamilies([]); setFamilyId(""); setFamilyKey(""); })} /></Card>
+        <Card>
+          <Text style={styles.cardTitle}>Aile alanı</Text>
+          {families.length ? <View style={styles.choiceRow}>{families.map((item) => {
+            const roleLabel = item.role === "family" ? "Aile · salt okunur" : item.role === "parent" ? "Ebeveyn" : "Bakıcı";
+            return <Pill key={item.family_id} label={`${item.isOwner ? "Sahip · " : ""}${roleLabel} · ${item.family_id.slice(0, 8)}`} active={familyId === item.family_id} onPress={() => { setFamilyId(item.family_id); setFamilyKey(""); setInviteToken(""); }} />;
+          })}</View> : <Text style={styles.body}>Henüz bir aile alanına katılmadınız.</Text>}
+          <View style={styles.spacer12} /><PrimaryButton label="Aile alanı oluştur" quiet onPress={createFamily} />
+          <Text style={styles.inputLabel}>Davet kodu</Text>
+          <TextInput accessibilityLabel="Aile davet kodu" value={inviteToken} onChangeText={setInviteToken} style={styles.input} autoCapitalize="none" autoCorrect={false} placeholder="64 karakterli davet kodu" />
+          {inviteToken.length === 64 || familyId ? <>
+            <Text style={styles.inputLabel}>Aile şifreleme anahtarı · ayrı ve güvenli kanaldan alın</Text>
+            <TextInput accessibilityLabel="Aile şifreleme anahtarı" value={familyKey} onChangeText={setFamilyKey} style={styles.input} autoCapitalize="none" autoCorrect={false} placeholder="Aile sahibinin oluşturduğu 256 bit anahtar" />
+            {inviteToken.length === 64 ? <><View style={styles.spacer12} /><PrimaryButton label="Daveti kabul et" quiet onPress={acceptInvite} /></> : null}
+            {familyId ? <>
+              <View style={styles.spacer12} />
+              <PrimaryButton label="Anahtarı bu cihaza güvenle kaydet" quiet onPress={() => void run(async () => { if (!requireConsent()) return; await storeSharedFamilyEncryptionKey(familyId, familyKey); setMessage("Aile anahtarı bu cihazın güvenli deposuna kaydedildi."); })} />
+              <View style={styles.spacer12} />
+              <PrimaryButton label="Bu cihazdaki aile anahtarını göster" quiet onPress={() => void run(async () => { const stored = await getFamilyEncryptionKey(familyId); if (!stored) { setMessage("Bu cihazda bu aile için kayıtlı anahtar yok."); return; } setFamilyKey(stored); setMessage("Anahtarı yalnızca güvenli, uçtan uca şifreli bir kanaldan paylaşın."); })} />
+            </> : null}
+          </> : null}
+        </Card>
+        {familyId ? <Card>
+          <Text style={styles.cardTitle}>Üyelik ve veriler</Text>
+          {selectedMembership?.role === "family" ? <Text style={styles.hint}>Bu üyelik salt okunurdur. Buluttaki kayıtları indirebilirsiniz.</Text> : <>
+            {selectedMembership?.isOwner ? <>
+              <Text style={styles.inputLabel}>Davet edilecek e-posta</Text>
+              <TextInput accessibilityLabel="Davet e-postası" value={inviteEmail} onChangeText={setInviteEmail} style={styles.input} keyboardType="email-address" autoCapitalize="none" />
+              <View style={styles.choiceRow}>{([{ id: "caregiver", label: "Bakıcı" }, { id: "parent", label: "Ebeveyn" }, { id: "family", label: "Salt okunur aile" }] as const).map((item) => <Pill key={item.id} label={item.label} active={inviteRole === item.id} onPress={() => setInviteRole(item.id)} />)}</View>
+              <View style={styles.spacer12} /><PrimaryButton label="Süreli davet oluştur" quiet onPress={createInvite} />
+              {inviteToken ? <><Text style={styles.hint}>Davet kodu · 7 gün geçerli</Text><Text selectable style={styles.body}>{inviteToken}</Text></> : null}
+              {pendingInvites.length ? <><Text style={styles.inputLabel}>Bekleyen davetler</Text>{pendingInvites.map((invite) => <View key={invite.id} style={styles.eventRow}><View style={styles.flex}><Text style={styles.eventTitle}>{invite.invited_email}</Text><Text style={styles.muted}>{invite.role === "family" ? "Salt okunur aile" : invite.role === "parent" ? "Ebeveyn" : "Bakıcı"} · {new Date(invite.expires_at).toLocaleDateString("tr-TR")} tarihinde sona erer</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`${invite.invited_email} davetini iptal et`} onPress={() => revokeInvite(invite.id, invite.invited_email)} hitSlop={8}><Text style={styles.editLink}>İptal et</Text></Pressable></View>)}</> : null}
+              {familyKey ? <><Text style={styles.hint}>Aile şifreleme anahtarı · yalnızca güvenli, uçtan uca şifreli kanaldan paylaşın</Text><Text selectable style={styles.body}>{familyKey}</Text></> : null}
+            </> : <Text style={styles.hint}>Bu ailede davet ve bulut alanı silme işlemleri yalnızca aile sahibine açıktır.</Text>}
+            <View style={styles.spacer12} /><PrimaryButton label={busy ? "Şifreleniyor…" : "Yerel ve bulut kayıtlarını birleştirip eşitle"} onPress={syncNow} />
+          </>}
+          <View style={styles.spacer12} /><PrimaryButton label="Buluttan indir ve yerel kayıtlarla birleştir" quiet onPress={download} />
+          {selectedMembership?.isOwner ? <><View style={styles.spacer12} /><Pressable onPress={deleteFamily} style={styles.dangerButton}><Text style={styles.dangerText}>Bulut aile alanını ve kopyasını sil</Text></Pressable></> : null}
+        </Card> : null}
+      </>}
+      {message ? <Text accessibilityLiveRegion="polite" style={styles.hint}>{message}</Text> : null}<View style={styles.spacer12} /><PrimaryButton label="Kapat" quiet onPress={close} />
+    </>}
+    <View style={styles.spacer24} />
+  </ScrollView></Modal>;
 }
 
 function DataRestoreModal({ visible, close, currentState, restore }: { visible: boolean; close: () => void; currentState: UykuvaAppState; restore: ReturnType<typeof useUykuvaState>["restoreData"] }) {
@@ -1707,16 +2234,16 @@ function DataRestoreModal({ visible, close, currentState, restore }: { visible: 
       if (result.canceled) return;
       const asset = result.assets[0];
       if (!asset) return Alert.alert("Dosya bulunamadı", "JSON yedeğini seçip yeniden deneyin.");
-      if (asset.size !== undefined && asset.size > 5 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin dosya sınırı 5 MB.");
+      if (asset.size !== undefined && asset.size > 18 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin dosya sınırı 18 MB.");
       const contents = await new File(asset.uri).text();
-      if (contents.length > 5_000_000) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin metin sınırı 5 milyon karakter.");
+      if (contents.length > 18_000_000) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin metin sınırı 18 milyon karakter.");
       setRaw(contents);
       Alert.alert("Yedek yüklendi", "Dosya kontrol için hazır. İçeriği doğrulayıp geri yüklemeyi onaylayın.");
     } catch {
       Alert.alert("Dosya açılamadı", "Uykuva JSON yedeğini seçip yeniden deneyin.");
     }
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Yedeği aktar</Text><Text style={styles.pageIntro}>Şifreli Uykuva yedeğini dosyadan seçin veya içeriğini yapıştırın. Şifreli dosyalar için yedeği oluştururken belirlediğiniz parolayı girin. Aynı bebeğin kayıtlarını birleştirebilir ya da mevcut verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="Uykuva yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput accessibilityLabel="Şifreli yedek parolası" value={password} onChangeText={setPassword} style={[styles.input, { marginTop: 12 }]} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} placeholder="Parola · yalnızca şifreli yedek için" placeholderTextColor="#93A09C" /><TextInput accessibilityLabel="Yedek dosyası içeriği" value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top", marginTop: 12 }]} multiline maxLength={5_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · şifreli veya standart Uykuva yedeği</Text><View style={styles.spacer12} /><PrimaryButton label={decrypting ? "Yedek açılıyor…" : "Yedeği kontrol et ve aktar"} onPress={() => void reviewBackup()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Yedeği aktar</Text><Text style={styles.pageIntro}>Şifreli Uykuva yedeğini dosyadan seçin veya içeriğini yapıştırın. Şifreli dosyalar için yedeği oluştururken belirlediğiniz parolayı girin. Aynı bebeğin kayıtlarını birleştirebilir ya da mevcut verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="Uykuva yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput accessibilityLabel="Şifreli yedek parolası" value={password} onChangeText={setPassword} style={[styles.input, { marginTop: 12 }]} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} placeholder="Parola · yalnızca şifreli yedek için" placeholderTextColor="#93A09C" /><TextInput accessibilityLabel="Yedek dosyası içeriği" value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top", marginTop: 12 }]} multiline maxLength={18_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · şifreli veya standart Uykuva yedeği</Text><View style={styles.spacer12} /><PrimaryButton label={decrypting ? "Yedek açılıyor…" : "Yedeği kontrol et ve aktar"} onPress={() => void reviewBackup()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
@@ -1782,7 +2309,7 @@ function NightWakeModal({ visible, close, save }: { visible: boolean; close: () 
     if (occurredAt.getTime() > Date.now() || occurredAt.getTime() < Date.now() - 24 * 60 * 60_000) return Alert.alert("Zamanı kontrol edin", "Gece uyanmasını son 24 saat içinde kaydedebilirsiniz.");
     save(response, occurredAt.toISOString());
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}>
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
     <Pressable style={styles.backdrop} onPress={close} />
     <ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset}>
       <View style={styles.sheetHandle} />
@@ -1861,7 +2388,7 @@ function EventRow({ event, onPress, onDelete }: { event: CareEvent; onPress?: ()
   return (
     <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `${eventTitle(event)} · saatleri düzenle` : undefined} accessibilityHint={onDelete ? "Silmek için basılı tutun ve onaylayın." : undefined} onPress={onPress} onLongPress={onDelete ? confirmDelete : undefined} style={styles.eventRow}>
       <View style={[styles.eventDot, { backgroundColor: event.kind === "sleep" ? colors.lavender : event.kind === "feed" ? colors.peach : colors.mint }]} />
-      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "health" && event.medicationReminderAt ? ` · plan hatırlatması ${new Date(event.medicationReminderAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}` : ""}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text></View>
+      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "health" && event.medicationReminderAt ? ` · plan hatırlatması ${new Date(event.medicationReminderAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}` : ""}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text>{event.kind === "memory" && event.memoryPhotoData ? <Image accessibilityLabel="Anı fotoğrafı" source={{ uri: event.memoryPhotoData }} style={styles.memoryThumb} /> : null}</View>
       <Text style={styles.eventTime}>{time(event.startedAt)}</Text>
     </Pressable>
   );
@@ -1987,7 +2514,7 @@ function SleepEntryModal({ event, initialStartAt, initialSuggestedWindow, visibl
     close();
   };
 
-  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>{initialStartAt ? "Tahmin aralığının orta saati dolduruldu. Gerçek yatış ve uyanış saatlerini kontrol edip gerekirse düzeltin." : "Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir."}</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.inputLabel}>Uykuya geçişte kullanılan destek · isteğe bağlı</Text><Text style={styles.hint}>Birini seçin; bu bilgi uyku geçmişinizde görünür.</Text><View style={styles.choiceRow}><Pill label="Belirtme" active={!sleepSupport} onPress={() => setSleepSupport("")} />{SLEEP_SUPPORT_OPTIONS.map((item) => <Pill key={item.id} label={item.label} active={sleepSupport === item.id} onPress={() => setSleepSupport(item.id)} />)}</View><Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>{event ? "Uyku kaydını düzenle" : "Geçmiş uyku ekle"}</Text><Text style={styles.pageIntro}>{initialStartAt ? "Tahmin aralığının orta saati dolduruldu. Gerçek yatış ve uyanış saatlerini kontrol edip gerekirse düzeltin." : "Başlangıç tarihini ve saatlerini kontrol edin. Uyanış saati yatıştan erkense sonraki gün olarak kaydedilir."}</Text><Field label="Yatış tarihi" value={startDate} onChangeText={setStartDate} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /><Field label="Yatış saati" value={startClock} onChangeText={setStartClock} keyboardType="numbers-and-punctuation" placeholder="20:00" /><View style={styles.settingRow}><View style={styles.flex}><Text style={styles.eventTitle}>Uyku devam ediyor</Text><Text style={styles.muted}>Henüz uyanmadıysa açın.</Text></View><Switch accessibilityLabel="Uyku kaydı hâlâ devam ediyor" accessibilityState={{ checked: ongoing }} value={ongoing} onValueChange={setOngoing} trackColor={{ true: colors.sage }} thumbColor={ongoing ? colors.sageDark : "#E2E2E2"} /></View>{!ongoing ? <Field label="Uyanış saati" value={endClock} onChangeText={setEndClock} keyboardType="numbers-and-punctuation" placeholder="07:00" /> : null}<Text style={styles.inputLabel}>Uykuya geçişte kullanılan destek · isteğe bağlı</Text><Text style={styles.hint}>Birini seçin; bu bilgi uyku geçmişinizde görünür.</Text><View style={styles.choiceRow}><Pill label="Belirtme" active={!sleepSupport} onPress={() => setSleepSupport("")} />{SLEEP_SUPPORT_OPTIONS.map((item) => <Pill key={item.id} label={item.label} active={sleepSupport === item.id} onPress={() => setSleepSupport(item.id)} />)}</View><Text style={styles.hint}>Geçmiş kayıtlar zaman çizelgesinde başlangıç saatine dokunarak düzenlenir. Silmek için basılı tutun.</Text><View style={styles.spacer12} /><PrimaryButton label="Uyku kaydını kaydet" onPress={save} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function RecordTimeModal({ event, close, update }: { event: CareEvent | null; close: () => void; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
@@ -2051,6 +2578,11 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
   const [lengthPosition, setLengthPosition] = useState<"recumbent" | "standing">(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
   const [head, setHead] = useState("");
   const [memoryTitle, setMemoryTitle] = useState("");
+  const [memoryPhotoData, setMemoryPhotoData] = useState<string | undefined>();
+  const [memoryPhotoBusy, setMemoryPhotoBusy] = useState(false);
+  useEffect(() => {
+    if (mode === "memory") { setMemoryTitle(""); setMemoryPhotoData(undefined); setNote(""); }
+  }, [mode]);
   useEffect(() => {
     if (mode !== "growth") return;
     setLengthPosition(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
@@ -2098,9 +2630,24 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
     setFoods(""); setReaction(""); setSelectedAllergens([]);
   };
   const saveMemory = () => {
-    if (!memoryTitle.trim() && !note.trim()) return Alert.alert("Anıyı yazın", "Bir başlık veya kısa not girin.");
-    add("memory", { memoryTitle: memoryTitle.trim() || "Anı", note: note.trim() || undefined });
-    setMemoryTitle(""); setNote(""); close();
+    if (!memoryTitle.trim() && !note.trim() && !memoryPhotoData) return Alert.alert("Anıyı yazın", "Bir başlık, kısa not veya fotoğraf ekleyin.");
+    add("memory", { memoryTitle: memoryTitle.trim() || (memoryPhotoData ? "Fotoğraflı anı" : "Anı"), note: note.trim() || undefined, memoryPhotoData });
+    setMemoryTitle(""); setNote(""); setMemoryPhotoData(undefined); close();
+  };
+  const chooseMemoryPhoto = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, quality: 0.85 });
+      if (result.canceled || !result.assets[0]) return;
+      setMemoryPhotoBusy(true);
+      const image = await ImageManipulator.manipulate(result.assets[0].uri, { maxWidth: 1280, maxHeight: 1280 }).renderAsync();
+      const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.7, base64: true });
+      if (!saved.base64 || saved.base64.length > 1_100_000) return Alert.alert("Fotoğraf çok büyük", "Daha küçük bir fotoğraf seçip yeniden deneyin.");
+      setMemoryPhotoData(`data:image/jpeg;base64,${saved.base64}`);
+    } catch {
+      Alert.alert("Fotoğraf eklenemedi", "Fotoğraf seçilemedi veya küçültülemedi. Yeniden deneyin.");
+    } finally {
+      setMemoryPhotoBusy(false);
+    }
   };
   const toggleAllergen = (allergen: string) => setSelectedAllergens((current) => current.includes(allergen) ? current.filter((item) => item !== allergen) : [...current, allergen]);
   return (
@@ -2119,13 +2666,13 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
           </>}
         </> : null}
         {mode === "diaper" ? <View style={styles.choiceRow}><Pill label="Islak" active onPress={() => save({ diaperType: "wet" })} /><Pill label="Kirli" onPress={() => save({ diaperType: "dirty" })} /><Pill label="İkisi" onPress={() => save({ diaperType: "both" })} /></View> : null}
-        {mode === "note" ? <><Text style={styles.inputLabel}>Not</Text><TextInput value={note} onChangeText={setNote} multiline placeholder="Bakımı devralan kişinin bilmesi gereken…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Notu kaydet" onPress={() => save({ note })} /></> : null}
-        {mode === "memory" ? <><Text style={styles.inputLabel}>Bir anı seçin (isteğe bağlı)</Text><View style={styles.choiceRow}>{memoryPrompts.map((prompt) => <Pill key={prompt} label={prompt} active={memoryTitle === prompt} onPress={() => setMemoryTitle(prompt)} />)}</View><Field label="Anı başlığı" value={memoryTitle} onChangeText={setMemoryTitle} placeholder="İlk kez parkta uyudu" /><Text style={styles.inputLabel}>Detay (isteğe bağlı)</Text><TextInput value={note} onChangeText={setNote} multiline maxLength={1000} placeholder="Bu günü hatırlamak için kısa bir not…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Anıyı kaydet" onPress={saveMemory} /></> : null}
+        {mode === "note" ? <><Text style={styles.inputLabel}>Not</Text><VoiceNoteInput value={note} onChangeText={setNote} /><TextInput accessibilityLabel="Bakım notu" value={note} onChangeText={setNote} multiline placeholder="Bakımı devralan kişinin bilmesi gereken…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Notu kaydet" onPress={() => save({ note })} /></> : null}
+        {mode === "memory" ? <><Text style={styles.inputLabel}>Bir anı seçin (isteğe bağlı)</Text><View style={styles.choiceRow}>{memoryPrompts.map((prompt) => <Pill key={prompt} label={prompt} active={memoryTitle === prompt} onPress={() => setMemoryTitle(prompt)} />)}</View><Field label="Anı başlığı" value={memoryTitle} onChangeText={setMemoryTitle} placeholder="İlk kez parkta uyudu" /><Text style={styles.inputLabel}>Detay (isteğe bağlı)</Text><VoiceNoteInput value={note} onChangeText={setNote} /><TextInput accessibilityLabel="Anı detayı" value={note} onChangeText={setNote} multiline maxLength={1000} placeholder="Bu günü hatırlamak için kısa bir not…" style={[styles.input, styles.noteInput]} /><PrimaryButton label={memoryPhotoBusy ? "Fotoğraf hazırlanıyor…" : memoryPhotoData ? "Fotoğrafı değiştir" : "Fotoğraf ekle (isteğe bağlı)"} quiet onPress={() => void chooseMemoryPhoto()} />{memoryPhotoData ? <View style={styles.memoryPhotoPreview}><Image accessibilityLabel="Seçilen anı fotoğrafı" source={{ uri: memoryPhotoData }} style={styles.memoryPreviewImage} /><Pressable accessibilityRole="button" onPress={() => setMemoryPhotoData(undefined)}><Text style={styles.editLink}>Fotoğrafı kaldır</Text></Pressable></View> : null}<Text style={styles.hint}>Fotoğraf cihazda, bu anı kaydıyla birlikte saklanır ve Uykuva yedeklerine dahil edilir.</Text><PrimaryButton label="Anıyı kaydet" onPress={saveMemory} /></> : null}
         {mode === "health" ? <>
           <View style={styles.choiceRow}><Pill label="Ateş" active={healthType === "temperature"} onPress={() => setHealthType("temperature")} /><Pill label="İlaç" active={healthType === "medicine"} onPress={() => setHealthType("medicine")} /><Pill label="Belirti" active={healthType === "symptom"} onPress={() => setHealthType("symptom")} /></View>
           {healthType === "temperature" ? <Field label="Ölçülen sıcaklık (°C)" value={temperature} onChangeText={setTemperature} keyboardType="decimal-pad" /> : null}
           {healthType === "medicine" ? <><Field label="İlaç adı" value={medicineName} onChangeText={setMedicineName} placeholder="Kutudaki adıyla" /><Field label="Verdiğiniz miktar (isteğe bağlı)" value={dose} onChangeText={setDose} placeholder="Örn. 2 ml — öneri değildir" /><Text style={styles.inputLabel}>Sağlık planınızda belirtilen sonraki hatırlatma (isteğe bağlı)</Text><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Tarih</Text><TextInput value={medicationReminderDate} onChangeText={setMedicationReminderDate} style={styles.compactInput} keyboardType="numbers-and-punctuation" placeholder="YYYY-AA-GG" /></View><View style={styles.timeField}><Text style={styles.muted}>Saat</Text><TextInput value={medicationReminderClock} onChangeText={setMedicationReminderClock} style={styles.compactInput} keyboardType="numbers-and-punctuation" placeholder="SS:DD" /></View></View><Text style={styles.hint}>Saati yalnızca sağlık uzmanınızın veya ilaç etiketinin talimatına göre girin. Uykuva doz ya da tekrar aralığı önermez; hatırlatma verdiğiniz saatte yalnızca planınızı kontrol etmenizi söyler.</Text></> : null}
-          <Text style={styles.inputLabel}>{healthType === "symptom" ? "Belirti notu" : "Not (isteğe bağlı)"}</Text><TextInput value={note} onChangeText={setNote} multiline style={[styles.input, styles.noteInput]} placeholder="Gözleminizi yazın" />
+          <Text style={styles.inputLabel}>{healthType === "symptom" ? "Belirti notu" : "Not (isteğe bağlı)"}</Text><VoiceNoteInput value={note} onChangeText={setNote} /><TextInput accessibilityLabel={healthType === "symptom" ? "Belirti notu" : "Sağlık kaydı notu"} value={note} onChangeText={setNote} multiline style={[styles.input, styles.noteInput]} placeholder="Gözleminizi yazın" />
           <PrimaryButton label="Sağlık kaydını ekle" onPress={saveHealth} />
           <Text style={styles.disclaimer}>Uykuva ilaç miktarı veya kullanım aralığı önermez; yalnızca girdiğiniz kaydı ve isteğe bağlı hatırlatmayı saklar.</Text>
         </> : null}
@@ -2182,10 +2729,13 @@ const styles = StyleSheet.create({
   nightCaregiverText: { color: "#D7E5DA", fontSize: 13, fontWeight: "700" },
   nightExitText: { color: "#DCE7DF", fontSize: 14, fontWeight: "700" },
   nightTimerCard: { borderRadius: 28, backgroundColor: "#19231F", padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#28362F" },
+  nightResponseCard: { borderRadius: 18, backgroundColor: "#17221D", padding: 14, borderWidth: 1, borderColor: "#2A3931", gap: 7 },
+  nightResponseText: { color: "#B6C5BA", fontSize: 12, lineHeight: 17 },
+  nightResponseExpand: { color: "#D7E5DA", fontSize: 12, fontWeight: "700", paddingTop: 2 },
   nightTimer: { color: "#E8EFE9", fontSize: 42, fontWeight: "700", letterSpacing: -1.4, marginVertical: 12 },
   nightHint: { color: "#9CAC9F", fontSize: 13, textAlign: "center" },
   nightActions: { gap: 12 },
-  nightAction: { minHeight: 88, borderRadius: 21, backgroundColor: "#1B2621", paddingHorizontal: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
+  nightAction: { minHeight: 68, borderRadius: 18, backgroundColor: "#1B2621", paddingHorizontal: 14, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
   nightActionPrimary: { backgroundColor: "#26382F", borderColor: "#3A5144" },
   nightActionGlyph: { color: "#B6CBB9", fontSize: 25, width: 42 },
   nightActionTitle: { color: "#E2EAE4", fontSize: 16, fontWeight: "700", flex: 1 },
@@ -2207,6 +2757,9 @@ const styles = StyleSheet.create({
   eventDot: { width: 11, height: 11, borderRadius: 6, marginRight: 12 },
   eventTitle: { color: colors.ink, fontSize: 14, fontWeight: "600" },
   eventTime: { color: colors.ink, fontSize: 13, fontWeight: "700" },
+  memoryThumb: { width: 54, height: 54, borderRadius: 12, marginTop: 8, backgroundColor: colors.mint },
+  memoryPhotoPreview: { marginTop: 12, alignItems: "flex-start", gap: 8 },
+  memoryPreviewImage: { width: 180, height: 180, borderRadius: 18, backgroundColor: colors.mint },
   muted: { color: colors.inkSoft, fontSize: 12, marginTop: 3 },
   flex: { flex: 1 },
   taskRow: { flexDirection: "row", alignItems: "center", minHeight: 54, borderBottomWidth: 1, borderBottomColor: colors.line },
@@ -2214,6 +2767,8 @@ const styles = StyleSheet.create({
   checkboxDone: { backgroundColor: colors.sageDark, borderColor: colors.sageDark },
   check: { color: "white", fontWeight: "800" },
   taskText: { flex: 1, color: colors.ink, fontSize: 14, lineHeight: 20 },
+  readinessRow: { alignItems: "flex-start", paddingVertical: 12 },
+  readinessHelp: { color: colors.inkSoft, fontSize: 12, lineHeight: 18, marginTop: 3 },
   taskTextDone: { color: colors.inkSoft, textDecorationLine: "line-through" },
   readinessNote: { color: colors.sageDark, fontSize: 12, lineHeight: 18, marginTop: 14 },
   suggestion: { color: colors.sageDark, fontSize: 12, fontWeight: "700", marginTop: 2 },
@@ -2233,6 +2788,7 @@ const styles = StyleSheet.create({
   nightGuideHeaderText: { flex: 1, flexShrink: 1, minWidth: 0, maxWidth: "100%" },
   nightGuideChevron: { width: 34, height: 34, borderRadius: 12, overflow: "hidden", backgroundColor: colors.mint, color: colors.sageDark, textAlign: "center", textAlignVertical: "center", fontSize: 24, fontWeight: "600", marginLeft: 10 },
   nightGuideContent: { width: "100%", maxWidth: "100%", alignSelf: "stretch", borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 8 },
+  sleepGuideItem: { width: "100%", maxWidth: "100%", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line, gap: 4 },
   nightGuideStep: { width: "100%", maxWidth: "100%", alignSelf: "stretch", flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 8 },
   nightGuideStepText: { flex: 1, flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, maxWidth: "100%", fontSize: 12, lineHeight: 18 },
   methodCompare: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 12, paddingTop: 10, gap: 7 },
@@ -2304,6 +2860,12 @@ const styles = StyleSheet.create({
   field: { marginBottom: 2 },
   input: { minHeight: 52, borderRadius: 16, borderWidth: 1, borderColor: colors.line, backgroundColor: "white", paddingHorizontal: 15, color: colors.ink, fontSize: 17 },
   noteInput: { height: 100, paddingTop: 14, textAlignVertical: "top", marginBottom: 14 },
+  voiceNote: { marginBottom: 10 },
+  voiceButton: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingHorizontal: 16, borderRadius: 14, backgroundColor: colors.mint, borderWidth: 1, borderColor: colors.line },
+  voiceButtonActive: { backgroundColor: colors.peachSoft, borderColor: colors.peach },
+  voiceButtonText: { color: colors.sageDark, fontSize: 14, fontWeight: "700" },
+  voiceButtonTextActive: { color: colors.ink },
+  voiceStatus: { color: colors.sageDark, fontSize: 13, marginTop: 8 },
   choiceRow: { flexDirection: "row", marginTop: 16, flexWrap: "wrap", rowGap: 8 },
   settingRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   editLink: { color: colors.sageDark, fontSize: 13, fontWeight: "700" },
@@ -2328,3 +2890,4 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
+
