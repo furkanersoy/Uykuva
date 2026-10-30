@@ -53,9 +53,12 @@ export function nextBreastSide(events: CareEvent[]): "left" | "right" | null {
 }
 
 export function createFeedingForecast(events: CareEvent[], now = new Date()): FeedingForecast {
-  const allFeeds = events
   const earliest = now.getTime() - 30 * 24 * 60 * 60_000;
-    .filter((event) => event.kind === "feed" && event.feedType !== "pump")
+  const allFeeds = events
+    .filter((event) => {
+      const startedAt = new Date(event.startedAt).getTime();
+      return event.kind === "feed" && event.feedType !== "pump" && Number.isFinite(startedAt) && startedAt >= earliest && startedAt <= now.getTime();
+    })
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
   const latestFeed = allFeeds[allFeeds.length - 1];
   const kind = latestFeed?.feedType === "solid" ? "solid" : "milk";
