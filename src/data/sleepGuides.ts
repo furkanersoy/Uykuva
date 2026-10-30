@@ -261,6 +261,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     category: "basics",
     source: "AAP · Prematüre bebeklerde düzeltilmiş yaş",
     url: "https://www.healthychildren.org/English/ages-stages/baby/preemie/pages/Corrected-Age-For-Preemies.aspx"
+  },
+  {
+    id: "safe-break-when-overwhelmed",
+    title: "Ağlama çok bunaltıcı olduğunda güvenli mola",
+    age: "Bebeklik · ebeveyn ve bakıcılar",
+    minAgeMonths: 0,
+    maxAgeMonths: 24,
+    summary: "Uzun ağlama yorucu olabilir. Önce açlık, bez, rahatsızlık veya hastalık gibi ihtiyaçları değerlendirin. Gerginliğiniz artarsa bebeği sırtüstü, boş ve güvenli yatağına bırakıp birkaç dakika sakinleşmek için uzaklaşın; sonra geri dönüp kontrol edin ve güvendiğiniz birinden yardım isteyin. Bebeği asla sarsmayın veya vurmayın. Bu güvenli mola bir uyku eğitimi yöntemi değildir; bebeğinizin ihtiyacını veya sağlık kaygısında yardım alma gereğini ertelemeyin.",
+    category: "caregiver",
+    source: "AAP · Ağlayan bebeğin ihtiyaçlarına yanıt",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/Pages/Responding-to-Your-Babys-Cries.aspx"
   }
 ];
 

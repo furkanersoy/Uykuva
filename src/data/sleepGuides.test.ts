@@ -49,6 +49,7 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nightmares-and-night-terrors"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "snoring-and-sleep-breathing"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "corrected-age-for-preemies"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-break-when-overwhelmed"));
 });
 
 test("safe sleep guide covers sitting products and points to AAP guidance", () => {
@@ -116,5 +117,16 @@ test("corrected-age guide explains its scope and preserves the actual birth date
   assert.match(guide.summary, /aşı tarihlerini gerçek doğum tarihine göre/i);
   assert.equal(guide.minAgeMonths, 0);
   assert.equal(guide.maxAgeMonths, 24);
+  assert.match(guide.url, /healthychildren\.org/);
+});
+
+test("caregiver break guide gives a safe place, a short break, help, and never-shake warning", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "safe-break-when-overwhelmed");
+  assert.ok(guide);
+  assert.match(guide.summary, /sırtüstü, boş ve güvenli yatağına/i);
+  assert.match(guide.summary, /birkaç dakika sakinleşmek için uzaklaşın/i);
+  assert.match(guide.summary, /güvendiğiniz birinden yardım isteyin/i);
+  assert.match(guide.summary, /Bebeği asla sarsmayın veya vurmayın/i);
+  assert.match(guide.summary, /bir uyku eğitimi yöntemi değildir/i);
   assert.match(guide.url, /healthychildren\.org/);
 });
