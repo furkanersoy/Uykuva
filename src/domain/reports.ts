@@ -208,6 +208,7 @@ export function createMemoryBookHtml(state: AppState, now = new Date()): string 
     .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
   let photoCount = 0;
   let photoBytes = 0;
+  let omittedPhotoCount = 0;
   const cards = entries.map((event) => {
     const title = event.memoryTitle?.trim() || "Bir güzel an";
     const note = event.note?.trim();
@@ -218,11 +219,13 @@ export function createMemoryBookHtml(state: AppState, now = new Date()): string 
       photoCount += 1;
       photoBytes += photo!.length;
     }
+    else if (photo) omittedPhotoCount += 1;
     const image = includePhoto ? `<img src="${photo}" alt="${escapeHtml(title)}" />` : "";
     const date = new Date(event.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
     return `<article class="memory">${image}<div class="memory-copy"><p class="date">${escapeHtml(date)} · ${escapeHtml(event.caregiver)}</p><h2>${escapeHtml(title)}</h2>${note ? `<p class="note">${escapeHtml(note)}</p>` : ""}</div></article>`;
   }).join("\n");
-  const content = entries.length ? cards : `<p class="empty">Henüz anı eklenmemiş. Uykuva’da Anılar bölümüne kaydettiğiniz anlar burada yer alır.</p>`;
+  const photoNotice = omittedPhotoCount ? `<p class="photo-notice">PDF boyutu sınırı nedeniyle ${omittedPhotoCount} fotoğraf eklenemedi; anı metinleri korunmuştur.</p>` : "";
+  const content = entries.length ? `${cards}${photoNotice}` : `<p class="empty">Henüz anı eklenmemiş. Uykuva’da Anılar bölümüne kaydettiğiniz anlar burada yer alır.</p>`;
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     @page { size: A4; margin: 16mm; }
     * { box-sizing: border-box; }
@@ -236,6 +239,7 @@ export function createMemoryBookHtml(state: AppState, now = new Date()): string 
     h2 { font-size: 16px; margin: 0 0 7px; color: #3e594d; }
     .date { margin: 0 0 8px; color: #66746d; font-size: 10px; }
     .note { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .photo-notice { margin-top: 18px; padding: 10px; color: #66746d; background: #f4f6f4; border-radius: 8px; font-size: 10px; }
     .empty { padding: 18px; color: #66746d; background: #f4f6f4; border-radius: 8px; }
   </style></head><body><header><h1>Uykuva · Anı defteri</h1><p>${escapeHtml(state.baby.name)} için kaydedilen ${entries.length} an · ${escapeHtml(now.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }))}</p></header><main>${content}</main></body></html>`;
 }
