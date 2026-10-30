@@ -175,6 +175,7 @@ export default function App() {
         if (awayFromApp) setForegroundCycle((cycle) => cycle + 1);
         // Returning to Uykuva always lands on the main screen; the wake form
         // is opened only by the user's "Gece uyanması" action.
+        setTab("today");
         setNightWakeOpen(false);
       }
       awayFromApp = nextState !== "active";
