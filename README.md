@@ -66,6 +66,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Gün hastalık, seyahat, diş çıkarma veya düzen değişikliği olarak işaretlendiyse bakım devri özetinde nedeni ve koçluk planının beklediğini belirtme
 - Bakım devri özetinde, günün uyanış saati veya son uykudan hesaplanan sıradaki uyku penceresini ve tahmin güven düzeyini gösterme
 - Yedi yaklaşım içeren 14 günlük nazik uyku planı; yöntemleri ailenin yakınlık, desteği azaltma veya kısa kontrol tercihine göre filtreleme ve tüm seçenekleri karşılaştırma
+- Uyku koçluğu planını son yedi gecenin check-in'leriyle metin veya A4 PDF olarak bakım verenlerle paylaşma
 - Önceden kararlaştırılmış kısa kontroller yaklaşımı; Uykuva sabit aralık veya ağlama süresi önermez, beslenme ve sağlık ihtiyaçları her zaman önceliklidir
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
