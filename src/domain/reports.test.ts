@@ -133,3 +133,20 @@ test("memory book embeds only valid JPEG data and handles an empty journal", () 
   state.events = [];
   assert.match(createMemoryBookHtml(state), /Henüz anı eklenmemiş/);
 });
+
+
+test("memory book reports when photo size limits omit images", () => {
+  const state = createInitialState();
+  const photo = "data:image/jpeg;base64," + "A".repeat(900_000);
+  state.events = Array.from({ length: 9 }, (_, index) => ({
+    id: \`photo-\${index}\`,
+    kind: "memory" as const,
+    memoryTitle: \`Anı \${index + 1}\`,
+    memoryPhotoData: photo,
+    startedAt: \`2026-10-\${String(10 + index).padStart(2, "0")}T12:00:00\`,
+    caregiver: "Anne"
+  }));
+  const html = createMemoryBookHtml(state, new Date("2026-10-30T12:00:00"));
+  assert.match(html, /PDF boyutu sınırı nedeniyle 3 fotoğraf eklenemedi/);
+  assert.equal((html.match(/<img src=/g) ?? []).length, 6);
+});
