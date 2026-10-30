@@ -520,3 +520,11 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npm.cmd run typecheck`: başarılı.
 - `npm.cmd test`: 118/118 test başarılı.
 - Android emülatöründe `PDF hazırla` düğmesi çalıştırıldı; PDF üretildi ve Android paylaşım menüsü açıldı. Dosya adı tarih/saat içeren `uykuva-uyku-plani-…pdf` biçiminde göründü.
+
+### 30 Ekim 2026 eşitleme silme koruması
+
+- `AppState` şema sürümü 6, olay, bakım görevi, gece uyanması, çocuk ve bakım veren silme kimliklerini kalıcı `syncTombstones` listelerinde taşır.
+- Veri silme ve check-in güncelleme bu işaretleri yazar; yedek dışa aktarma/geri yükleme bunları korur.
+- Birleştirme iki tarafın işaretlerini birleştirip eski kayıtları filtreler; silinmiş çocuk veya bakım veren referansları geri eklenmez.
+- Bu yerel/yedek birleştirme davranışı test edildi. Barındırılan Supabase kurulumu ve iki cihazda gerçek bulut eşitlemesi henüz doğrulanmadı; silme işaretleri şu an onay sonrası temizlenmiyor.
+- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 121/121 başarılı.

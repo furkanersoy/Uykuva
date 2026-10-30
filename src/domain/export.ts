@@ -1,4 +1,4 @@
-import { AppState } from "./types";
+import { AppState, SyncTombstones } from "./types";
 import { migrateState } from "../data/migrations";
 
 export function createDataExport(state: AppState) {
@@ -19,7 +19,8 @@ export function createDataExport(state: AppState) {
     sleepPlan: state.sleepPlan,
     preferences: state.preferences,
     children,
-    activeChildId: state.activeChildId
+    activeChildId: state.activeChildId,
+    syncTombstones: state.syncTombstones
   }, null, 2);
 }
 
@@ -76,6 +77,13 @@ function isSleepDayContext(value: unknown) {
   return ["illness", "travel", "teething", "routineChange"].includes(String(value));
 }
 
+function isSyncTombstones(value: unknown): value is SyncTombstones {
+  if (!isRecord(value)) return false;
+  return (["eventIds", "careTaskIds", "nightWakeLogIds", "childIds", "caregiverIds"] as const).every((key) =>
+    Array.isArray(value[key]) && value[key].length <= 50_000 && value[key].every((id) => typeof id === "string" && id.length > 0 && id.length <= 128)
+  );
+}
+
 export function parseDataExport(raw: string): AppState {
   if (raw.length > 12_000_000) throw new Error("Yedek dosyası 12 MB sınırını aşıyor.");
   let parsed: unknown;
@@ -84,8 +92,11 @@ export function parseDataExport(raw: string): AppState {
   } catch {
     throw new Error("Metin geçerli bir JSON yedeği değil.");
   }
-  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4, 5].includes(Number(parsed.schemaVersion))) {
+  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4, 5, 6].includes(Number(parsed.schemaVersion))) {
     throw new Error("Bu dosya Uykuva'nın desteklenen yedek biçiminde değil.");
+  }
+  if (parsed.syncTombstones !== undefined && !isSyncTombstones(parsed.syncTombstones)) {
+    throw new Error("Yedekteki eşitleme silme kayıtları geçersiz.");
   }
   if (!isRecord(parsed.baby) || typeof parsed.baby.id !== "string" || typeof parsed.baby.name !== "string" || !parsed.baby.name.trim() || typeof parsed.baby.birthDate !== "string" || !isDateOnly(parsed.baby.birthDate) || typeof parsed.baby.gestationalWeek !== "number" || !Number.isInteger(parsed.baby.gestationalWeek) || parsed.baby.gestationalWeek < 22 || parsed.baby.gestationalWeek > 42) {
     throw new Error("Yedekte geçerli bir bebek profili bulunamadı.");
@@ -132,15 +143,26 @@ function mergeById<T extends { id: string }>(current: T[], incoming: T[], merge?
   return [...rows.values()];
 }
 
-function mergeCheckIns(current: AppState["sleepPlan"]["checkIns"], incoming: AppState["sleepPlan"]["checkIns"]) {
+export function mergeSyncTombstones(current: SyncTombstones, incoming: SyncTombstones): SyncTombstones {
+  return {
+    eventIds: [...new Set([...current.eventIds, ...incoming.eventIds])],
+    careTaskIds: [...new Set([...current.careTaskIds, ...incoming.careTaskIds])],
+    nightWakeLogIds: [...new Set([...current.nightWakeLogIds, ...incoming.nightWakeLogIds])],
+    childIds: [...new Set([...current.childIds, ...incoming.childIds])],
+    caregiverIds: [...new Set([...current.caregiverIds, ...incoming.caregiverIds])]
+  };
+}
+
+function mergeCheckIns(current: AppState["sleepPlan"]["checkIns"], incoming: AppState["sleepPlan"]["checkIns"], deletedLogIds: Set<string>) {
   const byDate = new Map(current.map((item) => [item.date, item]));
   for (const item of incoming) {
     const previous = byDate.get(item.date);
     if (!previous) {
-      byDate.set(item.date, item);
+      byDate.set(item.date, { ...item, nightWakeLogs: item.nightWakeLogs?.filter((log) => !deletedLogIds.has(log.id)) });
       continue;
     }
     const logs = mergeById(previous.nightWakeLogs ?? [], item.nightWakeLogs ?? [])
+      .filter((log) => !deletedLogIds.has(log.id))
       .sort((a, b) => a.at.localeCompare(b.at))
       .slice(-30);
     const notes = [...new Set([previous.note?.trim(), item.note?.trim()].filter((note): note is string => Boolean(note)))];
@@ -154,12 +176,12 @@ function mergeCheckIns(current: AppState["sleepPlan"]["checkIns"], incoming: App
   return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function mergeCaregivers(current: AppState["caregivers"], incoming: AppState["caregivers"]) {
-  const result = [...current];
+function mergeCaregivers(current: AppState["caregivers"], incoming: AppState["caregivers"], deletedIds: Set<string>) {
+  const result = current.filter((item) => !deletedIds.has(item.id));
   const incomingIdMap = new Map<string, string>();
   const usedIds = new Set(result.map((item) => item.id));
   const normalizedName = (name: string) => name.trim().toLocaleLowerCase("tr-TR");
-  for (const caregiver of incoming) {
+  for (const caregiver of incoming.filter((item) => !deletedIds.has(item.id))) {
     const samePerson = result.find((item) => normalizedName(item.name) === normalizedName(caregiver.name));
     if (samePerson) {
       incomingIdMap.set(caregiver.id, samePerson.id);
@@ -181,6 +203,12 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     current.baby.name.trim().toLocaleLowerCase("tr-TR") === incoming.baby.name.trim().toLocaleLowerCase("tr-TR");
   if (!sameBaby) throw new Error("Yedek farklı bir bebek profiline ait. Birleştirmek için aynı bebeğin adını, doğum tarihini ve gebelik haftasını kullanın; farklı profilde tam geri yüklemeyi seçin.");
 
+  const syncTombstones = mergeSyncTombstones(current.syncTombstones, incoming.syncTombstones);
+  const deletedEventIds = new Set(syncTombstones.eventIds);
+  const deletedTaskIds = new Set(syncTombstones.careTaskIds);
+  const deletedLogIds = new Set(syncTombstones.nightWakeLogIds);
+  const deletedCaregiverIds = new Set(syncTombstones.caregiverIds);
+
   const events = mergeById(current.events, incoming.events, (previous, imported) => {
     const merged = { ...previous, ...imported };
     const endedAt = [previous.endedAt, imported.endedAt]
@@ -188,9 +216,9 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
       .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
       .at(-1);
     return { ...merged, endedAt };
-  })
+  }).filter((event) => !deletedEventIds.has(event.id))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  const caregiverMerge = mergeCaregivers(current.caregivers, incoming.caregivers);
+  const caregiverMerge = mergeCaregivers(current.caregivers, incoming.caregivers, deletedCaregiverIds);
   const incomingTasks = incoming.careTasks.map((task) => task.assignedCaregiverId === undefined
     ? task
     : { ...task, assignedCaregiverId: caregiverMerge.incomingIdMap.get(task.assignedCaregiverId) });
@@ -201,7 +229,9 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
       .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
       .at(-1);
     return { ...merged, completedAt };
-  }).sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  }).filter((task) => !deletedTaskIds.has(task.id))
+    .map((task) => deletedCaregiverIds.has(task.assignedCaregiverId ?? "") ? { ...task, assignedCaregiverId: undefined } : task)
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   const developmentCheckIns = new Map((current.developmentCheckIns ?? []).map((item) => [item.ageMonths, item]));
   for (const item of incoming.developmentCheckIns ?? []) {
     const previous = developmentCheckIns.get(item.ageMonths);
@@ -219,6 +249,7 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     baby: current.baby,
     caregiverName: current.caregiverName,
     careInstructions: instructions.join("\n").slice(0, 1000),
+    syncTombstones,
     developmentCheckIns: [...developmentCheckIns.values()].sort((a, b) => b.ageMonths - a.ageMonths).slice(0, 12),
     caregivers: caregiverMerge.caregivers,
     activeCaregiverId: current.activeCaregiverId,
@@ -226,7 +257,7 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     careTasks: mergedCareTasks,
     sleepPlan: {
       ...current.sleepPlan,
-      checkIns: mergeCheckIns(current.sleepPlan.checkIns, incoming.sleepPlan.checkIns),
+      checkIns: mergeCheckIns(current.sleepPlan.checkIns, incoming.sleepPlan.checkIns, deletedLogIds),
       savedGuideIds: [...new Set([...(current.sleepPlan.savedGuideIds ?? []), ...(incoming.sleepPlan.savedGuideIds ?? [])])].slice(0, 100),
       completedDays: mergeById(current.sleepPlan.completedDays.map((item) => ({ ...item, id: `${item.date}-${item.day}` })), incoming.sleepPlan.completedDays.map((item) => ({ ...item, id: `${item.date}-${item.day}` })))
         .map(({ id: _id, ...item }) => item)
@@ -245,11 +276,35 @@ function withChildProfile(state: AppState, child: AppState["children"][number]):
   return { ...state, ...child, activeChildId: child.baby.id, children: [] };
 }
 
+function filterChildWorkspace(child: AppState["children"][number], tombstones: SyncTombstones): AppState["children"][number] {
+  const deletedEvents = new Set(tombstones.eventIds);
+  const deletedTasks = new Set(tombstones.careTaskIds);
+  const deletedLogs = new Set(tombstones.nightWakeLogIds);
+  const deletedCaregivers = new Set(tombstones.caregiverIds);
+  return {
+    ...child,
+    events: child.events.filter((event) => !deletedEvents.has(event.id)),
+    careTasks: child.careTasks.filter((task) => !deletedTasks.has(task.id)).map((task) => deletedCaregivers.has(task.assignedCaregiverId ?? "") ? { ...task, assignedCaregiverId: undefined } : task),
+    sleepPlan: {
+      ...child.sleepPlan,
+      checkIns: child.sleepPlan.checkIns.map((checkIn) => ({ ...checkIn, nightWakeLogs: checkIn.nightWakeLogs?.filter((log) => !deletedLogs.has(log.id)) }))
+    }
+  };
+}
+
 export function mergeDataStates(current: AppState, incoming: AppState): AppState {
-  const currentChildren = current.children.map((child) => child.baby.id === current.activeChildId ? childProfileFor(current) : child);
-  if (!currentChildren.some((child) => child.baby.id === current.activeChildId)) currentChildren.push(childProfileFor(current));
-  const incomingChildren = incoming.children.map((child) => child.baby.id === incoming.activeChildId ? childProfileFor(incoming) : child);
-  if (!incomingChildren.some((child) => child.baby.id === incoming.activeChildId)) incomingChildren.push(childProfileFor(incoming));
+  const syncTombstones = mergeSyncTombstones(current.syncTombstones, incoming.syncTombstones);
+  const deletedChildIds = new Set(syncTombstones.childIds);
+  const deletedCaregiverIds = new Set(syncTombstones.caregiverIds);
+  const currentChildren = current.children.map((child) => child.baby.id === current.activeChildId ? childProfileFor(current) : child)
+    .map((child) => filterChildWorkspace(child, syncTombstones))
+    .filter((child) => !deletedChildIds.has(child.baby.id));
+  if (!deletedChildIds.has(current.activeChildId) && !currentChildren.some((child) => child.baby.id === current.activeChildId)) currentChildren.push(filterChildWorkspace(childProfileFor(current), syncTombstones));
+  const incomingChildren = incoming.children.map((child) => child.baby.id === incoming.activeChildId ? childProfileFor(incoming) : child)
+    .map((child) => filterChildWorkspace(child, syncTombstones))
+    .filter((child) => !deletedChildIds.has(child.baby.id));
+  if (!deletedChildIds.has(incoming.activeChildId) && !incomingChildren.some((child) => child.baby.id === incoming.activeChildId)) incomingChildren.push(filterChildWorkspace(childProfileFor(incoming), syncTombstones));
+  if (!currentChildren.length) throw new Error("Silme eşitlemesi son çocuk profilini kaldırmaya çalışıyor. Veriler korunarak birleştirme durduruldu.");
 
   for (const imported of incomingChildren) {
     const index = currentChildren.findIndex((child) => child.baby.id === imported.baby.id);
@@ -263,12 +318,16 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
 
   const activeChildId = current.activeChildId || current.baby.id;
   const active = currentChildren.find((child) => child.baby.id === activeChildId) ?? currentChildren[0]!;
+  const caregiverMerge = mergeCaregivers(current.caregivers, incoming.caregivers, deletedCaregiverIds);
+  if (!caregiverMerge.caregivers.length) throw new Error("Silme eşitlemesi son bakım veren profilini kaldırmaya çalışıyor. Veriler korunarak birleştirme durduruldu.");
+  const activeCaregiver = caregiverMerge.caregivers.find((caregiver) => caregiver.id === current.activeCaregiverId) ?? caregiverMerge.caregivers[0]!;
   return {
     ...current,
     ...active,
-    caregivers: mergeCaregivers(current.caregivers, incoming.caregivers).caregivers,
-    caregiverName: current.caregiverName,
-    activeCaregiverId: current.activeCaregiverId,
+    syncTombstones,
+    caregivers: caregiverMerge.caregivers,
+    caregiverName: activeCaregiver.name,
+    activeCaregiverId: activeCaregiver.id,
     preferences: current.preferences,
     children: currentChildren,
     activeChildId: active.baby.id

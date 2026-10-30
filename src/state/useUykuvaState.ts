@@ -124,12 +124,13 @@ export function useUykuvaState() {
 
   const deleteCaregiver = useCallback((caregiverId: string) => {
     setState((current) => {
-      if (current.caregivers.length <= 1) return current;
+      if (current.caregivers.length <= 1 || !current.caregivers.some((item) => item.id === caregiverId)) return current;
       const caregivers = current.caregivers.filter((item) => item.id !== caregiverId);
       const active = caregiverId === current.activeCaregiverId ? caregivers[0]! : caregivers.find((item) => item.id === current.activeCaregiverId)!;
       const clearAssignee = (task: CareTask) => task.assignedCaregiverId === caregiverId ? { ...task, assignedCaregiverId: undefined } : task;
       return {
         ...current,
+        syncTombstones: { ...current.syncTombstones, caregiverIds: [...new Set([...current.syncTombstones.caregiverIds, caregiverId])] },
         caregivers,
         activeCaregiverId: active.id,
         caregiverName: active.name,
@@ -208,7 +209,9 @@ export function useUykuvaState() {
   }, []);
 
   const deleteEvent = useCallback((eventId: string) => {
-    setState((current) => ({ ...current, events: current.events.filter((event) => event.id !== eventId) }));
+    setState((current) => current.events.some((event) => event.id === eventId)
+      ? { ...current, events: current.events.filter((event) => event.id !== eventId), syncTombstones: { ...current.syncTombstones, eventIds: [...new Set([...current.syncTombstones.eventIds, eventId])] } }
+      : current);
   }, []);
 
   const updateEvent = useCallback((eventId: string, patch: Partial<CareEvent>) => {
@@ -298,13 +301,19 @@ export function useUykuvaState() {
   }, []);
 
   const saveCheckIn = useCallback((checkIn: SleepCheckIn) => {
-    setState((current) => ({
-      ...current,
-      sleepPlan: {
-        ...current.sleepPlan,
-        checkIns: [checkIn, ...current.sleepPlan.checkIns.filter((item) => item.date !== checkIn.date)]
-      }
-    }));
+    setState((current) => {
+      const previous = current.sleepPlan.checkIns.find((item) => item.date === checkIn.date);
+      const retainedLogIds = new Set((checkIn.nightWakeLogs ?? []).map((log) => log.id));
+      const deletedLogIds = (previous?.nightWakeLogs ?? []).map((log) => log.id).filter((logId) => !retainedLogIds.has(logId));
+      return {
+        ...current,
+        syncTombstones: { ...current.syncTombstones, nightWakeLogIds: [...new Set([...current.syncTombstones.nightWakeLogIds, ...deletedLogIds])] },
+        sleepPlan: {
+          ...current.sleepPlan,
+          checkIns: [checkIn, ...current.sleepPlan.checkIns.filter((item) => item.date !== checkIn.date)]
+        }
+      };
+    });
   }, []);
 
   const saveDevelopmentAnswer = useCallback((ageMonths: 2 | 4 | 6 | 9 | 12 | 15 | 18 | 24 | 30 | 36 | 48 | 60, milestoneId: string, answer: DevelopmentAnswer) => {
@@ -402,7 +411,9 @@ export function useUykuvaState() {
   }, []);
 
   const deleteCareTask = useCallback((taskId: string) => {
-    setState((current) => ({ ...current, careTasks: current.careTasks.filter((task) => task.id !== taskId) }));
+    setState((current) => current.careTasks.some((task) => task.id === taskId)
+      ? { ...current, careTasks: current.careTasks.filter((task) => task.id !== taskId), syncTombstones: { ...current.syncTombstones, careTaskIds: [...new Set([...current.syncTombstones.careTaskIds, taskId])] } }
+      : current);
   }, []);
 
   const restoreData = useCallback((restored: AppState) => {

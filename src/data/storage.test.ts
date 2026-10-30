@@ -12,7 +12,7 @@ test("legacy state receives schema two defaults without losing events", () => {
     events: [{ id: "e", kind: "note", startedAt: "2026-10-26T10:00:00Z", caregiver: "Baba", note: "İyi" }],
     sleepPlan: { method: "responsive", startDate: "2026-10-26", day: 3, bedtime: "20:00", wakeTime: "07:00", routine: [], completedToday: [] }
   });
-  assert.equal(migrated.schemaVersion, 5);
+  assert.equal(migrated.schemaVersion, 6);
   assert.equal(migrated.onboardingComplete, true);
   assert.equal(migrated.preferences.milkExpiryReminderLead, "adaptive");
   assert.equal(migrated.events.length, 1);
@@ -83,6 +83,7 @@ test("switching children saves each workspace and deletion selects a remaining c
   assert.equal(removed.activeChildId, "child-a");
   assert.equal(removed.baby.name, "Ada");
   assert.equal(removed.children.length, 1);
+  assert.deepEqual(removed.syncTombstones.childIds, ["child-b"]);
 });
 
 test("caregiver migration preserves the active identity", () => {

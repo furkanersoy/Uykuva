@@ -28,11 +28,15 @@ Ebeveyn ve bakıcıların farklı telefonlardan aynı bebeğin bakım kayıtlar�
 ## Eşitleme ve çakışma
 
 - Her bakım olayı ve görev sabit UUID ile saklanır. Eşitleme olay kayıtlarını UUID ile birleştirir; aynı olay iki kez eklenmez.
-- Silmeler, çevrimdışı cihazlara da ulaşabilmeleri için eşitleme onayı gelene dek zaman damgalı tombstone olarak saklanır.
+- Yerel uygulama ve yedek birleştirme akışında silinen olay, bakım görevi, gece uyanması, çocuk ve bakım veren kimlikleri `syncTombstones` içinde kalıcı silme işareti olarak saklanır. Birleştirme önce bu kimlikleri toplar ve eski kopyaları yeniden eklemez. İşaretler şu an zaman damgası/cihaz onayıyla temizlenmez; saklama sınırı ve bulut eşitlemesindeki iki cihazlı davranış ayrıca doğrulanmalıdır.
 - Günlük check-in aynı tarih için alan bazında birleştirilir; gece uyanma kayıtları kendi UUID'leriyle birleştirilir.
 - Uyku planı tercihlerinde her cihazın değişiklik saati ve kullanıcı kimliği tutulur. Çakışmada sessizce bir tarafı silmek yerine son değişiklik ve bakım veren adı gösterilip kullanıcıya seçim sunulur.
 - Başlangıç tam yedeklemesi ve artımlı değişiklik kuyruğu, sunucu revizyon numarasıyla yapılır. Sunucudan çekme veya gönderme başarısız olursa yerel kayıtlar kullanılmaya devam eder ve senkronizasyon durumu görünür.
 - Sağlık ve bakım olayları analitik/çökme raporlarına dahil edilmez.
+
+### Yerel silme koruması
+
+`AppState` şema sürümü 6 ile silme işaretleri yedek dışa aktarma/geri yükleme ve veri birleştirmede korunur. Eski yedeklerde alan yoksa boş listelerle göç edilir; bozuk kimlik listeleri yedekten reddedilir. Bu uygulama eski yedek/cihaz kayıtlarının yerel birleştirmede geri gelmesini engeller. Barındırılan Supabase projesi ve iki fiziksel/emüle cihazlı eşitleme henüz doğrulanmadığı için bu, tamamlanmış bulut senkronizasyonu kanıtı sayılmaz.
 
 İlk şema temeli `families`, `family_members`, `family_invites` ve `sync_documents` tablolarını oluşturur. Davet token'ı veritabanında yalnızca SHA-256 özeti olarak tutulur; 7 gün sonra geçersiz olur ve yalnızca davet edilen doğrulanmış e-posta kabul edebilir. Aile içindeki `family` rolü şifreli kayıtları okuyabilir; `parent` ve `caregiver` rollerine senkronizasyon yazma hakkı tanınır. İstemcilerin tabloları doğrudan yazma izni yoktur; yazma RPC'si üyeliği doğrular ve beklenen revision farklıysa çakışma hatası döndürür. İstemci veriyi uçtan uca şifrelemeden bu RPC kullanılmamalıdır.
 

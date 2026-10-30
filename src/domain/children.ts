@@ -22,9 +22,9 @@ export function selectChildWorkspace(state: AppState, babyId: string): AppState 
 
 export function deleteChildWorkspace(state: AppState, babyId: string): AppState {
   const saved = saveActiveChild(state);
-  if (saved.children.length <= 1) return saved;
+  if (saved.children.length <= 1 || !saved.children.some((profile) => profile.baby.id === babyId)) return saved;
   const children = saved.children.filter((profile) => profile.baby.id !== babyId);
-  if (saved.activeChildId !== babyId) return { ...saved, children };
+  if (saved.activeChildId !== babyId) return { ...saved, children, syncTombstones: { ...saved.syncTombstones, childIds: [...new Set([...saved.syncTombstones.childIds, babyId])] } };
   const next = children[0]!;
-  return { ...saved, ...next, children, activeChildId: next.baby.id };
+  return { ...saved, ...next, children, activeChildId: next.baby.id, syncTombstones: { ...saved.syncTombstones, childIds: [...new Set([...saved.syncTombstones.childIds, babyId])] } };
 }

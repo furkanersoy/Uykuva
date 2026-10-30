@@ -33,6 +33,16 @@ test("saved sleep guides round-trip, merge by union, and reject malformed IDs", 
   assert.throws(() => parseDataExport(JSON.stringify(invalid)), /Uyku planı veya check-in kayıtları geçersiz/i);
 });
 
+test("sync deletion tombstones survive backup round-trip and reject malformed IDs", () => {
+  const state = createInitialState();
+  state.syncTombstones = { eventIds: ["event-1"], careTaskIds: ["task-1"], nightWakeLogIds: ["wake-1"], childIds: ["child-1"], caregiverIds: ["caregiver-1"] };
+  assert.deepEqual(parseDataExport(createDataExport(state)).syncTombstones, state.syncTombstones);
+
+  const invalid = JSON.parse(createDataExport(state));
+  invalid.syncTombstones.eventIds = [""];
+  assert.throws(() => parseDataExport(JSON.stringify(invalid)), /eşitleme silme kayıtları geçersiz/i);
+});
+
 test("morning check-ins preserve the actually applied sleep approach in backups", () => {
   const state = createInitialState();
   state.sleepPlan.checkIns = [{ date: "2026-10-30", appliedMethod: "gradual", ease: 3, sustainability: 4, planReflection: "Bebeğim ses desteğiyle daha kolay sakinleşti." }];
@@ -190,4 +200,34 @@ test("backup merge unions children and keeps each child's records separate", () 
   assert.match(mina?.careInstructions ?? "", /Mina notu/);
   assert.match(mina?.careInstructions ?? "", /Yedekten gelen not/);
   assert.equal(merged.activeChildId, current.activeChildId);
+});
+
+test("backup merge tombstones prevent deleted records, caregivers, and children from returning", () => {
+  const current = createInitialState();
+  const incoming = createInitialState();
+  current.caregivers.push({ id: "caregiver-deleted", name: "Silinmiş bakıcı", role: "caregiver" });
+  incoming.caregivers.push({ id: "caregiver-deleted", name: "Silinmiş bakıcı", role: "caregiver" });
+  const staleChild = { ...createInitialState(), baby: { id: "child-deleted", name: "Mina", birthDate: "2025-03-01", gestationalWeek: 39 } };
+  current.children.push({ baby: staleChild.baby, careInstructions: "", developmentCheckIns: [], events: [], careTasks: [], sleepPlan: staleChild.sleepPlan });
+  incoming.children.push({ baby: staleChild.baby, careInstructions: "", developmentCheckIns: [], events: [{ id: "deleted-event", kind: "note" as const, startedAt: "2026-10-27T10:00:00Z", caregiver: "Anne" }], careTasks: [{ id: "deleted-task", type: "appointment" as const, title: "Eski görev", dueAt: "2026-10-28T10:00:00Z", assignedCaregiverId: "caregiver-deleted" }], sleepPlan: { ...staleChild.sleepPlan, checkIns: [{ date: "2026-10-27", nightWakeLogs: [{ id: "deleted-wake", at: "2026-10-27T02:00:00Z", response: "comfort" as const, caregiver: "Anne" }] }] } });
+  current.syncTombstones = { eventIds: ["deleted-event"], careTaskIds: ["deleted-task"], nightWakeLogIds: ["deleted-wake"], childIds: ["child-deleted"], caregiverIds: ["caregiver-deleted"] };
+
+  const merged = mergeDataStates(current, incoming);
+
+  assert.equal(merged.children.some((child) => child.baby.id === "child-deleted"), false);
+  assert.equal(merged.events.some((event) => event.id === "deleted-event"), false);
+  assert.equal(merged.careTasks.some((task) => task.id === "deleted-task"), false);
+  assert.equal(merged.caregivers.some((caregiver) => caregiver.id === "caregiver-deleted"), false);
+  assert.deepEqual(merged.syncTombstones, current.syncTombstones);
+});
+
+test("backup merge filters tombstoned night-wake logs from the active child", () => {
+  const current = createInitialState();
+  const incoming = createInitialState();
+  incoming.sleepPlan.checkIns = [{ date: "2026-10-27", nightWakeLogs: [{ id: "deleted-wake", at: "2026-10-27T02:00:00Z", response: "comfort", caregiver: "Anne" }] }];
+  current.syncTombstones.nightWakeLogIds = ["deleted-wake"];
+
+  const merged = mergeDataStates(current, incoming);
+
+  assert.equal(merged.sleepPlan.checkIns[0]?.nightWakeLogs?.length ?? 0, 0);
 });
