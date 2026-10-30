@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createInitialState } from "../data/seed";
-import { createDoctorSummary, createDoctorSummaryHtml } from "./reports";
+import { createDoctorSummary, createDoctorSummaryHtml, createSleepWeekSummary, createSleepWeekSummaryHtml } from "./reports";
 
 test("doctor summary labels medicine dose as user-entered and avoids advice", () => {
   const state = createInitialState();
@@ -67,5 +67,32 @@ test("doctor summary can include a caregiver-selected 14-day period", () => {
   assert.match(fortnight, /UYKUVA · 14 GÜNLÜK BAKIM ÖZETİ/);
   assert.match(fortnight, /Beslenme: 1 kayıt · kayıtlı biberon toplamı 120 ml/);
   assert.match(createDoctorSummaryHtml(state, now, 14), /<h1>UYKUVA · 14 GÜNLÜK BAKIM ÖZETİ<\/h1>/);
+});
+
+test("weekly sleep report splits overnight sleep across local days and includes parent check-ins", () => {
+  const state = createInitialState();
+  const now = new Date(2026, 9, 27, 12, 0);
+  state.baby.birthDate = "2026-06-01";
+  state.events = [
+    { id: "overnight", kind: "sleep", startedAt: "2026-10-26T23:00:00", endedAt: "2026-10-27T01:00:00", caregiver: "Anne" },
+    { id: "morning", kind: "sleep", startedAt: "2026-10-27T07:00:00", endedAt: "2026-10-27T07:45:00", caregiver: "Baba" },
+    { id: "future", kind: "sleep", startedAt: "2026-10-28T08:00:00", endedAt: "2026-10-28T09:00:00", caregiver: "Anne" }
+  ];
+  state.sleepPlan.checkIns = [{ date: "2026-10-27", ease: 2, nightWakings: 5, bedtime: "22:30", wakeTime: "07:00", dayContext: "travel" }];
+  const summary = createSleepWeekSummary(state, now);
+  assert.match(summary, /27 Ekim.*1 sa 45 dk · 2 uyku kaydı/);
+  assert.match(summary, /ebeveyn bildirimi 5\+ · kolaylık 2\/5 · yatış 22:30 · uyanış 07:00 · Seyahat/);
+  assert.match(summary, /Dönem toplamı: 2 sa 45 dk · en az bir uyku kaydı olan 2\/7 gün/);
+  assert.doesNotMatch(summary, /28 Ekim/);
+});
+
+test("weekly sleep PDF escapes names and presents missing data without health claims", () => {
+  const state = createInitialState();
+  state.baby.name = "<Bebek>";
+  const html = createSleepWeekSummaryHtml(state, new Date(2026, 9, 27, 12, 0));
+  assert.match(html, /&lt;Bebek&gt;/);
+  assert.doesNotMatch(html, /<h1>.*<Bebek>/);
+  assert.match(html, /uyku kaydı yok/);
+  assert.match(html, /sağlık değerlendirmesi veya uyku hedefi değildir/);
 });
 
