@@ -221,7 +221,7 @@ export function createMemoryBookHtml(state: AppState, now = new Date()): string 
     const image = includePhoto ? `<img src="${photo}" alt="${escapeHtml(title)}" />` : "";
     const date = new Date(event.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
     return `<article class="memory">${image}<div class="memory-copy"><p class="date">${escapeHtml(date)} · ${escapeHtml(event.caregiver)}</p><h2>${escapeHtml(title)}</h2>${note ? `<p class="note">${escapeHtml(note)}</p>` : ""}</div></article>`;
-  }).join("\\n");
+  }).join("\n");
   const content = entries.length ? cards : `<p class="empty">Henüz anı eklenmemiş. Uykuva’da Anılar bölümüne kaydettiğiniz anlar burada yer alır.</p>`;
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     @page { size: A4; margin: 16mm; }
