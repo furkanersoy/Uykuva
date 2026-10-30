@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createInitialState } from "../data/seed";
-import { createDoctorSummary } from "./reports";
+import { createDoctorSummary, createDoctorSummaryHtml } from "./reports";
 
 test("doctor summary labels medicine dose as user-entered and avoids advice", () => {
   const state = createInitialState();
@@ -66,5 +66,6 @@ test("doctor summary can include a caregiver-selected 14-day period", () => {
   assert.match(weekly, /Beslenme: 0 kayıt/);
   assert.match(fortnight, /UYKUVA · 14 GÜNLÜK BAKIM ÖZETİ/);
   assert.match(fortnight, /Beslenme: 1 kayıt · kayıtlı biberon toplamı 120 ml/);
+  assert.match(createDoctorSummaryHtml(state, now, 14), /<h1>UYKUVA · 14 GÜNLÜK BAKIM ÖZETİ<\/h1>/);
 });
 
