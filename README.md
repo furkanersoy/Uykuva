@@ -115,6 +115,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Uyku planı yaklaşımını yaş aşaması ve hazırlık listesine göre gösterme
 - Sabah check-in'inde o gece gerçekte uygulanan uyku yaklaşımını isteğe bağlı kaydetme; yaklaşım açıkça farklıysa o geceyi plan karşılaştırmasından çıkarma
 - Sabah check-in'inde yaklaşımın aile için ne kadar sürdürülebilir olduğunu isteğe bağlı belirtme; ilk/son plan dönemlerini ebeveyn deneyimi olarak karşılaştırma
+- Güne özel uyku koçluğu sorusuna isteğe bağlı yanıt yazma; yanıtlar yerel cihazda tutulur, doktor özetine girmez ve yalnızca plan paylaşımı başlatıldığında paylaşım metnine eklenir
 - Kayıtlı bakım etkinliklerinden 13 olgusal anı önerisi çıkarma; ebeveyn seçerse bunları anı defterine ekleme
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
 - Uyku planı hazır oluş kontrol listesi; hastalık/ağrı, beslenme kaygısı, güvenli uyku ve bakım verenlerin ortak kararı için madde başına açıklama

@@ -35,10 +35,11 @@ test("saved sleep guides round-trip, merge by union, and reject malformed IDs", 
 
 test("morning check-ins preserve the actually applied sleep approach in backups", () => {
   const state = createInitialState();
-  state.sleepPlan.checkIns = [{ date: "2026-10-30", appliedMethod: "gradual", ease: 3, sustainability: 4 }];
+  state.sleepPlan.checkIns = [{ date: "2026-10-30", appliedMethod: "gradual", ease: 3, sustainability: 4, planReflection: "Bebeğim ses desteğiyle daha kolay sakinleşti." }];
   const restored = parseDataExport(createDataExport(state));
   assert.equal(restored.sleepPlan.checkIns[0]?.appliedMethod, "gradual");
   assert.equal(restored.sleepPlan.checkIns[0]?.sustainability, 4);
+  assert.equal(restored.sleepPlan.checkIns[0]?.planReflection, "Bebeğim ses desteğiyle daha kolay sakinleşti.");
 
   const invalid = JSON.parse(createDataExport(state));
   invalid.sleepPlan.checkIns[0].appliedMethod = "unknown";
@@ -46,6 +47,9 @@ test("morning check-ins preserve the actually applied sleep approach in backups"
   const invalidSustainability = JSON.parse(createDataExport(state));
   invalidSustainability.sleepPlan.checkIns[0].sustainability = 6;
   assert.throws(() => parseDataExport(JSON.stringify(invalidSustainability)), /geçersiz/i);
+  const longReflection = JSON.parse(createDataExport(state));
+  longReflection.sleepPlan.checkIns[0].planReflection = "x".repeat(301);
+  assert.throws(() => parseDataExport(JSON.stringify(longReflection)), /geçersiz/i);
 });
 
 test("backup validation accepts the expanded appointment reminder options", () => {

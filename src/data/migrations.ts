@@ -84,6 +84,7 @@ function migrateSingleState(value: unknown): AppState {
         ...item,
         appliedMethod: ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(item.appliedMethod)) ? item.appliedMethod : undefined,
         sustainability: [1, 2, 3, 4, 5].includes(Number(item.sustainability)) ? Number(item.sustainability) as NonNullable<AppState["sleepPlan"]["checkIns"][number]["sustainability"]> : undefined,
+        planReflection: typeof item.planReflection === "string" ? item.planReflection.slice(0, 300) : undefined,
         dayContext: ["illness", "travel", "teething", "routineChange"].includes(String(item.dayContext)) ? item.dayContext : undefined
       })) : []
     },

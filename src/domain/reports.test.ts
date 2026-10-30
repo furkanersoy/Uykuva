@@ -29,6 +29,13 @@ test("doctor summary includes timestamped night waking responses", () => {
   assert.match(summary, /Sakinleştirme \/ yakınlık · Baba/);
 });
 
+test("doctor summary keeps private sleep-coaching reflections out of the medical report", () => {
+  const state = createInitialState();
+  state.sleepPlan.checkIns = [{ date: "2026-10-26", planReflection: "Aile içinde konuşmak istediğimiz özel not." }];
+  const summary = createDoctorSummary(state, new Date("2026-10-27T12:00:00Z"));
+  assert.doesNotMatch(summary, /Aile içinde konuşmak istediğimiz özel not/);
+});
+
 test("doctor summary clips and merges completed sleep within the seven-day window", () => {
   const state = createInitialState();
   state.events = [

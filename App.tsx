@@ -1125,7 +1125,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       ...enabledRoutine.map((item, index) => `${index + 1}. ${item.label} (${item.minutes} dk)`),
       ...(!app.state.sleepPlan.paused && !programCompleted ? ["Bugünün adımları:", ...plan.tasks.map((task) => `• ${task}`)] : []),
       ...comparisonLines,
-      ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.sustainability === undefined ? "" : ` · aile için sürdürülebilirlik ${item.sustainability}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}`)] : []),
+      ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.sustainability === undefined ? "" : ` · aile için sürdürülebilirlik ${item.sustainability}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}${item.planReflection ? ` · koçluk yanıtı: ${item.planReflection}` : ""}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
   };
@@ -1413,7 +1413,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       <SectionTitle title="Hedef saatler" />
       <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput accessibilityLabel="Hedef yatış saati" value={bedtime} onChangeText={(value) => setBedtime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput accessibilityLabel="Hedef sabah uyanış saati" value={wakeTime} onChangeText={(value) => setWakeTime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
       <Card tone="peach">
-        <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
+        <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.inputLabel}>Bugünün koçluk sorusu</Text><Text style={styles.body}>{plan.checkIn}</Text>
         <Text style={styles.inputLabel}>Dün gece özeti</Text>
         <View style={styles.measureRow}>
           <Measure value={nightSummary.minutes ? `${Math.floor(nightSummary.minutes / 60)} sa ${nightSummary.minutes % 60} dk` : "—"} label="Kaydedilen uyku" />
@@ -1448,6 +1448,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.inputLabel}>Dünden farklı olan neydi? (isteğe bağlı)</Text>
         <TextInput accessibilityLabel="Bugünkü uyku ve rutin hakkında not" value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
         <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
+        <Text style={styles.inputLabel}>Koçluk sorusuna yanıt · isteğe bağlı</Text>
+        <TextInput accessibilityLabel="Uyku koçluğu sorusuna yanıt" value={todayCheckIn?.planReflection ?? ""} onChangeText={(planReflection) => app.saveCheckIn({ ...todayCheckIn, date: today, planReflection })} style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Dilerseniz kısa bir yanıt yazın" placeholderTextColor="#93A09C" />
+        <Text style={styles.hint}>Yanıtınız cihazda kalır ve doktor özetine eklenmez. Plan paylaşımını başlattığınızda son yedi check-in yanıtları da paylaşım metnine eklenir.</Text>
       </Card>
       <SectionTitle title="Son geceler" action="7 günlük görünüm" />
       <Card>

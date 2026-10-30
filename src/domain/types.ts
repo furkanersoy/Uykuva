@@ -115,6 +115,7 @@ export type SleepCheckIn = {
   appliedMethod?: SleepMethod;
   ease?: 1 | 2 | 3 | 4 | 5;
   sustainability?: 1 | 2 | 3 | 4 | 5;
+  planReflection?: string;
   nightWakings?: number;
   bedtime?: string;
   wakeTime?: string;
