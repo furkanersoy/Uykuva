@@ -265,6 +265,34 @@ test("bedtime adjustment is capped at fifteen minutes", () => {
   assert.equal(insight.checkInAverage, 3);
 });
 
+test("sleep coach summarizes bedtime-to-sleep onset time across matching nights", () => {
+  const records = [
+    { date: "2026-10-30", bedtime: "20:00" },
+    { date: "2026-10-29", bedtime: "20:00" },
+    { date: "2026-10-28", bedtime: "20:00" },
+    { date: "2026-10-23", bedtime: "20:00" },
+    { date: "2026-10-22", bedtime: "20:00" },
+    { date: "2026-10-21", bedtime: "20:00" },
+    { date: "2026-10-31", bedtime: "20:00" },
+    { date: "2026-10-24", bedtime: "25:00" }
+  ];
+  const minutes = [30, 45, 15, 80, 70, 90];
+  const events: CareEvent[] = records.slice(0, 6).map((record, index) => {
+    const bedtime = new Date(`${record.date}T12:00:00`);
+    bedtime.setDate(bedtime.getDate() - 1);
+    bedtime.setHours(20, 0, 0, 0);
+    const start = new Date(bedtime.getTime() + minutes[index]! * 60_000);
+    return { id: `onset-${index}`, kind: "sleep", startedAt: start.toISOString(), endedAt: new Date(start.getTime() + 5 * 60 * 60_000).toISOString(), caregiver: "Anne" };
+  });
+
+  const insight = createSleepCoachInsights(events, "20:00", records, new Date(2026, 9, 30, 12));
+
+  assert.equal(insight.sleepOnsetSamples, 3);
+  assert.equal(insight.sleepOnsetMedianMinutes, 30);
+  assert.equal(insight.previousSleepOnsetSamples, 3);
+  assert.equal(insight.previousSleepOnsetMedianMinutes, 80);
+});
+
 test("sleep insights summarize recorded settling support neutrally", () => {
   const events: CareEvent[] = [
     { id: "s1", kind: "sleep", sleepSupport: "held", startedAt: "2026-10-26T20:00:00", endedAt: "2026-10-27T01:00:00", caregiver: "Anne" },
