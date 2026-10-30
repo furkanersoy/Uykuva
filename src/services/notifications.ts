@@ -145,7 +145,7 @@ export async function replaceOpenSleepCheckReminders(
     if (target.getTime() <= now.getTime()) continue;
     let date = target;
     if (isInQuietHours(date, quietStart, quietEnd)) {
-      const match = /^(\\d{2}):(\\d{2})$/.exec(quietEnd);
+      const match = /^(\d{2}):(\d{2})$/.exec(quietEnd);
       if (match && Number(match[1]) <= 23 && Number(match[2]) <= 59) {
         date = new Date(target);
         date.setHours(Number(match[1]), Number(match[2]), 0, 0);
