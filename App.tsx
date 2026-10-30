@@ -1156,7 +1156,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       <Card>
         {SLEEP_READINESS_ITEMS.map((item) => {
           const done = app.state.sleepPlan.readinessCompleted.includes(item);
-          return <Pressable key={item} accessibilityRole="checkbox" accessibilityLabel={item} accessibilityState={{ checked: done }} onPress={() => app.toggleReadiness(item)} style={[styles.taskRow, styles.readinessRow]}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><View style={styles.flex}><Text style={styles.taskText}>{item}</Text><Text style={styles.readinessHelp}>{SLEEP_READINESS_GUIDANCE[item]}</Text></View></Pressable>;
+          return <Pressable key={item} accessibilityRole="checkbox" accessibilityLabel={`${item}. ${SLEEP_READINESS_GUIDANCE[item]}`} accessibilityHint="Bu hazır oluş maddesini işaretler veya işaretini kaldırır." accessibilityState={{ checked: done }} onPress={() => app.toggleReadiness(item)} style={[styles.taskRow, styles.readinessRow]}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><View style={styles.flex}><Text style={styles.taskText}>{item}</Text><Text style={styles.readinessHelp}>{SLEEP_READINESS_GUIDANCE[item]}</Text></View></Pressable>;
         })}
         {!stage.canReduceSupport ? <Text style={styles.readinessNote}>Bu yaş aşamasında tüm maddeler tamamlansa bile desteği azaltma hedefi yoktur; rutin ve duyarlı bakım önceliklidir.</Text> : null}
       </Card>
