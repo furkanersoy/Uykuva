@@ -21,4 +21,6 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nap-transitions"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "night-feeds-and-sleep-plans"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "when-to-pause-sleep-plan"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "toddler-bedtime-resistance"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "screens-before-bed"));
 });

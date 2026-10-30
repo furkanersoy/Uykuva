@@ -59,6 +59,24 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
   },
   {
+    id: "toddler-bedtime-resistance",
+    title: "Yatma saatine direniyorsa",
+    age: "Yaklaşık 1–5 yaş",
+    summary: "Küçük çocuklar yatmaya geçişte zorlanabilir. Yatışa yakın kısa bir sakinleşme sırası, net bir iyi geceler adımı ve bakım verenlerin benzer yanıtı yardımcı olabilir. Yatma saati çocuğun alıştığı uykuya dalma saatinden çok erkense, NHS hedef saate küçük ve yavaş adımlarla yaklaşmayı önerir. Her çocuğun ritmi farklıdır.",
+    category: "routine",
+    source: "NHS · Küçük çocuklarda uyku",
+    url: "https://www.nhs.uk/baby/health/sleep-and-young-children/"
+  },
+  {
+    id: "screens-before-bed",
+    title: "Yatmadan önce ekranları kapatma",
+    age: "Küçük çocuklar ve okul öncesi",
+    summary: "Telefon, tablet ve televizyonu yatma saatinden 30–60 dakika önce kapatıp bu zamanı kitap, sakin oyun veya sarılma gibi ekran dışı bir etkinlikle doldurabilirsiniz. Bu bir zorunluluk ya da uyku garantisi değildir; ailenizin uygulayabileceği sakin bir akşam sınırıdır.",
+    category: "routine",
+    source: "NHS · Küçük çocuklarda uyku",
+    url: "https://www.nhs.uk/baby/health/sleep-and-young-children/"
+  },
+  {
     id: "night-waking",
     title: "Gece uyanmaları ve beslenme",
     age: "Yenidoğan ve bebek",
