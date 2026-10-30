@@ -35,6 +35,13 @@ type FamilyMembership = {
   isOwner: boolean;
 };
 
+export type CloudFamilyInvite = {
+  id: string;
+  invited_email: string;
+  role: "parent" | "caregiver" | "family";
+  expires_at: string;
+};
+
 function supabaseUrl() {
   return process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "";
 }
@@ -172,6 +179,26 @@ export async function createCloudFamilyInvite(familyId: string, email: string, r
   const invite = Array.isArray(data) ? data[0] : data;
   if (!invite?.invite_token || !invite?.invite_expires_at) throw new Error("Davet oluşturuldu ancak yanıt okunamadı.");
   return { token: invite.invite_token as string, expiresAt: invite.invite_expires_at as string };
+}
+
+export async function getCloudFamilyInvites(familyId: string): Promise<CloudFamilyInvite[]> {
+  const { data, error } = await getClient()
+    .from("family_invites")
+    .select("id, invited_email, role, expires_at, accepted_at, revoked_at")
+    .eq("family_id", familyId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  const now = Date.now();
+  return (data ?? []).filter((invite) => !invite.accepted_at && !invite.revoked_at && new Date(invite.expires_at).getTime() > now) as CloudFamilyInvite[];
+}
+
+export async function revokeCloudFamilyInvite(familyId: string, inviteId: string) {
+  const { data, error } = await getClient().rpc("revoke_family_invite", {
+    p_family_id: familyId,
+    p_invite_id: inviteId
+  });
+  if (error) throw error;
+  if (data !== true) throw new Error("Davet iptal edilemedi; kabul edilmiş veya süresi dolmuş olabilir.");
 }
 
 export async function acceptCloudFamilyInvite(token: string) {
