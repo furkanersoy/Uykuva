@@ -106,7 +106,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Son yedi check-in gecesinin kaydedilen uyku toplamı ve bildirilen uyanma sayısına göre geçmişini görme
 - Uyku planı yaklaşımını yaş aşaması ve hazırlık listesine göre gösterme
 - Yaşa göre ritim temelleri, nazik hazırlık ve kişisel plan ayrımı
-- Uyku planı hazır oluş kontrol listesi
+- Uyku planı hazır oluş kontrol listesi; hastalık/ağrı, beslenme kaygısı, güvenli uyku ve bakım verenlerin ortak kararı için madde başına açıklama
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
 - İlaç kaydında kullanıcının girdiği sonraki kontrol saatine tek seferlik yerel hatırlatma
 - Son sekiz büyüme ölçümünü tarih sırasıyla karşılaştırma
