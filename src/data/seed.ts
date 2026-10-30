@@ -14,7 +14,7 @@ export function createInitialState(): AppState {
   const sleep3 = iso(7.1, 48);
   const sleep4 = iso(10.4, 55);
   const initialState: Omit<AppState, "children" | "activeChildId"> = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
@@ -50,7 +50,8 @@ export function createInitialState(): AppState {
       completedDays: [],
       completedRuns: [],
       readinessCompleted: [],
-      checkIns: []
+      checkIns: [],
+      savedGuideIds: []
     },
     preferences: {
       handoffHours: 4,

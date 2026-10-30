@@ -12,7 +12,7 @@ test("legacy state receives schema two defaults without losing events", () => {
     events: [{ id: "e", kind: "note", startedAt: "2026-10-26T10:00:00Z", caregiver: "Baba", note: "İyi" }],
     sleepPlan: { method: "responsive", startDate: "2026-10-26", day: 3, bedtime: "20:00", wakeTime: "07:00", routine: [], completedToday: [] }
   });
-  assert.equal(migrated.schemaVersion, 4);
+  assert.equal(migrated.schemaVersion, 5);
   assert.equal(migrated.onboardingComplete, true);
   assert.equal(migrated.preferences.milkExpiryReminderLead, "adaptive");
   assert.equal(migrated.events.length, 1);
@@ -23,9 +23,18 @@ test("legacy state receives schema two defaults without losing events", () => {
   assert.equal(migrated.activeCaregiverId, "caregiver-1");
   assert.deepEqual(migrated.sleepPlan.checkIns, []);
   assert.deepEqual(migrated.sleepPlan.readinessCompleted, []);
+  assert.deepEqual(migrated.sleepPlan.savedGuideIds, []);
   assert.equal(migrated.children.length, 1);
   assert.equal(migrated.children[0]?.baby.id, "b");
   assert.equal(migrated.activeChildId, "b");
+});
+
+test("migration preserves unique saved sleep guides and drops malformed entries", () => {
+  const state = createInitialState();
+  state.children = [];
+  state.sleepPlan.savedGuideIds = ["safe-sleep-space", "safe-sleep-space", "", 3, "routine"] as never;
+  const migrated = migrateState(state);
+  assert.deepEqual(migrated.sleepPlan.savedGuideIds, ["safe-sleep-space", "routine"]);
 });
 
 test("migration preserves all valid completed sleep plan cycles", () => {

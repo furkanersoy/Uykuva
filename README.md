@@ -77,7 +77,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Konu filtreli, çevrimdışı uyku okuma kütüphanesi; bebek ritmi, sakin rutin, gece uyanmaları ve beslenme, zor günler, bakım veren desteği ve gündüz uykuları için NHS, AAP ve CDC kaynak bağlantıları; her özet işletim sisteminin paylaşım menüsüyle bakım verenlere iletilebilir
-- Uyku ekranında yaklaşık 4 aylık uyku döngüsü değişimi, gece-gündüz işaretleri, rutin, gece uyanmaları, zor günler, bakım veren desteği ve gündüz uykusu geçişleri hakkında sekiz çevrimdışı kısa okuma; NHS, AAP ve Queensland çocuk sağlığı kaynak bağlantıları
+- Uyku ekranında güvenli uyku, kundak, ayrılık kaygısı, uykuya geçiş desteği, rutin, gece uyanmaları ve gündüz uykuları hakkında 16 çevrimdışı kısa okuma; rehberleri kaydedip ayrı listede görme ve bakım verenle paylaşma; NHS, AAP ve Queensland çocuk sağlığı kaynak bağlantıları
 - Uyku rehberinde uykuda solunum güçlüğü, sık horlama veya zor uyandırılma gibi durumlarda doktor ya da acil yardım gerektirebilecek belirtileri açıklama; AAP ve NHS kaynak bağlantıları
 - Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma

@@ -47,7 +47,7 @@ function migrateSingleState(value: unknown): AppState {
   return {
     ...initial,
     ...candidate,
-    schemaVersion: 4,
+    schemaVersion: 5,
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: {
       ...initial.baby,
@@ -76,6 +76,9 @@ function migrateSingleState(value: unknown): AppState {
       completedDays,
       completedRuns,
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
+      savedGuideIds: Array.isArray(candidate.sleepPlan?.savedGuideIds)
+        ? [...new Set(candidate.sleepPlan.savedGuideIds.filter((value): value is string => typeof value === "string" && value.length > 0 && value.length <= 100))].slice(0, 100)
+        : [],
       checkIns: Array.isArray(candidate.sleepPlan?.checkIns) ? candidate.sleepPlan.checkIns.map((item) => ({
         ...item,
         dayContext: ["illness", "travel", "teething", "routineChange"].includes(String(item.dayContext)) ? item.dayContext : undefined

@@ -985,8 +985,9 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
 }
 
 function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
-  const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all">("all");
-  const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
+  const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all" | "saved">("all");
+  const savedGuideIds = app.state.sleepPlan.savedGuideIds ?? [];
+  const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : sleepGuideFilter === "saved" ? SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)) : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);
   const coachingPausedToday = isSleepPlanPausedToday(app.state.sleepPlan, today);
@@ -1216,12 +1217,16 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.inputLabel}>Konular</Text>
           <View style={styles.choiceRow}>
             <Pill label={`Tümü · ${SLEEP_GUIDES.length}`} active={sleepGuideFilter === "all"} onPress={() => setSleepGuideFilter("all")} />
+            <Pill label={`Kaydedilen · ${SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)).length}`} active={sleepGuideFilter === "saved"} onPress={() => setSleepGuideFilter("saved")} />
             {SLEEP_GUIDE_CATEGORIES.map((category) => <Pill key={category.id} label={`${category.label} · ${SLEEP_GUIDES.filter((guide) => guide.category === category.id).length}`} active={sleepGuideFilter === category.id} onPress={() => setSleepGuideFilter(category.id)} />)}
           </View>
           {visibleSleepGuides.map((guide) => <View key={guide.id} style={styles.sleepGuideItem}>
             <Text style={styles.inputLabel}>{guide.title}</Text>
             <Text style={styles.eyebrow}>{guide.age}</Text>
             <Text style={styles.body}>{guide.summary}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={`${guide.title} rehberini ${savedGuideIds.includes(guide.id) ? "kaydedilenlerden çıkar" : "kaydet"}`} accessibilityState={{ selected: savedGuideIds.includes(guide.id) }} onPress={() => app.toggleSavedGuide(guide.id)}>
+              <Text style={styles.linkText}>{savedGuideIds.includes(guide.id) ? "✓ Kaydedildi · kaydedilenlerden çıkar" : "☆ Rehberi kaydet"}</Text>
+            </Pressable>
             <Pressable accessibilityRole="link" accessibilityLabel={`${guide.source} kaynağını aç`} onPress={() => void Linking.openURL(guide.url).catch(() => Alert.alert("Bağlantı açılamadı", "Kaynak sayfaya şu anda ulaşılamıyor. Kısa özet uygulamada çevrimdışı okunabilir."))}>
               <Text style={styles.linkText}>{guide.source} · kaynağı aç</Text>
             </Pressable>

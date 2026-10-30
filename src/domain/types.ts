@@ -107,6 +107,7 @@ export type SleepPlan = {
   completedRuns: SleepPlanRun[];
   readinessCompleted: string[];
   checkIns: SleepCheckIn[];
+  savedGuideIds: string[];
 };
 
 export type SleepCheckIn = {
@@ -175,7 +176,7 @@ export type ChildProfile = {
 };
 
 export type AppState = {
-  schemaVersion: 4;
+  schemaVersion: 5;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;

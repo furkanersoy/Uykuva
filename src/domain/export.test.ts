@@ -18,6 +18,21 @@ test("memory photos round-trip in local backups and reject invalid or oversized 
   assert.throws(() => parseDataExport(JSON.stringify(tooLarge)), /bakım kayıtları/i);
 });
 
+test("saved sleep guides round-trip, merge by union, and reject malformed IDs", () => {
+  const current = createInitialState();
+  current.sleepPlan.savedGuideIds = ["safe-sleep-space"];
+  const incoming = createInitialState();
+  incoming.sleepPlan.savedGuideIds = ["settling-supports"];
+  const restored = parseDataExport(createDataExport(current));
+  assert.deepEqual(restored.sleepPlan.savedGuideIds, ["safe-sleep-space"]);
+  const merged = mergeDataStates(current, incoming);
+  assert.deepEqual(merged.sleepPlan.savedGuideIds, ["safe-sleep-space", "settling-supports"]);
+
+  const invalid = JSON.parse(createDataExport(current));
+  invalid.sleepPlan.savedGuideIds = ["", "x".repeat(101)];
+  assert.throws(() => parseDataExport(JSON.stringify(invalid)), /Uyku planı veya check-in kayıtları geçersiz/i);
+});
+
 test("backup validation accepts the expanded appointment reminder options", () => {
   const state = createInitialState();
   for (const minutes of [15, 30, 60, 120, 180, 1440] as const) {

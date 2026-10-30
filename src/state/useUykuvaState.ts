@@ -219,6 +219,17 @@ export function useUykuvaState() {
       : { ...current, sleepPlan: { ...current.sleepPlan, focus, completedToday: [] } });
   }, []);
 
+  const toggleSavedGuide = useCallback((guideId: string) => {
+    if (!guideId || guideId.length > 100) return;
+    setState((current) => {
+      const saved = current.sleepPlan.savedGuideIds ?? [];
+      const next = saved.includes(guideId)
+        ? saved.filter((id) => id !== guideId)
+        : [...saved, guideId].slice(-100);
+      return { ...current, sleepPlan: { ...current.sleepPlan, savedGuideIds: next } };
+    });
+  }, []);
+
   const toggleSleepPlanPaused = useCallback(() => {
     setState((current) => ({ ...current, sleepPlan: { ...current.sleepPlan, paused: !current.sleepPlan.paused } }));
   }, []);
@@ -446,6 +457,7 @@ export function useUykuvaState() {
     updateEvent,
     setMethod,
     setSleepFocus,
+    toggleSavedGuide,
     toggleSleepPlanPaused,
     toggleTask,
     toggleReadiness,
