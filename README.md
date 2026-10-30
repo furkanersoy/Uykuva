@@ -46,6 +46,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Emzirme zamanlayıcısında tek oturum içinde taraf değiştirme ve sol/sağ sürelerini ayrı görme
 - İlkler için önerilen başlıklar ve ebeveynin kendi metniyle anı günlüğü
 - Anı günlüğüne fotoğraf ekleme; görseller cihazda küçültülerek saklanır ve yerel ya da şifreli yedeklere dahil edilir
+- Kaydedilen anı ve fotoğrafları cihazda PDF anı defterine dönüştürüp paylaşma; boyut sınırı nedeniyle eklenmeyen görseller PDF içinde belirtilir
 - Düzeltilmiş takvim yaşına göre 2 ay–5 yaş CDC gelişim gözlem listeleri; ebeveyn yanıtları, geçmiş yaş listelerini gözden geçirme, notlar ve doktorla paylaşılabilir özet
 - Ortak bakım zaman çizelgesi
 - İkizler ve kardeşler için ayrı çocuk profilleri; uyku planı, bakım kayıtları, gelişim gözlemleri ve talimatları profil başına saklama
