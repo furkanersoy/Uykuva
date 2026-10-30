@@ -139,11 +139,11 @@ test("memory book reports when photo size limits omit images", () => {
   const state = createInitialState();
   const photo = "data:image/jpeg;base64," + "A".repeat(900_000);
   state.events = Array.from({ length: 9 }, (_, index) => ({
-    id: \`photo-\${index}\`,
+    id: `photo-${index}`,
     kind: "memory" as const,
-    memoryTitle: \`Anı \${index + 1}\`,
+    memoryTitle: `Anı ${index + 1}`,
     memoryPhotoData: photo,
-    startedAt: \`2026-10-\${String(10 + index).padStart(2, "0")}T12:00:00\`,
+    startedAt: `2026-10-${String(10 + index).padStart(2, "0")}T12:00:00`,
     caregiver: "Anne"
   }));
   const html = createMemoryBookHtml(state, new Date("2026-10-30T12:00:00"));
