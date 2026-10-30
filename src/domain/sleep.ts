@@ -822,6 +822,10 @@ export type SleepCoachInsights = {
   nightWakingsAverage?: number;
   routineToSleepMedianMinutes?: number;
   routineToSleepSamples: number;
+  sleepOnsetMedianMinutes?: number;
+  sleepOnsetSamples: number;
+  previousSleepOnsetMedianMinutes?: number;
+  previousSleepOnsetSamples: number;
   sleepSupportSummary?: string;
   sleepSupportSamples: number;
   nightsUsed: number;
@@ -932,6 +936,45 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     .sort((a, b) => b[1] - a[1])
     .map(([support, count]) => `${sleepSupportLabel(support)} ${count}`)
     .join(", ");
+  const dayKeyDaysAgo = (days: number) => {
+    const date = new Date(now);
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() - days);
+    return localDayKey(date);
+  };
+  const recentOnsetStart = dayKeyDaysAgo(6);
+  const previousOnsetStart = dayKeyDaysAgo(13);
+  const previousOnsetEnd = dayKeyDaysAgo(7);
+  const onsetSamples: { date: string; minutes: number }[] = [];
+  const usedOnsetSleepIds = new Set<string>();
+  const onsetCheckIns = checkIns
+    .filter((item) => typeof item.date === "string" && item.date >= previousOnsetStart && item.date <= localDayKey(now) && typeof item.bedtime === "string" && isValidClock(item.bedtime))
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+  for (const item of onsetCheckIns) {
+    const morning = new Date(`${item.date}T12:00:00`);
+    if (localDayKey(morning) !== item.date) continue;
+    const [hour, minute] = item.bedtime!.split(":").map(Number);
+    if (hour! >= 12) morning.setDate(morning.getDate() - 1);
+    morning.setHours(hour!, minute!, 0, 0);
+    const bedtimeAt = morning.getTime();
+    if (bedtimeAt > now.getTime()) continue;
+    const sleep = events
+      .filter((event) => {
+        if (event.kind !== "sleep" || !event.endedAt || usedOnsetSleepIds.has(event.id)) return false;
+        const startedAt = new Date(event.startedAt);
+        const endedAt = new Date(event.endedAt);
+        const latency = (startedAt.getTime() - bedtimeAt) / 60_000;
+        const duration = (endedAt.getTime() - startedAt.getTime()) / 60_000;
+        const isNightSleep = startedAt.getHours() >= 17 || startedAt.getHours() < 6;
+        return Number.isFinite(startedAt.getTime()) && Number.isFinite(endedAt.getTime()) && startedAt.getTime() <= now.getTime() && endedAt.getTime() <= now.getTime() && isNightSleep && latency >= 0 && latency <= 240 && duration >= 15;
+      })
+      .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())[0];
+    if (!sleep) continue;
+    usedOnsetSleepIds.add(sleep.id);
+    onsetSamples.push({ date: item.date!, minutes: (new Date(sleep.startedAt).getTime() - bedtimeAt) / 60_000 });
+  }
+  const recentOnset = onsetSamples.filter((item) => item.date >= recentOnsetStart);
+  const previousOnset = onsetSamples.filter((item) => item.date >= previousOnsetStart && item.date <= previousOnsetEnd);
   return {
     actualBedtime: actual === undefined ? undefined : formatClock(actual),
     targetBedtime: formatClock(target),
@@ -941,6 +984,10 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
     nightWakingsAverage,
     routineToSleepMedianMinutes: routineLatencies.length ? median(routineLatencies) : undefined,
     routineToSleepSamples: routineLatencies.length,
+    sleepOnsetMedianMinutes: recentOnset.length >= 3 ? median(recentOnset.map((item) => item.minutes)) : undefined,
+    sleepOnsetSamples: recentOnset.length,
+    previousSleepOnsetMedianMinutes: previousOnset.length >= 3 ? median(previousOnset.map((item) => item.minutes)) : undefined,
+    previousSleepOnsetSamples: previousOnset.length,
     sleepSupportSummary: sleepSupportSummary || undefined,
     sleepSupportSamples: supportEvents.length,
     nightsUsed: bedtimeSample.length
