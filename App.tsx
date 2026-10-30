@@ -711,6 +711,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
 }
 
 function NightModeScreen({ app, now, onExit, openLog, onLogNightWake, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onLogNightWake: () => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
+  const [careNotesExpanded, setCareNotesExpanded] = useState(false);
   const elapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
   const stage = sleepProgramStage(app.state.baby, now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(now));
@@ -737,6 +738,11 @@ function NightModeScreen({ app, now, onExit, openLog, onLogNightWake, onSwitchCa
         <Text style={styles.nightEyebrow}>GECE YANITI · {methodDescription(method).name.toLocaleUpperCase("tr-TR")}</Text>
         <Text style={styles.nightResponseText}>{nightResponse}</Text>
       </View>
+      {app.state.careInstructions?.trim() ? <View style={styles.nightResponseCard}>
+        <Text style={styles.nightEyebrow}>AİLENİN BAKIM NOTU</Text>
+        <Text style={styles.nightResponseText} numberOfLines={careNotesExpanded ? undefined : 3}>{app.state.careInstructions.trim()}</Text>
+        {app.state.careInstructions.trim().length > 140 ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: careNotesExpanded }} onPress={() => setCareNotesExpanded((expanded) => !expanded)}><Text style={styles.nightResponseExpand}>{careNotesExpanded ? "Daha az göster" : "Notun tamamını göster"}</Text></Pressable> : null}
+      </View> : null}
       <View style={styles.nightActions}>
         <Pressable accessibilityRole="button" accessibilityLabel={app.runningSleep ? "Uykuyu bitir ve uyanma kaydı oluştur" : "Uyku zamanlayıcısını başlat"} accessibilityHint={app.runningSleep ? "Gerçek uyanış saatini şimdi kaydeder." : "Uyku başlangıç saatini kaydeder."} onPress={app.toggleSleep} style={[styles.nightAction, styles.nightActionPrimary]}>
           <Text style={styles.nightActionGlyph}>{app.runningSleep ? "■" : "☾"}</Text><Text style={styles.nightActionTitle}>{app.runningSleep ? "Uykuyu bitir" : "Uykuyu başlat"}</Text><Text style={styles.nightActionHint}>{app.runningSleep ? "Uyanma kaydı ekle" : "Uyku sayacını başlat"}</Text>
@@ -2247,6 +2253,7 @@ const styles = StyleSheet.create({
   nightTimerCard: { borderRadius: 28, backgroundColor: "#19231F", padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#28362F" },
   nightResponseCard: { borderRadius: 18, backgroundColor: "#17221D", padding: 14, borderWidth: 1, borderColor: "#2A3931", gap: 7 },
   nightResponseText: { color: "#B6C5BA", fontSize: 12, lineHeight: 17 },
+  nightResponseExpand: { color: "#D7E5DA", fontSize: 12, fontWeight: "700", paddingTop: 2 },
   nightTimer: { color: "#E8EFE9", fontSize: 42, fontWeight: "700", letterSpacing: -1.4, marginVertical: 12 },
   nightHint: { color: "#9CAC9F", fontSize: 13, textAlign: "center" },
   nightActions: { gap: 12 },
