@@ -9,8 +9,8 @@ import { NOTIFICATION_KINDS } from "../domain/notificationRouting";
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
+  handleNotification: async (notification) => ({
+    shouldShowBanner: notification.request.content.data?.kind !== NOTIFICATION_KINDS.openSleepCheck,
     shouldShowList: true,
     shouldPlaySound: false,
     shouldSetBadge: false
@@ -118,6 +118,56 @@ export async function cancelAllCareReminders() {
     Notifications.cancelAllScheduledNotificationsAsync(),
     Notifications.dismissAllNotificationsAsync()
   ]);
+}
+
+export type OpenSleepCheckReminder = {
+  childId: string;
+  babyName: string;
+  eventId: string;
+  startedAt: string;
+};
+
+export async function replaceOpenSleepCheckReminders(
+  reminders: OpenSleepCheckReminder[],
+  quietStart: string,
+  quietEnd: string,
+  now = new Date()
+): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter((item) => item.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck)
+    .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)));
+
+  for (const reminder of reminders) {
+    const startedAt = new Date(reminder.startedAt).getTime();
+    if (!reminder.childId || !reminder.eventId || !Number.isFinite(startedAt)) continue;
+    const target = new Date(startedAt + 12 * 60 * 60_000);
+    if (target.getTime() <= now.getTime()) continue;
+    let date = target;
+    if (isInQuietHours(date, quietStart, quietEnd)) {
+      const match = /^(\\d{2}):(\\d{2})$/.exec(quietEnd);
+      if (match && Number(match[1]) <= 23 && Number(match[2]) <= 59) {
+        date = new Date(target);
+        date.setHours(Number(match[1]), Number(match[2]), 0, 0);
+        if (date.getTime() <= target.getTime()) date.setDate(date.getDate() + 1);
+      }
+    }
+    if (date.getTime() <= now.getTime()) continue;
+    await ensureAndroidChannel();
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: reminder.babyName + " için uyku kaydı hâlâ açık mı?",
+        body: "Uyku kaydı 12 saattir açık. Bebeğiniz uyandıysa dokunup gerçek uyanış saatini düzenleyin; hâlâ uyuyorsa bildirimi yok sayabilirsiniz.",
+        sound: false,
+        data: { kind: NOTIFICATION_KINDS.openSleepCheck, childId: reminder.childId, eventId: reminder.eventId }
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date,
+        channelId: Platform.OS === "android" ? "sleep-reminders" : undefined
+      }
+    });
+  }
 }
 
 export async function scheduleSleepReminder(
