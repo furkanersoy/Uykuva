@@ -429,7 +429,7 @@ export default function App() {
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
-      <NightWakeModal visible={nightWakeOpen} close={() => setNightWakeOpen(false)} save={saveNightWake} />
+      {nightWakeOpen ? <NightWakeModal visible close={() => setNightWakeOpen(false)} save={saveNightWake} /> : null}
     </SafeAreaView>
   );
 }
@@ -2381,3 +2381,4 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
+
