@@ -1381,7 +1381,8 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
   const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
   const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
   const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-  const milestones = detectRecordedMilestones(events, now);\n  const memories = events.filter((event) => event.kind === "memory" && Number.isFinite(new Date(event.startedAt).getTime()) && new Date(event.startedAt).getTime() <= now.getTime());
+  const milestones = detectRecordedMilestones(events, now);
+  const memories = events.filter((event) => event.kind === "memory" && Number.isFinite(new Date(event.startedAt).getTime()) && new Date(event.startedAt).getTime() <= now.getTime());
   const solidHistory = summarizeSolidFoodHistory(events);
   const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
   const completedCareTasks = [...state.careTasks].filter((task) => task.completedAt).sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
