@@ -44,7 +44,7 @@ import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
-import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, saveEncryptedFamilyDocument, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
+import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudFamilyInvites, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, revokeCloudFamilyInvite, saveEncryptedFamilyDocument, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -1844,6 +1844,7 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
   const [password, setPassword] = useState("");
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [families, setFamilies] = useState<Awaited<ReturnType<typeof getMyCloudFamilies>>>([]);
+  const [pendingInvites, setPendingInvites] = useState<Awaited<ReturnType<typeof getCloudFamilyInvites>>>([]);
   const [familyId, setFamilyId] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"parent" | "caregiver" | "family">("caregiver");
@@ -1867,6 +1868,14 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
     }).catch((error) => setMessage(error instanceof Error ? error.message : "Hesap durumu okunamadı."));
   }, [visible]);
   const selectedMembership = families.find((item) => item.family_id === familyId);
+  useEffect(() => {
+    if (!visible || !familyId || !selectedMembership?.isOwner) { setPendingInvites([]); return; }
+    let active = true;
+    void getCloudFamilyInvites(familyId)
+      .then((invites) => { if (active) setPendingInvites(invites); })
+      .catch((error) => { if (active) setMessage(error instanceof Error ? error.message : "Davetler yüklenemedi."); });
+    return () => { active = false; };
+  }, [visible, familyId, selectedMembership?.isOwner]);
   if (!visible) return null;
   const run = async (action: () => Promise<void>) => {
     if (busy) return;
@@ -1885,6 +1894,10 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
     const memberships = await getMyCloudFamilies();
     setFamilies(memberships);
     setFamilyId((current) => memberships.some((item) => item.family_id === current) ? current : memberships[0]?.family_id ?? "");
+  };
+  const refreshInvites = async () => {
+    if (!familyId) return;
+    setPendingInvites(await getCloudFamilyInvites(familyId));
   };
   const submitAuth = (create: boolean) => void run(async () => {
     if (!requireConsent()) return;
@@ -1918,8 +1931,18 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
     if (!requireConsent() || !familyId) return;
     const invite = await createCloudFamilyInvite(familyId, inviteEmail, inviteRole);
     setInviteToken(invite.token);
+    await refreshInvites();
     setMessage(`Davet 7 gün geçerli. Anahtarı davet kodundan ayrı, güvenli bir kanaldan paylaşın. Son geçerlilik: ${new Date(invite.expiresAt).toLocaleString("tr-TR")}.`);
   });
+  const revokeInvite = (inviteId: string, invitedEmail: string) => Alert.alert("Daveti iptal et?", `${invitedEmail} için oluşturulan davet kodu artık kullanılamaz.`, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Davet kodunu iptal et", style: "destructive", onPress: () => void run(async () => {
+      if (!requireConsent()) return;
+      await revokeCloudFamilyInvite(familyId, inviteId);
+      setPendingInvites((current) => current.filter((invite) => invite.id !== inviteId));
+      setMessage("Davet iptal edildi.");
+    }) }
+  ]);
   const acceptInvite = () => void run(async () => {
     if (!requireConsent()) return;
     const id = await acceptCloudFamilyInvite(inviteToken);
@@ -2008,6 +2031,7 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
               <View style={styles.choiceRow}>{([{ id: "caregiver", label: "Bakıcı" }, { id: "parent", label: "Ebeveyn" }, { id: "family", label: "Salt okunur aile" }] as const).map((item) => <Pill key={item.id} label={item.label} active={inviteRole === item.id} onPress={() => setInviteRole(item.id)} />)}</View>
               <View style={styles.spacer12} /><PrimaryButton label="Süreli davet oluştur" quiet onPress={createInvite} />
               {inviteToken ? <><Text style={styles.hint}>Davet kodu · 7 gün geçerli</Text><Text selectable style={styles.body}>{inviteToken}</Text></> : null}
+              {pendingInvites.length ? <><Text style={styles.inputLabel}>Bekleyen davetler</Text>{pendingInvites.map((invite) => <View key={invite.id} style={styles.eventRow}><View style={styles.flex}><Text style={styles.eventTitle}>{invite.invited_email}</Text><Text style={styles.muted}>{invite.role === "family" ? "Salt okunur aile" : invite.role === "parent" ? "Ebeveyn" : "Bakıcı"} · {new Date(invite.expires_at).toLocaleDateString("tr-TR")} tarihinde sona erer</Text></View><Pressable accessibilityRole="button" accessibilityLabel={`${invite.invited_email} davetini iptal et`} onPress={() => revokeInvite(invite.id, invite.invited_email)} hitSlop={8}><Text style={styles.editLink}>İptal et</Text></Pressable></View>)}</> : null}
               {familyKey ? <><Text style={styles.hint}>Aile şifreleme anahtarı · yalnızca güvenli, uçtan uca şifreli kanaldan paylaşın</Text><Text selectable style={styles.body}>{familyKey}</Text></> : null}
             </> : <Text style={styles.hint}>Bu ailede davet ve bulut alanı silme işlemleri yalnızca aile sahibine açıktır.</Text>}
             <View style={styles.spacer12} /><PrimaryButton label={busy ? "Şifreleniyor…" : "Yerel ve bulut kayıtlarını birleştirip eşitle"} onPress={syncNow} />
