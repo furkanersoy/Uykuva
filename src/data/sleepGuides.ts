@@ -64,5 +64,14 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     summary: "Hastalık, diş çıkarma ve günlük düzen değişiklikleri uykuyu etkileyebilir. Bu günlerde bebeğinizin işaretlerini izleyin. Uykuva'da gün bağlamını seçerek koçluk adımlarını bekletebilir, uyku ve bakım kayıtlarını sürdürebilirsiniz. Sağlık kaygınız varsa çocuk doktorunuza danışın.",
     source: "NHS · Uyku örüntüsündeki değişiklikler",
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
+  },
+  {
+    id: "nap-transitions",
+    title: "Gündüz uykuları nasıl değişebilir?",
+    age: "Yaklaşık 2–18 ay",
+    summary: "Gündüz uykularının sayısı bebek büyüdükçe çoğunlukla azalır; 2–12 ay arasında üç-dört uykudan ikiye geçiş görülebilir, sabah uykusu da bazı çocuklarda 12–18 ay civarında sona erer. Bunlar geniş örüntülerdir, zorunlu takvim değildir. Bebeğinizin işaretlerini ve son günlerdeki kayıtlarını izleyin; yalnızca yaşına bakarak uykuyu kaldırmanız gerekmez.",
+    source: "Children’s Health Queensland · Sağlıklı uyku",
+    url: "https://www.childrens.health.qld.gov.au/health-a-to-z/healthy-sleep"
+  }
 ];
 
