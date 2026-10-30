@@ -978,7 +978,7 @@ function TimelineScreen({ events, caregivers, onDelete, onEditSleep, onEditRecor
     return searchable.includes(normalizedQuery);
   });
   return (
-    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
+    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled">
       <Text style={styles.pageTitle}>Günün akışı</Text>
       <Text style={styles.pageIntro}>Kayıtları türüne veya bakım veren adına göre bulun. Kayda dokunup saatini düzenleyin; silmek için basılı tutup onaylayın.</Text>
       <TextInput accessibilityLabel="Zaman çizelgesinde kayıt veya bakım veren ara" value={query} onChangeText={setQuery} style={styles.input} placeholder="Kayıt veya bakım veren ara" placeholderTextColor="#93A09C" />
@@ -1199,7 +1199,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     setRoutineRunnerOpen(true);
   };
   return (
-    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
+    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled">
       <Text style={styles.pageTitle}>Uyku planı</Text>
       <Text style={styles.pageIntro}>Katı kurallar değil; bebeğinizin sinyallerine göre ayarlanabilen 14 günlük nazik bir plan.</Text>
       <Card>
@@ -1261,7 +1261,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.nightGuideChevron}>{sleepReadingsOpen ? "−" : "+"}</Text>
         </Pressable>
         {sleepReadingsOpen ? <View style={styles.nightGuideContent}>
-          <TextInput accessibilityLabel="Uyku rehberlerinde ara" value={sleepGuideSearch} onChangeText={setSleepGuideSearch} style={[styles.input, { marginBottom: 12 }]} maxLength={80} autoCapitalize="none" autoCorrect={false} returnKeyType="search" placeholder="Konu, yaş veya kaynak ara" placeholderTextColor="#93A09C" />
+          <View style={styles.guideSearchRow}>
+            <TextInput accessibilityLabel="Uyku rehberlerinde ara" value={sleepGuideSearch} onChangeText={setSleepGuideSearch} style={[styles.input, styles.guideSearchInput]} maxLength={80} autoCapitalize="none" autoCorrect={false} returnKeyType="search" placeholder="Konu, yaş veya kaynak ara" placeholderTextColor="#93A09C" />
+            {sleepGuideSearch.length ? <Pressable accessibilityRole="button" accessibilityLabel="Uyku rehberi aramasını temizle" onPress={() => setSleepGuideSearch("")} style={styles.guideSearchClear}><Text style={styles.guideSearchClearText}>×</Text></Pressable> : null}
+          </View>
           {sleepGuideSearch.trim() ? <Text accessibilityLiveRegion="polite" style={styles.hint}>{searchedSleepGuides.length ? `${searchedSleepGuides.length} rehber bulundu.` : "Bu aramayla eşleşen rehber yok."}</Text> : null}
           <Text style={styles.inputLabel}>Konular</Text>
           <View style={styles.choiceRow}>
@@ -1285,7 +1288,6 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
               <Text style={styles.linkText}>Özeti bakım verenle paylaş</Text>
             </Pressable>
           </View>)}
-          {searchedSleepGuides.length === 0 && sleepGuideSearch.trim() ? <Pressable accessibilityRole="button" onPress={() => setSleepGuideSearch("")}><Text style={styles.linkText}>Aramayı temizle</Text></Pressable> : null}
           <Text style={styles.hint}>Bu kısa özetler genel bilgilendirmedir; tıbbi değerlendirme yerine geçmez. Kaynak sayfalar güncellenebilir. Sağlık veya beslenme endişenizde çocuk doktorunuza danışın. İçerik gözden geçirme: 30 Ekim 2026.</Text>
         </View> : null}
       </Card>
@@ -2903,6 +2905,10 @@ const styles = StyleSheet.create({
   miniCheck: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.5, borderColor: colors.sage, alignItems: "center", justifyContent: "center", marginRight: 8 },
   routineNo: { width: 28, color: colors.sageDark, fontSize: 12, fontWeight: "800" },
   inlineForm: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
+  guideSearchRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  guideSearchInput: { flex: 1, marginTop: 0, marginBottom: 0 },
+  guideSearchClear: { width: 48, height: 48, borderRadius: 14, backgroundColor: "#F0F2ED", alignItems: "center", justifyContent: "center" },
+  guideSearchClearText: { color: colors.sageDark, fontSize: 26, lineHeight: 30, fontWeight: "600" },
   minutesInput: { width: 62, marginTop: 0 },
   hint: { color: colors.inkSoft, fontSize: 10, lineHeight: 15, marginTop: 10 },
   easeRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 16 },
