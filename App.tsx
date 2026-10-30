@@ -203,7 +203,7 @@ export default function App() {
   const hasSleepSinceMorningWake = savedMorningWakeAt ? hasSleepSinceWake(app.state.events, savedMorningWakeAt) : false;
   const forecastWakeAt = hasSleepSinceMorningWake ? undefined : savedMorningWakeAt;
   const forecast = useMemo(() => createSleepForecast(app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext), [app.state.baby, app.state.events, clockNow, forecastWakeAt, todaySleepCheckIn?.dayContext]);
-  const feedingForecast = useMemo(() => createFeedingForecast(app.state.events), [app.state.events]);
+  const feedingForecast = useMemo(() => createFeedingForecast(app.state.events, clockNow), [app.state.events, clockNow]);
   const childSleepReminders = useMemo(() => app.state.children.map((child) => {
     const checkIn = child.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow));
     const wakeMinutes = checkIn?.wakeTime && isValidClock(checkIn.wakeTime) ? checkIn.wakeTime.split(":").map(Number) : undefined;
@@ -277,7 +277,7 @@ export default function App() {
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.activeChildId, app.setActiveChild]);
 
   useEffect(() => {
-    const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string) => Promise<void> } | undefined;
+    const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string, feedingWindow: string) => Promise<void> } | undefined;
     if (!app.hydrated || !app.state.onboardingComplete || !widget?.updateSleepWindow) return;
     const sleepWindow = app.runningSleep
       ? "Uyku devam ediyor"
@@ -293,8 +293,11 @@ export default function App() {
           : clockNow < forecast.end
             ? "Uyku penceresi açık"
             : "Aralık geçti · uyku işaretlerini izleyin";
-    void widget.updateSleepWindow(app.state.baby.name, sleepWindow, status).catch(() => undefined);
-  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep, forecast, clockNow]);
+    const feedingWindow = feedingForecast.available && feedingForecast.start && feedingForecast.end
+      ? `Beslenme · ${time(feedingForecast.start)}–${time(feedingForecast.end)}`
+      : "Beslenme penceresi için kayıt gerekiyor";
+    void widget.updateSleepWindow(app.state.baby.name, sleepWindow, status, feedingWindow).catch(() => undefined);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep, forecast, feedingForecast, clockNow]);
 
   useEffect(() => {
     if (!app.hydrated || !app.state.onboardingComplete || app.runningSleep || sleepEditor || logMode || taskMode || eventEditor || nightWakeOpen || restoreOpen || profileOpen || caregiverOpen || vaccineSuggestionsOpen || !forecast.available || !forecast.start || !forecast.end) return;

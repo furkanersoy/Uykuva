@@ -31,7 +31,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Uyku sekmesinde, erken doğumda düzeltilmiş yaşa göre geçerli aralığı vurgulayan, yaş gruplarına göre uyanıklık aralığı rehberi
 - Bugün ekranında kaydedilen uyku, beslenme, bez ve sağlık kayıtlarının hızlı özeti; ilk dokuz haftada kayan 24 saat, sonrasında yerel gün
 - Kullanıcının girdiği sonraki ilaç planı kontrol hatırlatmasını önümüzdeki 24 saatlik bakım planında gösterme; doz veya ilaç aralığı önermez
-- Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve durum; widget'a dokununca Uykuva açılır
+- Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve yeterli kayıt varsa kişisel beslenme aralığı; widget'a dokununca Uykuva açılır
 - İsteğe bağlı hastalık, seyahat, diş çıkarma ve düzen değişikliği günü işareti; bu günlerde olağan uyku penceresi ve hatırlatmalar duraklatılır
 - Olağan dışı gün işaretlendiğinde uyku koçluğu görevlerini ve günlük plan ilerlemesini de duraklatma; günlük bakım kayıtları kullanılmaya devam eder
 - Sabah check-in'inde uyanış saati girildiğinde ilk gündüz uykusu penceresini anında gösterme; ilk uyku kaydedilince sonraki tahminleri o uykudan sürdürme

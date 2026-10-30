@@ -27,12 +27,14 @@ class UykuvaWidgetProvider : AppWidgetProvider() {
     private const val BABY_NAME = "baby_name"
     private const val SLEEP_WINDOW = "sleep_window"
     private const val STATUS = "status"
+    private const val FEEDING_WINDOW = "feeding_window"
 
-    fun saveSleepWindow(context: Context, babyName: String, sleepWindow: String, status: String) {
+    fun saveSleepWindow(context: Context, babyName: String, sleepWindow: String, status: String, feedingWindow: String) {
       context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
         .putString(BABY_NAME, babyName)
         .putString(SLEEP_WINDOW, sleepWindow)
         .putString(STATUS, status)
+        .putString(FEEDING_WINDOW, feedingWindow)
         .apply()
       refresh(context)
     }
@@ -49,6 +51,7 @@ class UykuvaWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.widget_baby, prefs.getString(BABY_NAME, "Bebeğiniz") ?: "Bebeğiniz")
       views.setTextViewText(R.id.widget_window, prefs.getString(SLEEP_WINDOW, "Uyku aralığı bekleniyor") ?: "Uyku aralığı bekleniyor")
       views.setTextViewText(R.id.widget_status, prefs.getString(STATUS, "Güncel tahmin için Uykuva'yı açın") ?: "Güncel tahmin için Uykuva'yı açın")
+      views.setTextViewText(R.id.widget_feeding, prefs.getString(FEEDING_WINDOW, "Beslenme penceresi için kayıt gerekiyor") ?: "Beslenme penceresi için kayıt gerekiyor")
 
       val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
       if (launchIntent != null) {
@@ -81,9 +84,9 @@ class UykuvaWidgetModule(context: ReactApplicationContext) : ReactContextBaseJav
   override fun getName() = "UykuvaWidget"
 
   @ReactMethod
-  fun updateSleepWindow(babyName: String, sleepWindow: String, status: String, promise: Promise) {
+  fun updateSleepWindow(babyName: String, sleepWindow: String, status: String, feedingWindow: String, promise: Promise) {
     try {
-      UykuvaWidgetProvider.saveSleepWindow(reactApplicationContext, babyName, sleepWindow, status)
+      UykuvaWidgetProvider.saveSleepWindow(reactApplicationContext, babyName, sleepWindow, status, feedingWindow)
       promise.resolve(null)
     } catch (error: Exception) {
       promise.reject("WIDGET_UPDATE_FAILED", error)
@@ -145,6 +148,16 @@ const widgetLayout = `<LinearLayout xmlns:android="http://schemas.android.com/ap
     android:text="Güncel tahmin için Uykuva'yı açın"
     android:textColor="#447465"
     android:textSize="12sp" />
+  <TextView
+    android:id="@+id/widget_feeding"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="5dp"
+    android:ellipsize="end"
+    android:maxLines="1"
+    android:text="Beslenme penceresi için kayıt gerekiyor"
+    android:textColor="#61716C"
+    android:textSize="12sp" />
 </LinearLayout>
 `;
 
@@ -158,8 +171,8 @@ const widgetBackground = `<shape xmlns:android="http://schemas.android.com/apk/r
 const widgetInfo = `<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
   android:description="@string/uykuva_widget_description"
   android:initialLayout="@layout/uykuva_widget"
-  android:minHeight="100dp"
-  android:minWidth="180dp"
+  android:minHeight="125dp"
+  android:minWidth="200dp"
   android:previewLayout="@layout/uykuva_widget"
   android:resizeMode="horizontal|vertical"
   android:updatePeriodMillis="1800000"
@@ -186,7 +199,7 @@ function withWidgetStrings(config) {
   return withStringsXml(config, (mod) => {
     const strings = mod.modResults.resources.string ?? [];
     if (!strings.some((item) => item.$?.name === "uykuva_widget_description")) {
-      strings.push({ $: { name: "uykuva_widget_description" }, _: "Bebeğinizin sıradaki tahmini uyku penceresi" });
+      strings.push({ $: { name: "uykuva_widget_description" }, _: "Bebeğinizin sıradaki uyku ve kişisel beslenme pencereleri" });
     }
     mod.modResults.resources.string = strings;
     return mod;
