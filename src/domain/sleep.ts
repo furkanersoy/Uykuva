@@ -766,7 +766,7 @@ export type SleepCoachGuidance = {
 export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Date()): SleepCoachGuidance | undefined {
   const today = localDayKey(now);
   const recent = checkIns
-    .filter((item) => isLocalDayKey(item.date) && item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.nightWakings !== undefined || Boolean(item.nightWakeLogs?.length)))
+    .filter((item) => isLocalDayKey(item.date) && item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.sustainability !== undefined || item.nightWakings !== undefined || Boolean(item.nightWakeLogs?.length)))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
   const latest = recent[0];
@@ -774,6 +774,12 @@ export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Dat
   if (latest.nightWakings === 5) return {
     title: "Sık uyanma bildirildi",
     body: "Önce açlık, bez, rahatsızlık ve yakınlık ihtiyacını değerlendirin; beslenmeyi plana göre ertelemeyin. Bu gece destek azaltma adımını atlamakta özgürsünüz.",
+    tone: "peach"
+  };
+  const lowSustainabilityNights = recent.filter((item) => item.sustainability !== undefined && item.sustainability <= 2).length;
+  if (lowSustainabilityNights >= 2) return {
+    title: "Planı ailenize göre sadeleştirin",
+    body: `Son ${recent.length} check-in'in ${lowSustainabilityNights} tanesinde planı sürdürmek zor olarak işaretlendi. Yeni bir adım eklemek zorunda değilsiniz; rutini basitleştirin, bakım verenlerle görevleri paylaşın veya planı duraklatın.`,
     tone: "peach"
   };
   const difficultNights = recent.filter((item) => item.ease !== undefined && item.ease <= 2).length;

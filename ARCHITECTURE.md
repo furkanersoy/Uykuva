@@ -534,4 +534,10 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 
 - Aile, bakım veren yakınlığı, huzursuzluğa yanıt biçimi ve değişim hızını seçerek kendileriyle örtüşebilecek en fazla iki uyku yaklaşımını görebilir.
 - Eşleştirme basit ve açıklanabilir bir yerel puanlamadır; uygunluk/sonuç vaadi vermez, tercihleri kaydetmez veya paylaşmaz, yöntem otomatik seçilmez. Yaş ve hazır oluş kapısının izin vermediği yöntemler aday listesine girmez.
-- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 125/125 başarılı.
+- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 126/126 başarılı.
+
+### 30 Ekim 2026 aile sürdürülebilirliği geri bildirimi
+
+- Uyku koçu son üç check-in'de en az iki düşük aile sürdürülebilirliği puanı görürse yeni uyku adımı önermek yerine rutini sadeleştirme, bakımı paylaşma veya planı duraklatma seçeneklerini hatırlatır.
+- Sürdürülebilirlik puanı tek başına yeterli değil; tek zor gece veya tek düşük puan otomatik plan değişikliğine yol açmaz.
+- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 126/126 başarılı.

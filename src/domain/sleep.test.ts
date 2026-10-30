@@ -22,6 +22,19 @@ test("empty check-ins do not displace the last recorded sleep ratings", () => {
   assert.equal(insights.actualBedtime, "20:30");
 });
 
+test("sleep coach uses repeated low sustainability ratings to suggest simplifying the plan", () => {
+  const now = new Date(2026, 9, 30, 12);
+  const guidance = createSleepCoachGuidance([
+    { date: "2026-10-30", sustainability: 2 },
+    { date: "2026-10-29", sustainability: 1 },
+    { date: "2026-10-28", sustainability: 4 }
+  ], now);
+  assert.equal(guidance?.title, "Planı ailenize göre sadeleştirin");
+  assert.match(guidance?.body ?? "", /görevleri paylaşın veya planı duraklatın/);
+
+  assert.equal(createSleepCoachGuidance([{ date: "2026-10-30", sustainability: 1 }], now), undefined);
+});
+
 test("sleep coaching ignores impossible calendar dates in check-ins", () => {
   const now = new Date(2026, 2, 3, 12);
   assert.equal(createSleepCoachGuidance([{ date: "2026-03-03", ease: 4 }, { date: "2026-02-31", nightWakings: 5 }], now)?.title, undefined);
