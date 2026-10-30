@@ -9,10 +9,14 @@ export const TURKEY_VACCINE_SCHEDULE_UPDATE_DATE = "2026-09-01";
 export const TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE = "https://hatayism.saglik.gov.tr/TR-391851/cocukluk-donemi-asilama-takviminde-yeni-duzenleme.html";
 
 export function completedAgeMonths(birthDate: string, now = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return -1;
   const birth = new Date(`${birthDate}T12:00:00`);
-  if (Number.isNaN(birth.getTime())) return -1;
+  const normalizedBirth = `${birth.getFullYear()}-${String(birth.getMonth() + 1).padStart(2, "0")}-${String(birth.getDate()).padStart(2, "0")}`;
+  if (Number.isNaN(birth.getTime()) || normalizedBirth !== birthDate || !Number.isFinite(now.getTime())) return -1;
+  const current = new Date(now);
+  current.setHours(12, 0, 0, 0);
   let months = (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth();
-  if (now.getDate() < birth.getDate()) months -= 1;
+  if (addMonths(birth, months).getTime() > current.getTime()) months -= 1;
   return Math.max(0, months);
 }
 
@@ -52,8 +56,11 @@ function addMonths(date: Date, months: number) {
 }
 
 export function suggestedVaccineTasks(birthDate: string, existingTitles: string[], now = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return [];
   const birth = new Date(`${birthDate}T12:00:00`);
   if (Number.isNaN(birth.getTime())) return [];
+  const normalizedBirth = `${birth.getFullYear()}-${String(birth.getMonth() + 1).padStart(2, "0")}-${String(birth.getDate()).padStart(2, "0")}`;
+  if (normalizedBirth !== birthDate) return [];
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const normalizedExisting = existingTitles.map((title) => title.trim().toLocaleLowerCase("tr-TR"));
   return TURKEY_CHILDHOOD_VACCINE_MILESTONES.flatMap((milestone) => {
@@ -64,3 +71,4 @@ export function suggestedVaccineTasks(birthDate: string, existingTitles: string[
     return [{ ...milestone, dueAt }];
   });
 }
+
