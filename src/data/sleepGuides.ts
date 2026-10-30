@@ -77,6 +77,15 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
   },
   {
+    id: "settling-supports",
+    title: "Uykuya geçişte kullanılan destekler",
+    age: "Bebek ve bakım verenler",
+    summary: "Kucakta sakinleşme, sallama, beslenme veya bakım verenin yanında olması uykuya geçişte kullanılan desteklerdir; bunları değiştirmek zorunlu değildir. Aileniz için değişiklik istiyorsanız, tek bir desteği bebeğinizin işaretlerine göre daha küçük bir adımla denemek ve huzursuzluk artarsa önceki desteğe dönmek bir seçenektir. Beslenme, yakınlık ve sağlık ihtiyaçlarını plana göre geciktirmeyin.",
+    category: "routine",
+    source: "AAP · Bebeğinizi uyutmaya yardımcı olma",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx"
+  },
+  {
     id: "toddler-bedtime-resistance",
     title: "Yatma saatine direniyorsa",
     age: "Yaklaşık 1–5 yaş",

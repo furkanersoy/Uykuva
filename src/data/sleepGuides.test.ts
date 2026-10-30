@@ -17,6 +17,7 @@ test("offline sleep guides have unique IDs, age labels, summaries, and HTTPS sou
 
 test("sleep education includes infant age changes and caregiver support", () => {
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "four-month-pattern"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "settling-supports"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-sleep-space"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "swaddling-safely"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "caregiver-rest"));
@@ -49,4 +50,12 @@ test("separation anxiety reading frames sleep changes as a normal optional-care 
   assert.match(guide.summary, /gelişimin olağan bir dönemidir/i);
   assert.match(guide.summary, /uyku eğitimine başlama zorunluluğu değildir/i);
   assert.match(guide.url, /healthychildren\.org/);
+});
+
+test("settling-support guide keeps caregiver support optional and protects feeding needs", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "settling-supports");
+  assert.ok(guide);
+  assert.match(guide.summary, /değiştirmek zorunlu değildir/i);
+  assert.match(guide.summary, /önceki desteğe dönmek/i);
+  assert.match(guide.summary, /Beslenme.*ihtiyaçlarını plana göre geciktirmeyin/i);
 });
