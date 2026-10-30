@@ -18,6 +18,7 @@ test("offline sleep guides have unique IDs, age labels, summaries, and HTTPS sou
 test("sleep education includes infant age changes and caregiver support", () => {
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "four-month-pattern"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-sleep-space"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "swaddling-safely"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "caregiver-rest"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nap-transitions"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "night-feeds-and-sleep-plans"));
@@ -31,4 +32,12 @@ test("safe sleep guide covers sitting products and points to AAP guidance", () =
   assert.ok(guide);
   assert.match(guide.summary, /araba koltuğu, puset, salıncak veya taşıyıcıda uyuyakalırsa/i);
   assert.equal(guide.url, "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx");
+});
+
+test("swaddling guidance makes the rolling and weighted-product limits clear", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "swaddling-safely");
+  assert.ok(guide);
+  assert.match(guide.summary, /dönmeye çalıştığını gösterir göstermez sarmayı bırakın/i);
+  assert.match(guide.summary, /Ağırlıklı kundak.*kullanmayın/i);
+  assert.match(guide.summary, /ani bebek ölümü riskini azalttığı gösterilmemiştir/i);
 });

@@ -50,6 +50,15 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx"
   },
   {
+    id: "swaddling-safely",
+    title: "Bebeği güvenli biçimde sarma",
+    age: "Yenidoğan · dönme işaretleri başlayana kadar",
+    summary: "Sarmayı tercih ederseniz bebeği her uykuda sırtüstü yatırın; sarma göğsünü sıkıştırmamalı ve kalçalarının hareketini kısıtlamamalıdır. Bebek dönmeye çalıştığını gösterir göstermez sarmayı bırakın; bu işaret bazı bebeklerde erken başlayabilir. Ağırlıklı kundak veya ağırlık eklenmiş ürün kullanmayın. Sarma uykuya yardımcı olabilir ama ani bebek ölümü riskini azalttığı gösterilmemiştir.",
+    category: "basics",
+    source: "AAP · Güvenli uyku rehberi",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx"
+  },
+  {
     id: "night-and-day",
     title: "Gece ile gündüzü ayırt etmeye yardım",
     age: "İlk aylar",
