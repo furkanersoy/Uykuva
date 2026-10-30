@@ -147,6 +147,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
   },
   {
+    id: "early-morning-waking",
+    title: "Erken sabah uyanmaları",
+    age: "Bebeklik ve küçük çocukluk",
+    minAgeMonths: 0,
+    maxAgeMonths: 60,
+    summary: "Bebeklerin uyanma düzenleri birbirinden farklıdır; erken uyanma tek başına bir sorun veya uyku planını değiştirme işareti değildir. Birkaç gün gerçek uyanış saatlerini ve önceki uyku kayıtlarını not ederek örüntü olup olmadığına bakabilirsiniz. Gece bakımında ışığı ve sesi sakin tutun; yorgunsanız mümkünse başka bir bakım verenden sabah bez değiştirme veya giyinme işini devralmasını isteyin. Beslenme ihtiyacını geciktirmeyin.",
+    category: "night",
+    source: "NHS · Bebeğinizin uyumasına yardımcı olma",
+    url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
+  },
+  {
     id: "separation-anxiety-and-sleep",
     title: "Ayrılık kaygısı ve gece uyanmaları",
     age: "Yaklaşık 6 ay–3 yaş",
