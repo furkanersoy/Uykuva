@@ -831,6 +831,38 @@ export type SleepCoachInsights = {
   nightsUsed: number;
 };
 
+export type NightWakeResponseSummary = {
+  total: number;
+  daysWithLogs: number;
+  counts: Record<NightWakeResponse, number>;
+};
+
+export function summarizeNightWakeResponses(checkIns: Pick<SleepCheckIn, "nightWakeLogs">[], now = new Date()): NightWakeResponseSummary {
+  const start = new Date(now);
+  start.setHours(12, 0, 0, 0);
+  start.setDate(start.getDate() - 6);
+  const startKey = localDayKey(start);
+  const endKey = localDayKey(now);
+  const counts: Record<NightWakeResponse, number> = { feeding: 0, comfort: 0, diaper: 0, other: 0 };
+  const seen = new Set<string>();
+  const days = new Set<string>();
+  for (const checkIn of checkIns) {
+    for (const log of checkIn.nightWakeLogs ?? []) {
+      if (!log || typeof log.id !== "string" || seen.has(log.id)) continue;
+      const at = new Date(log.at);
+      const atMs = at.getTime();
+      if (!Number.isFinite(atMs) || atMs > now.getTime()) continue;
+      const dateKey = localDayKey(at);
+      if (dateKey < startKey || dateKey > endKey) continue;
+      if (!(log.response in counts)) continue;
+      seen.add(log.id);
+      counts[log.response] += 1;
+      days.add(dateKey);
+    }
+  }
+  return { total: Object.values(counts).reduce((sum, count) => sum + count, 0), daysWithLogs: days.size, counts };
+}
+
 export type NightSleepSummary = { minutes: number; segments: number; hasExactWindow: boolean };
 
 export function summarizeNightSleep(events: CareEvent[], checkIn?: Pick<SleepCheckIn, "date" | "bedtime" | "wakeTime">, now = new Date()): NightSleepSummary {
@@ -1129,3 +1161,4 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     ? `${parts[0]}.\n${parts.slice(1).map((part) => `• ${part}`).join("\n")}`
     : `${parts[0]}.`;
 }
+

@@ -74,6 +74,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
 - Uyku planında günlük ilerleme göstergesi, her gün tek adım ve 14. gün için ayrı tamamlanma onayı
 - Son check-in'lere göre desteği artırmayı veya mevcut rutini korumayı öneren, planı otomatik değiştirmeyen uyku koçu rehberi
+- Saatli gece uyanması kayıtlarında son 7 günün verilen destek türlerini ve kayıtlı geceleri tarafsız biçimde özetleme; beslenmeyi erteleme veya plan değiştirme önerisi üretmez
 - Check-in'deki gece yatış saati ile ilk uyku kaydını eşleştirerek son ve önceki 7 günün uykuya dalma süresi ortancasını gösterme; en az üç eşleşme gerekir ve tek başına plan değişikliği önermez
 - Tamamlanan 14 günlük plan döngülerinin görev toplamlarıyla arşivi (en çok 10 döngü)
 - Akşam rutini ve günlük görevler
@@ -154,3 +155,4 @@ npx.cmd expo export --platform android --output-dir dist
 ```
 
 Ürün ve teknik mimari için [ARCHITECTURE.md](./ARCHITECTURE.md) dosyasına bakın.
+

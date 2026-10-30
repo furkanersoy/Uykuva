@@ -27,7 +27,7 @@ import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
@@ -827,6 +827,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   const napOutline = createDailyNapOutline(app.state.events);
   const napPattern = compareNapPatterns(app.state.events);
   const insights = createSleepCoachInsights(app.state.events, app.state.sleepPlan.bedtime, app.state.sleepPlan.checkIns);
+  const nightWakeResponseSummary = summarizeNightWakeResponses(app.state.sleepPlan.checkIns, now);
   const methods: SleepMethod[] = trainingReady ? ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"] : ["responsive"];
   const alreadyAdvancedToday = app.state.sleepPlan.lastAdvancedDate === today;
   const programCompleted = Boolean(app.state.sleepPlan.completedDate);
@@ -1073,6 +1074,14 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {insights.routineToSleepMedianMinutes !== undefined ? <Text style={styles.awake}>Rutin bitişinden uyku başlangıcına ortanca {Math.round(insights.routineToSleepMedianMinutes)} dk · {insights.routineToSleepSamples} eşleşen gece</Text> : <Text style={styles.hint}>Rutin çalıştırıcısı tamamlanıp ardından gece uykusu kaydedildiğinde rutin–uyku aralığı burada görünür.</Text>}
         {insights.sleepOnsetMedianMinutes !== undefined ? <Text style={styles.awake}>Yatış saatinden uyku başlangıcına son 7 gün ortancası {Math.round(insights.sleepOnsetMedianMinutes)} dk · {insights.sleepOnsetSamples} eşleşen gece</Text> : <Text style={styles.hint}>Sabah check-in'indeki yatış saati ve ilk gece uykusu kaydı eşleştikçe, en az 3 gecelik son hafta ortancası burada görünür ({insights.sleepOnsetSamples}/3 eşleşme).</Text>}
         {insights.previousSleepOnsetMedianMinutes !== undefined ? <Text style={styles.awake}>Önceki 7 gün ortancası {Math.round(insights.previousSleepOnsetMedianMinutes)} dk · bu fark tek başına planı değiştirme nedeni değildir.</Text> : null}
+      </Card>
+      <SectionTitle title="Saatli gece uyanmaları" action="Son 7 gün" />
+      <Card>
+        {nightWakeResponseSummary.total ? <>
+          <Text style={styles.body}>{nightWakeResponseSummary.total} kayıt · {nightWakeResponseSummary.daysWithLogs} gecede</Text>
+          {NIGHT_WAKE_RESPONSE_OPTIONS.filter((item) => nightWakeResponseSummary.counts[item.id] > 0).map((item) => <View key={item.id} style={styles.eventRow}><Text style={[styles.eventTitle, styles.flex]}>{item.label}</Text><Text style={styles.taskDate}>{nightWakeResponseSummary.counts[item.id]}</Text></View>)}
+          <Text style={styles.hint}>Bu özet yalnızca kaydedilen yanıt türlerini sayar; beslenme ihtiyacını erteleme veya uyku yöntemini değiştirme önerisi değildir.</Text>
+        </> : <Text style={styles.body}>Son 7 günde saatli gece uyanması kaydı yok. İsterseniz Bugün ekranındaki veya gece modundaki kısayoldan ekleyebilirsiniz.</Text>}
       </Card>
       <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
       <Card>

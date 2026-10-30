@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_ITEMS, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -148,6 +148,21 @@ test("all seven sleep coaching approaches include caregiver and night-waking gui
     assert.ok(guidance.caregiverRole.length > 0);
     assert.ok(guidance.nightResponse.length > 0);
   }
+});
+
+test("night-wake response summary counts unique recent logs and ignores future or malformed entries", () => {
+  const summary = summarizeNightWakeResponses([
+    { nightWakeLogs: [
+      { id: "feed", at: "2026-10-30T02:00:00", response: "feeding", caregiver: "Anne" },
+      { id: "comfort", at: "2026-10-29T23:00:00", response: "comfort", caregiver: "Baba" },
+      { id: "duplicate", at: "2026-10-30T03:00:00", response: "diaper", caregiver: "Anne" },
+      { id: "bad-time", at: "invalid", response: "other", caregiver: "Anne" },
+      { id: "future", at: "2026-10-30T13:00:00", response: "other", caregiver: "Anne" },
+      { id: "old", at: "2026-10-23T23:59:00", response: "diaper", caregiver: "Anne" }
+    ] },
+    { nightWakeLogs: [{ id: "duplicate", at: "2026-10-30T03:00:00", response: "diaper", caregiver: "Anne" }] }
+  ], new Date(2026, 9, 30, 12));
+  assert.deepEqual(summary, { total: 3, daysWithLogs: 2, counts: { feeding: 1, comfort: 1, diaper: 1, other: 0 } });
 });
 
 test("forecast stays unavailable before week nine", () => {
@@ -395,3 +410,4 @@ test("care handoff includes the active sleep approach and evening routine", () =
   assert.doesNotMatch(paused, /Uyku yaklaşımı:/);
   assert.match(paused, /Etkin akşam rutini: Işıkları azalt → Ninni/);
 });
+
