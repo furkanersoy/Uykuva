@@ -379,7 +379,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Uyku/beslenme tahminleri, hedef yatış ve bakım görevleri Bugün ekranında saat sıralı tek 24 saat planında birleştirildi; yatış hedefi geçmişse ertesi güne taşınır.
 - [x] Yeterli kayıt bulunan sonraki gündüz uykuları 24 saatlik plana tarihsel, yaklaşık aralık olarak eklenir; tamamlanan uykular ve sıradaki uyku tahminiyle çakışan taslaklar tekrarlanmaz.
 - [x] Tamamı geçmiş beslenme tahmin aralığı gösterilmez; yeni kayıt beklenir.
-- [x] 12 saati aşan açık uyku sayacı uygulama açıkken zamanlayıcı güncellemesiyle veya uygulamaya dönüldüğünde teyit edilir; süre otomatik tamamlanmaz, kullanıcı gerçek uyanış saatini düzenleyebilir.
+- [x] 12 saati aşan açık uyku sayacı uygulama açıkken nazik onayla veya bildirimler açıksa sessiz saat sonrasına ertelenen yerel hatırlatmayla kontrol edilir; bildirime dokununca ilgili uyku kaydının gerçek uyanış saati düzenlemeye açılır. Sayaç hiçbir zaman otomatik tamamlanmaz.
 - [x] 9 haftadan küçük bebeklerde uyku, beslenme, bez ve sağlık özeti takvim günü yerine son 24 saati kapsar.
 - [x] Tahmin aralığı geçtikten sonra kaydı olmayan bakım verene bir kez sorar ve gözden geçirilebilir tarihli kayıt açar.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
