@@ -3,6 +3,21 @@ import test from "node:test";
 import { createInitialState } from "../data/seed";
 import { createDataExport, mergeDataStates, parseDataExport } from "./export";
 
+test("memory photos round-trip in local backups and reject invalid or oversized image data", () => {
+  const state = createInitialState();
+  state.events = [{ id: "memory-photo", kind: "memory", memoryTitle: "İlk gülüş", memoryPhotoData: "data:image/jpeg;base64,AQID", startedAt: "2026-10-28T12:00:00.000Z", caregiver: "Anne" }];
+  const restored = parseDataExport(createDataExport(state));
+  assert.equal(restored.events[0]?.memoryPhotoData, state.events[0]?.memoryPhotoData);
+
+  const invalidType = JSON.parse(createDataExport(state));
+  invalidType.events[0].memoryPhotoData = "file:///private/photo.jpg";
+  assert.throws(() => parseDataExport(JSON.stringify(invalidType)), /bakım kayıtları/i);
+
+  const tooLarge = JSON.parse(createDataExport(state));
+  tooLarge.events[0].memoryPhotoData = `data:image/jpeg;base64,${"A".repeat(1_100_001)}`;
+  assert.throws(() => parseDataExport(JSON.stringify(tooLarge)), /bakım kayıtları/i);
+});
+
 test("backup validation accepts the expanded appointment reminder options", () => {
   const state = createInitialState();
   for (const minutes of [15, 30, 60, 120, 180, 1440] as const) {
