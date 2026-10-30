@@ -53,12 +53,17 @@ export function nextBreastSide(events: CareEvent[]): "left" | "right" | null {
 }
 
 export function createFeedingForecast(events: CareEvent[], now = new Date()): FeedingForecast {
-  const feeds = events
+  const allFeeds = events
     .filter((event) => event.kind === "feed" && event.feedType !== "pump")
-    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime())
+    .sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime());
+  const latestFeed = allFeeds[allFeeds.length - 1];
+  const kind = latestFeed?.feedType === "solid" ? "solid" : "milk";
+  const feeds = allFeeds
+    .filter((event) => kind === "solid" ? event.feedType === "solid" : event.feedType !== "solid")
     .slice(-11);
   if (feeds.length < 4) {
-    return { available: false, confidence: "low", explanation: "Beslenme ritmi için en az 4 kayıt gerekiyor." };
+    const label = kind === "solid" ? "ek gıda öğünü" : "süt beslenmesi";
+    return { available: false, kind, confidence: "low", explanation: `Kişisel ${label} aralığı için en az 4 benzer kayıt gerekiyor.` };
   }
   const intervals: number[] = [];
   for (let index = 1; index < feeds.length; index += 1) {
@@ -66,7 +71,7 @@ export function createFeedingForecast(events: CareEvent[], now = new Date()): Fe
     if (value >= 30 && value <= 480) intervals.push(value);
   }
   if (intervals.length < 3) {
-    return { available: false, confidence: "low", explanation: "Düzenli bir aralık göstermek için biraz daha kayıt gerekiyor." };
+    return { available: false, kind, confidence: "low", explanation: "Düzenli bir aralık göstermek için biraz daha benzer kayıt gerekiyor." };
   }
   const typical = median(intervals);
   const last = new Date(feeds[feeds.length - 1]!.startedAt);
@@ -74,17 +79,17 @@ export function createFeedingForecast(events: CareEvent[], now = new Date()): Fe
   const start = new Date(last.getTime() + Math.max(30, typical - spread) * 60_000);
   const end = new Date(last.getTime() + (typical + spread) * 60_000);
   if (end.getTime() <= now.getTime()) {
-    return { available: false, confidence: "low", explanation: "Son kayıtlı beslenme aralığı geçti; yeni bir kayıt olmadan tahmin yenilenemez." };
+    return { available: false, kind, confidence: "low", explanation: "Son kayıtlı beslenme aralığı geçti; yeni bir kayıt olmadan tahmin yenilenemez." };
   }
   return {
     available: true,
+    kind,
     start,
     end,
     confidence: intervals.length >= 7 ? "high" : "medium",
-    explanation: `Son ${intervals.length} kayıtlı beslenme aralığının medyanı kullanıldı. Bebeğinizin açlık sinyalleri her zaman önceliklidir.`
+    explanation: `Son ${intervals.length} benzer ${kind === "solid" ? "ek gıda" : "süt beslenmesi"} aralığının medyanı kullanıldı. Bebeğinizin açlık ve doyma işaretleri her zaman önceliklidir.`
   };
 }
-
 export function todayFeedingTotals(events: CareEvent[], now = new Date(), rolling24Hours = false) {
   const day = now.toDateString();
   const periodStart = rolling24Hours
