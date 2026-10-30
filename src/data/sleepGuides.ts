@@ -103,6 +103,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx"
   },
   {
+    id: "responsive-settling-under-six-months",
+    title: "İlk altı ayda duyarlı yatıştırma",
+    age: "0–6 ay",
+    minAgeMonths: 0,
+    maxAgeMonths: 6,
+    summary: "İlk aylarda bebekler sık beslenebilir ve sakinleşmek için bakım verenin yakınlığına ihtiyaç duyabilir. Kucağınızda sakinleştirme, nazik ses veya bebeğiniz rahat ediyorsa güvenli yatağında yanında olma seçeneklerinden size uygun olanı deneyin; huzursuzluk artarsa kucağa alıp ihtiyacına yanıt verin. Açlık veya sağlıkla ilgili bir kaygıda beslenmeyi ve bakımı uyku planı için geciktirmeyin; bu yaşta desteği azaltmak ya da kendi kendine uyumasını beklemek zorunlu değildir. Uykuya geçtiğinde bebeği sırtüstü, sert ve düz, boş ayrı uyku alanına yatırın.",
+    category: "routine",
+    source: "Raising Children Network · 0–6 ayda duyarlı yatıştırma",
+    url: "https://raisingchildren.net.au/newborns/sleep/settling-routines/patting-settling"
+  },
+  {
     id: "toddler-bedtime-resistance",
     title: "Yatma saatine direniyorsa",
     age: "Yaklaşık 1–5 yaş",

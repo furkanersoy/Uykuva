@@ -38,6 +38,7 @@ test("age-filtered sleep readings use inclusive ranges and keep general caregive
 test("sleep education includes infant age changes and caregiver support", () => {
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "four-month-pattern"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "settling-supports"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "responsive-settling-under-six-months"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-sleep-space"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "swaddling-safely"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "caregiver-rest"));
@@ -55,6 +56,17 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "corrected-age-for-preemies"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-break-when-overwhelmed"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "cot-to-bed-transition"));
+});
+
+test("responsive settling guide is age-limited and protects feeding and safe sleep", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "responsive-settling-under-six-months");
+  assert.ok(guide);
+  assert.ok(sleepGuidesForAge(0).some((item) => item.id === guide.id));
+  assert.ok(sleepGuidesForAge(6).some((item) => item.id === guide.id));
+  assert.ok(!sleepGuidesForAge(7).some((item) => item.id === guide.id));
+  assert.match(guide.summary, /beslenmeyi.*geciktirmeyin/i);
+  assert.match(guide.summary, /sırtüstü, sert ve düz, boş ayrı uyku alanı/i);
+  assert.equal(guide.url, "https://raisingchildren.net.au/newborns/sleep/settling-routines/patting-settling");
 });
 
 test("cot to bed guide prioritizes safety cues over a fixed transition age", () => {
