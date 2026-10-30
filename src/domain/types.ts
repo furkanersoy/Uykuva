@@ -201,6 +201,7 @@ export type SleepForecast = {
 
 export type FeedingForecast = {
   available: boolean;
+  kind?: "milk" | "solid";
   start?: Date;
   end?: Date;
   confidence: "low" | "medium" | "high";
