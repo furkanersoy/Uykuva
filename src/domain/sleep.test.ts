@@ -21,6 +21,15 @@ test("empty check-ins do not displace the last recorded sleep ratings", () => {
   assert.equal(insights.actualBedtime, "20:30");
 });
 
+test("sleep coaching ignores impossible calendar dates in check-ins", () => {
+  const now = new Date(2026, 2, 3, 12);
+  assert.equal(createSleepCoachGuidance([{ date: "2026-03-03", ease: 4 }, { date: "2026-02-31", nightWakings: 5 }], now)?.title, undefined);
+  const insights = createSleepCoachInsights([], "20:00", [{ date: "2026-02-31", ease: 1, nightWakings: 5, bedtime: "19:00" }], now);
+  assert.equal(insights.checkInAverage, undefined);
+  assert.equal(insights.nightWakingsAverage, undefined);
+  assert.equal(insights.actualBedtime, undefined);
+});
+
 test("overlapping sleep records use the end of the combined sleep for awake windows", () => {
   const events: CareEvent[] = Array.from({ length: 5 }, (_, index) => {
     const date = `2026-10-${23 + index}`;

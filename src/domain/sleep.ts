@@ -378,6 +378,12 @@ function localDayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function isLocalDayKey(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T12:00:00`);
+  return Number.isFinite(parsed.getTime()) && localDayKey(parsed) === value;
+}
+
 function isDaytimeNap(event: CareEvent, now: Date) {
   if (event.kind !== "sleep") return false;
   const start = new Date(event.startedAt);
@@ -717,7 +723,7 @@ export type SleepCoachGuidance = {
 export function createSleepCoachGuidance(checkIns: SleepCheckIn[], now = new Date()): SleepCoachGuidance | undefined {
   const today = localDayKey(now);
   const recent = checkIns
-    .filter((item) => item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.nightWakings !== undefined))
+    .filter((item) => isLocalDayKey(item.date) && item.date <= today && item.date >= localDayKey(new Date(now.getTime() - 2 * DAY)) && (item.ease !== undefined || item.nightWakings !== undefined))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
   const latest = recent[0];
@@ -867,7 +873,7 @@ export function summarizeNightWakeResponses(checkIns: Pick<SleepCheckIn, "nightW
 export type NightSleepSummary = { minutes: number; segments: number; hasExactWindow: boolean };
 
 export function summarizeNightSleep(events: CareEvent[], checkIn?: Pick<SleepCheckIn, "date" | "bedtime" | "wakeTime">, now = new Date()): NightSleepSummary {
-  const date = checkIn?.date && /^\d{4}-\d{2}-\d{2}$/.test(checkIn.date) ? checkIn.date : localDayKey(now);
+  const date = isLocalDayKey(checkIn?.date) ? checkIn.date : localDayKey(now);
   const morning = new Date(`${date}T12:00:00`);
   if (!Number.isFinite(morning.getTime())) return { minutes: 0, segments: 0, hasExactWindow: false };
   const startMinutes = checkIn?.bedtime ? clockMinutes(checkIn.bedtime) : null;
@@ -915,7 +921,7 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
       return date.getHours() * 60 + date.getMinutes();
     });
   const recentCheckIns = checkIns
-    .filter((item) => typeof item.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now) && (item.ease !== undefined || item.nightWakings !== undefined || Boolean(item.bedtime)))
+    .filter((item) => isLocalDayKey(item.date) && item.date >= localDayKey(new Date(cutoff)) && item.date <= localDayKey(now) && (item.ease !== undefined || item.nightWakings !== undefined || Boolean(item.bedtime)))
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
     .slice(0, 7);
   const checkInBedtimes = recentCheckIns.flatMap((item) => {
@@ -981,7 +987,7 @@ export function createSleepCoachInsights(events: CareEvent[], targetBedtime: str
   const onsetSamples: { date: string; minutes: number }[] = [];
   const usedOnsetSleepIds = new Set<string>();
   const onsetCheckIns = checkIns
-    .filter((item) => typeof item.date === "string" && item.date >= previousOnsetStart && item.date <= localDayKey(now) && typeof item.bedtime === "string" && isValidClock(item.bedtime))
+    .filter((item) => isLocalDayKey(item.date) && item.date >= previousOnsetStart && item.date <= localDayKey(now) && typeof item.bedtime === "string" && isValidClock(item.bedtime))
     .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
   for (const item of onsetCheckIns) {
     const morning = new Date(`${item.date}T12:00:00`);
