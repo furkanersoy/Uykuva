@@ -596,7 +596,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   const napOutline = createDailyNapOutline(app.state.events, now);
   const agenda: { id: string; at: Date; kind: "sleep" | "feed" | "bedtime" | "care" | "medication"; label: string; detail: string; endAt?: Date; task?: CareTask }[] = [];
   if (!app.runningSleep && displayedForecast.available && displayedForecast.start && displayedForecast.end) agenda.push({ id: "next-sleep", at: displayedForecast.start, endAt: displayedForecast.end, kind: "sleep", label: "Olası uyku penceresi", detail: "Sabah uyanış saati ve yaş aralığına dayalı tahmin; uyku işaretlerine göre esnetin." });
-  if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: feedingForecast.kind === "solid" ? "Kayıtlı ek gıda aralığı" : "Kayıtlı süt beslenmesi aralığı", detail: "Açlık ve doyma işaretleri ile bebeğinizin ihtiyacı her zaman önceliklidir." });
+  if (feedingForecast.available && feedingForecast.start && feedingForecast.end) agenda.push({ id: "next-feed", at: feedingForecast.start, endAt: feedingForecast.end, kind: "feed", label: "Kayıtlı süt beslenmesi aralığı", detail: "Açlık ve doyma işaretleri ile bebeğinizin ihtiyacı her zaman önceliklidir." });
   if (bedtimeTarget && bedtimeTarget.getTime() <= careWindowEnd) agenda.push({ id: "bedtime", at: bedtimeTarget, kind: "bedtime", label: "Hedef yatış", detail: "Uyku planınızdaki esnek hedef saat." });
   for (const event of latestMedicationByName.values()) {
     const reminderAt = event.medicationReminderAt ? new Date(event.medicationReminderAt) : undefined;
