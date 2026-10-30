@@ -4,6 +4,7 @@ import {
   AppState,
   Alert,
   Linking,
+  Image,
   Modal,
   NativeModules,
   Pressable,
@@ -22,6 +23,8 @@ import * as Notifications from "expo-notifications";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
 import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
@@ -1732,16 +1735,16 @@ function DataRestoreModal({ visible, close, currentState, restore }: { visible: 
       if (result.canceled) return;
       const asset = result.assets[0];
       if (!asset) return Alert.alert("Dosya bulunamadı", "JSON yedeğini seçip yeniden deneyin.");
-      if (asset.size !== undefined && asset.size > 5 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin dosya sınırı 5 MB.");
+      if (asset.size !== undefined && asset.size > 18 * 1024 * 1024) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin dosya sınırı 18 MB.");
       const contents = await new File(asset.uri).text();
-      if (contents.length > 5_000_000) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin metin sınırı 5 milyon karakter.");
+      if (contents.length > 18_000_000) return Alert.alert("Yedek çok büyük", "Uykuva yedeklerinin metin sınırı 18 milyon karakter.");
       setRaw(contents);
       Alert.alert("Yedek yüklendi", "Dosya kontrol için hazır. İçeriği doğrulayıp geri yüklemeyi onaylayın.");
     } catch {
       Alert.alert("Dosya açılamadı", "Uykuva JSON yedeğini seçip yeniden deneyin.");
     }
   };
-  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Yedeği aktar</Text><Text style={styles.pageIntro}>Şifreli Uykuva yedeğini dosyadan seçin veya içeriğini yapıştırın. Şifreli dosyalar için yedeği oluştururken belirlediğiniz parolayı girin. Aynı bebeğin kayıtlarını birleştirebilir ya da mevcut verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="Uykuva yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput accessibilityLabel="Şifreli yedek parolası" value={password} onChangeText={setPassword} style={[styles.input, { marginTop: 12 }]} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} placeholder="Parola · yalnızca şifreli yedek için" placeholderTextColor="#93A09C" /><TextInput accessibilityLabel="Yedek dosyası içeriği" value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top", marginTop: 12 }]} multiline maxLength={5_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · şifreli veya standart Uykuva yedeği</Text><View style={styles.spacer12} /><PrimaryButton label={decrypting ? "Yedek açılıyor…" : "Yedeği kontrol et ve aktar"} onPress={() => void reviewBackup()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Yedeği aktar</Text><Text style={styles.pageIntro}>Şifreli Uykuva yedeğini dosyadan seçin veya içeriğini yapıştırın. Şifreli dosyalar için yedeği oluştururken belirlediğiniz parolayı girin. Aynı bebeğin kayıtlarını birleştirebilir ya da mevcut verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="Uykuva yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput accessibilityLabel="Şifreli yedek parolası" value={password} onChangeText={setPassword} style={[styles.input, { marginTop: 12 }]} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} placeholder="Parola · yalnızca şifreli yedek için" placeholderTextColor="#93A09C" /><TextInput accessibilityLabel="Yedek dosyası içeriği" value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top", marginTop: 12 }]} multiline maxLength={18_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · şifreli veya standart Uykuva yedeği</Text><View style={styles.spacer12} /><PrimaryButton label={decrypting ? "Yedek açılıyor…" : "Yedeği kontrol et ve aktar"} onPress={() => void reviewBackup()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {
@@ -1886,7 +1889,7 @@ function EventRow({ event, onPress, onDelete }: { event: CareEvent; onPress?: ()
   return (
     <Pressable accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={onPress ? `${eventTitle(event)} · saatleri düzenle` : undefined} accessibilityHint={onDelete ? "Silmek için basılı tutun ve onaylayın." : undefined} onPress={onPress} onLongPress={onDelete ? confirmDelete : undefined} style={styles.eventRow}>
       <View style={[styles.eventDot, { backgroundColor: event.kind === "sleep" ? colors.lavender : event.kind === "feed" ? colors.peach : colors.mint }]} />
-      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "health" && event.medicationReminderAt ? ` · plan hatırlatması ${new Date(event.medicationReminderAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}` : ""}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text></View>
+      <View style={styles.flex}><Text style={styles.eventTitle}>{eventTitle(event)}</Text><Text style={styles.muted}>{event.caregiver}{event.kind === "health" && event.medicationReminderAt ? ` · plan hatırlatması ${new Date(event.medicationReminderAt).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}` : ""}{event.kind === "feed" && event.allergens?.length ? ` · etiket: ${event.allergens.join(", ")}` : ""}{event.kind === "feed" && event.reactionNote ? ` · gözlem: ${event.reactionNote}` : ""}{event.kind === "memory" && event.note ? ` · ${event.note}` : ""}</Text>{event.kind === "memory" && event.memoryPhotoData ? <Image accessibilityLabel="Anı fotoğrafı" source={{ uri: event.memoryPhotoData }} style={styles.memoryThumb} /> : null}</View>
       <Text style={styles.eventTime}>{time(event.startedAt)}</Text>
     </Pressable>
   );
@@ -2076,6 +2079,11 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
   const [lengthPosition, setLengthPosition] = useState<"recumbent" | "standing">(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
   const [head, setHead] = useState("");
   const [memoryTitle, setMemoryTitle] = useState("");
+  const [memoryPhotoData, setMemoryPhotoData] = useState<string | undefined>();
+  const [memoryPhotoBusy, setMemoryPhotoBusy] = useState(false);
+  useEffect(() => {
+    if (mode === "memory") { setMemoryTitle(""); setMemoryPhotoData(undefined); setNote(""); }
+  }, [mode]);
   useEffect(() => {
     if (mode !== "growth") return;
     setLengthPosition(Date.now() - Date.parse(`${app.state.baby.birthDate}T00:00:00`) < 731 * 86_400_000 ? "recumbent" : "standing");
@@ -2123,9 +2131,24 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
     setFoods(""); setReaction(""); setSelectedAllergens([]);
   };
   const saveMemory = () => {
-    if (!memoryTitle.trim() && !note.trim()) return Alert.alert("Anıyı yazın", "Bir başlık veya kısa not girin.");
-    add("memory", { memoryTitle: memoryTitle.trim() || "Anı", note: note.trim() || undefined });
-    setMemoryTitle(""); setNote(""); close();
+    if (!memoryTitle.trim() && !note.trim() && !memoryPhotoData) return Alert.alert("Anıyı yazın", "Bir başlık, kısa not veya fotoğraf ekleyin.");
+    add("memory", { memoryTitle: memoryTitle.trim() || (memoryPhotoData ? "Fotoğraflı anı" : "Anı"), note: note.trim() || undefined, memoryPhotoData });
+    setMemoryTitle(""); setNote(""); setMemoryPhotoData(undefined); close();
+  };
+  const chooseMemoryPhoto = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, quality: 0.85 });
+      if (result.canceled || !result.assets[0]) return;
+      setMemoryPhotoBusy(true);
+      const image = await ImageManipulator.manipulate(result.assets[0].uri, { maxWidth: 1280, maxHeight: 1280 }).renderAsync();
+      const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.7, base64: true });
+      if (!saved.base64 || saved.base64.length > 1_100_000) return Alert.alert("Fotoğraf çok büyük", "Daha küçük bir fotoğraf seçip yeniden deneyin.");
+      setMemoryPhotoData(`data:image/jpeg;base64,${saved.base64}`);
+    } catch {
+      Alert.alert("Fotoğraf eklenemedi", "Fotoğraf seçilemedi veya küçültülemedi. Yeniden deneyin.");
+    } finally {
+      setMemoryPhotoBusy(false);
+    }
   };
   const toggleAllergen = (allergen: string) => setSelectedAllergens((current) => current.includes(allergen) ? current.filter((item) => item !== allergen) : [...current, allergen]);
   return (
@@ -2145,7 +2168,7 @@ function QuickLogModal({ mode, close, app, now }: { mode: LogMode; close: () => 
         </> : null}
         {mode === "diaper" ? <View style={styles.choiceRow}><Pill label="Islak" active onPress={() => save({ diaperType: "wet" })} /><Pill label="Kirli" onPress={() => save({ diaperType: "dirty" })} /><Pill label="İkisi" onPress={() => save({ diaperType: "both" })} /></View> : null}
         {mode === "note" ? <><Text style={styles.inputLabel}>Not</Text><TextInput value={note} onChangeText={setNote} multiline placeholder="Bakımı devralan kişinin bilmesi gereken…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Notu kaydet" onPress={() => save({ note })} /></> : null}
-        {mode === "memory" ? <><Text style={styles.inputLabel}>Bir anı seçin (isteğe bağlı)</Text><View style={styles.choiceRow}>{memoryPrompts.map((prompt) => <Pill key={prompt} label={prompt} active={memoryTitle === prompt} onPress={() => setMemoryTitle(prompt)} />)}</View><Field label="Anı başlığı" value={memoryTitle} onChangeText={setMemoryTitle} placeholder="İlk kez parkta uyudu" /><Text style={styles.inputLabel}>Detay (isteğe bağlı)</Text><TextInput value={note} onChangeText={setNote} multiline maxLength={1000} placeholder="Bu günü hatırlamak için kısa bir not…" style={[styles.input, styles.noteInput]} /><PrimaryButton label="Anıyı kaydet" onPress={saveMemory} /></> : null}
+        {mode === "memory" ? <><Text style={styles.inputLabel}>Bir anı seçin (isteğe bağlı)</Text><View style={styles.choiceRow}>{memoryPrompts.map((prompt) => <Pill key={prompt} label={prompt} active={memoryTitle === prompt} onPress={() => setMemoryTitle(prompt)} />)}</View><Field label="Anı başlığı" value={memoryTitle} onChangeText={setMemoryTitle} placeholder="İlk kez parkta uyudu" /><Text style={styles.inputLabel}>Detay (isteğe bağlı)</Text><TextInput value={note} onChangeText={setNote} multiline maxLength={1000} placeholder="Bu günü hatırlamak için kısa bir not…" style={[styles.input, styles.noteInput]} /><PrimaryButton label={memoryPhotoBusy ? "Fotoğraf hazırlanıyor…" : memoryPhotoData ? "Fotoğrafı değiştir" : "Fotoğraf ekle (isteğe bağlı)"} quiet onPress={() => void chooseMemoryPhoto()} />{memoryPhotoData ? <View style={styles.memoryPhotoPreview}><Image accessibilityLabel="Seçilen anı fotoğrafı" source={{ uri: memoryPhotoData }} style={styles.memoryPreviewImage} /><Pressable accessibilityRole="button" onPress={() => setMemoryPhotoData(undefined)}><Text style={styles.editLink}>Fotoğrafı kaldır</Text></Pressable></View> : null}<Text style={styles.hint}>Fotoğraf cihazda, bu anı kaydıyla birlikte saklanır ve Uykuva yedeklerine dahil edilir.</Text><PrimaryButton label="Anıyı kaydet" onPress={saveMemory} /></> : null}
         {mode === "health" ? <>
           <View style={styles.choiceRow}><Pill label="Ateş" active={healthType === "temperature"} onPress={() => setHealthType("temperature")} /><Pill label="İlaç" active={healthType === "medicine"} onPress={() => setHealthType("medicine")} /><Pill label="Belirti" active={healthType === "symptom"} onPress={() => setHealthType("symptom")} /></View>
           {healthType === "temperature" ? <Field label="Ölçülen sıcaklık (°C)" value={temperature} onChangeText={setTemperature} keyboardType="decimal-pad" /> : null}
@@ -2232,6 +2255,9 @@ const styles = StyleSheet.create({
   eventDot: { width: 11, height: 11, borderRadius: 6, marginRight: 12 },
   eventTitle: { color: colors.ink, fontSize: 14, fontWeight: "600" },
   eventTime: { color: colors.ink, fontSize: 13, fontWeight: "700" },
+  memoryThumb: { width: 54, height: 54, borderRadius: 12, marginTop: 8, backgroundColor: colors.mint },
+  memoryPhotoPreview: { marginTop: 12, alignItems: "flex-start", gap: 8 },
+  memoryPreviewImage: { width: 180, height: 180, borderRadius: 18, backgroundColor: colors.mint },
   muted: { color: colors.inkSoft, fontSize: 12, marginTop: 3 },
   flex: { flex: 1 },
   taskRow: { flexDirection: "row", alignItems: "center", minHeight: 54, borderBottomWidth: 1, borderBottomColor: colors.line },
