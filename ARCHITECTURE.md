@@ -529,3 +529,9 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Aynı aile belgesine başka cihaz yazdıysa istemci yeni revizyonu indirip birleştirerek en fazla üç kez yeniden dener; sürekli çakışmada yerel kayıtları koruyup kullanıcıyı yeniden eşitlemeye yönlendirir.
 - Bu yerel/yedek birleştirme davranışı test edildi. Barındırılan Supabase kurulumu ve iki cihazda gerçek bulut eşitlemesi henüz doğrulanmadı; silme işaretleri şu an onay sonrası temizlenmiyor.
 - Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 124/124 başarılı.
+
+### 30 Ekim 2026 uyku yaklaşımı eşleştirmesi
+
+- Aile, bakım veren yakınlığı, huzursuzluğa yanıt biçimi ve değişim hızını seçerek kendileriyle örtüşebilecek en fazla iki uyku yaklaşımını görebilir.
+- Eşleştirme basit ve açıklanabilir bir yerel puanlamadır; uygunluk/sonuç vaadi vermez, tercihleri kaydetmez veya paylaşmaz, yöntem otomatik seçilmez. Yaş ve hazır oluş kapısının izin vermediği yöntemler aday listesine girmez.
+- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 125/125 başarılı.

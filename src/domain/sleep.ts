@@ -549,6 +549,31 @@ export function methodDescription(method: SleepMethod) {
   return METHOD_COPY[method];
 }
 
+export type SleepMethodPreferences = {
+  caregiverPresence: "near" | "briefVisits";
+  responseStyle: "prompt" | "plannedChecks";
+  changePace: "keepSupport" | "gradualChange";
+};
+
+export function recommendSleepMethods(preferences: Partial<SleepMethodPreferences>, availableMethods: SleepMethod[]): { methods: SleepMethod[]; reason: string } | undefined {
+  if (!preferences.caregiverPresence || !preferences.responseStyle || !preferences.changePace || !availableMethods.length) return undefined;
+  const scores: Record<SleepMethod, number> = {
+    responsive: (preferences.caregiverPresence === "near" ? 1 : 0) + (preferences.responseStyle === "prompt" ? 3 : 0) + (preferences.changePace === "keepSupport" ? 2 : 0),
+    gradual: (preferences.caregiverPresence === "near" ? 1 : 0) + (preferences.responseStyle === "prompt" ? 1 : 0) + (preferences.changePace === "gradualChange" ? 3 : 0),
+    timedChecks: (preferences.caregiverPresence === "briefVisits" ? 3 : 0) + (preferences.responseStyle === "plannedChecks" ? 3 : 0) + (preferences.changePace === "gradualChange" ? 1 : 0),
+    camping: (preferences.caregiverPresence === "near" ? 3 : 0) + (preferences.responseStyle === "prompt" ? 2 : 0) + (preferences.changePace === "gradualChange" ? 1 : 0),
+    bedtimeFading: (preferences.caregiverPresence === "near" ? 1 : 0) + (preferences.changePace === "gradualChange" ? 2 : 0),
+    pickUpPutDown: (preferences.caregiverPresence === "near" ? 3 : 0) + (preferences.responseStyle === "prompt" ? 3 : 0) + (preferences.changePace === "keepSupport" ? 1 : 0),
+    routineFirst: (preferences.caregiverPresence === "near" ? 1 : 0) + (preferences.responseStyle === "prompt" ? 2 : 0) + (preferences.changePace === "keepSupport" ? 3 : 0)
+  };
+  const order: SleepMethod[] = ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
+  const methods = availableMethods.slice().sort((left, right) => scores[right] - scores[left] || order.indexOf(left) - order.indexOf(right)).slice(0, Math.min(2, availableMethods.length));
+  const presence = preferences.caregiverPresence === "near" ? "yakında kalmayı" : "kısa ziyaretleri";
+  const response = preferences.responseStyle === "prompt" ? "huzursuzlukta hızlı yanıtı" : "önceden konuşulmuş kontrolleri";
+  const pace = preferences.changePace === "keepSupport" ? "mevcut desteği korumayı" : "değişikliği küçük adımlarla yapmayı";
+  return { methods, reason: `Yakınlıkta ${presence}, yanıtta ${response} ve ilerlemede ${pace} tercihlerinizi temel alıyor.` };
+}
+
 export const SLEEP_SUPPORT_OPTIONS: { id: SleepSupport; label: string }[] = [
   { id: "feeding", label: "Beslenerek" },
   { id: "held", label: "Kucakta" },

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, coachingWeek, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, coachingWeek, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, recommendSleepMethods, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 import { detectRecordedMilestones } from "./milestones";
@@ -181,6 +181,18 @@ test("all seven sleep coaching approaches include caregiver and night-waking gui
     assert.ok(guidance.caregiverRole.length > 0);
     assert.ok(guidance.nightResponse.length > 0);
   }
+});
+
+test("sleep-method matching waits for all choices and only suggests age-allowed methods", () => {
+  assert.equal(recommendSleepMethods({ caregiverPresence: "near" }, ["responsive", "gradual"]), undefined);
+  const responseLed = recommendSleepMethods({ caregiverPresence: "near", responseStyle: "prompt", changePace: "keepSupport" }, ["responsive", "gradual", "timedChecks", "pickUpPutDown"]);
+  assert.deepEqual(responseLed?.methods, ["pickUpPutDown", "responsive"]);
+  assert.match(responseLed?.reason ?? "", /hızlı yanıt/i);
+
+  const plannedVisit = recommendSleepMethods({ caregiverPresence: "briefVisits", responseStyle: "plannedChecks", changePace: "gradualChange" }, ["responsive", "gradual", "timedChecks"]);
+  assert.deepEqual(plannedVisit?.methods, ["timedChecks", "gradual"]);
+  const beforeReadiness = recommendSleepMethods({ caregiverPresence: "briefVisits", responseStyle: "plannedChecks", changePace: "gradualChange" }, ["responsive"]);
+  assert.deepEqual(beforeReadiness?.methods, ["responsive"]);
 });
 
 test("each sleep-plan readiness item explains its safety and caregiver context", () => {
