@@ -17,6 +17,7 @@ test("offline sleep guides have unique IDs, age labels, summaries, and HTTPS sou
 
 test("sleep education includes infant age changes and caregiver support", () => {
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "four-month-pattern"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-sleep-space"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "caregiver-rest"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nap-transitions"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "night-feeds-and-sleep-plans"));

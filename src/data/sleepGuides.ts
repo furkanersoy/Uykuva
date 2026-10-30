@@ -41,6 +41,15 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx"
   },
   {
+    id: "safe-sleep-space",
+    title: "Bebek için güvenli uyku alanı",
+    age: "İlk yıl ve bebeklik",
+    summary: "Her uykuda bebeği sırtüstü, sert, düz ve eğimsiz bir uyku yüzeyine yatırın; yatağı yastık, yorgan, oyuncak ve gevşek örtülerden boş tutun. İlk 6 ay bebeğin kendi ayrı uyku alanı ebeveynle aynı odada olabilir. Koltukta, kanepede veya yetişkin yatağında birlikte uyumak güvenli bir alternatif değildir. Uygun uyku alanı hakkında sorunuz varsa çocuk doktorunuza danışın.",
+    category: "basics",
+    source: "AAP · Güvenli uyku rehberi",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx"
+  },
+  {
     id: "night-and-day",
     title: "Gece ile gündüzü ayırt etmeye yardım",
     age: "İlk aylar",
