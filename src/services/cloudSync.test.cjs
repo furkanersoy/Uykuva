@@ -110,3 +110,47 @@ test("family encryption keys are stored locally only after checking for 256-bit 
   assert.equal(await service.getFamilyEncryptionKey("family-owner"), valid);
   await assert.rejects(service.storeSharedFamilyEncryptionKey("family-owner", "AAAAAAAAAAAAAAAAAAAAAA=="), /256 bit/i);
 });
+
+test("family document revision conflicts are recognized without masking other failures", () => {
+  assert.equal(service.isFamilyRevisionConflict({ code: "40001", message: "serialization failure" }), true);
+  assert.equal(service.isFamilyRevisionConflict({ message: "The family document changed on another device." }), true);
+  assert.equal(service.isFamilyRevisionConflict({ code: "42501", message: "permission denied" }), false);
+  assert.equal(service.isFamilyRevisionConflict(new Error("network unavailable")), false);
+});
+
+test("family document sync fetches and merges the latest revision after a write conflict", async () => {
+  const writes = [];
+  let latestReads = 0;
+  const result = await service.saveFamilyDocumentWithRevisionRetry({
+    value: { entries: ["local"] },
+    revision: 3,
+    loadLatest: async () => { latestReads += 1; return { revision: 4, value: { entries: ["remote"] } }; },
+    merge: (current, latest) => ({ entries: [...new Set([...current.entries, ...latest.entries])] }),
+    save: async (revision, value) => {
+      writes.push({ revision, value });
+      if (writes.length === 1) throw { code: "40001", message: "revision conflict" };
+      return revision + 1;
+    }
+  });
+
+  assert.equal(latestReads, 1);
+  assert.deepEqual(writes, [
+    { revision: 3, value: { entries: ["local"] } },
+    { revision: 4, value: { entries: ["local", "remote"] } }
+  ]);
+  assert.deepEqual(result, { revision: 5, value: { entries: ["local", "remote"] } });
+});
+
+test("family document sync stops after bounded retries and preserves the retry error", async () => {
+  let writes = 0;
+  let reads = 0;
+  await assert.rejects(service.saveFamilyDocumentWithRevisionRetry({
+    value: { local: true },
+    revision: 1,
+    loadLatest: async () => { reads += 1; return { revision: reads + 1, value: { remote: reads } }; },
+    merge: (current, latest) => ({ ...current, ...latest }),
+    save: async () => { writes += 1; throw { code: "40001", message: "revision conflict" }; }
+  }), /Bu cihazdaki kayıtlar korundu/i);
+  assert.equal(writes, 3);
+  assert.equal(reads, 2);
+});

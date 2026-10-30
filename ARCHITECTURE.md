@@ -526,5 +526,6 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `AppState` şema sürümü 6, olay, bakım görevi, gece uyanması, çocuk ve bakım veren silme kimliklerini kalıcı `syncTombstones` listelerinde taşır.
 - Veri silme ve check-in güncelleme bu işaretleri yazar; yedek dışa aktarma/geri yükleme bunları korur.
 - Birleştirme iki tarafın işaretlerini birleştirip eski kayıtları filtreler; silinmiş çocuk veya bakım veren referansları geri eklenmez.
+- Aynı aile belgesine başka cihaz yazdıysa istemci yeni revizyonu indirip birleştirerek en fazla üç kez yeniden dener; sürekli çakışmada yerel kayıtları koruyup kullanıcıyı yeniden eşitlemeye yönlendirir.
 - Bu yerel/yedek birleştirme davranışı test edildi. Barındırılan Supabase kurulumu ve iki cihazda gerçek bulut eşitlemesi henüz doğrulanmadı; silme işaretleri şu an onay sonrası temizlenmiyor.
-- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 121/121 başarılı.
+- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 124/124 başarılı.

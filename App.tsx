@@ -46,7 +46,7 @@ import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
-import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudFamilyInvites, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, revokeCloudFamilyInvite, saveEncryptedFamilyDocument, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
+import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudFamilyInvites, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, revokeCloudFamilyInvite, saveEncryptedFamilyDocument, saveFamilyDocumentWithRevisionRetry, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
 import { colors } from "./src/ui/theme";
 
@@ -2149,21 +2149,32 @@ function CloudSyncModal({ visible, close, app }: { visible: boolean; close: () =
   const syncNow = () => void run(async () => {
     if (!requireConsent() || !familyId) return;
     if (selectedMembership?.role === "family") throw new Error("Bu aile üyeliği salt okunur; kayıtları indirebilirsiniz ancak yükleyemezsiniz.");
-    const remote = await fetchEncryptedFamilyDocument(familyId, "family-workspace");
     let state = app.state;
-    let revision = 0;
+    let remote = await fetchEncryptedFamilyDocument(familyId, "family-workspace");
+    let hadRemote = Boolean(remote);
     if (remote) {
       const remoteExport = await decryptFamilyDocument(familyId, "family-workspace", remote.ciphertext);
       if (typeof remoteExport !== "string") throw new Error("Buluttaki aile kaydı geçerli bir Uykuva yedeği değil.");
-      const remoteState = parseDataExport(remoteExport);
-      state = mergeDataStates(app.state, remoteState);
-      revision = remote.revision;
-      app.restoreData(state);
+      state = mergeDataStates(state, parseDataExport(remoteExport));
     }
-    const nextRevision = await saveEncryptedFamilyDocument(familyId, "family-workspace", revision, createDataExport(state));
-    setMessage(remote
-      ? `Yerel ve buluttaki kayıtlar birleştirildi ve şifrelenerek eşitlendi (revizyon ${nextRevision}).`
-      : `İlk şifreli aile yedeği yüklendi (revizyon ${nextRevision}).`);
+    const result = await saveFamilyDocumentWithRevisionRetry({
+      value: state,
+      revision: remote?.revision ?? 0,
+      loadLatest: async () => {
+        remote = await fetchEncryptedFamilyDocument(familyId, "family-workspace");
+        if (!remote) return null;
+        hadRemote = true;
+        const latestExport = await decryptFamilyDocument(familyId, "family-workspace", remote.ciphertext);
+        if (typeof latestExport !== "string") throw new Error("Buluttaki aile kaydı geçerli bir Uykuva yedeği değil.");
+        return { revision: remote.revision, value: parseDataExport(latestExport) };
+      },
+      merge: mergeDataStates,
+      save: (revision, nextState) => saveEncryptedFamilyDocument(familyId, "family-workspace", revision, createDataExport(nextState))
+    });
+    app.restoreData(result.value);
+    setMessage(hadRemote
+      ? `Yerel ve buluttaki kayıtlar birleştirildi ve şifrelenerek eşitlendi (revizyon ${result.revision}).`
+      : `İlk şifreli aile yedeği yüklendi (revizyon ${result.revision}).`);
   });
   const download = () => void run(async () => {
     if (!requireConsent() || !familyId) return;

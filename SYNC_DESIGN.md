@@ -36,7 +36,7 @@ Ebeveyn ve bakıcıların farklı telefonlardan aynı bebeğin bakım kayıtlar�
 
 ### Yerel silme koruması
 
-`AppState` şema sürümü 6 ile silme işaretleri yedek dışa aktarma/geri yükleme ve veri birleştirmede korunur. Eski yedeklerde alan yoksa boş listelerle göç edilir; bozuk kimlik listeleri yedekten reddedilir. Bu uygulama eski yedek/cihaz kayıtlarının yerel birleştirmede geri gelmesini engeller. Barındırılan Supabase projesi ve iki fiziksel/emüle cihazlı eşitleme henüz doğrulanmadığı için bu, tamamlanmış bulut senkronizasyonu kanıtı sayılmaz.
+`AppState` şema sürümü 6 ile silme işaretleri yedek dışa aktarma/geri yükleme ve veri birleştirmede korunur. Eski yedeklerde alan yoksa boş listelerle göç edilir; bozuk kimlik listeleri yedekten reddedilir. Bu uygulama eski yedek/cihaz kayıtlarının yerel birleştirmede geri gelmesini engeller. Revizyon çakışmasında istemci son bulut kopyasını yeniden indirip birleştirerek en fazla üç yazma denemesi yapar. Barındırılan Supabase projesi ve iki fiziksel/emüle cihazlı eşitleme henüz doğrulanmadığı için bu, tamamlanmış bulut senkronizasyonu kanıtı sayılmaz.
 
 İlk şema temeli `families`, `family_members`, `family_invites` ve `sync_documents` tablolarını oluşturur. Davet token'ı veritabanında yalnızca SHA-256 özeti olarak tutulur; 7 gün sonra geçersiz olur ve yalnızca davet edilen doğrulanmış e-posta kabul edebilir. Aile içindeki `family` rolü şifreli kayıtları okuyabilir; `parent` ve `caregiver` rollerine senkronizasyon yazma hakkı tanınır. İstemcilerin tabloları doğrudan yazma izni yoktur; yazma RPC'si üyeliği doğrular ve beklenen revision farklıysa çakışma hatası döndürür. İstemci veriyi uçtan uca şifrelemeden bu RPC kullanılmamalıdır.
 

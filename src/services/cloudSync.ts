@@ -335,6 +335,38 @@ export async function saveEncryptedFamilyDocument(familyId: string, documentId: 
   return Number(data);
 }
 
+export function isFamilyRevisionConflict(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: unknown; message?: unknown };
+  return candidate.code === "40001" || typeof candidate.message === "string" && /changed on another device|revision conflict/i.test(candidate.message);
+}
+
+export async function saveFamilyDocumentWithRevisionRetry<T>(options: {
+  value: T;
+  revision: number;
+  loadLatest: () => Promise<{ revision: number; value: T } | null>;
+  merge: (current: T, latest: T) => T;
+  save: (revision: number, value: T) => Promise<number>;
+  maxAttempts?: number;
+}): Promise<{ revision: number; value: T }> {
+  const maxAttempts = Math.max(1, Math.min(5, Math.floor(options.maxAttempts ?? 3)));
+  let value = options.value;
+  let revision = options.revision;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      return { revision: await options.save(revision, value), value };
+    } catch (error) {
+      if (!isFamilyRevisionConflict(error)) throw error;
+      if (attempt + 1 >= maxAttempts) throw new Error("Başka bir cihaz aynı anda eşitleme yaptı. Bu cihazdaki kayıtlar korundu; bağlantıyı kontrol edip “Şimdi eşitle”ye yeniden basın.");
+      const latest = await options.loadLatest();
+      if (!latest) throw new Error("Aile bulut kaydı eşitleme sırasında kaldırıldı. Bu cihazdaki kayıtlar korundu.");
+      value = options.merge(value, latest.value);
+      revision = latest.revision;
+    }
+  }
+  throw new Error("Eşitleme tamamlanamadı. Bu cihazdaki kayıtlar korundu.");
+}
+
 export async function removeFamilyEncryptionKey(familyId: string) {
   await SecureStore.deleteItemAsync(`${FAMILY_KEY_PREFIX}${familyId}`);
 }
