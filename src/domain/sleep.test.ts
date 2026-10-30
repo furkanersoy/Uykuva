@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -157,6 +157,11 @@ test("all seven sleep coaching approaches include caregiver and night-waking gui
     assert.ok(guidance.caregiverRole.length > 0);
     assert.ok(guidance.nightResponse.length > 0);
   }
+});
+
+test("each sleep-plan readiness item explains its safety and caregiver context", () => {
+  assert.deepEqual(Object.keys(SLEEP_READINESS_GUIDANCE).sort(), [...SLEEP_READINESS_ITEMS].sort());
+  for (const item of SLEEP_READINESS_ITEMS) assert.ok(SLEEP_READINESS_GUIDANCE[item].length > 20);
 });
 
 test("night-wake response summary counts unique recent logs and ignores future or malformed entries", () => {
