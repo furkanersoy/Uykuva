@@ -9,12 +9,20 @@ const memberships = [
   { family_id: "family-owner", role: "parent", joined_at: "2026-10-01T00:00:00Z" },
   { family_id: "family-member", role: "caregiver", joined_at: "2026-10-02T00:00:00Z" }
 ];
+const inviteRows = [
+  { id: "invite-pending", invited_email: "care@example.com", role: "caregiver", expires_at: "2099-01-01T00:00:00Z", accepted_at: null, revoked_at: null },
+  { id: "invite-accepted", invited_email: "done@example.com", role: "parent", expires_at: "2099-01-01T00:00:00Z", accepted_at: "2026-10-29T00:00:00Z", revoked_at: null },
+  { id: "invite-expired", invited_email: "old@example.com", role: "family", expires_at: "2000-01-01T00:00:00Z", accepted_at: null, revoked_at: null }
+];
+const rpcCalls = [];
 const mockClient = {
   auth: { getUser: async () => ({ data: { user: { id: "user-owner", email: "parent@example.com" } }, error: null }) },
+  rpc: async (name, args) => { rpcCalls.push({ name, args }); return { data: true, error: null }; },
   from(table) {
     return {
       select() { return this; },
-      async order() { return { data: memberships, error: null }; },
+      eq() { return this; },
+      async order() { return { data: table === "family_invites" ? inviteRows : memberships, error: null }; },
       async in(_column, ids) {
         return {
           data: ids.filter((id) => id.startsWith("family-")).map((id) => ({ id, owner_id: id === "family-owner" ? "user-owner" : "someone-else" })),
@@ -72,6 +80,16 @@ test("family membership identifies the owner without granting ownership to invit
   assert.equal(families[0].isOwner, true);
   assert.equal(families[1].isOwner, false);
   assert.equal(families[1].role, "caregiver");
+});
+
+test("family owners see only active invites and can revoke an invite through the guarded RPC", async () => {
+  const invites = await service.getCloudFamilyInvites("family-owner");
+  assert.deepEqual(invites.map((invite) => invite.id), ["invite-pending"]);
+  await service.revokeCloudFamilyInvite("family-owner", "invite-pending");
+  assert.deepEqual(rpcCalls.at(-1), {
+    name: "revoke_family_invite",
+    args: { p_family_id: "family-owner", p_invite_id: "invite-pending" }
+  });
 });
 
 test("secure auth storage splits long Unicode sessions without changing their value", async () => {
