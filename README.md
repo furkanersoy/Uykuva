@@ -100,7 +100,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - İsteğe bağlı uyku penceresi bildirimleri
 - Uyku, rutin, bez, aşı/randevu, ilaç ve sağılan süt bildirimine dokununca ilgili ekranı açma; çoklu çocukta doğru çocuk profiline geçme ve gerekirse ilgili kayıt düzenlemesini açma
 - Tahmini uyku aralığı geçip kayıt yoksa tek seferlik uyku kaydı sorusu
-- Açık uyku sayacı 12 saati aşınca sessiz saatlerden sonra yerel hatırlatma; bildirime dokununca gerçek uyanış saatini düzenleme, uygulama açıkken nazik onay penceresi; süre hiçbir zaman otomatik kapatılmaz
+- Açık uyku sayacı 12 saati aşınca sessiz saatlerden sonra yerel hatırlatma; bildirime dokununca gerçek uyanış saatini düzenleme veya “Uyandı · şimdi kaydet” bildirimi eylemiyle o anı kaydetme; kayıt kullanıcı onayı olmadan kapatılmaz
 - Aşı ve doktor randevuları için 15 dakika, 30 dakika, 1/2/3 saat veya 1 gün önceden ayarlanabilir yerel hatırlatmalar
 - Son bez kaydından 2, 3 veya 4 saat sonra isteğe bağlı tek seferlik bez kontrol bildirimi
 - Uyku planı için günlük kolaylık değerlendirmesi

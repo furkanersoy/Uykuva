@@ -4,7 +4,7 @@ import { CareEvent, CareTask, MilkExpiryReminderLead, SleepForecast } from "../d
 import { dailyReminderDatesBefore, isInQuietHours, isValidClock } from "../domain/time";
 import { createWakeReminderCoordinator } from "../domain/wakeReminders";
 import { createMilkInventory, milkExpiryReminderLeadMs, milkStorageLabel } from "../domain/milk";
-import { NOTIFICATION_KINDS } from "../domain/notificationRouting";
+import { NOTIFICATION_KINDS, OPEN_SLEEP_WAKE_NOW_ACTION } from "../domain/notificationRouting";
 
 const LEGACY_NOTIFICATION_KIND = "uykvua-sleep-window";
 
@@ -127,6 +127,16 @@ export type OpenSleepCheckReminder = {
   startedAt: string;
 };
 
+const OPEN_SLEEP_CHECK_CATEGORY = "uykuva_open_sleep_check";
+
+async function ensureOpenSleepCheckCategory() {
+  await Notifications.setNotificationCategoryAsync(OPEN_SLEEP_CHECK_CATEGORY, [{
+    identifier: OPEN_SLEEP_WAKE_NOW_ACTION,
+    buttonTitle: "Uyandı · şimdi kaydet",
+    options: { opensAppToForeground: true }
+  }]);
+}
+
 export async function replaceOpenSleepCheckReminders(
   reminders: OpenSleepCheckReminder[],
   quietStart: string,
@@ -154,11 +164,13 @@ export async function replaceOpenSleepCheckReminders(
     }
     if (date.getTime() <= now.getTime()) continue;
     await ensureAndroidChannel();
+    await ensureOpenSleepCheckCategory();
     await Notifications.scheduleNotificationAsync({
       content: {
         title: reminder.babyName + " için uyku kaydı hâlâ açık mı?",
         body: "Uyku kaydı 12 saattir açık. Bebeğiniz uyandıysa dokunup gerçek uyanış saatini düzenleyin; hâlâ uyuyorsa bildirimi yok sayabilirsiniz.",
         sound: false,
+        categoryIdentifier: OPEN_SLEEP_CHECK_CATEGORY,
         data: { kind: NOTIFICATION_KINDS.openSleepCheck, childId: reminder.childId, eventId: reminder.eventId }
       },
       trigger: {

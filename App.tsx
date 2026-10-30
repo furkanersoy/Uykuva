@@ -37,7 +37,7 @@ import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE
 import { clockInputDigits, isInQuietHours, isTodayTimeReached, isValidClock, normalizeClockInput } from "./src/domain/time";
 import { breastfeedingSideMinutes, completedFeedMinutes, createFeedingForecast, feedingElapsedMinutes, nextBreastSide, todayFeedingTotals, TRACKED_ALLERGENS } from "./src/domain/feeding";
 import { createMilkInventory, milkStorageLabel } from "./src/domain/milk";
-import { NOTIFICATION_KINDS, notificationDestination } from "./src/domain/notificationRouting";
+import { NOTIFICATION_KINDS, notificationDestination, OPEN_SLEEP_WAKE_NOW_ACTION } from "./src/domain/notificationRouting";
 import { GrowthIndicator, GrowthScore, growthAgeLabel, whoGrowthScore } from "./src/domain/whoGrowth";
 import { detectRecordedMilestones } from "./src/domain/milestones";
 import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data/developmentMilestones";
@@ -251,7 +251,9 @@ export default function App() {
       }
       if (destination.childId && child) app.setActiveChild(child.baby.id);
       setNightMode(false);
-      setTab(destination.tab);
+      const confirmedWakeNow = request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck
+        && response.actionIdentifier === OPEN_SLEEP_WAKE_NOW_ACTION;
+      setTab(confirmedWakeNow ? "today" : destination.tab);
       if (destination.taskId && child) {
         const task = child.careTasks.find((item) => item.id === destination.taskId);
         if (task) {
@@ -262,7 +264,11 @@ export default function App() {
       if (destination.eventId && child) {
         const event = child.events.find((item) => item.id === destination.eventId);
         if (event) {
-          if (request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck && event.kind === "sleep") setSleepEditor(event);
+          if (confirmedWakeNow) {
+            if (event.kind === "sleep" && !event.endedAt && Date.parse(event.startedAt) <= Date.now()) {
+              app.updateEvent(event.id, { endedAt: new Date().toISOString() });
+            }
+          } else if (request.content.data?.kind === NOTIFICATION_KINDS.openSleepCheck && event.kind === "sleep") setSleepEditor(event);
           else setEventEditor(event);
         }
       }
@@ -274,7 +280,7 @@ export default function App() {
       active = false;
       subscription.remove();
     };
-  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.activeChildId, app.setActiveChild]);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.activeChildId, app.setActiveChild, app.updateEvent]);
 
   useEffect(() => {
     const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string, feedingWindow: string) => Promise<void> } | undefined;

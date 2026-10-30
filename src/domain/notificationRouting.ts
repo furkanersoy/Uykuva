@@ -9,6 +9,8 @@ export const NOTIFICATION_KINDS = {
   milkExpiry: "uykuva-milk-expiry"
 } as const;
 
+export const OPEN_SLEEP_WAKE_NOW_ACTION = "uykuva_open_sleep_wake_now";
+
 export type NotificationDestination = {
   tab: "today" | "timeline" | "insights";
   childId?: string;

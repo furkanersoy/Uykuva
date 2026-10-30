@@ -10,11 +10,13 @@ test("Expo adapter schedules wake reminders and cancels only its own notificatio
     ["other", { content: { data: { kind: "uykuva-care-task" } } }]
   ]);
   const channels = [];
+  const categories = [];
   const mockNotifications = {
     setNotificationHandler() {},
     AndroidImportance: { DEFAULT: 3 },
     SchedulableTriggerInputTypes: { DATE: "date" },
     setNotificationChannelAsync: async (id) => { channels.push(id); },
+    setNotificationCategoryAsync: async (identifier, actions) => { categories.push({ identifier, actions }); },
     getAllScheduledNotificationsAsync: async () => [...scheduled].map(([identifier, value]) => ({ identifier, ...value })),
     cancelScheduledNotificationAsync: async (id) => { scheduled.delete(id); },
     scheduleNotificationAsync: async (request) => { scheduled.set("new-wake", request); return "new-wake"; }
@@ -64,6 +66,15 @@ test("Expo adapter schedules wake reminders and cancels only its own notificatio
   assert.equal(openSleepCheck.content.data.kind, "uykuva-open-sleep-check");
   assert.equal(openSleepCheck.content.data.childId, "baby-2");
   assert.equal(openSleepCheck.content.data.eventId, "sleep-1");
+  assert.equal(openSleepCheck.content.categoryIdentifier, "uykuva_open_sleep_check");
+  assert.deepEqual(categories, [{
+    identifier: "uykuva_open_sleep_check",
+    actions: [{
+      identifier: "uykuva_open_sleep_wake_now",
+      buttonTitle: "Uyandı · şimdi kaydet",
+      options: { opensAppToForeground: true }
+    }]
+  }]);
   assert.equal(openSleepCheck.trigger.date.getTime(), new Date(2026, 9, 30, 7, 0, 0).getTime());
 
   await service.replaceOpenSleepCheckReminders([], "22:00", "07:00", checkNow);
