@@ -212,7 +212,7 @@ export function createMemoryBookHtml(state: AppState, now = new Date()): string 
     const title = event.memoryTitle?.trim() || "Bir güzel an";
     const note = event.note?.trim();
     const photo = event.memoryPhotoData;
-    const photoIsValid = photo && photo.length <= 1_100_100 && /^data:image\\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(photo);
+    const photoIsValid = photo && photo.length <= 1_100_100 && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(photo);
     const includePhoto = Boolean(photoIsValid && photoCount < 8 && photoBytes + photo.length <= 6_000_000);
     if (includePhoto) {
       photoCount += 1;
