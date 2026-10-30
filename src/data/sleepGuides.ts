@@ -176,6 +176,15 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
   },
   {
+    id: "clock-change-and-sleep",
+    title: "Saat değişikliği günlerinde uyku",
+    age: "Saatlerin ileri veya geri alındığı günler",
+    summary: "Saat değişikliği yatış ve uyanış saatlerini bir süre farklı hissettirebilir. AAP, küçük çocuklarda değişime hazırlanmak için yatış ve gündüz uykularını önceki günlerde yeni saate doğru küçük adımlarla kaydırmayı öneriyor. Hazırlık yapamadıysanız endişelenmeyin; sakin rutini sürdürüp çocuğunuzun işaretlerine göre yeni saate uyum sağlayabilirsiniz. Bu öneri her aile için zorunlu bir takvim değildir.",
+    category: "changes",
+    source: "AAP · Yaz saati değişikliği ve uyku",
+    url: "https://www.healthychildren.org/English/healthy-living/sleep/Pages/Daylight-Saving-Time-Dont-Lose-Sleep-Over-It.aspx"
+  },
+  {
     id: "nap-transitions",
     title: "Gündüz uykuları nasıl değişebilir?",
     age: "Yaklaşık 2–18 ay",
@@ -185,6 +194,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     category: "naps",
     source: "Children’s Health Queensland · Sağlıklı uyku",
     url: "https://www.childrens.health.qld.gov.au/health-a-to-z/healthy-sleep"
+  },
+  {
+    id: "short-naps-and-variability",
+    title: "Kısa gündüz uykuları ve değişkenlik",
+    age: "Bebeklik ve küçük çocukluk",
+    minAgeMonths: 0,
+    maxAgeMonths: 60,
+    summary: "Bebekler kısa ya da uzun aralıklarla uyuyabilir; ihtiyaçları ve günlük örüntüleri birbirinden farklıdır. Tek bir kısa uyku, bebeğinizin daha uzun uyuması, düzeninin değiştirilmesi veya bir uykunun kaldırılması gerektiğini göstermez. Birkaç günlük kayıtları ve bebeğinizin işaretlerini birlikte gözden geçirin. Toplam uyku veya sağlık konusunda kaygınız varsa çocuk doktorunuza danışın.",
+    category: "naps",
+    source: "NHS · Bebeğinizin uyku örüntüleri",
+    url: "https://www.nhs.uk/best-start-in-life/baby/baby-basics/newborn-and-baby-sleeping-advice-for-parents/your-babys-sleep-patterns/"
   },
   {
     id: "night-feeds-and-sleep-plans",

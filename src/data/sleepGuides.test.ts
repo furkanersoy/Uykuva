@@ -64,6 +64,26 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "corrected-age-for-preemies"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-break-when-overwhelmed"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "cot-to-bed-transition"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "clock-change-and-sleep"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "short-naps-and-variability"));
+});
+
+test("short nap guidance does not prescribe dropping naps from one short sleep", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "short-naps-and-variability");
+  assert.ok(guide);
+  assert.match(guide.summary, /Tek bir kısa uyku.*bir uykunun kaldırılması gerektiğini göstermez/i);
+  assert.match(guide.url, /nhs\.uk/);
+  assert.ok(sleepGuidesForAge(0).some((item) => item.id === guide.id));
+  assert.ok(sleepGuidesForAge(60).some((item) => item.id === guide.id));
+  assert.ok(!sleepGuidesForAge(61).some((item) => item.id === guide.id));
+});
+
+test("clock change sleep guide offers gradual adjustment as an option", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "clock-change-and-sleep");
+  assert.ok(guide);
+  assert.match(guide.summary, /küçük adımlarla/i);
+  assert.match(guide.summary, /zorunlu bir takvim değildir/i);
+  assert.match(guide.url, /healthychildren\.org/);
 });
 
 test("responsive settling guide is age-limited and protects feeding and safe sleep", () => {
