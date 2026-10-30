@@ -151,7 +151,7 @@ Ana fonksiyonlar:
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
 - `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir. Bugünkü planda henüz kaydedilmemiş, gelecekteki uyku taslakları sonraki uyku tahminiyle çakışmıyorsa listelenir.
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
-- `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir; hesaplanan aralık tamamen geçmişse bayat tahmini göstermez.
+- `createFeedingForecast`: Son 30 gündeki geçerli emzirme/biberon başlangıçlarından en fazla 11 tanesinin medyanıyla süt beslenmesi aralığı üretir. Katı gıda ve sağım kayıtlarını, gelecek/bozuk tarihleri dışarıda bırakır; en az dört benzer kayıt yoksa nedenini Bugün ekranında açıklar.
 - `coachingDay`: Düzeltilmiş yaş aşaması ve seçilen yaklaşıma göre birbirinden farklı günlük görev ve check-in sorularını üretir; 6 aydan küçük bebeklerde destek azaltma görevi vermez.
 - `isSleepPlanPausedToday`: Kullanıcının elle duraklatma ayarıyla o günün hastalık/seyahat/diş çıkarma/düzen değişikliği check-in'ini birleştirir; UI dışında çağrılsa da günlük görev işaretleme ve plan ilerletme koruması aynı kuralı uygular.
 - `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. En güncel yedi tarihli check-in'i kullanır; tarihsiz, bozuk tarihli ve gelecekteki check-in'leri dışarıda bırakır. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla eşleşme kurup rutin–uyku başlangıç aralığının ortancasını verir; son 30 gündeki en yeni yedi işaretli uyku kaydının kullanılan geçiş desteği dağılımını tıbbi veya başarı değerlendirmesi yapmadan gösterir.
@@ -335,9 +335,9 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Tüm kullanıcı verisini JSON olarak dışa aktarma eklendi.
 - [x] Onaylı cihaz verisi silme akışı eklendi.
 - [x] Sağ/sol/iki taraf emzirme zamanlayıcısı eklendi.
-- [x] Son kayda göre sıradaki emzirme tarafı önerisi eklendi.
+- [x] Son emzirme kaydındaki zamanlı taraf oturumuna göre sıradaki taraf önerisi eklendi.
 - [x] Biberon miktarı ve katı gıda/tepki kaydı eklendi.
-- [x] Açıklanabilir sıradaki beslenme aralığı eklendi.
+- [x] Katı öğünlerden ayrı, son 30 günlük süt beslenmesi aralığı tahmini eklendi; yeterli örnek yoksa gereken kayıt sayısı açıklanır.
 - [x] Günlük emzirme süresi, biberon ve katı öğün toplamları eklendi.
 - [x] Gerçek gece başlangıçlarını hedef yatışla karşılaştıran koçluk içgörüsü eklendi.
 - [x] Gecelik değişimi 15 dakika ile sınırlayan yatış önerisi eklendi.
