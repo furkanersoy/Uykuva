@@ -58,7 +58,7 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 
 İsteğe bağlı aile eşitlemesi Supabase PostgreSQL ve RLS şemasını kullanır. `src/services/cloudSync.ts` Supabase oturumunu ve aile şifreleme anahtarını Expo SecureStore'da tutar; hassas profil verisini cihazda AES-GCM ile şifreledikten sonra elle gönderir. Supabase bağlantısı yoksa eşitleme kapalıdır. Sağlık verileri uygulama günlüklerine veya analitik olaylarına yazılmaz. Gerçek bulut kurulumu ve veritabanı RLS testleri henüz doğrulanmamıştır.
 
-`supabase/migrations` altında ilk aile eşitleme şeması ve `supabase/tests` altında pgTAP izin testi taslağı bulunur. Şema henüz bir Supabase projesine uygulanmamış, pgTAP testi çalıştırılmamıştır; uygulama istemcisi bu servise bağlı değildir.
+`supabase/migrations` altında ilk aile eşitleme şeması ve `supabase/tests` altında pgTAP izin testi bulunur. Şema henüz bir Supabase projesine uygulanmamış, pgTAP testi gerçek yerel veritabanında çalıştırılmamıştır. Eşitleme istemcisi isteğe bağlı yapılandırma ve aile ekranındaki açık onayla etkinleşir.
 
 Android ana ekran uyku widget'ı `plugins/withUykuvaWidget.js` Expo config plugin'iyle oluşturulur. Plugin Android manifest'ine sağlayıcıyı ekler; Kotlin sağlayıcı/modülünü ve widget kaynaklarını yazar, React Native paketini `MainApplication` içine kaydeder. `App.tsx`, uygulama açıkken güncel bebek adı, uyku penceresi ve durum metnini yerel widget depolamasına gönderir. Android widget'ı en az 30 dakikalık işletim sistemi yenilemesini kullanır ve dokunulduğunda uygulamayı açar. Bu Android'e özgüdür; otomatik bulut senkronizasyonu veya iOS widget'ı sağlamaz. Böylece `expo prebuild` çalıştırıldığında yerel değişikliklerin kaybolmaması hedeflenir.
 
