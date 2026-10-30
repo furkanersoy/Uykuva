@@ -56,7 +56,9 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | Test | TypeScript derleyicisi + Node test runner | Uyku motorunu arayüzden bağımsız test etme |
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
-Bulut senkronizasyonu eklendiğinde PostgreSQL tabanlı bir arka uç, satır seviyesinde erişim kuralları ve çevrimdışı olay senkronizasyonu kullanılacaktır. Sağlık verileri uygulama günlüklerine veya analitik olaylarına yazılmayacaktır.
+İsteğe bağlı aile eşitlemesi Supabase PostgreSQL ve RLS şemasını kullanır. `src/services/cloudSync.ts` Supabase oturumunu ve aile şifreleme anahtarını Expo SecureStore'da tutar; hassas profil verisini cihazda AES-GCM ile şifreledikten sonra elle gönderir. Supabase bağlantısı yoksa eşitleme kapalıdır. Sağlık verileri uygulama günlüklerine veya analitik olaylarına yazılmaz. Gerçek bulut kurulumu ve veritabanı RLS testleri henüz doğrulanmamıştır.
+
+`supabase/migrations` altında ilk aile eşitleme şeması ve `supabase/tests` altında pgTAP izin testi taslağı bulunur. Şema henüz bir Supabase projesine uygulanmamış, pgTAP testi çalıştırılmamıştır; uygulama istemcisi bu servise bağlı değildir.
 
 Android ana ekran uyku widget'ı `plugins/withUykuvaWidget.js` Expo config plugin'iyle oluşturulur. Plugin Android manifest'ine sağlayıcıyı ekler; Kotlin sağlayıcı/modülünü ve widget kaynaklarını yazar, React Native paketini `MainApplication` içine kaydeder. `App.tsx`, uygulama açıkken güncel bebek adı, uyku penceresi ve durum metnini yerel widget depolamasına gönderir. Android widget'ı en az 30 dakikalık işletim sistemi yenilemesini kullanır ve dokunulduğunda uygulamayı açar. Bu Android'e özgüdür; otomatik bulut senkronizasyonu veya iOS widget'ı sağlamaz. Böylece `expo prebuild` çalıştırıldığında yerel değişikliklerin kaybolmaması hedeflenir.
 
@@ -88,6 +90,9 @@ Uykuva/
 │       └── theme.ts                # Renkler ve görsel token'lar
 │   └── services/
 │       └── notifications.ts        # Uyku, akşam rutini, bez kontrolü ve görev hatırlatmaları
+├── supabase/
+│   ├── migrations/                 # Aile eşitleme için PostgreSQL şeması
+│   └── tests/                      # RLS için pgTAP izin testleri
 └── ARCHITECTURE.md                 # Bu doküman
 ```
 
@@ -204,7 +209,7 @@ Akşam rutini adımları ebeveyn tarafından etkinleştirilip devre dışı bır
 
 Akşam rutini bildirimi isteğe bağlıdır. Etkin rutin adımlarının toplam süresi hedef yatış saatinden çıkarılır; sonraki yedi günün bildirimleri yerel olarak kurulur. Süre sıfırsa veya bildirim sessiz saatlere denk gelirse o gün bildirim planlanmaz. Eski yedeklerde bu tercih varsayılan olarak kapalıdır.
 
-Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir. `detectRecordedMilestones`, ilk uyku/beslenme/ek gıda/ölçüm kayıtlarını, ilk dört saatlik uyku kaydını ve 100. beslenme kaydını yalnızca mevcut olaylardan bulur; gelişim basamağı veya klinik değerlendirme çıkarmaz. Ebeveyn isterse bulunan anı tek dokunuşla günlüğe ekler. `milestoneId` tekrar öneriyi önler ve JSON yedeğinde korunur.
+Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir. `detectRecordedMilestones`, ilk uyku/beslenme/ek gıda/ölçüm kayıtlarını, ilk dört saatlik uyku kaydını ve 100. beslenme kaydını yalnızca mevcut olaylardan bulur; gelişim basamağı veya klinik değerlendirme çıkarmaz. Ebeveyn isterse bulunan anı tek dokunuşla günlüğe ekler. `milestoneId` tekrar öneriyi önler ve JSON yedeğinde korunur. Insights ekranındaki anı defteri, geçmişteki anı kayıtlarını tarihe göre sıralayıp PDF’e dönüştürür; HTML metinleri kaçırır, yalnızca doğrulanmış JPEG veri adreslerini gömer ve gelecekteki kayıtları dışarıda bırakır. Fotoğraf toplamı sekiz görsel ve yaklaşık 6 MB ile sınırlıdır; eklenmeyen görsel sayısı PDF’de belirtilir. PDF `expo-print` ile cihazda hazırlanır ve `expo-sharing` üzerinden kullanıcının seçtiği hedefe gönderilir; sunucuya yükleme yapılmaz.
 
 Doktor özeti, ebeveynin seçtiği son 7, 14 veya 30 günlük aralıkta beslenme, bez, sağlık, uyku ve saatli uyanma kayıtlarını kapsar; ileri tarihli veya bozuk olay saatleri sayılmaz. PDF ve metin aynı aralık parametresini kullanır. Büyüme bölümünde olay sıralamasından bağımsız olarak en yeni geçmiş ölçüm seçilir. Gelişim bölümünde ileri tarihli gözlem dışarıda kalır. Bu rapor kullanıcı kayıtlarını düzenler; klinik değerlendirme üretmez.
 
@@ -395,7 +400,7 @@ Uykuva'nın hesaplama motoru da altı gün dilimini, son 10 örneği ve gündüz
 
 Koç ekranındaki kısa uyku rehberi temel bilgilendirmeyi çevrimdışı sunar: bebeklerin uyku ritmindeki değişkenlik, sakin ve tekrarlanabilir rutin, gece uyanınca ihtiyacı değerlendirme, bebeklerde güvenli uyku, bakım verenlerin ortak bir yanıt belirlemesi ve zor günlerde planı erteleme. Yaş aşamasında destek azaltma kapalıysa rehber bunu da açıklar; hazır oluş maddeleri tamamlandığında yöntem karşılaştırmasına geçiş verir. Ayrıntılı okuma için NHS'in [bebek uykusu rehberine](https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/), AAP'nin [bebek uyku rehberine](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx) ve CDC'nin [güvenli uyku bilgilerine](https://www.cdc.gov/sudden-infant-death/sleep-safely/) bağlantı verilir. Temel kart içerikleri 27 Ekim 2026'da bu kaynaklar gözden geçirilerek yazıldı; sağlık tavsiyesi yerine geçmez ve uyku eğitiminin aile için zorunlu olmadığını açıkça söyler.
 
-Uyku sekmesinde ayrıca `src/data/sleepGuides.ts` tarafından sağlanan sekiz çevrimdışı kısa okuma bulunur: yaklaşık dört ay civarındaki uyku döngüsü değişimi, gece-gündüz işaretleri, sakin akşam rutini, gece uyanmaları, hastalık/diş çıkarma/düzen değişikliği ve bakım veren desteği ile gündüz uykusu geçişleri. Her özet kendi NHS, AAP veya Children’s Health Queensland kaynak bağlantısını taşır ve tıbbi danışmanlık olmadığını açıklar. Gündüz uykusu geçişi metni yaş aralıklarını zorunlu hedef gibi sunmaz. Dört ay civarındaki değişim, uyku eğitimi için hazır olma veya başlama önerisi olarak sunulmaz. Zor günler rehberi, uygulamadaki gün bağlamı seçimiyle koçluk adımlarını bekletmeyi, günlük bakım kayıtlarını sürdürmeyi açıklar. İçerikler son olarak 30 Ekim 2026'da gözden geçirilmiştir.
+Uyku sekmesinde ayrıca `src/data/sleepGuides.ts` tarafından sağlanan sekiz çevrimdışı kısa okuma bulunur: yaklaşık dört ay civarındaki uyku döngüsü değişimi, gece-gündüz işaretleri, sakin akşam rutini, gece uyanmaları, hastalık/diş çıkarma/düzen değişikliği ve bakım veren desteği ile gündüz uykusu geçişleri. Her özet kendi NHS, AAP veya Queensland çocuk sağlığı kaynağı bağlantısını taşır ve tıbbi danışmanlık olmadığını açıklar. Dört ay civarındaki değişim, uyku eğitimi için hazır olma veya başlama önerisi olarak sunulmaz. Gündüz uykusu geçişi metni yaş aralıklarını zorunlu hedef gibi sunmaz. Zor günler rehberi, uygulamadaki gün bağlamı seçimiyle koçluk adımlarını bekletmeyi, günlük bakım kayıtlarını sürdürmeyi açıklar. İçerikler son olarak 30 Ekim 2026'da gözden geçirilmiştir.
 
 Uyku planındaki dört hazır oluş maddesinin her birinde etkileşimli kutu ve kısa açıklama bulunur. Açıklamalar hastalık/ağrı olduğunda planı bekletmeyi, beslenme endişesinde çocuk doktoruna danışmayı ve beslenmeyi geciktirmemeyi, güvenli uyku düzenini değiştirmemeyi ve bakım verenler ortak karar veremiyorsa destek azaltmayı ertelemeyi belirtir. Açıklamalar hazır oluş kontrolünün tıbbi değerlendirme olmadığını korur.
 
@@ -473,7 +478,3 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Android `:app:assembleDebug`: başarılı; APK emülatöre kuruldu
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
-
-## Anı defteri PDF paylaşımı
-
-Anı günlüğü kayıtları zaman çizelgesindeki `memory` olaylarından alınır. Insights ekranındaki dışa aktarma, geçmiş kayıtları tarihe göre sıralar ve `expo-print` ile HTML’den PDF üretir; metin alanları HTML kaçışından geçirilir ve yalnızca JPEG base64 veri URI’leri gömülür. Gelecekteki tarihler dışarıda bırakılır. PDF boyutu için en fazla sekiz fotoğraf ve toplam yaklaşık 6 MB görsel verisi eklenir; dışarıda kalan görsel sayısı PDF’de açıklanır. Dosya cihazda oluşturulur ve kullanıcı `expo-sharing` menüsünde paylaşım hedefini seçer. Uygulama veriyi bir sunucuya yüklemez.
