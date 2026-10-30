@@ -613,7 +613,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     agenda.push({ id: `nap-outline-${nap.order}`, at: nap.from.getTime() > now.getTime() ? nap.from : now, endAt: nap.to, kind: "sleep", label: `${nap.order}. gündüz uykusu taslağı`, detail: `Son 14 günde ${nap.sampleCount} günde kaydedilen saatlerin ortancası ${time(nap.typical)}; kesin program değildir.` });
   });
   agenda.sort((a, b) => a.at.getTime() - b.at.getTime());
-  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onSwitchCaregiver={onSwitchCaregiver} onSwitchChild={onSwitchChild} />;
+  if (nightMode) return <NightModeScreen app={app} now={now} onExit={onToggleNightMode} openLog={openLog} onLogNightWake={onLogNightWake} onSwitchCaregiver={onSwitchCaregiver} onSwitchChild={onSwitchChild} />;
   return (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset} showsVerticalScrollIndicator={false}>
       <Card tone="mint">
@@ -710,8 +710,16 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
   );
 }
 
-function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
+function NightModeScreen({ app, now, onExit, openLog, onLogNightWake, onSwitchCaregiver, onSwitchChild }: { app: ReturnType<typeof useUykuvaState>; now: Date; onExit: () => void; openLog: (mode: LogMode) => void; onLogNightWake: () => void; onSwitchCaregiver: () => void; onSwitchChild: () => void }) {
   const elapsed = app.runningSleep ? Math.max(0, Math.floor((now.getTime() - new Date(app.runningSleep.startedAt).getTime()) / 60_000)) : 0;
+  const stage = sleepProgramStage(app.state.baby, now);
+  const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(now));
+  const trainingReady = stage.canReduceSupport
+    && SLEEP_READINESS_ITEMS.every((item) => app.state.sleepPlan.readinessCompleted.includes(item))
+    && !app.state.sleepPlan.paused
+    && !todayCheckIn?.dayContext;
+  const method = trainingReady ? app.state.sleepPlan.method : "responsive";
+  const nightResponse = methodDescription(method).nightResponse;
   return (
     <View style={styles.nightScreen}>
       <View style={styles.nightTop}>
@@ -725,10 +733,15 @@ function NightModeScreen({ app, now, onExit, openLog, onSwitchCaregiver, onSwitc
         <Text style={styles.nightTimer}>{app.runningSleep ? `${Math.floor(elapsed / 60)} sa ${elapsed % 60} dk` : "Hazır"}</Text>
         <Text style={styles.nightHint}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı` : "Gece bakım kaydını buradan yönetebilirsin."}</Text>
       </View>
+      <View style={styles.nightResponseCard}>
+        <Text style={styles.nightEyebrow}>GECE YANITI · {methodDescription(method).name.toLocaleUpperCase("tr-TR")}</Text>
+        <Text style={styles.nightResponseText}>{nightResponse}</Text>
+      </View>
       <View style={styles.nightActions}>
         <Pressable accessibilityRole="button" accessibilityLabel={app.runningSleep ? "Uykuyu bitir ve uyanma kaydı oluştur" : "Uyku zamanlayıcısını başlat"} accessibilityHint={app.runningSleep ? "Gerçek uyanış saatini şimdi kaydeder." : "Uyku başlangıç saatini kaydeder."} onPress={app.toggleSleep} style={[styles.nightAction, styles.nightActionPrimary]}>
           <Text style={styles.nightActionGlyph}>{app.runningSleep ? "■" : "☾"}</Text><Text style={styles.nightActionTitle}>{app.runningSleep ? "Uykuyu bitir" : "Uykuyu başlat"}</Text><Text style={styles.nightActionHint}>{app.runningSleep ? "Uyanma kaydı ekle" : "Uyku sayacını başlat"}</Text>
         </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Gece uyanmasını saatli kaydet" onPress={onLogNightWake} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Gece uyanması</Text><Text style={styles.nightActionHint}>Saatli kaydet</Text></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Beslenme kaydı aç" onPress={() => openLog("feed")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◉</Text><Text style={styles.nightActionTitle}>Beslenme</Text><Text style={styles.nightActionHint}>Beslenme kaydı aç</Text></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Bez kaydı aç" onPress={() => openLog("diaper")} style={styles.nightAction}><Text style={styles.nightActionGlyph}>◇</Text><Text style={styles.nightActionTitle}>Bez</Text><Text style={styles.nightActionHint}>Bez kaydı aç</Text></Pressable>
       </View>
@@ -2232,10 +2245,12 @@ const styles = StyleSheet.create({
   nightCaregiverText: { color: "#D7E5DA", fontSize: 13, fontWeight: "700" },
   nightExitText: { color: "#DCE7DF", fontSize: 14, fontWeight: "700" },
   nightTimerCard: { borderRadius: 28, backgroundColor: "#19231F", padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#28362F" },
+  nightResponseCard: { borderRadius: 18, backgroundColor: "#17221D", padding: 14, borderWidth: 1, borderColor: "#2A3931", gap: 7 },
+  nightResponseText: { color: "#B6C5BA", fontSize: 12, lineHeight: 17 },
   nightTimer: { color: "#E8EFE9", fontSize: 42, fontWeight: "700", letterSpacing: -1.4, marginVertical: 12 },
   nightHint: { color: "#9CAC9F", fontSize: 13, textAlign: "center" },
   nightActions: { gap: 12 },
-  nightAction: { minHeight: 88, borderRadius: 21, backgroundColor: "#1B2621", paddingHorizontal: 18, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
+  nightAction: { minHeight: 68, borderRadius: 18, backgroundColor: "#1B2621", paddingHorizontal: 14, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#2A3931" },
   nightActionPrimary: { backgroundColor: "#26382F", borderColor: "#3A5144" },
   nightActionGlyph: { color: "#B6CBB9", fontSize: 25, width: 42 },
   nightActionTitle: { color: "#E2EAE4", fontSize: 16, fontWeight: "700", flex: 1 },
