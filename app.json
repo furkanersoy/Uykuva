@@ -27,7 +27,8 @@
           "microphonePermission": false
         }
       ],
-      "./plugins/withUykuvaWidget"
+      "./plugins/withUykuvaWidget",
+      "expo-secure-store"
     ]
   }
 }
