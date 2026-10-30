@@ -112,7 +112,7 @@ Uykuva/
 - **Özet:** Günlük toplamlar ve paylaşılabilir doktor raporu.
 - **Aile:** Bakım rolleri, devir özeti ve paylaşım.
 
-Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım veren adına göre yerel metin aramasını ve birden fazla bakım veren varsa tek dokunuşlu kişi filtresini sunar; kayıt verileri depoda değişmeden kalır. Birden fazla bakım veren tanımlıysa üst başlıktan veya gece modundan etkin kişi değiştirilir; yeni uyku, beslenme, bez ve diğer bakım kayıtları seçili kişinin adıyla saklanır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
+Zaman çizelgesi; kayıt türü, Bugün/Son 7 gün/Son 30 gün/Tümü tarih aralığı, kayıt içeriği veya bakım veren adına göre yerel arama filtreleri sunar. Tarih aralığı yerel gün başlangıcına göre hesaplanır; filtreler birbiriyle birlikte kullanılabilir ve kayıt verileri depoda değişmeden kalır. Birden fazla bakım veren varsa tek dokunuşlu kişi filtresi de gösterilir. Üst başlıktan veya gece modundan etkin kişi değiştirilir; yeni uyku, beslenme, bez ve diğer bakım kayıtları seçili kişinin adıyla saklanır. Bir kaydı silmek için uzun basma ve ayrıca kullanıcı onayı gerekir.
 
 ### Ulusal aşı takvimi önerileri
 
@@ -385,6 +385,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Katı öğünlerde takip etiketleri ve ebeveyn gözlemi zaman çizelgesi, devir özeti ve doktor özetinde saklanıyor.
 - [x] Son yedi günün uyku süreleri, gece yarısını aşan dönemler günlere dağıtılarak grafikte gösteriliyor.
 - [x] Zaman çizelgesinden geçmiş uyku ekleme ve kayıt saatlerini düzenleme eklendi.
+- [x] Zaman çizelgesine yerel gün başlangıcına göre Bugün, Son 7 gün, Son 30 gün ve Tümü tarih aralıkları eklendi; diğer filtrelerle birlikte çalışır.
 - [x] Zaman çizelgesinden tüm bakım kayıtlarının tarih ve saatini içeriği koruyarak düzeltme eklendi.
 - [x] Zaman çizelgesi kaydı silme işlemi ikinci onay ister; uzun basma tek başına kaydı silmez.
 - [x] Uyku tahmini kişisel uyanıklık örneklerini son 30 günle sınırlar ve aktif uyku süresini canlı gösterir.

@@ -60,7 +60,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Bakım verene özel aile talimatlarını cihazda saklama ve isteğe bağlı devir özetine ekleme
 - Aşı ve doktor randevularını bakım verenlerden birine atama; görevi ve devir özetini sorumlu kişiyle gösterme
 - Aşı/randevu hatırlatmasında görevin sorumlu bakım vereninin adını gösterme
-- Zaman çizelgesinde kayıt türü ve bakım veren adına göre arama; birden fazla bakım veren için tek dokunuşla filtreleme
+- Zaman çizelgesinde kayıt türü, tarih aralığı ve bakım veren filtresi ile kayıt içeriğinde arama; birden fazla bakım veren için tek dokunuşla filtreleme
 - Üst başlıkta ve gece modunda hızlı bakım veren değiştirme; yeni kayıtlar seçili kişinin adına eklenir
 - Bakım kaydını zaman çizelgesinden silerken ikinci onay
 - Geçmiş uyku kaydı ekleme ve yatış/uyanış saatlerini düzeltme
