@@ -10,6 +10,14 @@ export type SleepGuide = {
 // Short, offline summaries in our own words. Follow the source link for current guidance.
 export const SLEEP_GUIDES: SleepGuide[] = [
   {
+    id: "four-month-pattern",
+    title: "Dört ay civarında uyku örüntüsü",
+    age: "Yaklaşık 4 ay",
+    summary: "AAP, bebeklerde daha düzenli uyku döngülerinin yaklaşık 4 ay civarında geliştiğini belirtiyor. Bu değişim her bebekte aynı görünmez ve gece uyanmalarının mutlaka biteceği anlamına gelmez. Tek başına uyku eğitimi başlama işareti değildir.",
+    source: "AAP · Bebeğinizi uyutmaya yardımcı olma",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx"
+  },
+  {
     id: "sleep-changes",
     title: "Bebek uykusu neden değişir?",
     age: "Yenidoğan ve bebek",
