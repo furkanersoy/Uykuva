@@ -406,7 +406,7 @@ Uyku planındaki dört hazır oluş maddesinin her birinde etkileşimli kutu ve 
 
 Uyku rehberi, solunum güçlüğü veya uzun/tekrarlayan nefes duraklamaları, sık/yüksek sesli horlama ve olağandışı uykuya meyil fark edilirse çocuk doktoruyla görüşmeyi; nefes alamama, renk değişikliği ya da zor uyandırılma durumunda acil yardım almayı söyler. Bu belirtilerde uyku planını uygulamaya devam etmemeyi belirtir. Kaynaklar AAP'nin [uyku apnesi belirtileri](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Sleep-Apnea-Detection.aspx) ve NHS'in [acil yardım işaretleri](https://www.nhs.uk/baby/health/when-to-get-urgent-medical-help-for-babies-and-children-under-5/) sayfalarıdır. Bu kısa yönlendirme tanı koymaz ve profesyonel değerlendirmeyi ikame etmez.
 
-Güncel ürün farkları: Whispie'nin resmî sayfası 36 dili, 39 ülkede aşı takvimini ve ücretsiz hesapta iki aile üyesini listeliyor; ayrıca davet edilen kişiye görüntüleme izni verilebildiğini söylüyor. Uykuva şu an Türkçe ve Türkiye takvimine odaklı; aynı cihazda ayrı bakım veren profilleri, paylaşılabilir devir/plan özeti ve dosya tabanlı yedek taşıma sunuyor. Hesaplar arasında başka cihazdan eşzamanlı kayıt, görüntüleme izniyle sınırlı aile üyesi ve ülkeye göre aşı takvimi henüz yok. En yüksek öncelikli fark çoklu cihaz senkronizasyonu; bunun için güvenli hesap, aile daveti, çevrimdışı değişiklik birleştirme/çakışma kuralları ve kullanıcı denetimli veri silme birlikte tasarlanmalı. Mevcut cihaz içi SQLite saklaması çevrimdışı kaynak olarak korunmalıdır. Eşitleme taslağı ve güvenlik kararları [SYNC_DESIGN.md](SYNC_DESIGN.md) dosyasındadır; bu taslak uygulamada ağ aktarımı başlatmaz.
+Güncel ürün farkları: Whispie'nin resmî sayfası 36 dili, 39 ülkede aşı takvimini ve ücretsiz hesapta iki aile üyesini listeliyor. Uykuva şu an Türkçe ve Türkiye takvimine odaklı; aynı cihazda ayrı bakım veren profilleri, paylaşılabilir devir/plan özeti ve dosya tabanlı yedek taşıma sunuyor. Hesaplar arası eşitleme istemcisi, aile daveti, roller, cihazda AES-GCM şifreleme, elle eşitleme ve bulut kopyasını kullanıcı denetiminde silme akışları eklendi; güvenli Supabase yapılandırması, migration uygulaması ve gerçek iki cihazlı doğrulama bekliyor. Ülkeye göre aşı takvimi ve ek ekran dilleri hâlâ yok. Eşitleme durum ayrıntıları [SYNC_DESIGN.md](SYNC_DESIGN.md) dosyasındadır.
 
 Uyku koçluğu ve tahminler ebeveynin gözlemlerinin yerine geçmez. Mevcut yaş sınırları, hazır oluş maddeleri, hastalık/seyahat duraklatması ve sağlık uzmanına yönlendirme metinleri korunmalıdır.
 
@@ -419,8 +419,8 @@ Uyku koçu son üç geçerli yerel gün içinde kolaylık veya uyanma sayısı i
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
 - [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
 - [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
-- [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
-- [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
+- [x] İsteğe bağlı hesap ve elle eşitleme istemcisi; Supabase migration ve iki cihazlı gerçek eşitleme henüz doğrulanmadı.
+- [x] Süreli aile daveti, aile sahibi izinleri, salt okunur rolü, davet iptali ve bulut aile verisini silme istemcisi; Supabase RLS gerçek veritabanında henüz test edilmedi.
 - [x] Randevular için haftalık/aylık tekrar; tamamlanan her örnekten sonra sıradaki örnek açılır ve geçmiş kayıt saklanır.
 - [ ] Ayrıntılı bildirim zamanlama seçenekleri
 - [x] Android ana ekran uyku widget'ı eklendi; Android dışındaki widget/Live Activity desteği açık
@@ -438,7 +438,7 @@ Uyku koçu son üç geçerli yerel gün içinde kolaylık veya uyanma sayısı i
 
 ## 11. Sonraki geliştirme sırası
 
-1. Güvenli aile hesabı, başka telefona bakım veren daveti, çevrimdışı senkronizasyon ve çakışma çözümü
+1. Yerel Supabase migration/pgTAP doğrulaması, yapılandırılmış test projesi ve gerçek iki cihazlı eşitleme/çakışma denemesi
 2. Bildirim planlarının gerçek cihaz ve saat dilimi değişimlerinde uçtan uca doğrulanması
 3. Türkçe sesli kayıt ve ebeveynin seçtiği ek dil/ülke aşı takvimleri
 4. İçerik ve uyku planlarının kaynak sürümlemeyle uzman doğrulaması
