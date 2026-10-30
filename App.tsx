@@ -1477,7 +1477,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       <Card>
         <Text style={styles.body}>{memories.length ? "Kaydettiğiniz anları ve fotoğrafları PDF anı defteri olarak dışa aktarın." : "Zaman çizelgesine anı ekledikçe burada PDF anı defteri oluşturabilirsiniz."}</Text>
         {memories.length ? <><View style={styles.spacer12} /><PrimaryButton label="Anı defterini PDF paylaş" quiet onPress={() => void shareMemoryBookPdf(state)} /></> : null}
-        <Text style={styles.hint}>PDF cihazda hazırlanır. Fotoğraflar PDF’ye eklenir; paylaşım menüsünden nereye göndereceğinizi siz seçersiniz.</Text>
+        <Text style={styles.hint}>PDF cihazda hazırlanır. Büyük defterlerde boyut sınırı nedeniyle bazı fotoğraflar eklenmeyebilir; PDF paylaşım hedefini siz seçersiniz.</Text>
       </Card>
       <SectionTitle title="Doktor görüşmesi" />
       <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Paylaşılacak kayıt aralığını seçin. Uyku, beslenme, bez ve sağlık bilgileri seçtiğiniz döneme göre hazırlanır.</Text><View style={styles.spacer12} /><View style={styles.choiceRow}>{([7, 14, 30] as const).map((days) => <Pill key={days} label={`${days} gün`} active={doctorSummaryPeriod === days} onPress={() => setDoctorSummaryPeriod(days)} />)}</View><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state, doctorSummaryPeriod)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state, now, doctorSummaryPeriod) })} /></View></View></Card>
