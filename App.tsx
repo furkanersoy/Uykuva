@@ -1166,7 +1166,10 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva uyku planı")}</h1></header><main>${content}</main></body></html>`;
       const file = await Print.printToFileAsync({ html, base64: false });
       if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
-      await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva uyku planını paylaş" });
+      const stamp = `${localDateValue(now)}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+      const namedPdf = new File(file.uri);
+      namedPdf.rename(`uykuva-uyku-plani-${stamp}.pdf`);
+      await Sharing.shareAsync(namedPdf.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva uyku planını paylaş" });
     } catch {
       Alert.alert("PDF oluşturulamadı", "Uyku planı PDF olarak hazırlanırken bir sorun oluştu. Metin paylaşımını kullanabilirsiniz.");
     }

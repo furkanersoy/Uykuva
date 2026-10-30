@@ -519,3 +519,4 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Olağan dışı gün işaretliyken o günün görevleri paylaşımda etkin gösterilmez; plan günü atlandığı belirtilir. Plan elle duraklatılmış veya bitmişse yeni görev listelenmez.
 - `npm.cmd run typecheck`: başarılı.
 - `npm.cmd test`: 118/118 test başarılı.
+- Android emülatöründe `PDF hazırla` düğmesi çalıştırıldı; PDF üretildi ve Android paylaşım menüsü açıldı. Dosya adı tarih/saat içeren `uykuva-uyku-plani-…pdf` biçiminde göründü.
