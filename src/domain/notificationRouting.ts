@@ -1,6 +1,7 @@
 export const NOTIFICATION_KINDS = {
   sleepWindow: "uykuva-sleep-window",
   sleepWake: "uykuva-sleep-wake",
+  openSleepCheck: "uykuva-open-sleep-check",
   routine: "uykuva-evening-routine",
   careTask: "uykuva-care-task",
   diaper: "uykuva-diaper-check",
@@ -24,6 +25,8 @@ export function notificationDestination(data: unknown): NotificationDestination 
   const shared = childId ? { childId } : {};
 
   switch (fields.kind) {
+    case NOTIFICATION_KINDS.openSleepCheck:
+      return eventId ? { tab: "timeline", ...shared, eventId } : null;
     case NOTIFICATION_KINDS.sleepWindow:
     case NOTIFICATION_KINDS.sleepWake:
     case NOTIFICATION_KINDS.routine:
