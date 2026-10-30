@@ -60,6 +60,7 @@ export type CareEvent = {
   lengthPosition?: "recumbent" | "standing";
   note?: string;
   memoryTitle?: string;
+  memoryPhotoData?: string;
   milestoneId?: string;
   caregiver: string;
 };
