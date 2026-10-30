@@ -1100,6 +1100,14 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     const latestWake = nightWakeLogs[0]!;
     parts.push(`${nightWakeLogs.length} gece uyanması kaydı · son ${eventTime(latestWake.at)} ${nightWakeResponseLabel(latestWake.response)} · ${latestWake.caregiver}`);
   }
+  const recentWakeResponses = summarizeNightWakeResponses(state.sleepPlan.checkIns, now);
+  if (recentWakeResponses.total) {
+    const responseDetails = ( ["feeding", "comfort", "diaper", "other"] as const)
+      .filter((response) => recentWakeResponses.counts[response] > 0)
+      .map((response) => `${nightWakeResponseLabel(response)} ${recentWakeResponses.counts[response]}`)
+      .join(", ");
+    parts.push(`Son 7 günde saatli uyanma yanıtları: ${responseDetails}`);
+  }
   if (state.careInstructions?.trim()) parts.push(`Bakım talimatı: ${state.careInstructions.trim()}`);
   if (feeds.length) parts.push(`${feeds.length} beslenme kaydı${amount ? ` · ${amount} ml kayıtlı biberon` : ""}`);
   if (lastFeed) {

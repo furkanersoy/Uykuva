@@ -62,6 +62,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - Bakım devri özetinde kullanılabilir sağılan süt stoğu, önce kullanılması gereken parti ve kullanım son saatini gösterme
 - Bakım devrinde hedef yatış saatini, etkin uyku yaklaşımını ve kapalı olmayan akşam rutini adımlarını madde madde paylaşma
 - Bakım devri özetinde seçilen zaman aralığına düşen, kullanıcı tarafından girilmiş sonraki ilaç planı kontrol saatlerini gösterme
+- Bakım devri paylaşımına saatli gece uyanmalarının son 7 gündeki yanıt dağılımını ekleme; yalnızca kayıtları sayar, bakım önerisi üretmez
 - Gün hastalık, seyahat, diş çıkarma veya düzen değişikliği olarak işaretlendiyse bakım devri özetinde nedeni ve koçluk planının beklediğini belirtme
 - Bakım devri özetinde, günün uyanış saati veya son uykudan hesaplanan sıradaki uyku penceresini ve tahmin güven düzeyini gösterme
 - Yedi yaklaşım içeren 14 günlük nazik uyku planı; yöntemleri ailenin yakınlık, desteği azaltma veya kısa kontrol tercihine göre filtreleme ve tüm seçenekleri karşılaştırma
