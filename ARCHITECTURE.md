@@ -112,7 +112,7 @@ Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım vere
 
 Takvim verisi Sağlık Bakanlığının [2025 ulusal çocukluk dönemi aşı kartına](https://hsgm.saglik.gov.tr/depo/birimler/asi-ile-onlenebilir-hastaliklar-db/dokumanlar/2025/asi_haftasi/50X30_asi_karti.pdf) dayanır; Hepatit B doğum dozunu içerir. Bakanlığın [1 Eylül 2026 güncellemesi](https://iskilipdh.saglik.gov.tr/TR-1590795/cocukluk-donemi-asilama-takvimi-guncellendi-sucicegi-asisinda-ikinci-doz-uygulamasi-basladi.html) ikinci suçiçeği dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri aile hekimiyle doğrulanmalıdır.
 
-Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını ve o günün rehberini yerel paylaşım menüsüyle metin olarak diğer bakım verenlere gönderebilir. Paylaşım sunucuya yüklenmez.
+Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını, o günün rehberini ve son yedi gecenin check-in'lerini metin olarak veya A4 PDF halinde diğer bakım verenlerle paylaşabilir. PDF içeriği uygulama içinde HTML'den üretilir ve yerel paylaşım menüsünde açılır; paylaşım sunucuya yüklenmez. Metin ve PDF aynı rapor oluşturucudan beslenir.
 
 Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamamlamayı veya atlamayı takip eder. Rutin bitirildiğinde tamamlanan adım sayısı ve yaklaşık süre, etkin bakım veren adına zaman çizelgesine bir not olarak eklenir.
 
@@ -355,6 +355,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Aktif bakım veren değiştirme ve seçilen kişi adına kayıt ekleme eklendi.
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
+- [x] Uyku koçu planı, son yedi gecenin check-in'leriyle metin veya A4 PDF olarak bakım verenlerle paylaşılabiliyor.
 - [x] Yaklaşan doktor randevuları ve hazırlık notları paylaşılabilir doktor özetine ekleniyor.
 - [x] Randevu formu doktor soruları ve notları alanını uyku, beslenme ve büyüme örnekleriyle açıkça sunuyor.
 - [x] Tamamlanan aşı ve randevular için tarihli geçmiş gösteriliyor; son 20 tamamlanan aşı doktor özetinde uygulamada işaretleme tarihi ve planlanan tarihle ayrı belirtiliyor. Görev silme işlemi kullanıcı onayına bağlıdır.
