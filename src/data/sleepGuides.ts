@@ -165,5 +165,50 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     category: "changes",
     source: "NHS · Bebeğinizin uyumasına yardımcı olma",
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
+  },
+  {
+    id: "reading-sleepy-cues",
+    title: "Bebeğinizin uyku ve mola işaretlerini izleme",
+    age: "Bebeklik",
+    summary: "Uykuya yaklaşırken göz kapaklarının ağırlaşması, bakışını çevirmesi veya hareketlerinin sakinleşmesi gibi işaretleri zamanla kendi bebeğinizde gözlemleyebilirsiniz; işaretler bebekten bebeğe ve yaşla birlikte değişir. Yalnızca tek bir işarete göre karar vermek yerine açlık, rahatsızlık ve etkileşime hazır olup olmadığını da değerlendirin. Ağlama farklı ihtiyaçların belirtisi olabilir; bebeğinizin işaretlerine yanıt verin.",
+    category: "basics",
+    source: "NHS · Bebeğinizi anlamak",
+    url: "https://www.nhs.uk/best-start-in-life/baby/baby-basics/bonding-with-your-baby/understanding-your-baby/"
+  },
+  {
+    id: "sleep-needs-by-age",
+    title: "Yaşa göre toplam uyku aralıkları",
+    age: "0–5 yaş",
+    summary: "CDC'nin aktardığı günlük toplam uyku aralıkları şöyledir: 0–3 ayda 14–17 saat, 4–12 ayda 12–16 saat, 1–2 yaşta 11–14 saat, 3–5 yaşta 10–13 saat. Bir yaş ve üzerindeki aralıklara gündüz uykuları dahildir. Bunlar geniş nüfus aralıklarıdır; tek bir günün kaydı, bebeğinizin sağlığını veya yeterince uyuyup uyumadığını tek başına göstermez. Bebeğiniz için kaygınız varsa çocuk doktorunuza danışın.",
+    category: "basics",
+    source: "CDC · Uyku hakkında",
+    url: "https://www.cdc.gov/sleep/about/"
+  },
+  {
+    id: "young-child-night-wakings",
+    title: "Küçük çocuklarda yatma direnci ve gece uyanmaları",
+    age: "Yaklaşık 1–5 yaş",
+    summary: "Küçük çocukların yatmaya geçişte zorlanması veya gece uyanması sık görülebilir. Sakin ve öngörülebilir bir akşam rutini yardımcı olabilir; her aile yalnızca kendisine ve çocuğuna uygun adımları seçmelidir. Uykuya dalma saati değişsin istiyorsanız, NHS yatış rutinini küçük adımlarla öne almayı anlatır. Sabit bir saat hedefi herkes için uygun değildir; beslenme, sağlık ve çocuğun güvenlik ihtiyacı önce gelir.",
+    category: "night",
+    source: "NHS · Küçük çocuklarda uyku",
+    url: "https://www.nhs.uk/baby/health/sleep-and-young-children/"
+  },
+  {
+    id: "nightmares-and-night-terrors",
+    title: "Kabus ve gece terörü arasındaki fark",
+    age: "Özellikle 3–8 yaş",
+    summary: "NHS'ye göre kabusta çocuk uyanıp gördüğü rüyayı hatırlayabilir; gece teröründe ise çocuk bağırıyor veya hareket ediyor görünse de uykuda olabilir ve olayı hatırlamayabilir. Gece terörü sırasında sakin kalıp çocuğun güvenliğini gözetin; onu zorla uyandırmaya çalışmayın. Tekrarlıyor, yaralanma riski doğuruyor veya sizi kaygılandırıyorsa sağlık uzmanına danışın. Bu kısa bilgi tanı koymaz.",
+    category: "night",
+    source: "NHS · Gece terörleri ve kâbuslar",
+    url: "https://www.nhs.uk/conditions/night-terrors/"
+  },
+  {
+    id: "snoring-and-sleep-breathing",
+    title: "Horlama ve uyku sırasında solunum",
+    age: "Bebek ve çocuk",
+    summary: "Sık horlama veya uykuda nefeste duraklama fark ederseniz bunu uyku eğitimi sorunu olarak değerlendirmeyin; çocuk doktoruyla görüşün. Çocuğun nefesi duruyor, rengi soluk, mavi veya griye dönüyor ya da solunum güçlüğü varsa Türkiye'de 112'yi arayın. Bu belirtiler için uygulamadaki bir programa devam etmek yerine acil tıbbi yardım alın.",
+    category: "changes",
+    source: "AAP · Çocuklarda uyku apnesi belirtileri",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Sleep-Apnea-Detection.aspx"
   }
 ];

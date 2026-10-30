@@ -27,6 +27,11 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "when-to-pause-sleep-plan"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "toddler-bedtime-resistance"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "screens-before-bed"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "reading-sleepy-cues"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "sleep-needs-by-age"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "young-child-night-wakings"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nightmares-and-night-terrors"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "snoring-and-sleep-breathing"));
 });
 
 test("safe sleep guide covers sitting products and points to AAP guidance", () => {
@@ -58,4 +63,30 @@ test("settling-support guide keeps caregiver support optional and protects feedi
   assert.match(guide.summary, /değiştirmek zorunlu değildir/i);
   assert.match(guide.summary, /önceki desteğe dönmek/i);
   assert.match(guide.summary, /Beslenme.*ihtiyaçlarını plana göre geciktirmeyin/i);
+});
+
+test("sleep education adds age ranges without treating them as an individual target", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "sleep-needs-by-age");
+  assert.ok(guide);
+  assert.match(guide.summary, /0–3 ayda 14–17 saat/);
+  assert.match(guide.summary, /4–12 ayda 12–16 saat/);
+  assert.match(guide.summary, /tek başına göstermez/i);
+  assert.equal(guide.url, "https://www.cdc.gov/sleep/about/");
+});
+
+test("sleep breathing guide directs concerning symptoms to clinical or emergency care", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "snoring-and-sleep-breathing");
+  assert.ok(guide);
+  assert.match(guide.summary, /çocuk doktoruyla görüşün/i);
+  assert.match(guide.summary, /112'yi arayın/i);
+  assert.match(guide.summary, /uyku eğitimi sorunu olarak değerlendirmeyin/i);
+  assert.equal(guide.url, "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Sleep-Apnea-Detection.aspx");
+});
+
+test("night terror guide distinguishes it from nightmares and avoids forceful waking", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "nightmares-and-night-terrors");
+  assert.ok(guide);
+  assert.match(guide.summary, /uykuda olabilir/i);
+  assert.match(guide.summary, /zorla uyandırmaya çalışmayın/i);
+  assert.match(guide.summary, /tanı koymaz/i);
 });
