@@ -474,3 +474,6 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 
 `npm audit`, Expo CLI'nin dolaylı olarak kullandığı `node-forge` ve `zod` paketlerinde beş yüksek önem dereceli bildirim göstermektedir. npm'nin önerdiği otomatik zorlanmış çözüm Expo'yu 44 sürümüne düşürdüğü için uygulanmamıştır; bu kırıcı ve güvensiz bir sürüm gerilemesi olur. Bağımlılıklar Expo SDK 58 güncellemeleriyle takip edilmelidir. Bu paketler mevcut uygulama özelliklerinde kullanıcı verisini işleyen özel bir sunucu katmanı değildir, ancak mağaza sürümünden önce bildirimler yeniden değerlendirilmelidir.
 
+## Anı defteri PDF paylaşımı
+
+Anı günlüğü kayıtları zaman çizelgesindeki `memory` olaylarından alınır. Insights ekranındaki dışa aktarma, geçmiş kayıtları tarihe göre sıralar ve `expo-print` ile HTML’den PDF üretir; metin alanları HTML kaçışından geçirilir ve yalnızca JPEG base64 veri URI’leri gömülür. Gelecekteki tarihler dışarıda bırakılır. PDF boyutu için en fazla sekiz fotoğraf ve toplam yaklaşık 6 MB görsel verisi eklenir; dışarıda kalan görsel sayısı PDF’de açıklanır. Dosya cihazda oluşturulur ve kullanıcı `expo-sharing` menüsünde paylaşım hedefini seçer. Uygulama veriyi bir sunucuya yüklemez.
