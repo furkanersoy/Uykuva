@@ -19,6 +19,14 @@
       "expo-sqlite",
       "expo-notifications",
       "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Uykuva, seçtiğiniz fotoğrafı anı kaydınıza eklemek için kullanır.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "./plugins/withUykuvaWidget"
     ]
   }
