@@ -311,7 +311,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Ortak zaman çizelgesi eklendi.
 - [x] Son dört saat için bakım devri özeti eklendi.
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
-- [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; son 10 döngü başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
+- [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; tüm döngüler başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
 - [x] Yedi uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi. Süreli kontrol yaklaşımı sabit aralık veya ağlama süresi önermiyor; bebeğin ihtiyaçları ve bakım verenin kararı öncelikli.
 - [x] Hazır oluş koşulları tamamlandığında yedi yaklaşım; yöntem özeti, bakım veren adımı, gece yanıtı, beklenen huzursuzluk, yakınlık, uygulama yükü ve ilerleme biçimiyle karşılaştırılıyor. Ailenin yakınlık, destek azaltma veya kısa kontrol tercihine göre filtreleniyor; tüm yöntemler erişilebilir kalıyor.
 - [x] Ailece belirlenen kısa kontroller yaklaşımı eklendi. Uygulama sabit aralık veya ağlama süresi önermiyor; beslenme, sağlık ve yoğun huzursuzlukta gecikmeden yanıt veriliyor.
@@ -411,7 +411,7 @@ Uyku koçu son üç geçerli yerel gün içinde kolaylık veya uyanma sayısı i
 - [x] Randevular için haftalık/aylık tekrar; tamamlanan her örnekten sonra sıradaki örnek açılır ve geçmiş kayıt saklanır.
 - [ ] Ayrıntılı bildirim zamanlama seçenekleri
 - [x] Android ana ekran uyku widget'ı eklendi; Android dışındaki widget/Live Activity desteği açık
-- [x] Tamamlanan 14 günlük uyku planı döngülerinin en çok 10 tanesi, başlangıç/bitiş tarihleri ve görev geçmişiyle saklanır ve koç ekranında listelenir.
+- [x] Tamamlanan 14 günlük uyku planı döngülerinin tamamı, başlangıç/bitiş tarihleri ve görev geçmişiyle saklanır, birleştirilebilir ve koç ekranında listelenir.
 - [x] WHO 0–5 yaş kilo, boy ve baş çevresi z-skor tablolarıyla persentil eğrileri; kız/erkek eğrisi profilde isteğe bağlı seçilir
 - [x] Aşı önerisinde kaynak sürümü, resmi duyuru bağlantısı ve 49–72 ay suçiçeği yakalama dönemi için hekimle teyit uyarısı gösteriliyor.
 - [ ] Aşı kartı/e-Nabızdan doğrulanan doz geçmişiyle kişiye özel, hekim onaylı eksik doz akışı

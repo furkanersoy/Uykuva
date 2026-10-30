@@ -28,6 +28,17 @@ test("legacy state receives schema two defaults without losing events", () => {
   assert.equal(migrated.activeChildId, "b");
 });
 
+test("migration preserves all valid completed sleep plan cycles", () => {
+  const state = createInitialState();
+  state.sleepPlan.completedRuns = Array.from({ length: 12 }, (_, index) => {
+    const start = new Date(Date.UTC(2025, 0, 1 + index * 28)).toISOString().slice(0, 10);
+    const completedDate = new Date(Date.UTC(2025, 0, 15 + index * 28)).toISOString().slice(0, 10);
+    return { id: `run-${index}`, startDate: start, completedDate, days: [] };
+  });
+  const migrated = migrateState(state);
+  assert.equal(migrated.sleepPlan.completedRuns.length, 12);
+});
+
 test("multiple child workspaces retain separate records and active selection", () => {
   const first = createInitialState();
   first.baby = { id: "child-a", name: "Ada", birthDate: "2025-01-01", gestationalWeek: 40 };
@@ -116,3 +127,4 @@ test("sleep and night-wake details survive export and invalid values are rejecte
   invalidMilk.events.find((event) => event.id === "milk")!.milkWarmedAt = "yesterday";
   assert.throws(() => parseDataExport(JSON.stringify(invalidMilk)), /bakım kayıtları/i);
 });
+

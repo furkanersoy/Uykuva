@@ -54,7 +54,7 @@ function isCompletedPlanDayHistory(value: unknown) {
 }
 
 function isCompletedPlanRunHistory(value: unknown) {
-  return Array.isArray(value) && value.length <= 10 && value.every((run) =>
+  return Array.isArray(value) && value.every((run) =>
     isRecord(run) && typeof run.id === "string" && typeof run.startDate === "string" && isDateOnly(run.startDate) &&
     typeof run.completedDate === "string" && isDateOnly(run.completedDate) && isCompletedPlanDayHistory(run.days)
   );
@@ -222,7 +222,7 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
         .map(({ id: _id, ...item }) => item)
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(-14),
-      completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns).slice(-10)
+      completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns)
     }
   };
 }
@@ -264,3 +264,4 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
     activeChildId: active.baby.id
   };
 }
+

@@ -57,6 +57,24 @@ test("wake reminder preferences round-trip and older backups remain valid", () =
   assert.throws(() => parseDataExport(createDataExport(state)), /uyanma hatırlatması/i);
 });
 
+test("completed sleep plan history is not capped during export, restore, or merge", () => {
+  const runs = Array.from({ length: 12 }, (_, index) => {
+    const start = new Date(Date.UTC(2025, 0, 1 + index * 28)).toISOString().slice(0, 10);
+    const end = new Date(Date.UTC(2025, 0, 15 + index * 28)).toISOString().slice(0, 10);
+    return { id: `run-${index}`, startDate: start, completedDate: end, days: [] };
+  });
+  const current = createInitialState();
+  current.sleepPlan.completedRuns = runs;
+  const restored = parseDataExport(createDataExport(current));
+  assert.equal(restored.sleepPlan.completedRuns.length, 12);
+
+  const incoming = createInitialState();
+  incoming.sleepPlan.completedRuns = [...runs, { id: "run-12", startDate: "2025-12-03", completedDate: "2025-12-17", days: [] }];
+  const merged = mergeDataStates(current, incoming);
+  assert.equal(merged.sleepPlan.completedRuns.length, 13);
+  assert.equal(new Set(merged.sleepPlan.completedRuns.map((run) => run.id)).size, 13);
+});
+
 test("backup merge combines records and check-ins while preserving current device settings", () => {
   const current = createInitialState();
   const incoming = createInitialState();
@@ -113,3 +131,4 @@ test("backup merge unions children and keeps each child's records separate", () 
   assert.match(mina?.careInstructions ?? "", /Yedekten gelen not/);
   assert.equal(merged.activeChildId, current.activeChildId);
 });
+

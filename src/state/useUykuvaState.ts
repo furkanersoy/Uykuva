@@ -260,7 +260,7 @@ export function useUykuvaState() {
       const completedDays = [...plan.completedDays.filter((item) => item.date !== today), dayRecord].slice(-14);
       const runStartDate = plan.startDate.length === 10 ? plan.startDate : localDateKey(new Date(plan.startDate));
       const completedRuns = plan.day >= 14
-        ? [...plan.completedRuns, { id: id("sleep-run"), startDate: runStartDate, completedDate: today, days: completedDays.filter((item) => item.date >= runStartDate) }].slice(-10)
+        ? [...plan.completedRuns, { id: id("sleep-run"), startDate: runStartDate, completedDate: today, days: completedDays.filter((item) => item.date >= runStartDate) }]
         : plan.completedRuns;
       return {
         ...current,
@@ -467,3 +467,4 @@ export function useUykuvaState() {
     clearAllData
   };
 }
+
