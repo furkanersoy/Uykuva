@@ -1473,7 +1473,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
       <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
       {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
       {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
-      <SectionTitle title="Anı defteri" action="${memories.length} kayıt" />
+      <SectionTitle title="Anı defteri" action={`${memories.length} kayıt`} />
       <Card>
         <Text style={styles.body}>{memories.length ? "Kaydettiğiniz anları ve fotoğrafları PDF anı defteri olarak dışa aktarın." : "Zaman çizelgesine anı ekledikçe burada PDF anı defteri oluşturabilirsiniz."}</Text>
         {memories.length ? <><View style={styles.spacer12} /><PrimaryButton label="Anı defterini PDF paylaş" quiet onPress={() => void shareMemoryBookPdf(state)} /></> : null}
