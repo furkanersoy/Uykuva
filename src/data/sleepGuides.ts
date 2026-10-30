@@ -4,6 +4,7 @@ export type SleepGuide = {
   age: string;
   minAgeMonths?: number;
   maxAgeMonths?: number;
+  requiresPrematurity?: boolean;
   summary: string;
   category: SleepGuideCategory;
   source: string;
@@ -248,11 +249,25 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     category: "changes",
     source: "AAP · Çocuklarda uyku apnesi belirtileri",
     url: "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Sleep-Apnea-Detection.aspx"
+  },
+  {
+    id: "corrected-age-for-preemies",
+    title: "Erken doğumda düzeltilmiş yaş",
+    age: "Erken doğan bebekler · ilk 2 yıl",
+    minAgeMonths: 0,
+    maxAgeMonths: 24,
+    requiresPrematurity: true,
+    summary: "Düzeltilmiş yaş, bebeğin beklenen doğum tarihinden bu yana geçen süreyi dikkate alır; gerçek doğum tarihini değiştirmez. AAP, erken doğan bebeklerin gelişim basamaklarını ilk 2 yıl değerlendirirken düzeltilmiş yaşın kullanılmasını anlatır. Uykuva da erken doğum kaydı varsa ilk 24 ay uyku penceresi ve gelişim gözlemlerinde bu hesabı kullanır; aşı tarihlerini gerçek doğum tarihine göre gösterir. Bebeğinize özel takip için çocuk doktorunuzun önerisini izleyin.",
+    category: "basics",
+    source: "AAP · Prematüre bebeklerde düzeltilmiş yaş",
+    url: "https://www.healthychildren.org/English/ages-stages/baby/preemie/pages/Corrected-Age-For-Preemies.aspx"
   }
 ];
 
-export function sleepGuidesForAge(ageMonths: number): SleepGuide[] {
+export function sleepGuidesForAge(ageMonths: number, isPremature = false): SleepGuide[] {
   return SLEEP_GUIDES.filter((guide) =>
+    (!guide.requiresPrematurity || isPremature)
+    &&
     (guide.minAgeMonths === undefined || ageMonths >= guide.minAgeMonths)
     && (guide.maxAgeMonths === undefined || ageMonths <= guide.maxAgeMonths)
   );

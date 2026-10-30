@@ -27,6 +27,8 @@ test("age-filtered sleep readings use inclusive ranges and keep general caregive
   assert.ok(!toddlerGuides.some((guide) => guide.id === "swaddling-safely"));
   assert.equal(sleepGuidesForAge(3).some((guide) => guide.id === "four-month-pattern"), true);
   assert.equal(sleepGuidesForAge(5).some((guide) => guide.id === "four-month-pattern"), true);
+  assert.equal(sleepGuidesForAge(4).some((guide) => guide.id === "corrected-age-for-preemies"), false);
+  assert.equal(sleepGuidesForAge(4, true).some((guide) => guide.id === "corrected-age-for-preemies"), true);
 });
 
 test("sleep education includes infant age changes and caregiver support", () => {
@@ -46,6 +48,7 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "young-child-night-wakings"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "nightmares-and-night-terrors"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "snoring-and-sleep-breathing"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "corrected-age-for-preemies"));
 });
 
 test("safe sleep guide covers sitting products and points to AAP guidance", () => {
@@ -103,4 +106,15 @@ test("night terror guide distinguishes it from nightmares and avoids forceful wa
   assert.match(guide.summary, /uykuda olabilir/i);
   assert.match(guide.summary, /zorla uyandırmaya çalışmayın/i);
   assert.match(guide.summary, /tanı koymaz/i);
+});
+
+test("corrected-age guide explains its scope and preserves the actual birth date", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "corrected-age-for-preemies");
+  assert.ok(guide);
+  assert.match(guide.summary, /gerçek doğum tarihini değiştirmez/i);
+  assert.match(guide.summary, /ilk 24 ay/i);
+  assert.match(guide.summary, /aşı tarihlerini gerçek doğum tarihine göre/i);
+  assert.equal(guide.minAgeMonths, 0);
+  assert.equal(guide.maxAgeMonths, 24);
+  assert.match(guide.url, /healthychildren\.org/);
 });

@@ -1000,7 +1000,7 @@ function nightWakingGuide(stage: "newborn" | "foundations" | "plan", method: Sle
 function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
   const [sleepGuideFilter, setSleepGuideFilter] = useState<SleepGuideCategory | "all" | "saved" | "age">("all");
   const savedGuideIds = app.state.sleepPlan.savedGuideIds ?? [];
-  const ageRelevantGuides = sleepGuidesForAge(correctedAgeMonths(app.state.baby, now));
+  const ageRelevantGuides = sleepGuidesForAge(correctedAgeMonths(app.state.baby, now), app.state.baby.gestationalWeek < 37);
   const visibleSleepGuides = sleepGuideFilter === "all" ? SLEEP_GUIDES : sleepGuideFilter === "saved" ? SLEEP_GUIDES.filter((guide) => savedGuideIds.includes(guide.id)) : sleepGuideFilter === "age" ? ageRelevantGuides : SLEEP_GUIDES.filter((guide) => guide.category === sleepGuideFilter);
   const today = localDateValue(now);
   const todayCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === today);

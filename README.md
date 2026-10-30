@@ -79,7 +79,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları
 - Yaş aşamasına ve seçilen yönteme göre gece uyanması için açılır adım adım rehber
 - Düzeltilmiş yaşa göre “Bebeğime uygun” filtresi, konu filtreleri ve kaydedilenler listesi olan çevrimdışı uyku rehberi kütüphanesi; NHS, AAP ve CDC kaynak bağlantıları; rehberleri bakım verenle paylaşma
-- Uyku ekranında güvenli uyku, uyku işaretleri ve yaşa göre toplam uyku aralıkları; kundak, gece uyanmaları, kâbus/gece terörü ve solunum belirtilerinde yardım alma dahil 21 çevrimdışı kısa okuma; rehberleri kaydedip ayrı listede görme ve bakım verenle paylaşma; her rehberde NHS, CDC, AAP veya Queensland çocuk sağlığı kaynak bağlantısı
+- Uyku ekranında güvenli uyku, uyku işaretleri ve yaşa göre toplam uyku aralıkları; kundak, erken doğumda düzeltilmiş yaş, gece uyanmaları, kâbus/gece terörü ve solunum belirtilerinde yardım alma dahil 22 çevrimdışı kısa okuma; rehberleri kaydedip ayrı listede görme ve bakım verenle paylaşma; her rehberde NHS, CDC, AAP veya Queensland çocuk sağlığı kaynak bağlantısı
 - Uyku rehberinde uykuda solunum güçlüğü, sık horlama veya zor uyandırılma gibi durumlarda doktor ya da acil yardım gerektirebilecek belirtileri açıklama; AAP ve NHS kaynak bağlantıları
 - Uyku planı öncesi bakım verenlerin ortak yaklaşımını konuşma ve hastalık/seyahat/düzen değişikliğinde günlük koçluk adımlarını bekletme rehberi
 - Hastalık, seyahat veya ihtiyaç değişikliğinde kaldığı günden sürdürülebilen uyku planı duraklatma
