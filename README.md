@@ -118,7 +118,7 @@ Metro başladıktan sonra terminalde `a` tuşuna basarak Android emülatörünü
 - İsteğe bağlı yerel bildirimle stokta kalan sağılan süt partisinin kullanım süresi yaklaşınca hatırlatma; otomatik zamanlama veya 2/6/12/24/48 saat önceden seçim, dondurulmuş sütte en iyi kalite ve tavsiye edilen son tarih bildirimleri, sessiz saatlere uyum
 - Biberon ve katı gıda ayrıntıları
 - Katı öğünlerde yiyecek, alerjen etiketi ve ebeveyn gözlemi günlüğü
-- Kayıt ritmine dayanan açıklanabilir sıradaki beslenme aralığı
+- Katı gıdayı dışarıda tutan, son 30 günlük emzirme/biberon kayıtlarından açıklanabilir süt beslenmesi aralığı tahmini
 - Uyku ve beslenme tahminleri, hedef yatış ve randevuları saat sırasıyla aynı 24 saatlik bakım planında görme
 - Doktor görüşmesi için yedi günlük bakım özetini PDF veya metin olarak paylaşma
 - Aynı cihazda ebeveyn, aile üyesi ve bakıcı profilleri
