@@ -1,4 +1,4 @@
-import { ageInDays, nightWakeResponseLabel, sleepMinutesBetween } from "./sleep";
+import { ageInDays, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, weeklySleepTotals } from "./sleep";
 import { completedFeedMinutes } from "./feeding";
 import { AppState } from "./types";
 import { DEVELOPMENT_CHECKPOINTS } from "../data/developmentMilestones";
@@ -8,6 +8,39 @@ function trDate(value: string | Date) {
 }
 
 export type DoctorSummaryPeriod = 7 | 14 | 30;
+
+export function createSleepWeekSummary(state: AppState, now = new Date()): string {
+  const days = weeklySleepTotals(state.events, now);
+  const checkIns = new Map(state.sleepPlan.checkIns.map((item) => [item.date, item]));
+  const lines = [
+    "UYKUVA · 7 GÜNLÜK UYKU ÖZETİ",
+    `${state.baby.name} · ${ageInDays(state.baby.birthDate, now)} günlük`,
+    `Hazırlanma: ${trDate(now)}`,
+    "",
+    "Günlük kayıtlı uyku süreleri (yerel gün sınırlarına göre):"
+  ];
+  for (const day of days) {
+    const checkIn = checkIns.get(day.date);
+    const dateLabel = new Date(`${day.date}T12:00:00`).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" });
+    const duration = day.sleepCount ? `${Math.floor(day.totalMinutes / 60)} sa ${day.totalMinutes % 60} dk · ${day.sleepCount} uyku kaydı` : "uyku kaydı yok";
+    const nightWakes = checkIn?.nightWakings === undefined ? "uyanma sayısı girilmedi" : `ebeveyn bildirimi ${checkIn.nightWakings === 5 ? "5+" : checkIn.nightWakings}`;
+    const ease = checkIn?.ease === undefined ? "kolaylık puanı yok" : `kolaylık ${checkIn.ease}/5`;
+    const bedtime = checkIn?.bedtime ? `yatış ${checkIn.bedtime}` : "";
+    const wakeTime = checkIn?.wakeTime ? `uyanış ${checkIn.wakeTime}` : "";
+    const context = checkIn?.dayContext ? sleepDayContextLabel(checkIn.dayContext) : "";
+    lines.push(`- ${dateLabel}: ${duration} · ${nightWakes} · ${ease}${bedtime ? ` · ${bedtime}` : ""}${wakeTime ? ` · ${wakeTime}` : ""}${context ? ` · ${context}` : ""}`);
+  }
+  const totalMinutes = days.reduce((sum, day) => sum + day.totalMinutes, 0);
+  const loggedDays = days.filter((day) => day.sleepCount > 0).length;
+  lines.push(
+    "",
+    `Dönem toplamı: ${Math.floor(totalMinutes / 60)} sa ${totalMinutes % 60} dk · en az bir uyku kaydı olan ${loggedDays}/7 gün`,
+    `Uyku planı: ${state.sleepPlan.paused ? "duraklatılmış" : state.sleepPlan.completedDate ? "14 günlük rehber tamamlanmış" : `${state.sleepPlan.day}/14. gün`}`,
+    "",
+    "Bu özet yalnızca uygulamaya girilen kayıtlardan oluşturulur. Eksik kayıtlar toplamları değiştirebilir; süreler sağlık değerlendirmesi veya uyku hedefi değildir. Güncel gün tamamlanmamıştır."
+  );
+  return lines.join("\n");
+}
 
 export function createDoctorSummary(state: AppState, now = new Date(), periodDays: DoctorSummaryPeriod = 7): string {
   const since = now.getTime() - periodDays * 86_400_000;
@@ -142,5 +175,29 @@ export function createDoctorSummaryHtml(state: AppState, now = new Date(), perio
     .bullet { padding-left: 12px; }
     .notice { margin-top: 22px; border-top: 1px solid #d9e0dc; padding-top: 10px; font-size: 10px; color: #66746d; }
   </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva bakım özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
+}
+
+export function createSleepWeekSummaryHtml(state: AppState, now = new Date()): string {
+  const lines = createSleepWeekSummary(state, now).split("\n");
+  const [title, subtitle, prepared, ...details] = lines;
+  const detailMarkup = details.map((line) => {
+    if (!line.trim()) return "";
+    if (line.endsWith(":")) return `<h2>${escapeHtml(line.slice(0, -1))}</h2>`;
+    if (line.startsWith("- ")) return `<p class="bullet">• ${escapeHtml(line.slice(2))}</p>`;
+    if (line.startsWith("Dönem toplamı:") || line.startsWith("Uyku planı:")) return `<p class="summary">${escapeHtml(line)}</p>`;
+    return `<p>${escapeHtml(line)}</p>`;
+  }).join("\n");
+  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    @page { size: A4; margin: 18mm 16mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263631; font-size: 12px; line-height: 1.55; }
+    header { border-bottom: 2px solid #718b7c; padding-bottom: 12px; margin-bottom: 18px; }
+    h1 { font-size: 22px; margin: 0 0 5px; color: #3e594d; }
+    .subtitle { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+    .prepared { color: #66746d; font-size: 10px; margin: 0; }
+    h2 { font-size: 13px; margin: 15px 0 4px; color: #3e594d; }
+    p { margin: 5px 0; }
+    .bullet { padding-left: 12px; }
+    .summary { font-weight: 600; }
+  </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva uyku özeti")}</h1><p class="subtitle">${escapeHtml(subtitle ?? "")}</p><p class="prepared">${escapeHtml(prepared ?? "")}</p></header><main>${detailMarkup}</main></body></html>`;
 }
 
