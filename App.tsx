@@ -29,7 +29,7 @@ import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, coachingWeek, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
@@ -1100,6 +1100,17 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
   };
   const buildPlanMessage = () => {
     const enabledRoutine = app.state.sleepPlan.routine.filter((item) => item.enabled);
+    const upcomingPlanDays = !app.state.sleepPlan.paused && !programCompleted
+      ? coachingWeek(app.state.sleepPlan.day, coachingMethod, trainingReady, correctedAgeDays(app.state.baby, now), app.state.sleepPlan.focus, Boolean(todayCheckIn?.dayContext))
+      : [];
+    const upcomingPlanLines = upcomingPlanDays.length ? [
+      "Önümüzdeki 7 plan günü:",
+      ...upcomingPlanDays.flatMap((dayPlan) => [
+        `${dayPlan.title}:`,
+        ...dayPlan.tasks.map((task) => `• ${task}`),
+        `Check-in sorusu: ${dayPlan.checkIn}`
+      ])
+    ] : [];
     const shareCheckIns = app.state.sleepPlan.checkIns
       .filter((item) => item.date >= localDateValue(oldestNight) && item.date <= today)
       .sort((a, b) => a.date.localeCompare(b.date))
@@ -1118,12 +1129,13 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       `Gece uyanınca: ${methodDescription(coachingMethod).nightResponse}`,
       `Yöntem özellikleri · huzursuzluk: ${methodDescription(coachingMethod).comparison.protest} · yakınlık: ${methodDescription(coachingMethod).comparison.presence} · uygulama yükü: ${methodDescription(coachingMethod).comparison.effort} · ilerleme: ${methodDescription(coachingMethod).comparison.pace}`,
       `Plan odağı: ${sleepFocusOptions.find((item) => item.id === app.state.sleepPlan.focus)?.label ?? "Akşam rutini"}`,
-      `Program durumu: ${app.state.sleepPlan.paused ? "Duraklatıldı; günlük plan adımları beklemede." : programCompleted ? "14 günlük rehber tamamlandı." : `${app.state.sleepPlan.day}/14. gün`}`,
-      `Günlük rehber: ${plan.title}`,
+      `Program durumu: ${todayCheckIn?.dayContext ? `Bugün ${sleepDayContextLabel(todayCheckIn.dayContext)} nedeniyle beklemede; plan günü ilerlemiyor.` : app.state.sleepPlan.paused ? "Duraklatıldı; günlük plan adımları beklemede." : programCompleted ? "14 günlük rehber tamamlandı." : `${app.state.sleepPlan.day}/14. gün`}`,
+      `Günlük rehber: ${plan.title}${coachingPausedToday ? " (bugün beklemede)" : ""}`,
       `Hedef yatış: ${app.state.sleepPlan.bedtime} · Sabah başlangıcı: ${app.state.sleepPlan.wakeTime}`,
       "Akşam rutini:",
       ...enabledRoutine.map((item, index) => `${index + 1}. ${item.label} (${item.minutes} dk)`),
-      ...(!app.state.sleepPlan.paused && !programCompleted ? ["Bugünün adımları:", ...plan.tasks.map((task) => `• ${task}`)] : []),
+      ...(!coachingPausedToday && !programCompleted ? ["Bugünün adımları:", ...plan.tasks.map((task) => `• ${task}`)] : []),
+      ...upcomingPlanLines,
       ...comparisonLines,
       ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.sustainability === undefined ? "" : ` · aile için sürdürülebilirlik ${item.sustainability}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}${item.planReflection ? ` · koçluk yanıtı: ${item.planReflection}` : ""}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."

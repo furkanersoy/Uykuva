@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, coachingWeek, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 import { detectRecordedMilestones } from "./milestones";
@@ -291,6 +291,25 @@ test("forecast learns its center and range from saved suggestion outcomes", () =
 
 test("coaching plan is bounded to fourteen days", () => {
   assert.match(coachingDay(99, "gradual").title, /^14\. gün/);
+});
+
+test("shared sleep coaching week follows the selected approach and stops at day fourteen", () => {
+  const week = coachingWeek(4, "gradual", true, 220, "naps");
+  assert.equal(week.length, 7);
+  assert.match(week[0]!.title, /^4\. gün/);
+  assert.match(week[0]!.title, /Kademeli/);
+  assert.equal(week.at(-1)?.title.startsWith("10."), true);
+  assert.ok(week.every((item) => item.tasks.length > 0 && item.checkIn.length > 0));
+  assert.equal(coachingWeek(12, "routineFirst").length, 3);
+  assert.equal(coachingWeek(14, "routineFirst").length, 1);
+});
+
+test("shared sleep coaching week can skip an exceptional paused day", () => {
+  const week = coachingWeek(4, "responsive", false, 100, "nightWakings", true);
+  assert.equal(week.length, 7);
+  assert.match(week[0]!.title, /^5\. gün/);
+  assert.ok(week.every((item) => item.tasks.length > 0));
+  assert.equal(coachingWeek(14, "responsive", false, 100, "routine", true).length, 0);
 });
 
 test("each sleep approach gets distinct tasks throughout all coaching phases", () => {

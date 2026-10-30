@@ -705,6 +705,13 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
   };
 }
 
+export function coachingWeek(day: number, method: SleepMethod, canReduceSupport = true, correctedAge = 183, focus: SleepFocus = "routine", skipCurrentDay = false): CoachingDay[] {
+  const firstDay = Math.min(14, Math.max(1, day)) + (skipCurrentDay ? 1 : 0);
+  if (firstDay > 14) return [];
+  const daysToShow = Math.min(7, Math.max(0, 15 - firstDay));
+  return Array.from({ length: daysToShow }, (_, index) => coachingDay(firstDay + index, method, canReduceSupport, correctedAge, focus));
+}
+
 export type SleepPlanCheckInComparison = {
   available: boolean;
   firstDays: number;

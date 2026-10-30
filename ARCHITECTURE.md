@@ -120,7 +120,7 @@ Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım vere
 
 Takvim verisi Sağlık Bakanlığının [2025 ulusal çocukluk dönemi aşı kartına](https://hsgm.saglik.gov.tr/depo/birimler/asi-ile-onlenebilir-hastaliklar-db/dokumanlar/2025/asi_haftasi/50X30_asi_karti.pdf) dayanır; Hepatit B doğum dozunu içerir. Bakanlığın [1 Eylül 2026 güncellemesi](https://iskilipdh.saglik.gov.tr/TR-1590795/cocukluk-donemi-asilama-takvimi-guncellendi-sucicegi-asisinda-ikinci-doz-uygulamasi-basladi.html) ikinci suçiçeği dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri aile hekimiyle doğrulanmalıdır.
 
-Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını, o günün rehberini ve son yedi gecenin check-in'lerini metin olarak veya A4 PDF halinde diğer bakım verenlerle paylaşabilir. PDF içeriği uygulama içinde HTML'den üretilir ve yerel paylaşım menüsünde açılır; paylaşım sunucuya yüklenmez. Metin ve PDF aynı rapor oluşturucudan beslenir.
+Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını, son yedi gecenin check-in'lerini ve 14 günlük programın kalanından en fazla yedi yönteme/yaşa/odağa özel günlük planı metin olarak veya A4 PDF halinde diğer bakım verenlerle paylaşabilir. Olağan dışı gün seçilmişse plan o günü atlar ve paylaşımda ilerlemediğini açıkça belirtir; elle duraklatılmış veya tamamlanmış planda yeni adım gösterilmez. PDF içeriği uygulama içinde HTML'den üretilir ve yerel paylaşım menüsünde açılır; paylaşım sunucuya yüklenmez. Metin ve PDF aynı rapor oluşturucudan beslenir.
 
 Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamamlamayı veya atlamayı takip eder. Rutin bitirildiğinde tamamlanan adım sayısı ve yaklaşık süre, etkin bakım veren adına zaman çizelgesine bir not olarak eklenir.
 
@@ -512,3 +512,10 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - `npm.cmd run typecheck`: başarılı.
 - `npm.cmd test`: 116/116 test başarılı.
 - Android emülatöründe uygulama soğuk başlatıldı; başlangıçta Bugün ana ekranı açıldı. Gece uyanması formu yalnızca Bugün veya gece modu kısayolu seçildiğinde açılıyor.
+
+### 30 Ekim 2026 haftalık uyku planı paylaşımı
+
+- Uyku koçluğu paylaşımı seçilen yönteme, yaş aşamasına ve odak alanına göre kalan plandan en fazla yedi günü metin/PDF içine ekler; 14 günlük sınırda durur.
+- Olağan dışı gün işaretliyken o günün görevleri paylaşımda etkin gösterilmez; plan günü atlandığı belirtilir. Plan elle duraklatılmış veya bitmişse yeni görev listelenmez.
+- `npm.cmd run typecheck`: başarılı.
+- `npm.cmd test`: 118/118 test başarılı.
