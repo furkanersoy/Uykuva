@@ -14,6 +14,13 @@ test("care-task reminders open their task in Insights", () => {
   });
 });
 
+test("open sleep check reminders open the matching sleep record for correction", () => {
+  assert.deepEqual(notificationDestination({ kind: NOTIFICATION_KINDS.openSleepCheck, childId: "baby-2", eventId: "sleep-1" }), {
+    tab: "timeline", childId: "baby-2", eventId: "sleep-1"
+  });
+  assert.equal(notificationDestination({ kind: NOTIFICATION_KINDS.openSleepCheck, childId: "baby-2" }), null);
+});
+
 test("medicine and milk reminders open their recorded event in the timeline", () => {
   for (const kind of [NOTIFICATION_KINDS.medication, NOTIFICATION_KINDS.milkExpiry]) {
     assert.deepEqual(notificationDestination({ kind, childId: "baby-2", eventId: "event-1" }), {
