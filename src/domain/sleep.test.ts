@@ -108,6 +108,12 @@ test("wake estimates require five completed similar sleeps and ignore future end
   const enough = estimateSleepWakeWindow(past, running, now);
   assert.equal(enough.available, true);
   assert.equal(enough.typical?.getTime(), new Date("2026-10-27T13:00:00").getTime());
+  const justStarted = estimateSleepWakeWindow(past, { ...running, startedAt: "2026-10-27T12:10:20" }, now);
+  assert.equal(justStarted.available, true);
+  assert.equal(justStarted.typical?.getTime(), new Date("2026-10-27T13:10:20").getTime());
+  const impossibleFuture = estimateSleepWakeWindow(past, { ...running, startedAt: "2026-10-27T12:12:00" }, now);
+  assert.equal(impossibleFuture.available, false);
+  assert.match(impossibleFuture.explanation, /başlangıç saati kontrol edilemiyor/i);
   assert.equal(estimateSleepWakeWindow(past, undefined, now).available, false);
 });
 const termBaby: Baby = { id: "b1", name: "Ada", birthDate: "2026-06-01", gestationalWeek: 40 };

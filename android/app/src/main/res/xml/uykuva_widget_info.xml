@@ -1,0 +1,9 @@
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/uykuva_widget_description"
+  android:initialLayout="@layout/uykuva_widget"
+  android:minHeight="180dp"
+  android:minWidth="200dp"
+  android:previewLayout="@layout/uykuva_widget"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="1800000"
+  android:widgetCategory="home_screen" />

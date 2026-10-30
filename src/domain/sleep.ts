@@ -3,6 +3,7 @@ import { createMilkInventory, milkStorageLabel } from "./milk";
 import { isValidClock } from "./time";
 
 const DAY = 86_400_000;
+const CLOCK_REFRESH_SKEW = 60_000;
 
 type WakeBand = { maxAgeDays: number; min: number; max: number };
 
@@ -333,7 +334,7 @@ export function estimateSleepWakeWindow(events: CareEvent[], runningSleep?: Care
     return { available: false, sampleCount: 0, explanation: "Devam eden uyku yok." };
   }
   const sleepStart = new Date(runningSleep.startedAt);
-  if (!Number.isFinite(sleepStart.getTime()) || sleepStart.getTime() > now.getTime()) {
+  if (!Number.isFinite(sleepStart.getTime()) || sleepStart.getTime() > now.getTime() + CLOCK_REFRESH_SKEW) {
     return { available: false, sampleCount: 0, explanation: "Uyku başlangıç saati kontrol edilemiyor." };
   }
   const startsAtNight = (date: Date) => date.getHours() >= 18 || date.getHours() < 6;
@@ -352,8 +353,9 @@ export function estimateSleepWakeWindow(events: CareEvent[], runningSleep?: Care
   if (durations.length < 5) {
     return { available: false, sampleCount: durations.length, explanation: `Benzer uyku süresi aralığı için son 30 günde en az 5 tamamlanmış kayıt gerekiyor (${durations.length}/5).` };
   }
-  const elapsed = (now.getTime() - sleepStart.getTime()) / 60_000;
-  const projectedTime = (durationMinutes: number) => new Date(now.getTime() + Math.max(0, durationMinutes - elapsed) * 60_000);
+  const currentTime = Math.max(now.getTime(), sleepStart.getTime());
+  const elapsed = (currentTime - sleepStart.getTime()) / 60_000;
+  const projectedTime = (durationMinutes: number) => new Date(currentTime + Math.max(0, durationMinutes - elapsed) * 60_000);
   return {
     available: true,
     from: projectedTime(percentile(durations, 0.25)),

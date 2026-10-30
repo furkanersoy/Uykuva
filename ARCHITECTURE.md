@@ -550,3 +550,10 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Uyku rehberi, yaklaşık 18–48 ay aralığındaki çocuklar için beşikten yatağa geçiş içeriği sunar. Sabit bir yaş şartı koymaz; beşikten tırmanma ve yatağa sığmama gibi güvenlik işaretlerini vurgular.
 - İçerik cihazda çevrimdışı kullanılabilir ve NHS Children’s Health kaynağına bağlantı verir.
 - Doğrulama: `npm.cmd run typecheck`; `npm.cmd test`.
+
+### Android widget uyku kısayolu
+
+- Ana ekran widget'ı etkin çocuk için uyku sayacını başlatma veya devam eden sayacı bitirme kısayolu sunar. Eylem hedef durum olarak saklanır; uygulama açıldığında kayıt durumu ile karşılaştırılarak aynı dokunuşun yinelenmesi yeni bir uyku kaydı başlatıp bitirmesin diye güvenli biçimde uygulanır.
+- Widget işleminden sonra asıl kayıt mevcut uygulama durumu katmanında oluşturulur; widget, bebeğin adını veya uyku olayını kendi başına ikinci bir veri kaynağına yazmaz.
+- Bu eylemler yalnızca kullanıcı widget düğmesine dokunduğunda uygulamayı açar; uygulama açılışında uyku formu otomatik gösterilmez.
+- Doğrulama: `npm.cmd run typecheck`; `npm.cmd test`; Android debug derlemesi.
