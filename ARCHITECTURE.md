@@ -1,6 +1,24 @@
-Y��x�6���u�%j���+ar�����_���j�"�v���ڮ&���j����ڲL�ל���w���'�۬zW�~��y�,�	�nW�j��nW�# Uykuva — Ürün ve Teknik Mimari
+# Uykuva — Ürün ve Teknik Mimari
 
-Son güncelleme: 27 Ekim 2026
+Son güncelleme: 30 Ekim 2026
+
+Uygulama açıldığında Bugün ekranı gösterilir. Gece uyanması kayıt formu başlangıçta kapalıdır ve Bugün ekranındaki Uyanma kısayoluyla açılır; formun görünürlüğü uygulama durumuna bağlıdır.
+
+Bugünün gerçek uyanış saati yerel saatten ileri olamaz; geçersiz gelecek saat otomatik kaydedilmez ve elle kaydetme uyarıyla durdurulur. Bugün ekranında kaydedilmiş uyanış saati temizlenebilir; diğer check-in alanları korunur.
+
+Gece uykusu tam sabah uyanışında bitiyorsa ilk gündüz uykusu gerçekleşmiş sayılmaz. Uyanışta veya sonrasında başlayan ya da uyanıştan sonra biten bir uyku kaydı varsa sonraki pencere uyku kayıtlarına göre hesaplanır.
+
+Uyku zamanlayıcısı çalışırken Bugün ve Uyku planı ekranları eski sonraki uyku penceresi yerine uyanışın kaydedilmesini bekleyen açıklamayı gösterir; Bugün planına tahmini sonraki uyku aralığı eklenmez.
+
+Olası uyanış hatırlatması varsayılan olarak kapalıdır ve Aile ekranından açılır. Devam eden uyku için aynı gündüz/gece diliminde son 30 günden en az beş tamamlanmış benzer uyku varsa, geçmiş sürelerin ortancasından tahmini uyanış hesaplanır. Kullanıcının seçtiği 5–30 dakikalık ön bildirim cihazda planlanır; zamanı geçmiş veya sessiz saatlere denk gelen bildirim atlanır. İlgili çocuk için hastalık, seyahat, diş çıkarma veya düzen değişikliği günü işaretliyse bildirim planlanmaz. Uyku bitince, ayar kapanınca veya tahmin değişince bekleyen uyanış bildirimleri yeniden düzenlenir. Her çocuk kendi geçmişiyle değerlendirilir ve bildirime dokunmak ilgili çocuğun Bugün ekranını açar. Bu bir uyanma alarmı veya kesin saat değildir.
+
+Uyanış bildirimi planlaması `src/domain/wakeReminders.ts` içindeki sıralı koordinatörle yürütülür. Yeni ayar, sürmekte olan planlama tamamlandıktan sonra eski uyanış bildirimlerini iptal eder; böylece hızlı kapatma sırasında geç eklenen bir bildirimin kalması önlenir. Cihaz API çağrıları `src/services/notifications.ts` üzerinden yapılır; koordinatörün çoklu çocuk ve eş zamanlı kapatma davranışı ile servis katmanının tarih, çocuk kimliği ve bildirim türüne göre iptali sahte bildirim adaptörleriyle test edilir. Gerçek işletim sistemi teslimi ayrıca cihaz testi gerektirir.
+
+Kişisel uyanıklık aralıkları çıkarılırken zamanları çakışan tamamlanmış uyku kayıtları hesaplama için birleştirilir. Böylece iç içe kayıtlar aradaki uyanıklığı olduğundan uzun göstermez; orijinal kayıtlar değiştirilmez.
+
+Bugün ve Özet ekranlarındaki uyku süresi, haftalık grafik ve bakım devri toplamı, çakışan uyku aralıklarını yalnızca bir kez sayar. Gece yarısını aşan uykular yerel günlere bölünür; devam eden uyku o anki zamana kadar hesaplanır. Kayıt sayısı ayrı olay sayısı olarak kalır.
+
+Doktorla paylaşılan yedi günlük özette yalnızca tamamlanmış uykular sayılır; toplam süre özet sınırlarıyla kesilir ve çakışan dakikalar bir kez eklenir. Sınırdan önce başlayıp özet döneminde biten uykunun dönem içindeki bölümü de toplama katılır.
 
 Gece modu, Bugün ekranından açılır; ana başlık ve alt gezinmeyi gizleyip koyu temalı uyku sayacı ile uyku/beslenme/bez kısayolları gösterir. Uyku kaydı mevcut durum yönetimini kullanır, diğer kayıtlar mevcut kayıt formlarını açar. Üstteki çıkış düğmesi normal arayüze döner. Bu özellik yalnızca uygulama renklerini değiştirir; cihazın ekran parlaklığını veya işletim sistemi gece ayarını değiştirmez. Bugün ekranındaki saat sıralı 24 saatlik plan; kullanılabilir uyku ve beslenme tahminlerini, geçmiş kayıtlardan çıkarılan sonraki gündüz uykusu taslaklarını, hedef yatışı ve yaklaşan aşı/randevuları birleştirir. Hedef yatış geçmişte kaldıysa yarın için gösterilir; görevler plandan tamamlanabilir veya silinebilir.
 
@@ -34,17 +52,20 @@ Uygulama şimdilik tamamen ücretsizdir. Kod tabanında ödeme duvarı veya abon
 | Mobil | Expo SDK 58, React Native 0.88 | iOS ve Android için ortak kod tabanı |
 | Dil | TypeScript | Veri modeli ve özelliklerde tip güvenliği |
 | Yerel saklama | Expo SQLite (`uykuva.db`) | `app_state`, indeksli `care_events` ve `care_tasks` tabloları; eski SQLite KV/AsyncStorage verisinden güvenli geçiş |
+| Anı fotoğrafları | Expo Image Picker + Image Manipulator | Kullanıcının seçtiği fotoğrafı 1280 piksel sınırına ve yaklaşık 0,8 MB boyuta küçültür; veri URI'si olayın SQLite JSON yükünde saklanır |
 | Test | TypeScript derleyicisi + Node test runner | Uyku motorunu arayüzden bağımsız test etme |
 | Durum yönetimi | React hook'ları | Mevcut ölçek için düşük karmaşıklık |
 
-Bulut senkronizasyonu eklendiğinde PostgreSQL tabanlı bir arka uç, satır seviyesinde erişim kuralları ve çevrimdışı olay senkronizasyonu kullanılacaktır. Sağlık verileri uygulama günlüklerine veya analitik olaylarına yazılmayacaktır.
+İsteğe bağlı aile eşitlemesi Supabase PostgreSQL ve RLS şemasını kullanır. `src/services/cloudSync.ts` Supabase oturumunu ve aile şifreleme anahtarını Expo SecureStore'da tutar; hassas profil verisini cihazda AES-GCM ile şifreledikten sonra elle gönderir. Supabase bağlantısı yoksa eşitleme kapalıdır. Sağlık verileri uygulama günlüklerine veya analitik olaylarına yazılmaz. Gerçek bulut kurulumu ve veritabanı RLS testleri henüz doğrulanmamıştır.
+
+`supabase/migrations` altında ilk aile eşitleme şeması ve `supabase/tests` altında pgTAP izin testi bulunur. Şema henüz bir Supabase projesine uygulanmamış, pgTAP testi gerçek yerel veritabanında çalıştırılmamıştır. Eşitleme istemcisi isteğe bağlı yapılandırma ve aile ekranındaki açık onayla etkinleşir.
 
 Android ana ekran uyku widget'ı `plugins/withUykuvaWidget.js` Expo config plugin'iyle oluşturulur. Plugin Android manifest'ine sağlayıcıyı ekler; Kotlin sağlayıcı/modülünü ve widget kaynaklarını yazar, React Native paketini `MainApplication` içine kaydeder. `App.tsx`, uygulama açıkken güncel bebek adı, uyku penceresi ve durum metnini yerel widget depolamasına gönderir. Android widget'ı en az 30 dakikalık işletim sistemi yenilemesini kullanır ve dokunulduğunda uygulamayı açar. Bu Android'e özgüdür; otomatik bulut senkronizasyonu veya iOS widget'ı sağlamaz. Böylece `expo prebuild` çalıştırıldığında yerel değişikliklerin kaybolmaması hedeflenir.
 
 ## 4. Dizin yapısı
 
 ```text
-SleepWell/
+Uykuva/
 ├── App.tsx                         # Uygulama kabuğu, sekmeler ve ekran bileşimi
 ├── app.json                        # Expo, iOS ve Android uygulama ayarları
 ├── package.json                    # Komutlar ve bağımlılıklar
@@ -69,6 +90,9 @@ SleepWell/
 │       └── theme.ts                # Renkler ve görsel token'lar
 │   └── services/
 │       └── notifications.ts        # Uyku, akşam rutini, bez kontrolü ve görev hatırlatmaları
+├── supabase/
+│   ├── migrations/                 # Aile eşitleme için PostgreSQL şeması
+│   └── tests/                      # RLS için pgTAP izin testleri
 └── ARCHITECTURE.md                 # Bu doküman
 ```
 
@@ -89,17 +113,19 @@ Zaman çizelgesi, kayıt türüne göre filtreleri, kayıt içeriği/bakım vere
 
 ### Ulusal aşı takvimi önerileri
 
-`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaşlar doğum tarihine takvim ayı eklenerek hesaplanır; doğum günündeki öneri gün sonuna kadar görünür kalır. `TURKEY_VACCINE_SCHEDULE_BASE_VERSION`, `TURKEY_VACCINE_SCHEDULE_UPDATE_DATE` ve `TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE` önerinin temel sürümünü ve 1 Eylül 2026 güncelleme kaynağını gösterir. Öneri penceresi resmi duyuruya bağlantı verir; 49–72 ayda ikinci suçiçeği dozu kaydı yoksa aile hekimiyle kayıtları teyit etme uyarısı gösterir. Uygulama geçmiş dozları veya eksik doz gerekliliğini kendisi belirlemez; öneriler kullanıcı ayrıca takvime eklemeden kayıt oluşturmaz.
+`src/domain/vaccineSchedule.ts`, Türkiye ulusal çocukluk dönemi takvimindeki yaş dönüm noktalarından tarih önerileri üretir. Yaş, ay sonuna ve artık yıla denk gelen doğum günlerini takvim ayı ekleyerek hesaplar; doğum günündeki öneri gün sonuna kadar görünür kalır. `TURKEY_VACCINE_SCHEDULE_BASE_VERSION`, `TURKEY_VACCINE_SCHEDULE_UPDATE_DATE` ve `TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE` önerinin temel sürümünü ve 1 Eylül 2026 güncelleme kaynağını gösterir. Öneri penceresi resmi duyuruya bağlantı verir; 49–72 ayda ikinci suçiçeği dozu kaydı yoksa aile hekimiyle kayıtları teyit etme uyarısı gösterir. Uygulama geçmiş dozları veya eksik doz gerekliliğini kendisi belirlemez; öneriler kullanıcı ayrıca takvime eklemeden kayıt oluşturmaz.
 
 Takvim verisi Sağlık Bakanlığının [2025 ulusal çocukluk dönemi aşı kartına](https://hsgm.saglik.gov.tr/depo/birimler/asi-ile-onlenebilir-hastaliklar-db/dokumanlar/2025/asi_haftasi/50X30_asi_karti.pdf) dayanır; Hepatit B doğum dozunu içerir. Bakanlığın [1 Eylül 2026 güncellemesi](https://iskilipdh.saglik.gov.tr/TR-1590795/cocukluk-donemi-asilama-takvimi-guncellendi-sucicegi-asisinda-ikinci-doz-uygulamasi-basladi.html) ikinci suçiçeği dozunu 48. aya eklemiştir. Takvim ve öneri tarihleri aile hekimiyle doğrulanmalıdır.
 
-Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını ve o günün rehberini yerel paylaşım menüsüyle metin olarak diğer bakım verenlere gönderebilir. Paylaşım sunucuya yüklenmez.
+Uyku koçu, seçilen yaklaşımı, hedef saatleri, etkin akşam rutini adımlarını, o günün rehberini ve son yedi gecenin check-in'lerini metin olarak veya A4 PDF halinde diğer bakım verenlerle paylaşabilir. PDF içeriği uygulama içinde HTML'den üretilir ve yerel paylaşım menüsünde açılır; paylaşım sunucuya yüklenmez. Metin ve PDF aynı rapor oluşturucudan beslenir.
 
 Akşam rutini yürütücüsü, etkin adımları sırayla gösterir; adım tamamlamayı veya atlamayı takip eder. Rutin bitirildiğinde tamamlanan adım sayısı ve yaklaşık süre, etkin bakım veren adına zaman çizelgesine bir not olarak eklenir.
 
 Sabah uyku check-in'i kolaylık puanı ve gece uyanma sayısına ek olarak isteğe bağlı yatış/uyanış saatleri ve kısa bağlam notu saklar. Bu check-in notları günlük doktor özetine dahil edilmez; cihaz verisi dışa aktarımında yer alır.
 
 Bugün ekranındaki `Uyanma` kısayolu, her gece uyanmasında tarih/saat ve verilen desteği (`beslenme`, `sakinleştirme/yakınlık`, `bez/temel ihtiyaç`, `diğer`) bir check-in altında kaydeder; zaman son 24 saat içinde düzeltilebilir. Saatli kayıtlar elle bildirilen toplam uyanma sayısından ayrı tutulur, son 30 kayıtla sınırlanır; yanlış kayıtlar silinebilir. Bakım devri ve yedi günlük doktor özetinde bakım veren adıyla gösterilir. Bu, aile gözlem kaydıdır; uyku veya sağlık sonucu değerlendirmesi üretmez.
+
+Uyku koçu saatli gece uyanmalarını son yedi yerel takvim gününde yanıt türüne göre sayar. Yinelenen kayıt kimlikleri, bozuk saatler ve gelecekteki saatler dışarıda bırakılır. Bu görünüm yalnızca aile kayıtlarının özetidir; beslenme zamanlaması, uyku yöntemi veya sağlık sonucu önermez.
 
 Bugün ekranındaki sabah uyanış alanı, rakamlar yazılırken ham girişi korur; böylece `0700` gibi dört haneli saatler yazım sırasında erken biçimlenip bozulmaz. Saat geçerli olduğunda ilk uyku penceresi anında gösterilir, alan odaktan çıkınca veya kullanıcı kaydedince `SS:DD` biçiminde sunulur; kaydetmek isteğe bağlıdır. Etkin akşam rutininin toplam süresi sıfırdan büyükse, aynı kart rutine yaklaşık başlangıç aralığını da pencerenin başlangıç ve bitişinden bu süre çıkarılarak gösterir. Bu, ailenin kendi rutin süresine dayalı planlama yardımcısıdır; uyku işaretlerinin yerine geçmez. Uyku koçluğundaki sabah check-in alanı da aynı uyku önizlemesini sunar. Check-in kaydedilince sabah saati Bugün ekranındaki ilk pencere için başlangıç noktası olur; bu uyanıştan sonraki ilk uyku kaydedilince tahmin son uykunun bitişinden devam eder. Dokuz haftadan küçük düzeltilmiş yaşta girilmiş uyanış saati varsa düşük güvenli yaş aralığı gösterilir; saat girilmediyse yalnızca açıklama sunulur.
 
@@ -133,11 +159,12 @@ Ana fonksiyonlar:
 - `estimateSleepWakeWindow`: Devam eden uykunun saat dilimindeki son 30 günlük benzer uyku sürelerinden, en az beş kayıt varsa ortanca ve çeyrekler arası uyanma aralığı üretir; bildirim veya kesin saat oluşturmaz.
 - `createDailyNapOutline`: Son 14 günde en az üç farklı güne ait yeterli gündüz uykusu varsa sıra numarasına göre tarihsel saat aralığı çıkarır; bugünkü kaydı tarihsel aralığın yanında gösterir. Bugünkü planda henüz kaydedilmemiş, gelecekteki uyku taslakları sonraki uyku tahminiyle çakışmıyorsa listelenir.
 - `compareNapPatterns`: Önceki ve son yedi tam yerel günü ayrı inceler; bitmiş 15–240 dakika arası gündüz uykularının kayıt bulunduğu gün başına medyanını hesaplar. Her haftada en az dört kayıtlı gün yoksa karşılaştırma sunmaz. Sonucu yalnızca kaydedilen örüntü olarak açıklar, kestirme geçişi tahmin etmez.
-- `createFeedingForecast`: Kayıtlı beslenme aralıklarının medyanından açıklanabilir bir sonraki aralığı üretir; hesaplanan aralık tamamen geçmişse bayat tahmini göstermez.
+- `createFeedingForecast`: Son 30 gündeki geçerli emzirme/biberon başlangıçlarından en fazla 11 tanesinin medyanıyla süt beslenmesi aralığı üretir. Katı gıda ve sağım kayıtlarını, gelecek/bozuk tarihleri dışarıda bırakır; en az dört benzer kayıt yoksa nedenini Bugün ekranında açıklar.
 - `coachingDay`: Düzeltilmiş yaş aşaması ve seçilen yaklaşıma göre birbirinden farklı günlük görev ve check-in sorularını üretir; 6 aydan küçük bebeklerde destek azaltma görevi vermez.
 - `isSleepPlanPausedToday`: Kullanıcının elle duraklatma ayarıyla o günün hastalık/seyahat/diş çıkarma/düzen değişikliği check-in'ini birleştirir; UI dışında çağrılsa da günlük görev işaretleme ve plan ilerletme koruması aynı kuralı uygular.
-- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. En güncel yedi tarihli check-in'i kullanır; tarihsiz, bozuk tarihli ve gelecekteki check-in'leri dışarıda bırakır. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla eşleşme kurup rutin–uyku başlangıç aralığının ortancasını verir; son 30 gündeki en yeni yedi işaretli uyku kaydının kullanılan geçiş desteği dağılımını tıbbi veya başarı değerlendirmesi yapmadan gösterir.
+- `createSleepCoachInsights`: Son uzun gece uykularını hedef saatle karşılaştırır ve en fazla 15 dakikalık değişim üretir. En güncel yedi tarihli check-in'i kullanır; tarihsiz, bozuk tarihli ve gelecekteki check-in'leri dışarıda bırakır. Ayrıca rutin çalıştırıcısı bitişini izleyen 3 saatte başlayan en fazla yedi gece uykusuyla rutin–uyku başlangıç ortancasını; check-in'deki gece yatış saatinden sonraki ilk gece uykusuna kadar olan süreyi eşleşen son/önceki 7 takvim gününün her biri için en az 3 kayıtta uyku başlangıç ortancasını hesaplar. İki dönem yeterli örneğe sahipse ortanca farkını dakika olarak verir; fark tek başına plan değişikliği önermez. Hesaplamada çağıranın verdiği yerel `now` kullanılır. Son 30 gündeki en yeni yedi işaretli uyku kaydının kullanılan geçiş desteği dağılımını tıbbi veya başarı değerlendirmesi yapmadan gösterir. Yatış–başlangıç farkı tek başına yatış saati değişikliği önermez.
 - `handoffSummary`: Seçili 2/4/6/8 saatlik aralıktaki kayıtları, en son beslenme/bez/uyku saatlerini ve biberon miktarını özetler; son beslenme ve bez kaydında bakım verenin adını da gösterir. Paylaşımı satır satır biçimlendirir; kayıtlı yatış hedefini, plan etkinse yaş ve hazır oluş aşamasına uygun uyku yaklaşımını ve etkin akşam rutini adımlarını ekler. Plan duraklatılmışsa seçili yaklaşımı aktifmiş gibi göstermez. Pencere dışında başlamış olsa da açık emzirmeyi toplam ve taraf süreleriyle gösterir. Sağım geçmişi varsa tüm partilerdeki kullanılabilir toplamı, önce kullanılması gereken partinin saklama durumunu ve kullanım son saatini ekler. Seçilen devir aralığına düşen, her ilaç adına ait en güncel kayda kullanıcı tarafından girilmiş kontrol saatlerini ayrıca gösterir; ilaç/doz zamanı önermez. Olağan dışı gün bağlamı işaretliyse nedeni ve o gün koçluk planının beklediğini belirtir. Pencereyle kesişen uyku süresini, devam eden uykuyu ve sonraki 24 saatin en yakın üç görevini ekler. Bebek uyanıksa ve tahmin penceresi geçmemişse, günün sabah uyanış saatinden veya son uykudan hesaplanan sıradaki uyku penceresini ve tahmin güven düzeyini içerir. Güven düzeyi yaş bandı ve kişisel kayıt miktarını açıklar, kesin program değildir. Tercih varsayılanı 4 saattir; eski yedeklerde alan yoksa migrasyon bu değeri kullanır.
+- Bakım devri özetine saatli gece uyanmalarının son 7 gündeki yanıt türü sayılarını da ekler; bu dağılım yalnızca kaydedilen aile gözlemleridir ve beslenme ya da uyku planı önermez.
 - `careInstructions`: Ailenin bakım verene bırakmak istediği notları cihazda saklar; yalnızca bakım veren paylaşımı açıkça başlatıldığında devir özetine ekler. Yedeklerde taşınır ve eski veriler boş notla açılır.
 
 ### Veri katmanı
@@ -148,7 +175,11 @@ Durum `uykuva.db` dosyasında tutulur. Profil, tercih ve uyku planı JSON olarak
 
 JSON dışa aktarımı, `app_state` ile `care_events` satırlarını tam `AppState` olarak birleştirir. Böylece yedek şeması uygulama içi SQLite tablolarından bağımsız kalır.
 
+Anı fotoğrafları ayrıca dosya yoluna bağlı kalmamak için JPEG veri URI'si olarak anı olayına yazılır. Bu sayede uygulama önbelleği temizlense de fotoğraf bağlantısı kopmaz ve standart/şifreli yedeklerde olayla beraber taşınır. Her görsel 1,1 milyon Base64 karakteriyle, yedek metni 12 milyon karakterle sınırlıdır; içe aktarma MIME türünü ve Base64 biçimini doğrular.
+
 Durum şeması 4 ile `AppState.children` her çocuk için ayrı `ChildProfile` saklar: bebek bilgileri, bakım talimatları, gelişim check-in'leri, bakım kayıtları, görevler ve uyku planı. `activeChildId` seçili çalışma alanını belirtir; mevcut ekranlar bu alanın düz değerleriyle çalışır. Her durum değişiminde etkin çocuk anlık görüntüsü güncellenir; profil değiştirirken önce açık çalışma alanı kaydedilir. Bakım verenler ve bildirim tercihleri aile/cihaz genelinde ortaktır. Önceki tek çocuk şemaları tek profilli duruma kayıpsız taşınır. Uyku, rutin, bakım görevi, bez, ilaç ve süt hatırlatmaları bütün çocukların ayrı kayıtlarından yeniden planlanır; bildirim metni ilgili çocuğun adını taşır. JSON yedekleri tüm çocuk profillerini içerir; birleştirme aynı kimlikli çocuğun kayıtlarını bir araya getirir ve diğer profilleri korur.
+
+Aktif çocuk değiştiğinde Bugün ve Uyku planı ekranları yeni profil için yeniden oluşturulur. Kaydedilmemiş saat ve gece özeti taslakları diğer çocuğun ekranına taşınmaz.
 
 İlaç kaydı isteğe bağlı `medicationReminderAt` saatini olayda saklar. `scheduleMedicationReminders` her ilaç adı için en son ilaç kaydını esas alır, eski plan bildirimlerini iptal eder ve yalnızca kullanıcının açıkça girdiği gelecek saat için tek seferlik yerel bildirim kurar. Hatırlatma dozu veya aralığı söylemez; ilaç planını kontrol etmeyi hatırlatır. Bildirim izni yoksa doz kaydı yine tutulur, hatırlatma kurulmadığı açıklanır. İçe aktarılan hatırlatma tarihleri JSON doğrulamasından geçer; profil/veri sıfırlanınca zamanlanmış ilaç bildirimleri iptal edilir.
 
@@ -178,7 +209,11 @@ Akşam rutini adımları ebeveyn tarafından etkinleştirilip devre dışı bır
 
 Akşam rutini bildirimi isteğe bağlıdır. Etkin rutin adımlarının toplam süresi hedef yatış saatinden çıkarılır; sonraki yedi günün bildirimleri yerel olarak kurulur. Süre sıfırsa veya bildirim sessiz saatlere denk gelirse o gün bildirim planlanmaz. Eski yedeklerde bu tercih varsayılan olarak kapalıdır.
 
-Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir. `detectRecordedMilestones`, ilk uyku/beslenme/ek gıda/ölçüm kayıtlarını, ilk dört saatlik uyku kaydını ve 100. beslenme kaydını yalnızca mevcut olaylardan bulur; gelişim basamağı veya klinik değerlendirme çıkarmaz. Ebeveyn isterse bulunan anı tek dokunuşla günlüğe ekler. `milestoneId` tekrar öneriyi önler ve JSON yedeğinde korunur.
+Anı günlüğü, `memory` türünde zaman çizelgesi olayı olarak saklanır. Önerilen başlıklar yalnızca hızlı giriş içindir. `detectRecordedMilestones`, ilk uyku/beslenme/ek gıda/ölçüm kayıtlarını, ilk dört saatlik uyku kaydını ve 100. beslenme kaydını yalnızca mevcut olaylardan bulur; gelişim basamağı veya klinik değerlendirme çıkarmaz. Ebeveyn isterse bulunan anı tek dokunuşla günlüğe ekler. `milestoneId` tekrar öneriyi önler ve JSON yedeğinde korunur. Insights ekranındaki anı defteri, geçmişteki anı kayıtlarını tarihe göre sıralayıp PDF’e dönüştürür; HTML metinleri kaçırır, yalnızca doğrulanmış JPEG veri adreslerini gömer ve gelecekteki kayıtları dışarıda bırakır. Fotoğraf toplamı sekiz görsel ve yaklaşık 6 MB ile sınırlıdır; eklenmeyen görsel sayısı PDF’de belirtilir. PDF `expo-print` ile cihazda hazırlanır ve `expo-sharing` üzerinden kullanıcının seçtiği hedefe gönderilir; sunucuya yükleme yapılmaz.
+
+Doktor özeti, ebeveynin seçtiği son 7, 14 veya 30 günlük aralıkta beslenme, bez, sağlık, uyku ve saatli uyanma kayıtlarını kapsar; ileri tarihli veya bozuk olay saatleri sayılmaz. PDF ve metin aynı aralık parametresini kullanır. Büyüme bölümünde olay sıralamasından bağımsız olarak en yeni geçmiş ölçüm seçilir. Gelişim bölümünde ileri tarihli gözlem dışarıda kalır. Bu rapor kullanıcı kayıtlarını düzenler; klinik değerlendirme üretmez.
+
+Son yedi günlük uyku özeti, yerel takvim günlerine göre uyku dakikalarını çakışmaları tek kez sayarak listeler; gece uykusunu günlere dağıtır. Aynı satıra varsa ebeveynin gece uyanma sayısı, kolaylık puanı, yatış/uyanış saati ve olağan dışı gün bağlamı eklenir. Kayıt olmayan günler açıkça gösterilir; bugünkü günün tamamlanmadığı belirtilir. PDF yalnızca kullanıcının cihazında oluşturulur.
 Gelişim gözlem kartı `src/data/developmentMilestones.ts` içindeki CDC 2, 4, 6, 9, 12, 15, 18, 24, 30, 36, 48 ve 60 aylık listeleri kullanır. Yaş seçimi, erken doğumda ilk iki yıl için düzeltilmiş doğum tarihini takvim ayıyla karşılaştırır; iki liste yaşı arasındaysa daha küçük yaş listesini gösterir. Çocuğun mevcut yaşına kadar olan eski listeler seçilip gözden geçirilebilir. Yanıtlar, notlar ve kontrol tarihi `developmentCheckIns` alanında yerel olarak saklanır, JSON yedeğine eklenir ve kullanıcı doktor özetini paylaştığında son kontrolün özeti de paylaşılır. Bu liste gelişim tarama aracı veya tanı değildir.
 
 Büyüme geçmişi son sekiz kilo/boy/baş çevresi ölçümünü tarihle gösterir. İsteğe bağlı WHO eğrisi seçimiyle `src/domain/whoGrowth.ts`, WHO Anthro'nun resmî deposundaki günlük LMS tablolarından (0–1826 gün) z-skoru ve persentil hesaplar; küçük grafikler P10/P50/P90 referans çizgileri ve ölçüm noktalarını gösterir. Boy ölçümünde yatış/ayakta bilgisi saklanır ve yaşa uymayan ölçüm konumunda WHO'nun 0,7 cm düzeltmesi uygulanır. WHO verileri `src/data/{weianthro,lenanthro,hcanthro}.json` dosyalarında tutulur. Kaynak: [WHO Anthro büyüme standartları hesaplama deposu](https://github.com/WorldHealthOrganization/anthro). Eğriler bilgilendirme amaçlıdır; tıbbi yorum veya tanı oluşturmaz.
@@ -283,7 +318,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Ortak zaman çizelgesi eklendi.
 - [x] Son dört saat için bakım devri özeti eklendi.
 - [x] Devir özetini sistem paylaşım menüsüyle gönderme eklendi.
-- [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; son 10 döngü başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
+- [x] 14 günlük uyku eğitimi/alışkanlık planı ve tamamlanan döngü arşivi eklendi; tüm döngüler başlangıç/bitiş tarihleri, günlük görev toplamları ve yöntem bilgisiyle saklanır.
 - [x] Yedi uyku yaklaşımı; yönteme özel gece rehberi, gün adımları, yedek doğrulaması ve eski yöntem migrasyonu eklendi. Süreli kontrol yaklaşımı sabit aralık veya ağlama süresi önermiyor; bebeğin ihtiyaçları ve bakım verenin kararı öncelikli.
 - [x] Hazır oluş koşulları tamamlandığında yedi yaklaşım; yöntem özeti, bakım veren adımı, gece yanıtı, beklenen huzursuzluk, yakınlık, uygulama yükü ve ilerleme biçimiyle karşılaştırılıyor. Ailenin yakınlık, destek azaltma veya kısa kontrol tercihine göre filtreleniyor; tüm yöntemler erişilebilir kalıyor.
 - [x] Ailece belirlenen kısa kontroller yaklaşımı eklendi. Uygulama sabit aralık veya ağlama süresi önermiyor; beslenme, sağlık ve yoğun huzursuzlukta gecikmeden yanıt veriliyor.
@@ -315,9 +350,9 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Tüm kullanıcı verisini JSON olarak dışa aktarma eklendi.
 - [x] Onaylı cihaz verisi silme akışı eklendi.
 - [x] Sağ/sol/iki taraf emzirme zamanlayıcısı eklendi.
-- [x] Son kayda göre sıradaki emzirme tarafı önerisi eklendi.
+- [x] Son emzirme kaydındaki zamanlı taraf oturumuna göre sıradaki taraf önerisi eklendi.
 - [x] Biberon miktarı ve katı gıda/tepki kaydı eklendi.
-- [x] Açıklanabilir sıradaki beslenme aralığı eklendi.
+- [x] Katı öğünlerden ayrı, son 30 günlük süt beslenmesi aralığı tahmini eklendi; yeterli örnek yoksa gereken kayıt sayısı açıklanır.
 - [x] Günlük emzirme süresi, biberon ve katı öğün toplamları eklendi.
 - [x] Gerçek gece başlangıçlarını hedef yatışla karşılaştıran koçluk içgörüsü eklendi.
 - [x] Gecelik değişimi 15 dakika ile sınırlayan yatış önerisi eklendi.
@@ -327,6 +362,8 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Aktif bakım veren değiştirme ve seçilen kişi adına kayıt ekleme eklendi.
 - [x] Bakım veren rol seçimi, kaldırma ve eski veri migrasyonu eklendi.
 - [x] Yedi günlük doktor özeti A4 PDF dosyası olarak oluşturulup paylaşılabiliyor.
+- [x] Son yedi günlük uyku süresi, check-in ve plan durumu A4 PDF raporu olarak hazırlanıp paylaşılabiliyor; eksik günler ve kısmi bugünkü gün belirtiliyor.
+- [x] Uyku koçu planı, son yedi gecenin check-in'leriyle metin veya A4 PDF olarak bakım verenlerle paylaşılabiliyor.
 - [x] Yaklaşan doktor randevuları ve hazırlık notları paylaşılabilir doktor özetine ekleniyor.
 - [x] Randevu formu doktor soruları ve notları alanını uyku, beslenme ve büyüme örnekleriyle açıkça sunuyor.
 - [x] Tamamlanan aşı ve randevular için tarihli geçmiş gösteriliyor; son 20 tamamlanan aşı doktor özetinde uygulamada işaretleme tarihi ve planlanan tarihle ayrı belirtiliyor. Görev silme işlemi kullanıcı onayına bağlıdır.
@@ -347,7 +384,7 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Uyku/beslenme tahminleri, hedef yatış ve bakım görevleri Bugün ekranında saat sıralı tek 24 saat planında birleştirildi; yatış hedefi geçmişse ertesi güne taşınır.
 - [x] Yeterli kayıt bulunan sonraki gündüz uykuları 24 saatlik plana tarihsel, yaklaşık aralık olarak eklenir; tamamlanan uykular ve sıradaki uyku tahminiyle çakışan taslaklar tekrarlanmaz.
 - [x] Tamamı geçmiş beslenme tahmin aralığı gösterilmez; yeni kayıt beklenir.
-- [x] 12 saati aşan açık uyku sayacı uygulama açıkken zamanlayıcı güncellemesiyle veya uygulamaya dönüldüğünde teyit edilir; süre otomatik tamamlanmaz, kullanıcı gerçek uyanış saatini düzenleyebilir.
+- [x] 12 saati aşan açık uyku sayacı uygulama açıkken nazik onayla veya bildirimler açıksa sessiz saat sonrasına ertelenen yerel hatırlatmayla kontrol edilir; bildirime dokununca ilgili uyku kaydının gerçek uyanış saati düzenlemeye açılır. Sayaç hiçbir zaman otomatik tamamlanmaz.
 - [x] 9 haftadan küçük bebeklerde uyku, beslenme, bez ve sağlık özeti takvim günü yerine son 24 saati kapsar.
 - [x] Tahmin aralığı geçtikten sonra kaydı olmayan bakım verene bir kez sorar ve gözden geçirilebilir tarihli kayıt açar.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
@@ -357,15 +394,19 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 
 ## 10. Uyku koçluğu kapsamı ve kalan işler
 
-Whispie'nin resmi ürün sayfası uyku tahmininin yaş aralığını bebeğin uyanıklık kayıtlarıyla kişiselleştirdiğini, pencereyi kısa bir aralık olarak gösterdiğini ve 6 aydan itibaren Sleep Coach sunduğunu belirtiyor ([özellik sayfası](https://www.whispieapp.com/whispie/), [tahmin nasıl çalışıyor](https://www.whispieapp.com/whispie/how-it-works/)). 21 Ekim 2026 tarihli açıklamasında altı gün diliminde son 10 uyanıklık aralığı, gündüzde en az 5 ve gecede en az 2 örnek eşiği tarif ediliyor; sonraki uyku tahminleri ilk üç etkin günden sonra Premium'a, koç ise Premium+ üyeliğine bağlı. Uykuva'nın tüm özellikleri ücretsiz tutma kararı korunuyor.
+Whispie'nin resmî ürün sayfası yaş aralığını kişisel uyanıklık kayıtlarıyla ayarlayan uyku tahminini, kısa bir sonraki-uyku penceresini ve 6 aydan itibaren Sleep Coach'u tanıtıyor ([özellik sayfası](https://www.whispieapp.com/whispie/), [tahmin yöntemi](https://www.whispieapp.com/whispie/how-it-works/)). 21 Ekim 2026 tarihli açıklaması altı gün diliminde son 10 uyanıklık aralığını, gündüzde en az 5 ve gece diliminde en az 2 örnek eşiğini tarif ediyor. Kişisel uyku saatleri ilk üç etkin günden sonra Premium'a, altı yöntemli koç ise Premium+ üyeliğine bağlı. Whispie ayrıca yaşa göre düzenlenmiş 79 kısa rehber, 36 dil, 39 ülkenin aşı takvimi ve ücretsiz planda iki aile üyesi sunuyor. Uykuva'da kişisel uyku tahminleri, yedi yöntemli 14 günlük koçluk, çok dilli ekranlar ve ülkeye göre aşı takvimi ücret olmadan sunulacak şekilde tasarlanıyor; bu uygulamada abonelik veya ücretli kapı yok.
 
 Uykuva'nın hesaplama motoru da altı gün dilimini, son 10 örneği ve gündüz/gece için 5/2 örnek eşiğini kullanıyor; yaş aralığına kişisel örüntüyü harmanlıyor ve geçmiş tahmin hatalarına göre pencereyi ayarlıyor. Uyku koçluğunda yedi yaklaşım, yaşa bağlı hazır oluş kapısı, 14 günlük rehber, gece uyanması rehberi, sabah check-in'i, duraklatma ve tamamlanan program arşivi var.
 
 Koç ekranındaki kısa uyku rehberi temel bilgilendirmeyi çevrimdışı sunar: bebeklerin uyku ritmindeki değişkenlik, sakin ve tekrarlanabilir rutin, gece uyanınca ihtiyacı değerlendirme, bebeklerde güvenli uyku, bakım verenlerin ortak bir yanıt belirlemesi ve zor günlerde planı erteleme. Yaş aşamasında destek azaltma kapalıysa rehber bunu da açıklar; hazır oluş maddeleri tamamlandığında yöntem karşılaştırmasına geçiş verir. Ayrıntılı okuma için NHS'in [bebek uykusu rehberine](https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/), AAP'nin [bebek uyku rehberine](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Getting-Your-Baby-to-Sleep.aspx) ve CDC'nin [güvenli uyku bilgilerine](https://www.cdc.gov/sudden-infant-death/sleep-safely/) bağlantı verilir. Temel kart içerikleri 27 Ekim 2026'da bu kaynaklar gözden geçirilerek yazıldı; sağlık tavsiyesi yerine geçmez ve uyku eğitiminin aile için zorunlu olmadığını açıkça söyler.
 
+Uyku sekmesinde ayrıca `src/data/sleepGuides.ts` tarafından sağlanan sekiz çevrimdışı kısa okuma bulunur: yaklaşık dört ay civarındaki uyku döngüsü değişimi, gece-gündüz işaretleri, sakin akşam rutini, gece uyanmaları, hastalık/diş çıkarma/düzen değişikliği ve bakım veren desteği ile gündüz uykusu geçişleri. Her özet kendi NHS, AAP veya Queensland çocuk sağlığı kaynağı bağlantısını taşır ve tıbbi danışmanlık olmadığını açıklar. Dört ay civarındaki değişim, uyku eğitimi için hazır olma veya başlama önerisi olarak sunulmaz. Gündüz uykusu geçişi metni yaş aralıklarını zorunlu hedef gibi sunmaz. Zor günler rehberi, uygulamadaki gün bağlamı seçimiyle koçluk adımlarını bekletmeyi, günlük bakım kayıtlarını sürdürmeyi açıklar. İçerikler son olarak 30 Ekim 2026'da gözden geçirilmiştir.
+
+Uyku planındaki dört hazır oluş maddesinin her birinde etkileşimli kutu ve kısa açıklama bulunur. Açıklamalar hastalık/ağrı olduğunda planı bekletmeyi, beslenme endişesinde çocuk doktoruna danışmayı ve beslenmeyi geciktirmemeyi, güvenli uyku düzenini değiştirmemeyi ve bakım verenler ortak karar veremiyorsa destek azaltmayı ertelemeyi belirtir. Açıklamalar hazır oluş kontrolünün tıbbi değerlendirme olmadığını korur.
+
 Uyku rehberi, solunum güçlüğü veya uzun/tekrarlayan nefes duraklamaları, sık/yüksek sesli horlama ve olağandışı uykuya meyil fark edilirse çocuk doktoruyla görüşmeyi; nefes alamama, renk değişikliği ya da zor uyandırılma durumunda acil yardım almayı söyler. Bu belirtilerde uyku planını uygulamaya devam etmemeyi belirtir. Kaynaklar AAP'nin [uyku apnesi belirtileri](https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Sleep-Apnea-Detection.aspx) ve NHS'in [acil yardım işaretleri](https://www.nhs.uk/baby/health/when-to-get-urgent-medical-help-for-babies-and-children-under-5/) sayfalarıdır. Bu kısa yönlendirme tanı koymaz ve profesyonel değerlendirmeyi ikame etmez.
 
-Güncel ürün farkları: Whispie sayfası 27+ dil ve 39 ülkede aşı takvimi, ayrıca hesaplar arası paylaşımlı aile günlüğü tanıtıyor. Uykuva şu an Türkçe ve Türkiye takvimine odaklı; aynı cihazda bakım veren profilleri, paylaşılabilir devir/plan özeti ve dosya tabanlı yedek taşıma sunuyor. Başka telefondan eşzamanlı kayıt, rol bazlı bulut erişimi, çok dilli arayüz ve ülkeye göre aşı takvimi henüz yok. En yüksek öncelikli fark çoklu cihaz senkronizasyonu; bunun için güvenli hesap, aile daveti, çevrimdışı değişiklik birleştirme/çakışma kuralları ve kullanıcı denetimli veri silme birlikte tasarlanmalı. Mevcut cihaz içi SQLite saklaması çevrimdışı kaynak olarak korunmalıdır. Eşitleme taslağı ve güvenlik kararları [SYNC_DESIGN.md](SYNC_DESIGN.md) dosyasındadır; bu taslak uygulamada ağ aktarımı başlatmaz.
+Güncel ürün farkları: Whispie'nin resmî sayfası 36 dili, 39 ülkede aşı takvimini ve ücretsiz hesapta iki aile üyesini listeliyor. Uykuva şu an Türkçe ve Türkiye takvimine odaklı; aynı cihazda ayrı bakım veren profilleri, paylaşılabilir devir/plan özeti ve dosya tabanlı yedek taşıma sunuyor. Hesaplar arası eşitleme istemcisi, aile daveti, roller, cihazda AES-GCM şifreleme, elle eşitleme ve bulut kopyasını kullanıcı denetiminde silme akışları eklendi; güvenli Supabase yapılandırması, migration uygulaması ve gerçek iki cihazlı doğrulama bekliyor. Ülkeye göre aşı takvimi ve ek ekran dilleri hâlâ yok. Eşitleme durum ayrıntıları [SYNC_DESIGN.md](SYNC_DESIGN.md) dosyasındadır.
 
 Uyku koçluğu ve tahminler ebeveynin gözlemlerinin yerine geçmez. Mevcut yaş sınırları, hazır oluş maddeleri, hastalık/seyahat duraklatması ve sağlık uzmanına yönlendirme metinleri korunmalıdır.
 
@@ -373,17 +414,17 @@ Randevular tek seferlik, haftalık veya aylık olarak ayarlanabilir. Tekrarlanan
 
 Gece modu girişinde ekran okuyucu etiketi ve eylem ipucu bulunur. Alt gezinme hedefleri sekme rolü ve seçili durumunu ekran okuyucuya aktarır; koçluk ilerleme şeridi tek bir tamamlanan gün özeti olarak okunur. Gece modu giriş/çıkış hedefleri en az 48 dp, uyku/beslenme/bez hızlı eylemleri en az 88 dp, ortak seçim etiketleri en az 48 dp yüksekliğindedir. Rutin sıralama, kayıt silme, uyku değerlendirme ve gelişim dönüm noktası seçimlerinin dokunma hedefleri de en az 48 dp'dir. Metinler sistemin varsayılan yazı ölçeklendirmesini kullanır; bu düzenleme tam erişilebilirlik denetiminin yerini almaz.
 
-Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrarlayan zor gecelerde daha fazla destek ve temel ihtiyaç kontrolü önerir; daha kolay gecelerde mevcut rutini korumayı söyler. Bu rehber plan yöntemini otomatik değiştirmez, beslenmeyi ertelemez ve uyku başarısı/sağlık sonucu iddiasında bulunmaz.
+Uyku koçu son üç geçerli yerel gün içinde kolaylık veya uyanma sayısı içeren check-in'leri tarihe göre inceler. Takvimde olmayan tarihler ve yalnızca saat ya da not içeren kayıtlar rehbere katılmaz. 5+ uyanma veya tekrarlayan zor gecelerde daha fazla destek ve temel ihtiyaç kontrolü önerir; daha kolay gecelerde mevcut rutini korumayı söyler. Bu rehber plan yöntemini otomatik değiştirmez, beslenmeyi ertelemez ve uyku başarısı/sağlık sonucu iddiasında bulunmaz.
 
 - [x] Bakım olaylarını ayrı `care_events` SQLite tablosuna taşıma; eski SQLite KV ve AsyncStorage durum anahtarlarından güvenli ilk açılış göçü
 - [x] Bakım görevlerini indeksli `care_tasks` SQLite tablosuna taşıma; gömülü eski görevleri ilk okumada kayıpsız aktarma
 - [ ] Diğer büyüyen veri kümelerini normalize tablolara ayırma
-- [ ] Güvenli hesap sistemi ve çoklu cihaz senkronizasyonu
-- [ ] Telefonlar arası bakım veren daveti ve bulut erişim yönetimi
+- [x] İsteğe bağlı hesap ve elle eşitleme istemcisi; Supabase migration ve iki cihazlı gerçek eşitleme henüz doğrulanmadı.
+- [x] Süreli aile daveti, aile sahibi izinleri, salt okunur rolü, davet iptali ve bulut aile verisini silme istemcisi; Supabase RLS gerçek veritabanında henüz test edilmedi.
 - [x] Randevular için haftalık/aylık tekrar; tamamlanan her örnekten sonra sıradaki örnek açılır ve geçmiş kayıt saklanır.
 - [ ] Ayrıntılı bildirim zamanlama seçenekleri
 - [x] Android ana ekran uyku widget'ı eklendi; Android dışındaki widget/Live Activity desteği açık
-- [x] Tamamlanan 14 günlük uyku planı döngülerinin en çok 10 tanesi, başlangıç/bitiş tarihleri ve görev geçmişiyle saklanır ve koç ekranında listelenir.
+- [x] Tamamlanan 14 günlük uyku planı döngülerinin tamamı, başlangıç/bitiş tarihleri ve görev geçmişiyle saklanır, birleştirilebilir ve koç ekranında listelenir.
 - [x] WHO 0–5 yaş kilo, boy ve baş çevresi z-skor tablolarıyla persentil eğrileri; kız/erkek eğrisi profilde isteğe bağlı seçilir
 - [x] Aşı önerisinde kaynak sürümü, resmi duyuru bağlantısı ve 49–72 ay suçiçeği yakalama dönemi için hekimle teyit uyarısı gösteriliyor.
 - [ ] Aşı kartı/e-Nabızdan doğrulanan doz geçmişiyle kişiye özel, hekim onaylı eksik doz akışı
@@ -397,7 +438,7 @@ Uyku koçu son üç yerel check-in'i tarihe göre inceler. 5+ uyanma veya tekrar
 
 ## 11. Sonraki geliştirme sırası
 
-1. Güvenli aile hesabı, başka telefona bakım veren daveti, çevrimdışı senkronizasyon ve çakışma çözümü
+1. Yerel Supabase migration/pgTAP doğrulaması, yapılandırılmış test projesi ve gerçek iki cihazlı eşitleme/çakışma denemesi
 2. Bildirim planlarının gerçek cihaz ve saat dilimi değişimlerinde uçtan uca doğrulanması
 3. Türkçe sesli kayıt ve ebeveynin seçtiği ek dil/ülke aşı takvimleri
 4. İçerik ve uyku planlarının kaynak sürümlemeyle uzman doğrulaması

@@ -37,7 +37,7 @@ function migrateSingleState(value: unknown): AppState {
   const caregiverName = caregivers.find((item) => item.id === activeCaregiverId)?.name ?? legacyName;
   const completedDays = Array.isArray(candidate.sleepPlan?.completedDays) ? candidate.sleepPlan!.completedDays!.filter(isSleepPlanDayRecord).slice(-14) : [];
   const completedRuns = Array.isArray(candidate.sleepPlan?.completedRuns)
-    ? candidate.sleepPlan!.completedRuns!.filter((run) => run && typeof run.id === "string" && typeof run.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.startDate) && typeof run.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.completedDate) && Array.isArray(run.days) && run.days.length <= 14 && run.days.every(isSleepPlanDayRecord)).slice(-10)
+    ? candidate.sleepPlan!.completedRuns!.filter((run) => run && typeof run.id === "string" && typeof run.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.startDate) && typeof run.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.completedDate) && Array.isArray(run.days) && run.days.length <= 14 && run.days.every(isSleepPlanDayRecord))
     : [];
   const legacyRunStart = typeof candidate.sleepPlan?.startDate === "string" ? localDateOnly(candidate.sleepPlan.startDate) : undefined;
   const legacyCompletedDate = typeof candidate.sleepPlan?.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(candidate.sleepPlan.completedDate) ? candidate.sleepPlan.completedDate : undefined;
@@ -74,7 +74,7 @@ function migrateSingleState(value: unknown): AppState {
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday: candidate.sleepPlan?.completedToday ?? [],
       completedDays,
-      completedRuns: completedRuns.slice(-10),
+      completedRuns,
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],
       checkIns: Array.isArray(candidate.sleepPlan?.checkIns) ? candidate.sleepPlan.checkIns.map((item) => ({
         ...item,
@@ -85,6 +85,8 @@ function migrateSingleState(value: unknown): AppState {
       ...initial.preferences,
       ...candidate.preferences,
       handoffHours: [2, 4, 6, 8].includes(Number(candidate.preferences?.handoffHours)) ? Number(candidate.preferences?.handoffHours) as 2 | 4 | 6 | 8 : 4,
+      wakeReminderEnabled: candidate.preferences?.wakeReminderEnabled === true,
+      wakeReminderMinutes: [5, 10, 15, 20, 30].includes(Number(candidate.preferences?.wakeReminderMinutes)) ? Number(candidate.preferences?.wakeReminderMinutes) as 5 | 10 | 15 | 20 | 30 : 10,
       careTaskRemindersEnabled: candidate.preferences?.careTaskRemindersEnabled ?? false,
       careTaskReminderMinutes: candidate.preferences?.careTaskReminderMinutes ?? 120,
       diaperRemindersEnabled: candidate.preferences?.diaperRemindersEnabled ?? false,

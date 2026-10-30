@@ -17,7 +17,7 @@ const ITERATIONS = 600_000;
 const SALT_BYTES = 16;
 const NONCE_BYTES = 12;
 const TAG_BYTES = 16;
-const MAX_ENCRYPTED_EXPORT_CHARS = 5_000_000;
+const MAX_ENCRYPTED_EXPORT_CHARS = 17_000_000;
 const ADDITIONAL_DATA = utf8ToBytes("uykuva-encrypted-export:v1:PBKDF2-HMAC-SHA256:600000:AES-256-GCM");
 
 type EncryptedExportEnvelope = {
@@ -62,7 +62,7 @@ export function isEncryptedDataExport(raw: string) {
 export async function createEncryptedDataExport(state: AppState, password: string) {
   validatePassword(password);
   const raw = createDataExport(state);
-  if (raw.length > 2_000_000) throw new Error("Yedek metni 2 MB sınırını aşıyor.");
+  if (raw.length > 12_000_000) throw new Error("Yedek metni 12 MB sınırını aşıyor.");
   const salt = await getRandomBytesAsync(SALT_BYTES);
   const keyBytes = await pbkdf2Async(sha256, utf8ToBytes(password), salt, { c: ITERATIONS, dkLen: 32 });
   try {
@@ -85,7 +85,7 @@ export async function createEncryptedDataExport(state: AppState, password: strin
 }
 
 export async function decryptDataExport(raw: string, password: string) {
-  if (raw.length > MAX_ENCRYPTED_EXPORT_CHARS) throw new Error("Şifreli yedek 5 MB sınırını aşıyor.");
+  if (raw.length > MAX_ENCRYPTED_EXPORT_CHARS) throw new Error("Şifreli yedek 17 MB sınırını aşıyor.");
   if (!password) throw new Error("Şifreli yedek için parolayı girin.");
   let parsed: unknown;
   try {

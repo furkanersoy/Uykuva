@@ -60,6 +60,7 @@ export type CareEvent = {
   lengthPosition?: "recumbent" | "standing";
   note?: string;
   memoryTitle?: string;
+  memoryPhotoData?: string;
   milestoneId?: string;
   caregiver: string;
 };
@@ -123,6 +124,8 @@ export type AppPreferences = {
   handoffHours: 2 | 4 | 6 | 8;
   notificationsEnabled: boolean;
   sleepReminderMinutes: 5 | 10 | 15 | 20 | 30;
+  wakeReminderEnabled: boolean;
+  wakeReminderMinutes: 5 | 10 | 15 | 20 | 30;
   careTaskRemindersEnabled: boolean;
   careTaskReminderMinutes: 15 | 30 | 60 | 120 | 180 | 1440;
   diaperRemindersEnabled: boolean;
@@ -204,4 +207,3 @@ export type FeedingForecast = {
   confidence: "low" | "medium" | "high";
   explanation: string;
 };
-

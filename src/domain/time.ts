@@ -22,6 +22,18 @@ export function isValidClock(value: string) {
   return minutesOfDay(value) !== null;
 }
 
+export function isTodayTimeReached(value: string, now = new Date()): boolean {
+  const minutes = minutesOfDay(value);
+  if (minutes === null || !Number.isFinite(now.getTime())) return false;
+  return minutes <= now.getHours() * 60 + now.getMinutes();
+}
+
+export function sleepWakeReminderDate(typical: Date | undefined, leadMinutes: number, quietStart: string, quietEnd: string, now = new Date()): Date | undefined {
+  if (!typical || !Number.isFinite(typical.getTime()) || !Number.isFinite(now.getTime()) || ![5, 10, 15, 20, 30].includes(leadMinutes)) return undefined;
+  const reminder = new Date(typical.getTime() - leadMinutes * 60_000);
+  return reminder.getTime() > now.getTime() && !isInQuietHours(reminder, quietStart, quietEnd) ? reminder : undefined;
+}
+
 export function dailyReminderDatesBefore(clock: string, leadMinutes: number, days: number, now = new Date()): Date[] {
   const targetMinutes = minutesOfDay(clock);
   if (targetMinutes === null || !Number.isInteger(leadMinutes) || leadMinutes < 0 || leadMinutes >= 1440 || !Number.isInteger(days) || days < 1 || days > 14 || !Number.isFinite(now.getTime())) return [];

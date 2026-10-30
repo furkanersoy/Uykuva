@@ -54,7 +54,7 @@ function isCompletedPlanDayHistory(value: unknown) {
 }
 
 function isCompletedPlanRunHistory(value: unknown) {
-  return Array.isArray(value) && value.length <= 10 && value.every((run) =>
+  return Array.isArray(value) && value.every((run) =>
     isRecord(run) && typeof run.id === "string" && typeof run.startDate === "string" && isDateOnly(run.startDate) &&
     typeof run.completedDate === "string" && isDateOnly(run.completedDate) && isCompletedPlanDayHistory(run.days)
   );
@@ -77,7 +77,7 @@ function isSleepDayContext(value: unknown) {
 }
 
 export function parseDataExport(raw: string): AppState {
-  if (raw.length > 2_000_000) throw new Error("Yedek dosyası 2 MB sınırını aşıyor.");
+  if (raw.length > 12_000_000) throw new Error("Yedek dosyası 12 MB sınırını aşıyor.");
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -90,7 +90,7 @@ export function parseDataExport(raw: string): AppState {
   if (!isRecord(parsed.baby) || typeof parsed.baby.id !== "string" || typeof parsed.baby.name !== "string" || !parsed.baby.name.trim() || typeof parsed.baby.birthDate !== "string" || !isDateOnly(parsed.baby.birthDate) || typeof parsed.baby.gestationalWeek !== "number" || !Number.isInteger(parsed.baby.gestationalWeek) || parsed.baby.gestationalWeek < 22 || parsed.baby.gestationalWeek > 42) {
     throw new Error("Yedekte geçerli bir bebek profili bulunamadı.");
   }
-  if (!Array.isArray(parsed.events) || !parsed.events.every((event) => isRecord(event) && typeof event.id === "string" && ["sleep", "feed", "diaper", "note", "health", "growth", "memory"].includes(String(event.kind)) && isDateString(event.startedAt) && typeof event.caregiver === "string" && (event.endedAt === undefined || isDateString(event.endedAt)) && (event.sleepSupport === undefined || ["feeding", "held", "rocked", "nearby", "cribSupport", "independent", "other"].includes(String(event.sleepSupport))) && (event.breastSessions === undefined || isBreastSessions(event.breastSessions)) && (event.memoryTitle === undefined || typeof event.memoryTitle === "string") && (event.milestoneId === undefined || typeof event.milestoneId === "string") && (event.feedType === undefined || ["breast", "bottle", "solid", "pump"].includes(String(event.feedType))) && (event.bottleSource === undefined || ["formula", "expressed"].includes(String(event.bottleSource))) && (event.milkStorageLocation === undefined || ["room", "fridge", "freezer"].includes(String(event.milkStorageLocation))) && (event.milkLabel === undefined || typeof event.milkLabel === "string") && (event.milkDiscardedAt === undefined || isDateString(event.milkDiscardedAt)) && (event.milkThawedAt === undefined || isDateString(event.milkThawedAt)) && (event.milkWarmedAt === undefined || isDateString(event.milkWarmedAt)) && (event.medicationReminderAt === undefined || isDateString(event.medicationReminderAt)))) {
+  if (!Array.isArray(parsed.events) || !parsed.events.every((event) => isRecord(event) && typeof event.id === "string" && ["sleep", "feed", "diaper", "note", "health", "growth", "memory"].includes(String(event.kind)) && isDateString(event.startedAt) && typeof event.caregiver === "string" && (event.endedAt === undefined || isDateString(event.endedAt)) && (event.sleepSupport === undefined || ["feeding", "held", "rocked", "nearby", "cribSupport", "independent", "other"].includes(String(event.sleepSupport))) && (event.breastSessions === undefined || isBreastSessions(event.breastSessions)) && (event.memoryTitle === undefined || typeof event.memoryTitle === "string") && (event.memoryPhotoData === undefined || event.kind === "memory" && typeof event.memoryPhotoData === "string" && event.memoryPhotoData.length <= 1_100_000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(event.memoryPhotoData)) && (event.milestoneId === undefined || typeof event.milestoneId === "string") && (event.feedType === undefined || ["breast", "bottle", "solid", "pump"].includes(String(event.feedType))) && (event.bottleSource === undefined || ["formula", "expressed"].includes(String(event.bottleSource))) && (event.milkStorageLocation === undefined || ["room", "fridge", "freezer"].includes(String(event.milkStorageLocation))) && (event.milkLabel === undefined || typeof event.milkLabel === "string") && (event.milkDiscardedAt === undefined || isDateString(event.milkDiscardedAt)) && (event.milkThawedAt === undefined || isDateString(event.milkThawedAt)) && (event.milkWarmedAt === undefined || isDateString(event.milkWarmedAt)) && (event.medicationReminderAt === undefined || isDateString(event.medicationReminderAt)))) {
     throw new Error("Yedekte okunamayan veya eksik bakım kayıtları var.");
   }
   if (!Array.isArray(parsed.careTasks) || !parsed.careTasks.every((task) => isRecord(task) && typeof task.id === "string" && ["vaccine", "appointment"].includes(String(task.type)) && typeof task.title === "string" && isDateString(task.dueAt) && (task.completedAt === undefined || isDateString(task.completedAt)) && (task.note === undefined || typeof task.note === "string") && (task.repeat === undefined || task.type === "appointment" && ["weekly", "monthly"].includes(String(task.repeat))) && (task.recurrenceId === undefined || typeof task.recurrenceId === "string") && (task.recurrenceDay === undefined || Number.isInteger(task.recurrenceDay) && Number(task.recurrenceDay) >= 1 && Number(task.recurrenceDay) <= 31) && (task.generated === undefined || typeof task.generated === "boolean"))) {
@@ -107,6 +107,9 @@ export function parseDataExport(raw: string): AppState {
   }
   if (!isRecord(preferences) || (preferences.handoffHours !== undefined && ![2, 4, 6, 8].includes(Number(preferences.handoffHours))) || typeof preferences.notificationsEnabled !== "boolean" || ![5, 10, 15, 20, 30].includes(Number(preferences.sleepReminderMinutes)) || typeof preferences.careTaskRemindersEnabled !== "boolean" || ![15, 30, 60, 120, 180, 1440].includes(Number(preferences.careTaskReminderMinutes)) || (preferences.diaperRemindersEnabled !== undefined && typeof preferences.diaperRemindersEnabled !== "boolean") || (preferences.diaperReminderHours !== undefined && ![2, 3, 4].includes(Number(preferences.diaperReminderHours))) || (preferences.milkExpiryRemindersEnabled !== undefined && typeof preferences.milkExpiryRemindersEnabled !== "boolean") || (preferences.milkExpiryReminderLead !== undefined && !["adaptive", "2", "6", "12", "24", "48"].includes(String(preferences.milkExpiryReminderLead))) || !isClockString(preferences.quietStart) || !isClockString(preferences.quietEnd) || typeof parsed.caregiverName !== "string" || (parsed.careInstructions !== undefined && (typeof parsed.careInstructions !== "string" || parsed.careInstructions.length > 1000)) || !Array.isArray(parsed.caregivers) || !parsed.caregivers.length || !parsed.caregivers.every((caregiver) => isRecord(caregiver) && typeof caregiver.id === "string" && typeof caregiver.name === "string" && ["parent", "family", "caregiver"].includes(String(caregiver.role)))) {
     throw new Error("Uyku planı veya tercih bilgileri eksik.");
+  }
+  if ((preferences.wakeReminderEnabled !== undefined && typeof preferences.wakeReminderEnabled !== "boolean") || (preferences.wakeReminderMinutes !== undefined && ![5, 10, 15, 20, 30].includes(Number(preferences.wakeReminderMinutes)))) {
+    throw new Error("Uyanma hatırlatması tercihleri geçersiz.");
   }
   let children: AppState["children"] | undefined;
   if (parsed.children !== undefined) {
@@ -219,7 +222,7 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
         .map(({ id: _id, ...item }) => item)
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(-14),
-      completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns).slice(-10)
+      completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns)
     }
   };
 }
