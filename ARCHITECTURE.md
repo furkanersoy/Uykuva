@@ -545,3 +545,8 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Uyku koçu son üç check-in'de en az iki düşük aile sürdürülebilirliği puanı görürse yeni uyku adımı önermek yerine rutini sadeleştirme, bakımı paylaşma veya planı duraklatma seçeneklerini hatırlatır.
 - Sürdürülebilirlik puanı tek başına yeterli değil; tek zor gece veya tek düşük puan otomatik plan değişikliğine yol açmaz.
 - Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 126/126 başarılı.
+### Beşikten yatağa geçiş rehberi
+
+- Uyku rehberi, yaklaşık 18–48 ay aralığındaki çocuklar için beşikten yatağa geçiş içeriği sunar. Sabit bir yaş şartı koymaz; beşikten tırmanma ve yatağa sığmama gibi güvenlik işaretlerini vurgular.
+- İçerik cihazda çevrimdışı kullanılabilir ve NHS Children’s Health kaynağına bağlantı verir.
+- Doğrulama: `npm.cmd run typecheck`; `npm.cmd test`.

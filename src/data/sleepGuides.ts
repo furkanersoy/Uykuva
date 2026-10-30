@@ -272,6 +272,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     category: "caregiver",
     source: "AAP · Ağlayan bebeğin ihtiyaçlarına yanıt",
     url: "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/Pages/Responding-to-Your-Babys-Cries.aspx"
+  },
+  {
+    id: "cot-to-bed-transition",
+    title: "Beşikten çocuk yatağına geçiş",
+    age: "Yaklaşık 18 ay–4 yaş",
+    minAgeMonths: 18,
+    maxAgeMonths: 48,
+    summary: "Beşikten yatağa geçmek için her çocukta geçerli tek bir yaş yoktur. NHS çocuk sağlığı rehberi bu geçişin çoğunlukla 18 ay–3 yaş arasında olduğunu; beşikten tırmanmaya çalışma veya yatağa rahatça sığmamanın geçiş işareti olabileceğini belirtiyor. Yeni yatakta da tanıdık akşam rutininizi sürdürün. Çocuğun odasını güvenli hâle getirin, merdiven ve pencere risklerini kontrol edin; yataktan kalkarsa sakin ve kısa biçimde yatağına geri götürebilirsiniz. Emin değilseniz sağlık ziyaretçiniz veya çocuk doktorunuzla görüşün.",
+    category: "changes",
+    source: "NHS Children’s Health · Güvenli uyku",
+    url: "https://bedslutonchildrenshealth.nhs.uk/sleep/keeping-your-sleeping-baby-safe/"
   }
 ];
 

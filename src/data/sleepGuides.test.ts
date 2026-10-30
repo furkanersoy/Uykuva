@@ -23,6 +23,10 @@ test("age-filtered sleep readings use inclusive ranges and keep general caregive
   assert.ok(infantGuides.some((guide) => guide.id === "caregiver-rest"));
   assert.ok(!infantGuides.some((guide) => guide.id === "toddler-bedtime-resistance"));
   assert.ok(toddlerGuides.some((guide) => guide.id === "toddler-bedtime-resistance"));
+  assert.ok(!sleepGuidesForAge(17).some((guide) => guide.id === "cot-to-bed-transition"));
+  assert.ok(sleepGuidesForAge(18).some((guide) => guide.id === "cot-to-bed-transition"));
+  assert.ok(sleepGuidesForAge(48).some((guide) => guide.id === "cot-to-bed-transition"));
+  assert.ok(!sleepGuidesForAge(49).some((guide) => guide.id === "cot-to-bed-transition"));
   assert.ok(toddlerGuides.some((guide) => guide.id === "nightmares-and-night-terrors"));
   assert.ok(!toddlerGuides.some((guide) => guide.id === "swaddling-safely"));
   assert.equal(sleepGuidesForAge(3).some((guide) => guide.id === "four-month-pattern"), true);
@@ -50,6 +54,16 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "snoring-and-sleep-breathing"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "corrected-age-for-preemies"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-break-when-overwhelmed"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "cot-to-bed-transition"));
+});
+
+test("cot to bed guide prioritizes safety cues over a fixed transition age", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "cot-to-bed-transition");
+  assert.ok(guide);
+  assert.match(guide.summary, /tek bir yaş yoktur/i);
+  assert.match(guide.summary, /beşikten tırmanmaya çalışma/i);
+  assert.match(guide.summary, /od[aı]sını güvenli hâle getirin/i);
+  assert.equal(guide.url, "https://bedslutonchildrenshealth.nhs.uk/sleep/keeping-your-sleeping-baby-safe/");
 });
 
 test("safe sleep guide covers sitting products and points to AAP guidance", () => {
