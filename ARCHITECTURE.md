@@ -397,7 +397,10 @@ Gün geçmişi, yaş ve hazır oluş koşullarına göre kullanıcıya gerçekte
 - [x] Tahmin aralığı geçtikten sonra kaydı olmayan bakım verene bir kez sorar ve gözden geçirilebilir tarihli kayıt açar.
 - [x] Uyku tahmin motoru için birim testleri yazıldı.
 - [x] Tüm özellikler ücretsiz bırakıldı; ödeme sistemi eklenmedi.
-- [x] Kayıtlardan ilk uyku/beslenme/ek gıda/ölçüm, dört saatlik uyku ve 100. beslenme anı isteğe bağlı tespit edilip anı günlüğüne eklenebiliyor.
+- [x] Kayıtlardaki uyku, emzirme, biberon, ek gıda, süt sağma, bez, sağlık ve büyüme olaylarından 13 olgusal anı önerisi çıkarılıyor; ebeveyn seçerse anı günlüğüne ekleniyor.
+- [x] Sabah check-in'i önceki gece gerçekte uygulanan yaklaşımı isteğe bağlı kaydeder; açıkça farklı yaklaşım belirtilmiş geceler plan karşılaştırmasından çıkarılır.
+- [x] Yaklaşımın aileye uyum puanı ve günlük yönteme özel koçluk sorusuna yanıt isteğe bağlı kaydedilir; aileye uyum ilk/son plan döneminde ayrı gösterilir.
+- [x] Uyku planında eksik günlük adımlar açıkça gösterilir; ebeveyn tüm görevleri bitirmeden günü kaydedip ilerleyebilir.
 - [x] Son yedi günün ıslak, kirli ve ikili bez kayıtları ayrı trend grafiğinde gösteriliyor.
 
 ## 10. Uyku koçluğu kapsamı ve kalan işler
