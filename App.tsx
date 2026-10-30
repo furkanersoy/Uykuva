@@ -28,7 +28,7 @@ import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
 import { coachingDay, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
-import { createDoctorSummary, createDoctorSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
+import { createDoctorSummary, createDoctorSummaryHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
 import { createEncryptedDataExport, decryptDataExport, isEncryptedDataExport } from "./src/domain/encryptedExport";
 import { completedAgeMonths, suggestedVaccineTasks, TURKEY_VACCINE_SCHEDULE_BASE_VERSION, TURKEY_VACCINE_SCHEDULE_UPDATE_DATE, TURKEY_VACCINE_SCHEDULE_UPDATE_SOURCE } from "./src/domain/vaccineSchedule";
@@ -1319,6 +1319,16 @@ async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"],
   }
 }
 
+async function shareSleepWeekPdf(state: ReturnType<typeof useUykuvaState>["state"]) {
+  try {
+    const file = await Print.printToFileAsync({ html: createSleepWeekSummaryHtml(state), base64: false });
+    if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva haftalık uyku özetini paylaş" });
+  } catch {
+    Alert.alert("PDF oluşturulamadı", "Haftalık uyku özeti hazırlanırken bir sorun oluştu.");
+  }
+}
+
 function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openEditTask: (task: CareTask) => void; openVaccineSuggestions: () => void; now: Date }) {
   const state = app.state;
   const [doctorSummaryPeriod, setDoctorSummaryPeriod] = useState<DoctorSummaryPeriod>(7);
@@ -1361,6 +1371,7 @@ function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, n
           return <View key={day.date} style={styles.weeklyColumn} accessibilityLabel={day.sleepCount ? `${day.label}: ${hours} saat ${minutes} dakika uyku, ${day.sleepCount} dönem` : `${day.label}: uyku kaydı yok`}><View style={styles.weeklyTrack}><View style={[styles.weeklyBar, { height: day.totalMinutes ? `${Math.max(3, day.totalMinutes / maxDailySleep * 100)}%` : "0%" }]} /></View><Text style={styles.weeklyValue}>{day.sleepCount ? hours ? `${hours}s` : `${minutes}d` : "—"}</Text><Text style={styles.weeklyLabel}>{day.label}</Text></View>;
         })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
         <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
+        <View style={styles.spacer12} /><PrimaryButton label="7 günlük uyku özetini PDF paylaş" quiet onPress={() => void shareSleepWeekPdf(state)} />
       </Card>
       <SectionTitle title="Son 7 gün · bez kayıtları" action={maxDailyDiapers ? `${weeklyDiapers.reduce((sum, day) => sum + day.total, 0)} kayıt` : "Kayıt yok"} />
       <Card>
