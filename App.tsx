@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 62716)
-Total output lines: 2425
-
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
   ActivityIndicator,
@@ -53,6 +50,16 @@ type Tab = "today" | "timeline" | "coach" | "insights" | "family";
 type LogMode = "feed" | "diaper" | "note" | "health" | "growth" | "memory" | null;
 type TaskMode = "vaccine" | "appointment" | null;
 type TimelineFilter = "all" | "sleep" | "feeding" | "pumping" | "diaper" | "health" | "growth" | "notes" | "memories";
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  })[character] ?? character);
+}
 
 const timelineFilters: { id: TimelineFilter; label: string }[] = [
   { id: "all", label: "Tümü" }, { id: "sleep", label: "Uyku" }, { id: "feeding", label: "Beslenme" },
@@ -922,7 +929,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
     if (!routineLabel.trim() || !Number.isInteger(minutes) || minutes < 1 || minutes > 60) return Alert.alert("Adımı kontrol edin", "Bir ad ve 1–60 dakika arasında süre yazın.");
     app.addRoutineStep(routineLabel, minutes); setRoutineLabel(""); setRoutineMinutes("5");
   };
-  const sharePlan = () => {
+  const buildPlanMessage = () => {
     const enabledRoutine = app.state.sleepPlan.routine.filter((item) => item.enabled);
     const shareCheckIns = app.state.sleepPlan.checkIns
       .filter((item) => item.date >= localDateValue(oldestNight) && item.date <= today)
@@ -932,7 +939,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       `Kolaylık karşılaştırması (ilk 3 / son 3 plan günü): ${planCheckInComparison.firstEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.firstEaseAverage.toFixed(1)}/5`} / ${planCheckInComparison.recentEaseAverage === undefined ? "yeterli kayıt yok" : `${planCheckInComparison.recentEaseAverage.toFixed(1)}/5`}`,
       `Gece uyanma ortalaması: ${planCheckInComparison.firstWakingsAverage === undefined ? "ilk dönemde kayıt yok" : planCheckInComparison.firstWakingsAverage.toFixed(1)} / ${planCheckInComparison.recentWakingsAverage === undefined ? "son dönemde kayıt yok" : planCheckInComparison.recentWakingsAverage.toFixed(1)} (5+ uyanma sayıları ortalamaya katılmaz)`
     ] : [];
-    const message = [
+    return [
       `Uykuva · ${app.state.baby.name} için uyku planı`,
       `Yaş aşaması: ${stage.label}`,
       `Yaklaşım: ${methodDescription(coachingMethod).name}`,
@@ -951,7 +958,36 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
       ...(shareCheckIns.length ? ["Son 7 gecenin check-in'leri:", ...shareCheckIns.map((item) => `- ${item.date}${item.ease === undefined ? "" : ` · kolaylık ${item.ease}/5`}${item.nightWakings === undefined ? "" : ` · uyanma ${item.nightWakings === 5 ? "5+" : item.nightWakings}`}${item.bedtime ? ` · yatış ${item.bedtime}` : ""}${item.wakeTime ? ` · uyanış ${item.wakeTime}` : ""}${item.note ? ` · not: ${item.note}` : ""}`)] : []),
       "Bebeğin sinyallerine göre esnetin; yoğun huzursuzluk veya sağlık endişesinde planı durdurup sağlık uzmanınıza danışın."
     ].join("\n");
+  };
+  const sharePlan = () => {
+    const message = buildPlanMessage();
     void Share.share({ title: `${app.state.baby.name} için uyku planı`, message });
+  };
+  const sharePlanPdf = async () => {
+    try {
+      const message = buildPlanMessage();
+      const [title, ...details] = message.split("\n");
+      const content = details.map((line) => {
+        if (!line.trim()) return "";
+        if (line.endsWith(":")) return `<h2>${escapeHtml(line.slice(0, -1))}</h2>`;
+        if (line.startsWith("• ") || /^\d+\. /.test(line)) return `<p class="bullet">${escapeHtml(line)}</p>`;
+        return `<p>${escapeHtml(line)}</p>`;
+      }).join("\n");
+      const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+        @page { size: A4; margin: 18mm 16mm; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263631; font-size: 12px; line-height: 1.55; }
+        header { border-bottom: 2px solid #718b7c; padding-bottom: 12px; margin-bottom: 18px; }
+        h1 { font-size: 22px; margin: 0; color: #3e594d; }
+        h2 { font-size: 13px; margin: 15px 0 4px; color: #3e594d; }
+        p { margin: 5px 0; }
+        .bullet { padding-left: 12px; }
+      </style></head><body><header><h1>${escapeHtml(title ?? "Uykuva uyku planı")}</h1></header><main>${content}</main></body></html>`;
+      const file = await Print.printToFileAsync({ html, base64: false });
+      if (!await Sharing.isAvailableAsync()) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva uyku planını paylaş" });
+    } catch {
+      Alert.alert("PDF oluşturulamadı", "Uyku planı PDF olarak hazırlanırken bir sorun oluştu. Metin paylaşımını kullanabilirsiniz.");
+    }
   };
   const startRoutine = () => {
     if (!app.state.sleepPlan.routine.some((item) => item.enabled)) return Alert.alert("Etkin adım yok", "Önce akşam rutininize en az bir adım ekleyip etkinleştirin.");
@@ -1061,7 +1097,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <Text style={styles.heroSmall}>{coachingPausedToday ? "Hazır olduğunuzda devam edin" : plan.focus}</Text>
         <Text style={styles.body}>{coachingPausedToday ? "Bu sırada günlük bakım kayıtlarını tutabilir, akşam rutininizi kullanabilirsiniz. Plan günü ilerlemez." : methodDescription(coachingMethod).support}</Text>
       </Card>
-      <PrimaryButton label="Uyku planını bakım verenlerle paylaş" quiet onPress={sharePlan} />
+      <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={sharePlan} /></View><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void sharePlanPdf()} /></View></View>
       <SectionTitle title="Kayıtlarına göre gün taslağı" action="Son 14 gün" />
       <Card>
         {napOutline.length ? napOutline.map((nap) => <View key={nap.order} style={styles.eventRow}><View style={styles.flex}><Text style={styles.eventTitle}>{nap.order}. gündüz uykusu</Text><Text style={styles.muted}>{nap.actualStart ? `${nap.inProgress ? "Şu an uyuyor" : "Bugün kaydedildi"} · ${time(nap.actualStart)}` : `${time(nap.from)}–${time(nap.to)} · ortanca ${time(nap.typical)}`}</Text></View><Text style={styles.taskDate}>{nap.sampleCount} gün</Text></View>) : <Text style={styles.body}>Kişisel gündüz uykusu taslağı için son 14 günde en az üç farklı günde kayıt gerekir.</Text>}
@@ -1093,7 +1129,408 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
           <Text style={styles.body}>{nightWakeResponseSummary.total} kayıt · {nightWakeResponseSummary.daysWithLogs} gecede</Text>
           {NIGHT_WAKE_RESPONSE_OPTIONS.filter((item) => nightWakeResponseSummary.counts[item.id] > 0).map((item) => <View key={item.id} style={styles.eventRow}><Text style={[styles.eventTitle, styles.flex]}>{item.label}</Text><Text style={styles.taskDate}>{nightWakeResponseSummary.counts[item.id]}</Text></View>)}
           <Text style={styles.hint}>Bu özet yalnızca kaydedilen yanıt türlerini sayar; beslenme ihtiyacını erteleme veya uyku yöntemini değiştirme önerisi değildir.</Text>
-       …12716 tokens truncated… accessibilityLabel="Süt stoğunu çıkar" onPress={() => discard(batch.event)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable>
+        </> : <Text style={styles.body}>Son 7 günde saatli gece uyanması kaydı yok. İsterseniz Bugün ekranındaki veya gece modundaki kısayoldan ekleyebilirsiniz.</Text>}
+      </Card>
+      <SectionTitle title="Başlamadan önce" action={`${app.state.sleepPlan.readinessCompleted.length}/${SLEEP_READINESS_ITEMS.length}`} />
+      <Card>
+        {SLEEP_READINESS_ITEMS.map((item) => {
+          const done = app.state.sleepPlan.readinessCompleted.includes(item);
+          return <Pressable key={item} accessibilityRole="checkbox" accessibilityLabel={item} accessibilityState={{ checked: done }} onPress={() => app.toggleReadiness(item)} style={styles.taskRow}><View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View><Text style={styles.taskText}>{item}</Text></Pressable>;
+        })}
+        {!stage.canReduceSupport ? <Text style={styles.readinessNote}>Bu yaş aşamasında tüm maddeler tamamlansa bile desteği azaltma hedefi yoktur; rutin ve duyarlı bakım önceliklidir.</Text> : null}
+      </Card>
+      <SectionTitle title="Bugünün adımları" action={alreadyAdvancedToday ? "Yarın devam" : `${completedTodayCount}/${plan.tasks.length}`} />
+      <Card>
+        {plan.tasks.map((task) => {
+          const done = app.state.sleepPlan.completedToday.includes(task);
+          return (
+            <Pressable key={task} accessibilityRole="checkbox" accessibilityLabel={task} accessibilityState={{ checked: done, disabled: coachingPausedToday || alreadyAdvancedToday || programCompleted }} disabled={coachingPausedToday || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (coachingPausedToday || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
+              <View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View>
+              <Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>
+            </Pressable>
+          );
+        })}
+      </Card>
+      {app.state.sleepPlan.completedDays.length ? <>
+        <SectionTitle title="14 günlük plan geçmişi" action={`${app.state.sleepPlan.completedDays.length} gün`} />
+        <Card>
+          {app.state.sleepPlan.completedDays.slice(-7).reverse().map((record) => <View key={`${record.date}-${record.day}`} style={styles.growthHistoryRow}>
+            <View style={styles.eventRow}>
+              <View style={styles.flex}>
+                <Text style={styles.eventTitle}>{record.day}. gün · {record.completedTasks}/{record.totalTasks} görev</Text>
+                <Text style={styles.muted}>{new Date(`${record.date}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · {methodDescription(record.method).name}</Text>
+              </View>
+              <Text style={styles.taskDate}>{sleepFocusOptions.find((item) => item.id === record.focus)?.label ?? "Akşam rutini"}</Text>
+            </View>
+          </View>)}
+          <Text style={styles.hint}>Bu geçmiş yalnızca plan gününü ilerlettiğinizde kaydedilir; gün atlamak tamamlanan görev sayısı anlamına gelmez.</Text>
+        </Card>
+      </> : null}
+      {completedPlanRuns.length ? <>
+        <SectionTitle title="Tamamlanan uyku programları" action={`${completedPlanRuns.length} döngü`} />
+        <Card>
+          {completedPlanRuns.slice().reverse().map((run) => {
+            const completedTasks = run.days.reduce((sum, day) => sum + day.completedTasks, 0);
+            const totalTasks = run.days.reduce((sum, day) => sum + day.totalTasks, 0);
+            const firstMethod = run.days[0]?.method;
+            return <View key={run.id} style={styles.growthHistoryRow}>
+              <View style={styles.eventRow}>
+                <View style={styles.flex}>
+                  <Text style={styles.eventTitle}>{new Date(`${run.completedDate}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} · {run.days.length}/14 gün</Text>
+                  <Text style={styles.muted}>{firstMethod ? `Başlangıç yaklaşımı: ${methodDescription(firstMethod).name} · ` : ""}{completedTasks}/{totalTasks} günlük görev</Text>
+                </View>
+              </View>
+            </View>;
+          })}
+          <Text style={styles.hint}>Özet, yalnızca ilerlettiğiniz plan günlerinden oluşur. Görev oranı bir uyku sonucu veya sağlık değerlendirmesi değildir.</Text>
+        </Card>
+      </> : null}
+      {planCheckInComparison.available ? <>
+        <SectionTitle title="Plan check-in karşılaştırması" action="İlk 3 · son 3 gün" />
+        <Card tone="mint">
+          {planCheckInComparison.firstEaseAverage !== undefined && planCheckInComparison.recentEaseAverage !== undefined ? <View style={styles.measureRow}>
+            <Measure value={`${planCheckInComparison.firstEaseAverage.toFixed(1)}/5`} label={`İlk 3 gün · kolaylık (${planCheckInComparison.firstEaseCount} kayıt)`} />
+            <Measure value={`${planCheckInComparison.recentEaseAverage.toFixed(1)}/5`} label={`Son 3 gün · kolaylık (${planCheckInComparison.recentEaseCount} kayıt)`} />
+          </View> : <Text style={styles.body}>Kolaylık karşılaştırması için ilk ve son üç günde en az ikişer check-in kaydı gerekir.</Text>}
+          {planCheckInComparison.firstWakingsAverage !== undefined && planCheckInComparison.recentWakingsAverage !== undefined ? <View style={styles.measureRow}>
+            <Measure value={planCheckInComparison.firstWakingsAverage.toFixed(1)} label={`İlk 3 gün · uyanma (${planCheckInComparison.firstWakingsCount} kayıt)`} />
+            <Measure value={planCheckInComparison.recentWakingsAverage.toFixed(1)} label={`Son 3 gün · uyanma (${planCheckInComparison.recentWakingsCount} kayıt)`} />
+          </View> : null}
+          <Text style={styles.hint}>Yalnızca aynı yaklaşım ve plandaki aynı odakla eşleşen günlerin check-in'leri gösterilir. “5+ uyanma” kayıtları ortalamaya dahil edilmez. Bu, kayıt karşılaştırmasıdır; sonuç veya sağlık değerlendirmesi değildir.</Text>
+        </Card>
+      </> : null}
+      <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
+      <Card>
+        <PrimaryButton label="Akşam rutinine başla" onPress={startRoutine} />
+        <View style={styles.spacer12} />
+        {app.state.sleepPlan.routine.map((item, index) => <View key={item.id} style={[styles.routineRow, !item.enabled && styles.routineDisabled]}><Pressable accessibilityRole="checkbox" accessibilityState={{ checked: item.enabled }} accessibilityLabel={`${item.label}, ${item.enabled ? "etkin" : "devre dışı"}; silmek için basılı tutun`} onPress={() => app.toggleRoutineStep(item.id)} onLongPress={() => app.deleteRoutineStep(item.id)} style={styles.routineToggle}><View style={[styles.miniCheck, item.enabled && styles.checkboxDone]}><Text style={styles.check}>{item.enabled ? "✓" : ""}</Text></View><Text style={styles.routineNo}>{index + 1}</Text><Text style={styles.taskText}>{item.label}</Text><Text style={styles.muted}>{item.minutes} dk</Text></Pressable><View style={styles.routineControls}><Pressable accessibilityRole="button" accessibilityLabel={`${item.label} adımını yukarı taşı`} disabled={index === 0} onPress={() => app.moveRoutineStep(item.id, -1)} style={[styles.routineMove, index === 0 && styles.routineMoveDisabled]}><Text style={styles.routineMoveText}>↑</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`${item.label} adımını aşağı taşı`} disabled={index === app.state.sleepPlan.routine.length - 1} onPress={() => app.moveRoutineStep(item.id, 1)} style={[styles.routineMove, index === app.state.sleepPlan.routine.length - 1 && styles.routineMoveDisabled]}><Text style={styles.routineMoveText}>↓</Text></Pressable></View></View>)}
+        <Text style={styles.inputLabel}>Yeni rutin adımı</Text><TextInput accessibilityLabel="Yeni rutin adımı adı" value={routineLabel} onChangeText={setRoutineLabel} style={styles.input} placeholder="Örn. pijamaları giy" placeholderTextColor="#93A09C" /><View style={styles.inlineForm}><TextInput accessibilityLabel="Rutin adımının süresi, dakika" value={routineMinutes} onChangeText={setRoutineMinutes} style={[styles.compactInput, styles.minutesInput]} keyboardType="number-pad" /><Text style={styles.body}>dakika</Text><View style={styles.flex}><PrimaryButton label="Adım ekle" quiet onPress={addRoutine} /></View></View>
+        <Text style={styles.hint}>Bir adımı etkinleştirmek için dokunun, sırayı oklarla değiştirin; silmek için adım adına basılı tutun.</Text>
+      </Card>
+      <SectionTitle title="Hedef saatler" />
+      <Card><View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Yatış</Text><TextInput accessibilityLabel="Hedef yatış saati" value={bedtime} onChangeText={(value) => setBedtime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah</Text><TextInput accessibilityLabel="Hedef sabah uyanış saati" value={wakeTime} onChangeText={(value) => setWakeTime(normalizeClockInput(value))} style={styles.compactInput} keyboardType="number-pad" maxLength={5} /></View></View><View style={styles.spacer12} /><PrimaryButton label="Hedef saatleri kaydet" quiet onPress={saveSchedule} /></Card>
+      <Card tone="peach">
+        <Text style={styles.cardTitle}>Sabah check-in</Text><Text style={styles.body}>{plan.checkIn}</Text>
+        <Text style={styles.inputLabel}>Dün gece özeti</Text>
+        <View style={styles.measureRow}>
+          <Measure value={nightSummary.minutes ? `${Math.floor(nightSummary.minutes / 60)} sa ${nightSummary.minutes % 60} dk` : "—"} label="Kaydedilen uyku" />
+          <Measure value={todayCheckIn?.nightWakings === undefined ? "—" : todayCheckIn.nightWakings === 5 ? "5+" : String(todayCheckIn.nightWakings)} label="Bildirilen uyanma" />
+        </View>
+        <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
+        <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
+        <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} /></View></View>
+        {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
+        <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
+        {app.runningSleep ? <Text accessibilityLiveRegion="polite" style={styles.hint}>Uyku devam ediyor. Uyanış kaydedildiğinde sonraki uyku penceresi yeniden hesaplanır.</Text> : morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
+        {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
+        <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() ? morningWakeClock : undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />
+        <Text style={styles.hint}>Uyku zamanlayıcısını kullanmadığınız bir gecede saatleri elle ekleyebilirsiniz. Bu kayıt uyku kaydı yerine geçmez; koç yalnızca yatış saatini örüntü hesabında kullanır.</Text>
+        <Text style={styles.inputLabel}>Uykuya geçişin kolaylığı</Text>
+        <View style={styles.easeRow}>{([1, 2, 3, 4, 5] as const).map((ease) => <Pressable accessibilityRole="button" accessibilityLabel={`Kolaylık ${ease}/5`} key={ease} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, ease })} style={[styles.easeButton, todayCheckIn?.ease === ease && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.ease === ease && styles.easeTextActive]}>{ease}</Text></Pressable>)}</View>
+        <Text style={styles.easeLabels}><Text>Zordu</Text><Text>                                      Kolaydı</Text></Text>
+        <Text style={styles.inputLabel}>Gece uyanma sayısı</Text>
+        <View style={styles.easeRow}>{([0, 1, 2, 3, 4, 5] as const).map((count) => <Pressable accessibilityRole="button" accessibilityLabel={count === 5 ? "5 veya daha fazla uyanma" : `${count} gece uyanması`} key={count} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, nightWakings: count })} style={[styles.easeButton, todayCheckIn?.nightWakings === count && styles.easeButtonActive]}><Text style={[styles.easeText, todayCheckIn?.nightWakings === count && styles.easeTextActive]}>{count === 5 ? "5+" : count}</Text></Pressable>)}</View>
+        <Text style={styles.hint}>Bildirilen toplam sayı ile saatli uyanma kayıtları ayrı tutulur; ikisi de isteğe bağlıdır.</Text>
+        {todayCheckIn?.nightWakeLogs?.length ? <><Text style={styles.inputLabel}>Kaydedilen uyanmalar</Text>{todayCheckIn.nightWakeLogs.slice(-5).reverse().map((log) => <View key={log.id} style={styles.eventRow}><View style={styles.eventDot} /><View style={styles.flex}><Text style={styles.eventTitle}>{nightWakeResponseLabel(log.response)}</Text><Text style={styles.muted}>{log.caregiver}</Text></View><Text style={styles.taskDate}>{time(log.at)}</Text><Pressable accessibilityRole="button" accessibilityLabel={`${time(log.at)} uyanma kaydını sil`} onPress={() => confirmDeleteNightWake(log.id)} hitSlop={8}><Text style={styles.editLink}>Sil</Text></Pressable></View>)}{todayCheckIn.nightWakeLogs.length > 5 ? <Text style={styles.hint}>Son 5 kayıt gösteriliyor.</Text> : null}</> : <Text style={styles.hint}>Bugün henüz saatli gece uyanması kaydı yok. Bugün ekranındaki Uyanma kısayolundan ekleyebilirsiniz.</Text>}
+        <Text style={styles.inputLabel}>Dünden farklı olan neydi? (isteğe bağlı)</Text>
+        <TextInput accessibilityLabel="Bugünkü uyku ve rutin hakkında not" value={todayCheckIn?.note ?? ""} onChangeText={(note) => app.saveCheckIn({ ...todayCheckIn, date: today, note })} style={[styles.input, { minHeight: 88, textAlignVertical: "top" }]} multiline maxLength={300} placeholder="Örn. misafir, yolculuk veya farklı bir rutin" placeholderTextColor="#93A09C" />
+        <Text style={styles.hint}>Bu not yalnızca cihazınızda saklanır ve doktor özetindeki check-in kayıtlarına eklenmez.</Text>
+      </Card>
+      <SectionTitle title="Son geceler" action="7 günlük görünüm" />
+      <Card>
+        {recentNightSummaries.length ? recentNightSummaries.map(({ checkIn, summary }) => <View key={checkIn.date} style={styles.eventRow}>
+          <View style={styles.flex}><Text style={styles.eventTitle}>{new Date(`${checkIn.date}T12:00:00`).toLocaleDateString("tr-TR", { weekday: "short", day: "numeric", month: "short" })}</Text><Text style={styles.muted}>{summary.minutes ? `${Math.floor(summary.minutes / 60)} sa ${summary.minutes % 60} dk kaydedilen uyku` : "Uyku süresi kaydedilmemiş"}</Text></View>
+          <Text style={styles.taskDate}>{checkIn.nightWakings === undefined ? "Uyanma —" : `Uyanma ${checkIn.nightWakings === 5 ? "5+" : checkIn.nightWakings}`}</Text>
+        </View>) : <Text style={styles.body}>Gece özeti veya uyanma sayısı eklendikçe son yedi gün burada görünür.</Text>}
+        <Text style={styles.hint}>Uyku süreleri yalnızca uygulamaya kaydedilmiş uyku aralıklarının toplamıdır.</Text>
+      </Card>
+      {coachingPausedToday ? <Text style={styles.pausedMessage}>{todayCheckIn?.dayContext ? "Bugünün bağlamı nedeniyle koçluk planı ilerlemiyor. Olağan güne döndüğünüzde devam edebilirsiniz." : "Planı sürdürdüğünüzde gün adımları yeniden etkinleşir."}</Text> : programCompleted ? <Text style={styles.pausedMessage}>14 günlük plan tamamlandı.</Text> : alreadyAdvancedToday ? <Text style={styles.pausedMessage}>Bu günün adımını tamamladınız. Sıradaki gün yarın açılacak.</Text> : <PrimaryButton label={app.state.sleepPlan.day >= 14 ? "14. günü tamamla" : "Günü tamamla"} onPress={() => app.advancePlan(completedTodayCount, plan.tasks.length, coachingMethod)} />}
+      <Text style={styles.disclaimer}>Yoğun ağlama, beslenme güçlüğü, solunum sorunu veya sağlık endişesinde planı durdurun ve sağlık uzmanınıza danışın.</Text>
+      <BedtimeRoutineModal visible={routineRunnerOpen} steps={app.state.sleepPlan.routine.filter((item) => item.enabled)} close={() => setRoutineRunnerOpen(false)} addEvent={app.addEvent} />
+      <SleepMethodsModal visible={methodGuideOpen} close={() => setMethodGuideOpen(false)} methods={methods} activeMethod={coachingMethod} choose={(method) => app.setMethod(method)} />
+    </ScrollView>
+  );
+}
+
+function SleepMethodsModal({ visible, close, methods, activeMethod, choose }: { visible: boolean; close: () => void; methods: SleepMethod[]; activeMethod: SleepMethod; choose: (method: SleepMethod) => void }) {
+  const [preference, setPreference] = useState<"all" | "near" | "reduce" | "checks">("all");
+  if (!visible) return null;
+  const preferenceMethods: Record<Exclude<typeof preference, "all">, SleepMethod[]> = {
+    near: ["responsive", "camping", "pickUpPutDown", "routineFirst"],
+    reduce: ["gradual", "camping", "bedtimeFading"],
+    checks: ["timedChecks"]
+  };
+  const matches = preference === "all" ? methods : methods.filter((method) => preferenceMethods[preference].includes(method));
+  const otherMethods = preference === "all" ? [] : methods.filter((method) => !matches.includes(method));
+  const methodCard = (method: SleepMethod) => <Pressable key={method} accessibilityRole="button" accessibilityLabel={`${methodDescription(method).name} yaklaşımını seç`} onPress={() => { choose(method); close(); }}><Card tone={method === activeMethod ? "mint" : "white"}><Text style={styles.cardTitle}>{methodDescription(method).name}{method === activeMethod ? " · seçili" : ""}</Text><Text style={styles.body}>{methodDescription(method).support}</Text><Text style={styles.inputLabel}>Bakım veren ne yapar?</Text><Text style={styles.body}>{methodDescription(method).caregiverRole}</Text><Text style={styles.inputLabel}>Gece uyanınca</Text><Text style={styles.body}>{methodDescription(method).nightResponse}</Text><View style={styles.methodCompare}>{([["Huzursuzluk", methodDescription(method).comparison.protest], ["Bakım veren", methodDescription(method).comparison.presence], ["Uygulama yükü", methodDescription(method).comparison.effort], ["İlerleme", methodDescription(method).comparison.pace]] as const).map(([label, value]) => <View key={label} style={styles.methodCompareRow}><Text style={styles.methodCompareLabel}>{label}</Text><Text style={styles.methodCompareText}>{value}</Text></View>)}</View><Text style={styles.hint}>Bebek belirgin biçimde huzursuzsa, hastaysa veya beslenme/sağlık kaygısı varsa denemeyi bırakıp ihtiyacına yanıt verin.</Text></Card></Pressable>;
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Uyku yaklaşımlarını karşılaştır</Text><Text style={styles.pageIntro}>Ölçütler yöntemleri konuşmayı kolaylaştıran genel bir karşılaştırmadır; bebeğinizin tepkisi ve gereken süre değişebilir. Bir yaklaşım seçmek zorunlu değildir, istediğiniz zaman duraklatabilirsiniz.</Text>
+    <Text style={styles.inputLabel}>Ailenizin tercihine göre görünümü daraltın</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills}><Pill label="Tümü" active={preference === "all"} onPress={() => setPreference("all")} /><Pill label="Yakınında kal" active={preference === "near"} onPress={() => setPreference("near")} /><Pill label="Desteği azalt" active={preference === "reduce"} onPress={() => setPreference("reduce")} /><Pill label="Kısa kontroller" active={preference === "checks"} onPress={() => setPreference("checks")} /></ScrollView><Text style={styles.hint}>Bu filtre yalnızca yöntemleri aile tercihinize göre gruplar; öneri veya sıralama değildir. Diğer yöntemler de aşağıda kalır.</Text>
+    {preference !== "all" ? <Text style={styles.inputLabel}>Tercihinizle örtüşen yöntemler</Text> : null}{matches.map(methodCard)}{otherMethods.length ? <><Text style={styles.inputLabel}>Diğer yaklaşımlar</Text>{otherMethods.map(methodCard)}</> : null}
+    <Card tone="peach"><Text style={styles.body}>Bu seçenekler genel bilgilendirmedir; her bebeğe uyan tek bir yöntem yoktur. Beslenme ihtiyacını ertelemeyin. Sağlık veya gelişim kaygısında çocuk doktorunuzla konuşun.</Text></Card><PrimaryButton label="Kapat" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+}
+
+function BedtimeRoutineModal({ visible, steps, close, addEvent }: { visible: boolean; steps: RoutineStep[]; close: () => void; addEvent: ReturnType<typeof useUykuvaState>["addEvent"] }) {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [startedAt, setStartedAt] = useState("");
+  useEffect(() => {
+    if (!visible) return;
+    setStepIndex(0);
+    setCompletedIds([]);
+    setStartedAt(new Date().toISOString());
+  }, [visible]);
+  if (!visible) return null;
+  const step = steps[Math.min(stepIndex, steps.length - 1)];
+  const finish = (finishedIds: string[]) => {
+    const elapsed = startedAt ? Math.max(1, Math.round((Date.now() - new Date(startedAt).getTime()) / 60_000)) : 0;
+    addEvent({ kind: "note", note: `Akşam rutini tamamlandı · ${finishedIds.length}/${steps.length} adım · ${elapsed} dk`, startedAt: startedAt || new Date().toISOString(), endedAt: new Date().toISOString() });
+    Alert.alert("Rutin kaydedildi", `${finishedIds.length}/${steps.length} adım tamamlandı. Kayıt zaman çizelgenize eklendi.`);
+    close();
+  };
+  const advance = (markDone: boolean) => {
+    const nextCompleted = markDone && step && !completedIds.includes(step.id) ? [...completedIds, step.id] : completedIds;
+    if (stepIndex >= steps.length - 1) return finish(nextCompleted);
+    setCompletedIds(nextCompleted);
+    setStepIndex((current) => current + 1);
+  };
+  return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><View style={[styles.sheet, styles.quickSheet]}>
+    <View style={styles.sheetHandle} /><Text style={styles.eyebrow}>AKŞAM RUTİNİ</Text>
+    <Text style={styles.pageTitle}>{step ? `${stepIndex + 1}. adım` : "Rutin adımı kalmadı"}</Text>
+    {step ? <>
+      <Text style={styles.heroSmall}>{step.label}</Text>
+      <Text style={styles.body}>Bu adım için yaklaşık {step.minutes} dakika ayırabilirsiniz. Süre bir hedef değil, planlama kolaylığıdır.</Text>
+      <View style={styles.spacer12} /><Text style={styles.muted}>Adım {stepIndex + 1} / {steps.length} · {completedIds.length} tamamlandı</Text>
+      <View style={styles.spacer24} />
+      <PrimaryButton label={stepIndex === steps.length - 1 ? "Adımı tamamla ve bitir" : "Adımı tamamla · sonraki"} onPress={() => advance(true)} />
+      {stepIndex < steps.length - 1 ? <><View style={styles.spacer12} /><PrimaryButton label="Bu adımı atla" quiet onPress={() => advance(false)} /></> : null}
+    </> : <Text style={styles.body}>Etkin akşam rutini adımı bulunamadı.</Text>}
+    <View style={styles.spacer12} /><PrimaryButton label="Rutini kapat" quiet onPress={close} />
+  </View></Modal>;
+}
+
+async function shareDoctorPdf(state: ReturnType<typeof useUykuvaState>["state"], periodDays: DoctorSummaryPeriod) {
+  try {
+    const file = await Print.printToFileAsync({ html: createDoctorSummaryHtml(state, new Date(), periodDays), base64: false });
+    const canShare = await Sharing.isAvailableAsync();
+    if (!canShare) return Alert.alert("Paylaşım kullanılamıyor", "PDF hazırlandı ancak bu cihazda paylaşım menüsü açılamadı.");
+    await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "Uykuva doktor özetini paylaş" });
+  } catch {
+    Alert.alert("PDF oluşturulamadı", "Doktor özeti PDF olarak hazırlanırken bir sorun oluştu. Metin özeti paylaşımını kullanabilirsiniz.");
+  }
+}
+
+function InsightsScreen({ app, openTask, openEditTask, openVaccineSuggestions, now }: { app: ReturnType<typeof useUykuvaState>; openTask: (mode: TaskMode) => void; openEditTask: (task: CareTask) => void; openVaccineSuggestions: () => void; now: Date }) {
+  const state = app.state;
+  const [doctorSummaryPeriod, setDoctorSummaryPeriod] = useState<DoctorSummaryPeriod>(7);
+  const events = state.events;
+  const newbornSummary = correctedAgeDays(state.baby, now) < 63;
+  const periodStart = new Date(now);
+  if (newbornSummary) periodStart.setTime(now.getTime() - 24 * 60 * 60 * 1000);
+  else periodStart.setHours(0, 0, 0, 0);
+  const recent = events.filter((event) => new Date(event.startedAt).getTime() >= periodStart.getTime() && new Date(event.startedAt).getTime() <= now.getTime());
+  const sleepMinutes = sleepMinutesBetween(events, periodStart, now);
+  const feeds = recent.filter((event) => event.kind === "feed" && event.feedType !== "pump");
+  const feedingTotals = todayFeedingTotals(events, now, newbornSummary);
+  const diapers = recent.filter((event) => event.kind === "diaper");
+  const health = recent.filter((event) => event.kind === "health");
+  const weeklySleep = weeklySleepTotals(events, now);
+  const weeklyDiapers = weeklyDiaperTotals(events, now);
+  const maxDailyDiapers = Math.max(0, ...weeklyDiapers.map((day) => day.total));
+  const maxDailySleep = Math.max(0, ...weeklySleep.map((day) => day.totalMinutes));
+  const recordedSleepDays = weeklySleep.filter((day) => day.sleepCount > 0);
+  const averageWeeklySleep = recordedSleepDays.length ? Math.round(recordedSleepDays.reduce((sum, day) => sum + day.totalMinutes, 0) / recordedSleepDays.length) : 0;
+  const growthMeasurements = events.filter((event) => event.kind === "growth").sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const milestones = detectRecordedMilestones(events, now);
+  const solidHistory = summarizeSolidFoodHistory(events);
+  const upcoming = [...state.careTasks].filter((task) => !task.completedAt).sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+  const completedCareTasks = [...state.careTasks].filter((task) => task.completedAt).sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
+  return (
+    <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
+      <Text style={styles.pageTitle}>{newbornSummary ? "Son 24 saatin özeti" : "Günlük özet"}</Text><Text style={styles.pageIntro}>Rakamları yorumlamak için değil, değişimi fark etmek için.</Text>
+      <View style={styles.statGrid}>
+        <Stat value={`${Math.floor(sleepMinutes / 60)}s ${Math.round(sleepMinutes % 60)}d`} label={newbornSummary ? "Uyku · son 24 sa" : "Toplam uyku"} tone="mint" />
+        <Stat value={`${feeds.length}`} label="Beslenme" tone="peach" />
+        <Stat value={`${diapers.length}`} label="Bez" tone="lavender" />
+        <Stat value={`${health.length}`} label="Sağlık kaydı" tone="white" />
+      </View>
+      <SectionTitle title="Son 7 gün · uyku süreleri" action={recordedSleepDays.length ? `Kayıtlı gün ort. ${Math.floor(averageWeeklySleep / 60)} sa ${averageWeeklySleep % 60} dk` : "Kayıt yok"} />
+      <Card>
+        {maxDailySleep ? <View style={styles.weeklyChart}>{weeklySleep.map((day) => {
+          const hours = Math.floor(day.totalMinutes / 60);
+          const minutes = day.totalMinutes % 60;
+          return <View key={day.date} style={styles.weeklyColumn} accessibilityLabel={day.sleepCount ? `${day.label}: ${hours} saat ${minutes} dakika uyku, ${day.sleepCount} dönem` : `${day.label}: uyku kaydı yok`}><View style={styles.weeklyTrack}><View style={[styles.weeklyBar, { height: day.totalMinutes ? `${Math.max(3, day.totalMinutes / maxDailySleep * 100)}%` : "0%" }]} /></View><Text style={styles.weeklyValue}>{day.sleepCount ? hours ? `${hours}s` : `${minutes}d` : "—"}</Text><Text style={styles.weeklyLabel}>{day.label}</Text></View>;
+        })}</View> : <Text style={styles.body}>Grafik oluşturmak için uyku başlangıç ve bitiş kayıtları ekleyin.</Text>}
+        <Text style={styles.hint}>Gün sınırını aşan uyku dönemleri iki güne süreleri oranında dağıtılır. Görsel yalnızca girilen kayıtları gösterir.</Text>
+      </Card>
+      <SectionTitle title="Son 7 gün · bez kayıtları" action={maxDailyDiapers ? `${weeklyDiapers.reduce((sum, day) => sum + day.total, 0)} kayıt` : "Kayıt yok"} />
+      <Card>
+        {maxDailyDiapers ? <>
+          <View style={styles.diaperLegend}>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperWet]} /><Text style={styles.muted}>Islak</Text></View>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperDirty]} /><Text style={styles.muted}>Kirli</Text></View>
+            <View style={styles.diaperLegendItem}><View style={[styles.diaperLegendDot, styles.diaperMixed]} /><Text style={styles.muted}>İkisi</Text></View>
+          </View>
+          {weeklyDiapers.map((day) => <View key={day.date} style={styles.diaperTrendRow} accessibilityLabel={`${day.label}: ${day.wet} ıslak, ${day.dirty} kirli, ${day.mixed} ikisi, toplam ${day.total} bez kaydı`}>
+            <Text style={styles.diaperTrendLabel}>{day.label}</Text>
+            <View style={styles.diaperTrendTrack}>
+              {day.wet ? <View style={[styles.diaperSegment, styles.diaperWet, { flex: day.wet / maxDailyDiapers }]} /> : null}
+              {day.dirty ? <View style={[styles.diaperSegment, styles.diaperDirty, { flex: day.dirty / maxDailyDiapers }]} /> : null}
+              {day.mixed ? <View style={[styles.diaperSegment, styles.diaperMixed, { flex: day.mixed / maxDailyDiapers }]} /> : null}
+              {day.total < maxDailyDiapers ? <View style={{ flex: (maxDailyDiapers - day.total) / maxDailyDiapers }} /> : null}
+            </View>
+            <Text style={styles.diaperTrendCount}>{day.total || "—"}</Text>
+          </View>)}
+        </> : <Text style={styles.body}>Günlük bez değişimlerini ekledikçe son yedi gün burada görünür.</Text>}
+        <Text style={styles.hint}>Çubuklar kaydedilen ıslak, kirli ve ikili bez sayılarını gösterir. Kayıt eksik olabilir; bu grafik sağlık değerlendirmesi değildir.</Text>
+      </Card>
+      <SectionTitle title={newbornSummary ? "Son 24 saatte beslenme" : "Bugünkü beslenme"} />
+      <Card tone="peach"><View style={styles.measureRow}><Measure value={`${feedingTotals.breastMinutes} dk`} label="Emzirme" /><Measure value={`${feedingTotals.bottleMl} ml`} label="Biberon" /><Measure value={`${feedingTotals.solids}`} label="Katı öğün" /></View><Text style={styles.body}>Toplam {feedingTotals.count} beslenme kaydı. Değerler yalnızca girilen kayıtlardan hesaplanır.</Text></Card>
+      <SectionTitle title="Ek gıda günlüğü" action={`${solidHistory.mealCount} öğün`} />
+      <Card>
+        {solidHistory.foods.length || solidHistory.allergens.length ? <>
+          {solidHistory.foods.length ? <>
+            <Text style={styles.inputLabel}>Kaydedilen yiyecekler</Text>
+            {solidHistory.foods.slice(0, 8).map((food) => <View key={food.name.toLocaleLowerCase("tr-TR")} style={styles.eventRow}>
+              <View style={styles.flex}><Text style={styles.eventTitle}>{food.name}</Text><Text style={styles.muted}>İlk uygulama kaydı · {new Date(food.firstRecordedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</Text></View>
+              <Text style={styles.taskDate}>{food.mealCount} öğün</Text>
+            </View>)}
+            {solidHistory.foods.length > 8 ? <Text style={styles.hint}>Diğer yiyecek kayıtları Akış sekmesinde bulunabilir.</Text> : null}
+          </> : null}
+          {solidHistory.allergens.length ? <>
+            <Text style={styles.inputLabel}>Öğünlere eklenen alerjen etiketleri</Text>
+            <Text style={styles.body}>{solidHistory.allergens.map((item) => `${item.name} (${item.taggedMealCount})`).join(" · ")}</Text>
+          </> : null}
+          {solidHistory.observations.length ? <>
+            <Text style={styles.inputLabel}>Yazılı tepki gözlemleri</Text>
+            {solidHistory.observations.map((item) => <View key={`${item.startedAt}-${item.note}`} style={styles.growthHistoryRow}>
+              <Text style={styles.muted}>{new Date(item.startedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}{item.foods.length ? ` · ${item.foods.join(", ")}` : ""}</Text>
+              <Text style={styles.body}>{item.note}</Text>
+              {item.allergens.length ? <Text style={styles.hint}>Öğün etiketleri: {item.allergens.join(", ")}</Text> : null}
+            </View>)}
+          </> : null}
+        </> : <Text style={styles.body}>Katı gıda öğünleri kaydedildikçe yiyecek ve etiket geçmişi burada görünür.</Text>}
+        <Text style={styles.hint}>Bu bölüm yalnızca kaydedilen öğünleri ve ebeveyn gözlemlerini listeler; alerji tanısı, güvenli gıda önerisi veya tepki değerlendirmesi sunmaz.</Text>
+      </Card>
+      <MilkStockCard events={events} now={now} update={app.updateEvent} />
+      <GrowthHistoryCard measurements={growthMeasurements} baby={app.state.baby} />
+      <DevelopmentTrackerCard app={app} now={now} />
+      <SectionTitle title="Kayıtlardan anılar" action="İsteğe bağlı" />
+      <Card>
+        {milestones.length ? milestones.slice(0, 8).map((milestone) => <View key={milestone.id} style={styles.eventRow}>
+          <View style={styles.flex}>
+            <Text style={styles.eventTitle}>{milestone.title}</Text>
+            <Text style={styles.muted}>{new Date(milestone.occurredAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" })} · {milestone.detail}</Text>
+          </View>
+          {milestone.saved ? <Text style={styles.taskDate}>Anılarda</Text> : <PrimaryButton label="Anılara ekle" quiet onPress={() => app.addEvent({ kind: "memory", memoryTitle: milestone.title, note: `${milestone.detail} Bu an, uygulamada kayıtlı etkinliklerden bulundu.`, milestoneId: milestone.id, startedAt: milestone.occurredAt })} />}
+        </View>) : <Text style={styles.body}>Uyku, beslenme veya ölçüm kaydı ekledikçe burada kayıtlara dayalı anlar görünür.</Text>}
+        <Text style={styles.hint}>Bunlar yalnızca uygulamadaki kayıtlardan çıkarılır; gelişim basamağı veya sağlık değerlendirmesi değildir. Anı eklemek isteğe bağlıdır.</Text>
+      </Card>
+      <SectionTitle title="Aşı ve randevular" action={`${upcoming.length} yaklaşan`} />
+      <View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="Aşı ekle" quiet onPress={() => openTask("vaccine")} /></View><View style={styles.dualButton}><PrimaryButton label="Randevu ekle" quiet onPress={() => openTask("appointment")} /></View></View>
+      <PrimaryButton label="Ulusal takvimden aşı önerileri" quiet onPress={openVaccineSuggestions} />
+      {upcoming.length ? <Card>{upcoming.slice(0, 6).map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}</Card> : <Card><Text style={styles.body}>Yaklaşan aşı veya doktor randevusu eklenmedi.</Text></Card>}
+      {completedCareTasks.length ? <><SectionTitle title="Tamamlanan aşı ve randevular" action={`${completedCareTasks.length} kayıt`} /><Card>{completedCareTasks.map((task) => <CareTaskRow key={task.id} task={task} onToggle={() => app.toggleCareTask(task.id)} onDelete={() => app.deleteCareTask(task.id)} onEdit={() => openEditTask(task)} />)}<Text style={styles.hint}>Düzenle ile tarih veya notu değiştirin; kayda dokunarak yeniden açabilir, basılı tutarak silebilirsiniz.</Text></Card></> : null}
+      <SectionTitle title="Doktor görüşmesi" />
+      <Card><Text style={styles.cardTitle}>Kısa ve düzenli bir özet</Text><Text style={styles.body}>Paylaşılacak kayıt aralığını seçin. Uyku, beslenme, bez ve sağlık bilgileri seçtiğiniz döneme göre hazırlanır.</Text><View style={styles.spacer12} /><View style={styles.choiceRow}>{([7, 14, 30] as const).map((days) => <Pill key={days} label={`${days} gün`} active={doctorSummaryPeriod === days} onPress={() => setDoctorSummaryPeriod(days)} />)}</View><View style={styles.spacer12} /><View style={styles.dualButtons}><View style={styles.dualButton}><PrimaryButton label="PDF hazırla" onPress={() => void shareDoctorPdf(state, doctorSummaryPeriod)} /></View><View style={styles.dualButton}><PrimaryButton label="Metni paylaş" quiet onPress={() => void Share.share({ message: createDoctorSummary(state, now, doctorSummaryPeriod) })} /></View></View></Card>
+    </ScrollView>
+  );
+}
+
+function DevelopmentTrackerCard({ app, now }: { app: ReturnType<typeof useUykuvaState>; now: Date }) {
+  const ageMonths = correctedAgeMonths(app.state.baby, now);
+  const currentCheckpoint = developmentCheckpointForAge(ageMonths);
+  const [selectedAge, setSelectedAge] = useState<number | null>(currentCheckpoint?.ageMonths ?? null);
+  useEffect(() => setSelectedAge(currentCheckpoint?.ageMonths ?? null), [app.state.baby.id, currentCheckpoint?.ageMonths]);
+  const checkpoint = DEVELOPMENT_CHECKPOINTS.find((item) => item.ageMonths === selectedAge && item.ageMonths <= ageMonths) ?? currentCheckpoint;
+  const checkIn = checkpoint ? app.state.developmentCheckIns?.find((item) => item.ageMonths === checkpoint.ageMonths) : undefined;
+  const [note, setNote] = useState(checkIn?.note ?? "");
+  useEffect(() => setNote(checkIn?.note ?? ""), [checkpoint?.ageMonths, checkIn?.checkedAt]);
+
+  if (!checkpoint) return <>
+    <SectionTitle title="Yaşa göre gelişim gözlemi" action="2 ayda açılır" />
+    <Card><Text style={styles.body}>CDC yaş listeleri 2. aydan başlar. Düzeltilmiş yaşı iki aydan küçük bebeklerde burada liste gösterilmez.</Text><Pressable accessibilityRole="link" onPress={() => void Linking.openURL("https://www.cdc.gov/act-early/milestones/")}><Text style={styles.linkText}>CDC gelişim kaynaklarını aç</Text></Pressable></Card>
+  </>;
+
+  const items = checkpoint.groups.flatMap((item) => item.items);
+  const answers = checkIn?.answers ?? {};
+  const counts = {
+    yes: items.filter((item) => answers[item.id] === "yes").length,
+    notSure: items.filter((item) => answers[item.id] === "notSure").length,
+    notYet: items.filter((item) => answers[item.id] === "notYet").length
+  };
+  const options = [{ id: "yes" as const, label: "Gözlemledim" }, { id: "notSure" as const, label: "Emin değilim" }, { id: "notYet" as const, label: "Henüz görmedim" }];
+  return <>
+    <SectionTitle title="Yaşa göre gelişim gözlemi" action={checkpoint.title} />
+    <Card>
+      {DEVELOPMENT_CHECKPOINTS.filter((item) => item.ageMonths <= ageMonths).length > 1 ? <>
+        <Text style={styles.inputLabel}>Gözden geçirilecek yaş listesi</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pills} contentContainerStyle={{ flexDirection: "row", gap: 8 }}>
+          {DEVELOPMENT_CHECKPOINTS.filter((item) => item.ageMonths <= ageMonths).map((item) => <Pill key={item.ageMonths} label={item.title} active={checkpoint.ageMonths === item.ageMonths} onPress={() => setSelectedAge(item.ageMonths)} />)}
+        </ScrollView>
+      </> : null}
+      <Text style={styles.body}>Düzeltilmiş yaşa göre {checkpoint.title} listesi · CDC yaş kontrol listesinden uyarlanmıştır.</Text>
+      <Text style={styles.hint}>Liste, çoğu çocuğun bu yaşa kadar yapabildiği becerileri gözlemlemek içindir; gelişim taraması veya tanı değildir. Yaş listeleri arasındaysanız önceki yaş listesini kullanın.</Text>
+      {checkIn ? <Text style={styles.awake}>Son kayıt: {new Date(checkIn.checkedAt).toLocaleDateString("tr-TR")} · {counts.yes} gözlemledim · {counts.notSure} emin değilim · {counts.notYet} henüz görmedim</Text> : <Text style={styles.muted}>Bu yaş için henüz gözlem kaydı yok.</Text>}
+      {checkpoint.groups.map((milestoneGroup) => <View key={milestoneGroup.domain}>
+        <Text style={styles.inputLabel}>{milestoneGroup.label}</Text>
+        {milestoneGroup.items.map((item) => <View key={item.id} style={styles.developmentItem}>
+          <Text style={styles.body}>{item.label}</Text>
+          <View style={styles.developmentOptions}>{options.map((option) => <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={`${item.label}: ${option.label}`} accessibilityState={{ selected: answers[item.id] === option.id }} onPress={() => app.saveDevelopmentAnswer(checkpoint.ageMonths, item.id, option.id)} style={[styles.developmentOption, answers[item.id] === option.id && styles.developmentOptionActive]}><Text style={[styles.developmentOptionText, answers[item.id] === option.id && styles.developmentOptionTextActive]}>{option.label}</Text></Pressable>)}</View>
+        </View>)}
+      </View>)}
+      <Text style={styles.inputLabel}>Doktora veya diğer bakım verene sorularım</Text>
+      <TextInput accessibilityLabel="Gelişim gözlemleri hakkında doktora veya bakıcıya not" value={note} onChangeText={setNote} style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} multiline maxLength={500} placeholder="İsterseniz merak ettiğiniz noktaları not edin." placeholderTextColor="#93A09C" />
+      <PrimaryButton label="Gelişim notunu kaydet" quiet onPress={() => app.saveDevelopmentNote(checkpoint.ageMonths, note)} />
+      <Text style={styles.hint}>“Henüz görmedim” veya “Emin değilim” yanıtlarını, beceri kaybını ya da başka bir endişeyi çocuk doktorunuzla paylaşın. Bu gözlemler doktor özeti paylaşımına eklenir.</Text>
+      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(checkpoint.sourceUrl)}><Text style={styles.linkText}>CDC {checkpoint.title} kaynak listesini aç</Text></Pressable>
+    </Card>
+  </>;
+}
+
+function CareTaskRow({ task, onToggle, onDelete, onEdit }: { task: CareTask; onToggle: () => void; onDelete: () => void; onEdit?: () => void }) {
+  const taskType = task.type === "vaccine" ? "Aşı" : "Randevu";
+  const taskDate = new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
+  const completedDate = task.completedAt ? new Date(task.completedAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }) : undefined;
+  const confirmDelete = () => Alert.alert("Kaydı sil?", `${task.title} ${taskType.toLocaleLowerCase("tr-TR")} kaydı kalıcı olarak silinecek.`, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Sil", style: "destructive", onPress: onDelete }
+  ]);
+  return <View style={styles.eventRow}><View style={[styles.eventDot, { backgroundColor: task.type === "vaccine" ? colors.peach : colors.lavender }]} /><Pressable accessibilityRole="button" accessibilityLabel={`${task.title}, ${taskType}${task.repeat ? `, ${task.repeat === "weekly" ? "haftalık" : "aylık"} tekrarlı` : ""}, ${task.completedAt ? `uygulamada tamamlandı ${completedDate}; yeniden aç` : `${taskDate}; tamamla`}. Silmek için basılı tutun ve onaylayın.`} onPress={onToggle} onLongPress={confirmDelete} style={styles.flex}><Text style={styles.eventTitle}>{task.title}</Text><Text style={styles.muted}>{taskType}{task.repeat ? ` · ${task.repeat === "weekly" ? "Haftalık" : "Aylık"} tekrar` : ""} · {task.completedAt ? `uygulamada tamamlandı ${completedDate} · dokununca yeniden aç` : "dokununca tamamla"}</Text>{task.note ? <Text style={styles.hint}>{task.note}</Text> : null}</Pressable><View style={{ alignItems: "flex-end", marginLeft: 8 }}><Text style={styles.taskDate}>{taskDate}</Text>{onEdit ? <Pressable accessibilityRole="button" accessibilityLabel={`${task.title} kaydını düzenle`} onPress={onEdit} hitSlop={8}><Text style={styles.taskDate}>Düzenle</Text></Pressable> : null}</View></View>;
+}
+
+function MilkStockCard({ events, now, update }: { events: CareEvent[]; now: Date; update: ReturnType<typeof useUykuvaState>["updateEvent"] }) {
+  const inventory = useMemo(() => createMilkInventory(events, now), [events, now]);
+  const batches = inventory.batches.filter((batch) => batch.remainingMl > 0);
+  const dateTime = (date: Date) => `${date.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · ${time(date)}`;
+  const discard = (event: CareEvent) => Alert.alert("Stoğu çıkar?", `${event.amountMl ?? 0} ml ${milkStorageLabel(event)} kaydı artık envanterde görünmeyecek.`, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Stoktan çıkar", style: "destructive", onPress: () => update(event.id, { milkDiscardedAt: new Date().toISOString() }) }
+  ]);
+  const thaw = (event: CareEvent) => Alert.alert("Süt tamamen çözüldü mü?", "Süreyi yalnızca tamamen çözüldüğü anda başlatın. Çözülen sütü yeniden dondurmayın.", [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Tamamen çözüldü", onPress: () => update(event.id, { milkStorageLocation: "fridge", milkThawedAt: new Date().toISOString() }) }
+  ]);
+  const markWarmed = (event: CareEvent) => Alert.alert("Süt ısıtıldı veya oda sıcaklığına geldi mi?", "Bu andan itibaren 2 saatlik kullanım süresi başlar. Sütü yeniden dondurmayın.", [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Evet, süreyi başlat", onPress: () => update(event.id, { milkWarmedAt: new Date().toISOString() }) }
+  ]);
+  const moveTo = (event: CareEvent, location: "fridge" | "freezer") => update(event.id, { milkStorageLocation: location });
+  return <>
+    <SectionTitle title="Sağılan süt stoğu" action={`${inventory.availableMl} ml kullanılabilir`} />
+    <Card>
+      {batches.length ? batches.map((batch) => {
+        const qualityDatePassed = !batch.isExpired && batch.bestBy.getTime() <= now.getTime() && batch.event.milkStorageLocation === "freezer" && !batch.isThawed;
+        const dueSoon = !batch.isExpired && batch.useBy.getTime() <= now.getTime() + 48 * 60 * 60 * 1000;
+        return <View key={batch.event.id} style={styles.eventRow}>
+          <View style={styles.flex}><Text style={styles.eventTitle}>{batch.remainingMl} ml · {milkStorageLabel(batch.event)}</Text><Text style={styles.muted}>{batch.event.milkLabel?.trim() || `Sağım ${dateTime(new Date(batch.event.startedAt))}`}</Text>
+            {batch.event.milkStorageLocation === "freezer" && !batch.isThawed ? <Text style={styles.muted}>En iyi kalite: {dateTime(batch.bestBy)} · Tavsiye edilen son tarih: {dateTime(batch.useBy)}</Text> : <Text style={styles.muted}>Kullanım aralığı: {dateTime(batch.useBy)} tarihine kadar</Text>}
+            {batch.isExpired ? <Text style={styles.dangerText}>Önerilen kullanım süresi geçti</Text> : qualityDatePassed ? <Text style={styles.muted}>En iyi kalite dönemi geçti; CDC'nin kabul edilebilir saklama süresi sürüyor.</Text> : dueSoon ? <Text style={styles.dangerText}>Önümüzdeki 48 saatte kullanım süresi doluyor</Text> : null}
+            {batch.event.milkStorageLocation === "freezer" && !batch.event.milkThawedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => thaw(batch.event)}><Text style={styles.linkText}>Tamamen çözüldüğünde işaretle</Text></Pressable> : null}
+            {(batch.event.milkThawedAt || batch.event.milkStorageLocation === "fridge") && !batch.event.milkWarmedAt && !batch.isExpired ? <Pressable accessibilityRole="button" accessibilityLabel="Süt ısıtıldı veya oda sıcaklığına geldi olarak işaretle; iki saatlik süre başlat" onPress={() => markWarmed(batch.event)}><Text style={styles.linkText}>Isıtıldı / oda sıcaklığına geldi</Text></Pressable> : null}
+            {batch.event.milkStorageLocation === "room" && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "fridge")}><Text style={styles.linkText}>Buzdolabına alındı olarak güncelle</Text></Pressable> : null}
+            {batch.event.milkStorageLocation === "fridge" && !batch.event.milkThawedAt && !batch.event.milkWarmedAt && !batch.isExpired ? <Pressable accessibilityRole="button" onPress={() => moveTo(batch.event, "freezer")}><Text style={styles.linkText}>Dondurucuya alındı olarak güncelle</Text></Pressable> : null}
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Süt stoğunu çıkar" onPress={() => discard(batch.event)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable>
         </View>;
       }) : <Text style={styles.body}>Henüz sağım stoğu yok. Beslenme kaydından “Sağım” seçerek miktarı ve saklama yerini ekleyebilirsiniz.</Text>}
       <Text style={styles.hint}>Önerilen süreler taze sağılmış süt ve uygun sıcaklık koşulları içindir. Tamamen çözündürülmüş süt 24 saat içinde, ısıtılmış veya oda sıcaklığına gelmiş süt 2 saat içinde kullanılmalıdır. CDC kuralları sağlıklı ve zamanında doğan bebeklere yöneliktir; bebeğiniz prematüre veya hastaysa sağlık uzmanınıza danışın.</Text>
@@ -2024,4 +2461,3 @@ const styles = StyleSheet.create({
   developmentOptionText: { color: colors.inkSoft, fontSize: 10, lineHeight: 13, fontWeight: "700", textAlign: "center" },
   developmentOptionTextActive: { color: "white" }
 });
-
