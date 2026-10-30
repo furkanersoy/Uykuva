@@ -21,7 +21,8 @@ const compiledTests = [
 ].map((file) => path.join(outputDirectory, file));
 const testFiles = [
   ...compiledTests,
-  path.join(projectRoot, "src", "services", "notifications.test.cjs")
+  path.join(projectRoot, "src", "services", "notifications.test.cjs"),
+  path.join(projectRoot, "src", "services", "cloudSync.test.cjs")
 ];
 
 try {
@@ -35,6 +36,7 @@ try {
   } else {
     const tests = spawnSync(process.execPath, ["--test", ...testFiles], {
       cwd: projectRoot,
+      env: { ...process.env, UYKUVA_TEST_BUILD: outputDirectory },
       stdio: "inherit"
     });
     if (tests.error) throw tests.error;
@@ -46,4 +48,3 @@ try {
 } finally {
   rmSync(outputDirectory, { recursive: true, force: true });
 }
-
