@@ -168,7 +168,7 @@ export async function replaceOpenSleepCheckReminders(
     await Notifications.scheduleNotificationAsync({
       content: {
         title: reminder.babyName + " için uyku kaydı hâlâ açık mı?",
-        body: "Uyku kaydı 12 saattir açık. Bebeğiniz uyandıysa dokunup gerçek uyanış saatini düzenleyin; hâlâ uyuyorsa bildirimi yok sayabilirsiniz.",
+        body: "Uyandıysa saati düzenlemek için bildirime dokunun veya “Uyandı · şimdi kaydet” seçeneğini kullanın; hâlâ uyuyorsa bildirimi yok sayabilirsiniz.",
         sound: false,
         categoryIdentifier: OPEN_SLEEP_CHECK_CATEGORY,
         data: { kind: NOTIFICATION_KINDS.openSleepCheck, childId: reminder.childId, eventId: reminder.eventId }
