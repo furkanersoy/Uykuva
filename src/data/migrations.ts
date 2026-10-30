@@ -82,6 +82,7 @@ function migrateSingleState(value: unknown): AppState {
         : [],
       checkIns: Array.isArray(candidate.sleepPlan?.checkIns) ? candidate.sleepPlan.checkIns.map((item) => ({
         ...item,
+        appliedMethod: ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(item.appliedMethod)) ? item.appliedMethod : undefined,
         dayContext: ["illness", "travel", "teething", "routineChange"].includes(String(item.dayContext)) ? item.dayContext : undefined
       })) : []
     },

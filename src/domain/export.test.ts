@@ -33,6 +33,17 @@ test("saved sleep guides round-trip, merge by union, and reject malformed IDs", 
   assert.throws(() => parseDataExport(JSON.stringify(invalid)), /Uyku planı veya check-in kayıtları geçersiz/i);
 });
 
+test("morning check-ins preserve the actually applied sleep approach in backups", () => {
+  const state = createInitialState();
+  state.sleepPlan.checkIns = [{ date: "2026-10-30", appliedMethod: "gradual", ease: 3 }];
+  const restored = parseDataExport(createDataExport(state));
+  assert.equal(restored.sleepPlan.checkIns[0]?.appliedMethod, "gradual");
+
+  const invalid = JSON.parse(createDataExport(state));
+  invalid.sleepPlan.checkIns[0].appliedMethod = "unknown";
+  assert.throws(() => parseDataExport(JSON.stringify(invalid)), /geçersiz/i);
+});
+
 test("backup validation accepts the expanded appointment reminder options", () => {
   const state = createInitialState();
   for (const minutes of [15, 30, 60, 120, 180, 1440] as const) {

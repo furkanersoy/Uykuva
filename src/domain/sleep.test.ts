@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 
@@ -475,4 +475,42 @@ test("care handoff includes the active sleep approach and evening routine", () =
   assert.match(paused, /Uyku planı duraklatıldı/);
   assert.doesNotMatch(paused, /Uyku yaklaşımı:/);
   assert.match(paused, /Etkin akşam rutini: Işıkları azalt → Ninni/);
+});
+
+test("sleep plan comparisons exclude explicitly reported nights using another approach", () => {
+  const records = Array.from({ length: 6 }, (_, index) => ({
+    date: `2026-10-${String(index + 1).padStart(2, "0")}`,
+    day: index + 1,
+    method: "gradual" as const,
+    focus: "bedtime" as const,
+    completedTasks: 2,
+    totalTasks: 3
+  }));
+  const checkIns = records.map((record, index) => ({
+    date: record.date,
+    appliedMethod: index === 0 || index === 3 ? "routineFirst" as const : "gradual" as const,
+    ease: 3 as const,
+    nightWakings: 2
+  }));
+
+  const comparison = compareSleepPlanCheckIns(records, checkIns, "gradual", "bedtime");
+  assert.equal(comparison.firstEaseCount, 2);
+  assert.equal(comparison.recentEaseCount, 2);
+  assert.equal(comparison.firstWakingsCount, 2);
+  assert.equal(comparison.recentWakingsCount, 2);
+});
+
+test("sleep plan comparisons retain older check-ins without a reported approach", () => {
+  const records = Array.from({ length: 6 }, (_, index) => ({
+    date: `2026-10-${String(index + 1).padStart(2, "0")}`,
+    day: index + 1,
+    method: "gradual" as const,
+    focus: "bedtime" as const,
+    completedTasks: 2,
+    totalTasks: 3
+  }));
+  const checkIns = records.map((record) => ({ date: record.date, ease: 4 as const, nightWakings: 1 }));
+  const comparison = compareSleepPlanCheckIns(records, checkIns, "gradual", "bedtime");
+  assert.equal(comparison.firstEaseCount, 3);
+  assert.equal(comparison.recentEaseCount, 3);
 });

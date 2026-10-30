@@ -93,6 +93,7 @@ const sleepDayContextOptions: { id?: SleepDayContext; label: string }[] = [
   { id: "teething", label: "Diş çıkarma" },
   { id: "routineChange", label: "Düzen değişikliği" }
 ];
+const allSleepMethods: SleepMethod[] = ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"];
 
 function time(value?: string | Date) {
   if (!value) return "—";
@@ -1393,7 +1394,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
             <Measure value={planCheckInComparison.firstWakingsAverage.toFixed(1)} label={`İlk 3 gün · uyanma (${planCheckInComparison.firstWakingsCount} kayıt)`} />
             <Measure value={planCheckInComparison.recentWakingsAverage.toFixed(1)} label={`Son 3 gün · uyanma (${planCheckInComparison.recentWakingsCount} kayıt)`} />
           </View> : null}
-          <Text style={styles.hint}>Yalnızca aynı yaklaşım ve plandaki aynı odakla eşleşen günlerin check-in'leri gösterilir. “5+ uyanma” kayıtları ortalamaya dahil edilmez. Bu, kayıt karşılaştırmasıdır; sonuç veya sağlık değerlendirmesi değildir.</Text>
+          <Text style={styles.hint}>Yalnızca aynı plan yaklaşımı ve odakla eşleşen günler karşılaştırılır. Check-in'de farklı uygulanan yaklaşım belirtilmişse o gece dışarıda kalır; eski ve yaklaşımı belirtilmemiş kayıtlar korunur. “5+ uyanma” ortalamaya katılmaz. Bu bir kayıt karşılaştırmasıdır, sonuç veya sağlık değerlendirmesi değildir.</Text>
         </Card>
       </> : null}
       <SectionTitle title="Akşam rutini" action={`${app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0)} dakika`} />
@@ -1418,6 +1419,12 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} /></View></View>
         {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
+        <Text style={styles.inputLabel}>Dün gece uygulanan yaklaşım · isteğe bağlı</Text>
+        <View style={styles.choiceRow}>
+          <Pill label="Belirtmedim" active={!todayCheckIn?.appliedMethod} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, appliedMethod: undefined })} />
+          {allSleepMethods.map((method) => <Pill key={method} label={methodDescription(method).name} active={todayCheckIn?.appliedMethod === method} onPress={() => app.saveCheckIn({ ...todayCheckIn, date: today, appliedMethod: method })} />)}
+        </View>
+        <Text style={styles.hint}>Yalnızca o gece gerçekte uyguladığınız yaklaşımı işaretleyin. Bu seçim planı değiştirmez veya bir yöntemi önermek anlamına gelmez; farklı bir yaklaşım seçilen gece, plan karşılaştırmasına katılmaz.</Text>
         {app.runningSleep ? <Text accessibilityLiveRegion="polite" style={styles.hint}>Uyku devam ediyor. Uyanış kaydedildiğinde sonraki uyku penceresi yeniden hesaplanır.</Text> : morningWakeForecast ? <Text accessibilityLiveRegion="polite" style={morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? styles.awake : styles.hint}>{morningWakeForecast.available && morningWakeForecast.start && morningWakeForecast.end ? `${morningWakeHasSleep ? "Son uykudan sonraki" : "Sabah uyanışına göre ilk"} uyku penceresi: ${time(morningWakeForecast.start)}–${time(morningWakeForecast.end)}. ${morningWakeForecast.explanation}` : morningWakeForecast.explanation}</Text> : null}
         {nightSpanMinutes ? <Text style={styles.hint}>Gece aralığı {Math.floor(nightSpanMinutes / 60)} sa {nightSpanMinutes % 60} dk · uyanık kalınan süre çıkarılmamıştır.</Text> : null}
         <View style={styles.spacer12} /><PrimaryButton label={todayCheckIn?.bedtime === (nightBedtime.trim() || undefined) && todayCheckIn?.wakeTime === (morningWake.trim() ? morningWakeClock : undefined) && Boolean(nightBedtime || morningWake) ? "Gece özeti kaydedildi" : "Gece özetini kaydet"} quiet onPress={saveNightSummary} />

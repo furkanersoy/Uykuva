@@ -806,7 +806,8 @@ export function compareSleepPlanCheckIns(records: SleepPlanDayRecord[], checkIns
   const recentRecords = matchingDays.slice(-3);
   const checkInsByDate = new Map(checkIns.map((checkIn) => [checkIn.date, checkIn]));
   const summarize = (days: SleepPlanDayRecord[]) => {
-    const logs = days.map((day) => checkInsByDate.get(day.date)).filter((item): item is SleepCheckIn => Boolean(item));
+    const logs = days.map((day) => checkInsByDate.get(day.date))
+      .filter((item): item is SleepCheckIn => item !== undefined && (!item.appliedMethod || item.appliedMethod === method));
     const easeValues = logs.flatMap((item) => item.ease === undefined ? [] : [item.ease]);
     const uncappedWakingValues = logs.flatMap((item) => item.nightWakings === undefined || item.nightWakings >= 5 ? [] : [item.nightWakings]);
     const cappedWakings = logs.filter((item) => item.nightWakings === 5).length;
