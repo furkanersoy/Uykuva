@@ -148,7 +148,7 @@ Günün isteğe bağlı bağlamı (`illness`, `travel`, `teething`, `routineChan
 - Planı sonraki güne ilerletme
 - Her değişiklikten sonra cihaz içine kaydetme
 
-Uyku koçluğu görevi tamamlandığında `toggleTask`, görevi işaretleyen etkin bakım verenin görünen adını `completedTaskMarkedBy` alanında görev anahtarıyla birlikte saklar. Uyku ekranı bu adı tamamlanan görevin altında gösterir; bakım devri özeti de aynı görev/kişi eşleşmesini paylaşır. İşaret kaldırılırsa kişi kaydı silinir; plan yöntemi veya odağı değişince, yeni güne geçince ve plan yeniden başlatılınca günlük eşleşmeler sıfırlanır. Alan isteğe bağlıdır; eski yerel kayıtlar ve yedekler bu alan olmadan da geçerlidir. Bu, görevi kimin işaretlediğini söyler; fiziksel olarak kimin uyguladığını iddia etmez.
+Uyku koçluğu görevi değiştirildiğinde `toggleTask`, görevi işaretleyen etkin bakım verenin görünen adını `completedTaskMarkedBy` alanında görev anahtarıyla saklar ve işaretleme/geri alma saatini `completedTaskUpdatedAt` alanına yazar. Uyku ekranı adı tamamlanan görevin altında gösterir; bakım devri özeti de aynı görev/kişi eşleşmesini paylaşır. Aynı plan günündeki yedek/aile eşitleme birleştirmesinde görev başına en yeni saatli durum kazanır; böylece son işareti kaldırma eski tamamlanma bilgisini geri getirmez. Eşit saatli çelişkide yanlış bir tamamlanmış adım bildirmemek için işaretli olmayan durum seçilir. Plan yöntemi veya odağı değişince, yeni güne geçince ve plan yeniden başlatılınca günlük eşleşmeler sıfırlanır. Alanlar isteğe bağlıdır; eski yerel kayıtlar ve yedekler bunlar olmadan da geçerlidir. Bu, görevi kimin işaretlediğini söyler; fiziksel olarak kimin uyguladığını iddia etmez.
 
 ### Alan mantığı
 

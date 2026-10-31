@@ -7,9 +7,11 @@ test("sleep coaching task markers round-trip, accept older backups, and reject i
   const state = createInitialState();
   state.sleepPlan.completedToday = ["bedtime routine"];
   state.sleepPlan.completedTaskMarkedBy = { "bedtime routine": "Anne" };
+  state.sleepPlan.completedTaskUpdatedAt = { "bedtime routine": "2026-10-31T07:00:00.000Z" };
 
   const restored = parseDataExport(createDataExport(state));
   assert.deepEqual(restored.sleepPlan.completedTaskMarkedBy, { "bedtime routine": "Anne" });
+  assert.deepEqual(restored.sleepPlan.completedTaskUpdatedAt, state.sleepPlan.completedTaskUpdatedAt);
 
   const olderBackup = JSON.parse(createDataExport(state));
   delete olderBackup.sleepPlan.completedTaskMarkedBy;
@@ -25,6 +27,10 @@ test("sleep coaching task markers round-trip, accept older backups, and reject i
   const malformedMarker = JSON.parse(createDataExport(state));
   malformedMarker.sleepPlan.completedTaskMarkedBy = { "bedtime routine": 42 };
   assert.throws(() => parseDataExport(JSON.stringify(malformedMarker)));
+
+  const malformedUpdate = JSON.parse(createDataExport(state));
+  malformedUpdate.sleepPlan.completedTaskUpdatedAt = { "bedtime routine": "later" };
+  assert.throws(() => parseDataExport(JSON.stringify(malformedUpdate)));
 });
 
 test("memory photos round-trip in local backups and reject invalid or oversized image data", () => {
@@ -188,6 +194,34 @@ test("backup merge combines records and check-ins while preserving current devic
   assert.deepEqual(merged.sleepPlan.checkIns[0]?.nightWakeLogs?.map((log) => log.id), ["wake-1", "wake-2"]);
   assert.equal(merged.sleepPlan.checkIns[0]?.note, "Gece sakindi.");
   assert.equal(merged.preferences.handoffHours, 2);
+});
+
+test("backup merge keeps the newest sleep-task check-in from both caregivers", () => {
+  const current = createInitialState();
+  const incoming = createInitialState();
+  current.sleepPlan.completedToday = ["routine", "comfort"];
+  current.sleepPlan.completedTaskMarkedBy = { routine: "Anne", comfort: "Anne" };
+  current.sleepPlan.completedTaskUpdatedAt = {
+    routine: "2026-10-31T10:00:00.000Z",
+    comfort: "2026-10-31T10:10:00.000Z",
+    feeding: "2026-10-31T10:20:00.000Z"
+  };
+  incoming.sleepPlan.completedToday = ["routine", "feeding"];
+  incoming.sleepPlan.completedTaskMarkedBy = { routine: "Baba", feeding: "Baba" };
+  incoming.sleepPlan.completedTaskUpdatedAt = {
+    routine: "2026-10-31T10:05:00.000Z",
+    comfort: "2026-10-31T10:15:00.000Z",
+    feeding: "2026-10-31T10:18:00.000Z"
+  };
+
+  const merged = mergeDataStates(current, incoming);
+  const reverseMerged = mergeDataStates(incoming, current);
+
+  assert.deepEqual(merged.sleepPlan.completedToday, ["routine"]);
+  assert.deepEqual(merged.sleepPlan.completedTaskMarkedBy, { routine: "Baba" });
+  assert.equal(merged.sleepPlan.completedTaskUpdatedAt?.comfort, "2026-10-31T10:15:00.000Z");
+  assert.deepEqual(reverseMerged.sleepPlan.completedToday, merged.sleepPlan.completedToday);
+  assert.deepEqual(reverseMerged.sleepPlan.completedTaskMarkedBy, merged.sleepPlan.completedTaskMarkedBy);
 });
 
 test("backup merge remaps care-task assignments when caregiver IDs collide", () => {

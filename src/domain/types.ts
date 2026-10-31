@@ -104,6 +104,7 @@ export type SleepPlan = {
   routine: RoutineStep[];
   completedToday: string[];
   completedTaskMarkedBy?: Record<string, string>;
+  completedTaskUpdatedAt?: Record<string, string>;
   completedDays: SleepPlanDayRecord[];
   completedRuns: SleepPlanRun[];
   readinessCompleted: string[];

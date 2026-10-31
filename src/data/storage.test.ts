@@ -46,8 +46,17 @@ test("migration keeps caregiver attribution only for completed sleep coaching ta
     "not completed": "Anne",
     "Akşam ışıklarını azalt?": "x".repeat(101)
   };
+  state.sleepPlan.completedTaskUpdatedAt = {
+    "Akşam ışıklarını azalt": "2026-10-31T07:00:00.000Z",
+    "işareti kaldırılan görev": "2026-10-31T07:10:00.000Z",
+    "bozuk tarih": "daha sonra"
+  };
   const migrated = migrateState(state);
   assert.deepEqual(migrated.sleepPlan.completedTaskMarkedBy, { "Akşam ışıklarını azalt": "Baba" });
+  assert.deepEqual(migrated.sleepPlan.completedTaskUpdatedAt, {
+    "Akşam ışıklarını azalt": "2026-10-31T07:00:00.000Z",
+    "işareti kaldırılan görev": "2026-10-31T07:10:00.000Z"
+  });
 });
 
 test("migration preserves all valid completed sleep plan cycles", () => {

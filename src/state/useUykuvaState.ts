@@ -221,13 +221,13 @@ export function useUykuvaState() {
   const setMethod = useCallback((method: SleepMethod) => {
     setState((current) => current.sleepPlan.method === method
       ? current
-      : { ...current, sleepPlan: { ...current.sleepPlan, method, completedToday: [], completedTaskMarkedBy: {} } });
+      : { ...current, sleepPlan: { ...current.sleepPlan, method, completedToday: [], completedTaskMarkedBy: {}, completedTaskUpdatedAt: {} } });
   }, []);
 
   const setSleepFocus = useCallback((focus: SleepFocus) => {
     setState((current) => current.sleepPlan.focus === focus
       ? current
-      : { ...current, sleepPlan: { ...current.sleepPlan, focus, completedToday: [], completedTaskMarkedBy: {} } });
+      : { ...current, sleepPlan: { ...current.sleepPlan, focus, completedToday: [], completedTaskMarkedBy: {}, completedTaskUpdatedAt: {} } });
   }, []);
 
   const toggleSavedGuide = useCallback((guideId: string) => {
@@ -255,9 +255,11 @@ export function useUykuvaState() {
         ? plan.completedToday.filter((item) => item !== task)
         : [...plan.completedToday, task];
       const completedTaskMarkedBy = { ...(plan.completedTaskMarkedBy ?? {}) };
+      const completedTaskUpdatedAt = { ...(plan.completedTaskUpdatedAt ?? {}) };
       if (wasCompleted) delete completedTaskMarkedBy[task];
       else completedTaskMarkedBy[task] = current.caregiverName.trim() || "Bakım veren";
-      return { ...current, sleepPlan: { ...plan, completedToday: completed, completedTaskMarkedBy } };
+      completedTaskUpdatedAt[task] = new Date().toISOString();
+      return { ...current, sleepPlan: { ...plan, completedToday: completed, completedTaskMarkedBy, completedTaskUpdatedAt } };
     });
   }, []);
 
@@ -292,7 +294,7 @@ export function useUykuvaState() {
         ...current,
         sleepPlan: plan.day >= 14
           ? { ...plan, completedDate: today, lastAdvancedDate: today, completedDays, completedRuns }
-          : { ...plan, day: plan.day + 1, lastAdvancedDate: today, completedToday: [], completedTaskMarkedBy: {}, completedDays }
+          : { ...plan, day: plan.day + 1, lastAdvancedDate: today, completedToday: [], completedTaskMarkedBy: {}, completedTaskUpdatedAt: {}, completedDays }
       };
     });
   }, []);
@@ -300,7 +302,7 @@ export function useUykuvaState() {
   const restartSleepPlan = useCallback(() => {
     const today = localDateKey();
     setState((current) => current.sleepPlan.completedDate
-      ? { ...current, sleepPlan: { ...current.sleepPlan, paused: false, startDate: today, day: 1, completedToday: [], completedTaskMarkedBy: {}, completedDays: [], lastAdvancedDate: undefined, completedDate: undefined } }
+      ? { ...current, sleepPlan: { ...current.sleepPlan, paused: false, startDate: today, day: 1, completedToday: [], completedTaskMarkedBy: {}, completedTaskUpdatedAt: {}, completedDays: [], lastAdvancedDate: undefined, completedDate: undefined } }
       : current);
   }, []);
 

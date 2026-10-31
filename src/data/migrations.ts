@@ -53,6 +53,12 @@ function migrateSingleState(value: unknown): AppState {
       .filter(([task, name]) => completedToday.includes(task) && task.length <= 300 && typeof name === "string" && name.trim().length > 0 && name.length <= 100)
       .slice(0, 50)) as Record<string, string>
     : {};
+  const completedTaskUpdatedAtValue = candidate.sleepPlan?.completedTaskUpdatedAt;
+  const completedTaskUpdatedAt = completedTaskUpdatedAtValue && typeof completedTaskUpdatedAtValue === "object" && !Array.isArray(completedTaskUpdatedAtValue)
+    ? Object.fromEntries(Object.entries(completedTaskUpdatedAtValue as Record<string, unknown>)
+      .filter(([task, updatedAt]) => task.length > 0 && task.length <= 300 && typeof updatedAt === "string" && Number.isFinite(new Date(updatedAt).getTime()))
+      .slice(0, 50)) as Record<string, string>
+    : {};
   const legacyRunStart = typeof candidate.sleepPlan?.startDate === "string" ? localDateOnly(candidate.sleepPlan.startDate) : undefined;
   const legacyCompletedDate = typeof candidate.sleepPlan?.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(candidate.sleepPlan.completedDate) ? candidate.sleepPlan.completedDate : undefined;
   if (legacyCompletedDate && legacyRunStart && completedDays.some((day) => day.date >= legacyRunStart) && !completedRuns.some((run) => run.completedDate === legacyCompletedDate)) {
@@ -96,6 +102,7 @@ function migrateSingleState(value: unknown): AppState {
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
       completedToday,
       completedTaskMarkedBy,
+      completedTaskUpdatedAt,
       completedDays,
       completedRuns,
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],

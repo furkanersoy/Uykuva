@@ -1,4 +1,4 @@
-import { AppState, SyncTombstones } from "./types";
+import { AppState, SleepPlan, SyncTombstones } from "./types";
 import { migrateState } from "../data/migrations";
 
 export function createDataExport(state: AppState) {
@@ -47,6 +47,12 @@ function isCompletedTaskMarkedBy(value: unknown, completedToday: unknown): boole
   if (value === undefined) return true;
   if (!isRecord(value) || !Array.isArray(completedToday) || Object.keys(value).length > 50) return false;
   return Object.entries(value).every(([task, name]) => completedToday.includes(task) && task.length <= 300 && typeof name === "string" && name.trim().length > 0 && name.length <= 100);
+}
+
+function isCompletedTaskUpdatedAt(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!isRecord(value) || Object.keys(value).length > 50) return false;
+  return Object.entries(value).every(([task, updatedAt]) => task.length > 0 && task.length <= 300 && isDateString(updatedAt));
 }
 
 function isCompletedPlanDayHistory(value: unknown) {
@@ -114,7 +120,7 @@ export function parseDataExport(raw: string): AppState {
     throw new Error("Yedekte okunamayan aşı veya randevu kayıtları var.");
   }
   const plan = parsed.sleepPlan;
-  if (!isRecord(plan) || (plan.savedGuideIds !== undefined && (!Array.isArray(plan.savedGuideIds) || plan.savedGuideIds.length > 100 || !plan.savedGuideIds.every((id) => typeof id === "string" && id.length > 0 && id.length <= 100))) || (plan.paused !== undefined && typeof plan.paused !== "boolean") || (plan.lastAdvancedDate !== undefined && (typeof plan.lastAdvancedDate !== "string" || !isDateOnly(plan.lastAdvancedDate))) || (plan.completedDate !== undefined && (typeof plan.completedDate !== "string" || !isDateOnly(plan.completedDate))) || !["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(plan.method)) || (plan.focus !== undefined && !["bedtime", "nightWakings", "naps", "routine"].includes(String(plan.focus))) || (plan.completedDays !== undefined && !isCompletedPlanDayHistory(plan.completedDays)) || (plan.completedRuns !== undefined && !isCompletedPlanRunHistory(plan.completedRuns)) || !isDateString(plan.startDate) || typeof plan.day !== "number" || !Number.isInteger(plan.day) || plan.day < 1 || plan.day > 14 || !isClockString(plan.bedtime) || !isClockString(plan.wakeTime) || !Array.isArray(plan.routine) || !plan.routine.every((step) => isRecord(step) && typeof step.id === "string" && typeof step.label === "string" && typeof step.enabled === "boolean" && typeof step.minutes === "number" && Number.isInteger(step.minutes) && step.minutes > 0) || !Array.isArray(plan.completedToday) || !plan.completedToday.every((item) => typeof item === "string") || !isCompletedTaskMarkedBy(plan.completedTaskMarkedBy, plan.completedToday) || !Array.isArray(plan.readinessCompleted) || !plan.readinessCompleted.every((item) => typeof item === "string") || !Array.isArray(plan.checkIns) || !plan.checkIns.every((item) => isRecord(item) && typeof item.date === "string" && (item.ease === undefined || [1, 2, 3, 4, 5].includes(Number(item.ease))) && (item.sustainability === undefined || [1, 2, 3, 4, 5].includes(Number(item.sustainability))) && (item.planReflection === undefined || typeof item.planReflection === "string" && item.planReflection.length <= 300) && (item.nightWakings === undefined || typeof item.nightWakings === "number" && Number.isInteger(item.nightWakings) && item.nightWakings >= 0 && item.nightWakings <= 5) && (item.bedtime === undefined || isClockString(item.bedtime)) && (item.wakeTime === undefined || isClockString(item.wakeTime)) && (item.appliedMethod === undefined || ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(item.appliedMethod))) && (item.dayContext === undefined || isSleepDayContext(item.dayContext)) && (item.nightWakeLogs === undefined || Array.isArray(item.nightWakeLogs) && item.nightWakeLogs.length <= 30 && item.nightWakeLogs.every(isNightWakeLog)) && (item.note === undefined || typeof item.note === "string"))) {
+  if (!isRecord(plan) || (plan.savedGuideIds !== undefined && (!Array.isArray(plan.savedGuideIds) || plan.savedGuideIds.length > 100 || !plan.savedGuideIds.every((id) => typeof id === "string" && id.length > 0 && id.length <= 100))) || (plan.paused !== undefined && typeof plan.paused !== "boolean") || (plan.lastAdvancedDate !== undefined && (typeof plan.lastAdvancedDate !== "string" || !isDateOnly(plan.lastAdvancedDate))) || (plan.completedDate !== undefined && (typeof plan.completedDate !== "string" || !isDateOnly(plan.completedDate))) || !["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(plan.method)) || (plan.focus !== undefined && !["bedtime", "nightWakings", "naps", "routine"].includes(String(plan.focus))) || (plan.completedDays !== undefined && !isCompletedPlanDayHistory(plan.completedDays)) || (plan.completedRuns !== undefined && !isCompletedPlanRunHistory(plan.completedRuns)) || !isDateString(plan.startDate) || typeof plan.day !== "number" || !Number.isInteger(plan.day) || plan.day < 1 || plan.day > 14 || !isClockString(plan.bedtime) || !isClockString(plan.wakeTime) || !Array.isArray(plan.routine) || !plan.routine.every((step) => isRecord(step) && typeof step.id === "string" && typeof step.label === "string" && typeof step.enabled === "boolean" && typeof step.minutes === "number" && Number.isInteger(step.minutes) && step.minutes > 0) || !Array.isArray(plan.completedToday) || plan.completedToday.length > 50 || !plan.completedToday.every((item) => typeof item === "string" && item.length > 0 && item.length <= 300) || !isCompletedTaskMarkedBy(plan.completedTaskMarkedBy, plan.completedToday) || !isCompletedTaskUpdatedAt(plan.completedTaskUpdatedAt) || !Array.isArray(plan.readinessCompleted) || !plan.readinessCompleted.every((item) => typeof item === "string") || !Array.isArray(plan.checkIns) || !plan.checkIns.every((item) => isRecord(item) && typeof item.date === "string" && (item.ease === undefined || [1, 2, 3, 4, 5].includes(Number(item.ease))) && (item.sustainability === undefined || [1, 2, 3, 4, 5].includes(Number(item.sustainability))) && (item.planReflection === undefined || typeof item.planReflection === "string" && item.planReflection.length <= 300) && (item.nightWakings === undefined || typeof item.nightWakings === "number" && Number.isInteger(item.nightWakings) && item.nightWakings >= 0 && item.nightWakings <= 5) && (item.bedtime === undefined || isClockString(item.bedtime)) && (item.wakeTime === undefined || isClockString(item.wakeTime)) && (item.appliedMethod === undefined || ["responsive", "gradual", "timedChecks", "camping", "bedtimeFading", "pickUpPutDown", "routineFirst"].includes(String(item.appliedMethod))) && (item.dayContext === undefined || isSleepDayContext(item.dayContext)) && (item.nightWakeLogs === undefined || Array.isArray(item.nightWakeLogs) && item.nightWakeLogs.length <= 30 && item.nightWakeLogs.every(isNightWakeLog)) && (item.note === undefined || typeof item.note === "string"))) {
     throw new Error("Uyku planı veya check-in kayıtları geçersiz.");
   }
   const preferences = parsed.preferences;
@@ -203,6 +209,77 @@ function mergeCaregivers(current: AppState["caregivers"], incoming: AppState["ca
   return { caregivers: result, incomingIdMap };
 }
 
+function mergeDailySleepTasks(current: SleepPlan, incoming: SleepPlan): Pick<SleepPlan, "completedToday" | "completedTaskMarkedBy" | "completedTaskUpdatedAt"> {
+  const currentCompleted = new Set(current.completedToday);
+  const incomingCompleted = new Set(incoming.completedToday);
+  const currentTimes = current.completedTaskUpdatedAt ?? {};
+  const incomingTimes = incoming.completedTaskUpdatedAt ?? {};
+  const currentMarkers = current.completedTaskMarkedBy ?? {};
+  const incomingMarkers = incoming.completedTaskMarkedBy ?? {};
+  const tasks = [...new Set([
+    ...currentCompleted, ...incomingCompleted,
+    ...Object.keys(currentTimes), ...Object.keys(incomingTimes)
+  ])].sort((a, b) => a.localeCompare(b, "tr-TR")).slice(0, 50);
+  const completedToday: string[] = [];
+  const completedTaskMarkedBy: Record<string, string> = {};
+  const completedTaskUpdatedAt: Record<string, string> = {};
+
+  for (const task of tasks) {
+    const currentTime = currentTimes[task];
+    const incomingTime = incomingTimes[task];
+    const currentDone = currentCompleted.has(task);
+    const incomingDone = incomingCompleted.has(task);
+    let done: boolean;
+    let updatedAt: string | undefined;
+    let marker: string | undefined;
+
+    if (currentTime && incomingTime) {
+      const currentMs = Date.parse(currentTime);
+      const incomingMs = Date.parse(incomingTime);
+      if (currentMs > incomingMs) {
+        done = currentDone;
+        updatedAt = currentTime;
+        marker = currentMarkers[task];
+      } else if (incomingMs > currentMs) {
+        done = incomingDone;
+        updatedAt = incomingTime;
+        marker = incomingMarkers[task];
+      } else {
+        // Equal timestamps are rare (for example, two offline edits in the
+        // same millisecond). Prefer unchecked to avoid claiming completion.
+        done = currentDone && incomingDone;
+        updatedAt = currentTime;
+        marker = [currentMarkers[task], incomingMarkers[task]]
+          .filter((name): name is string => Boolean(name))
+          .sort((a, b) => a.localeCompare(b, "tr-TR"))[0];
+      }
+    } else if (currentTime) {
+      done = currentDone;
+      updatedAt = currentTime;
+      marker = currentMarkers[task];
+    } else if (incomingTime) {
+      done = incomingDone;
+      updatedAt = incomingTime;
+      marker = incomingMarkers[task];
+    } else {
+      // Older clients have no edit timestamp. Preserve their completion data
+      // and choose a stable name if both backups contain a marker.
+      done = currentDone || incomingDone;
+      marker = [currentDone ? currentMarkers[task] : undefined, incomingDone ? incomingMarkers[task] : undefined]
+        .filter((name): name is string => Boolean(name))
+        .sort((a, b) => a.localeCompare(b, "tr-TR"))[0];
+    }
+
+    if (updatedAt) completedTaskUpdatedAt[task] = updatedAt;
+    if (done) {
+      completedToday.push(task);
+      if (marker) completedTaskMarkedBy[task] = marker;
+    }
+  }
+
+  return { completedToday, completedTaskMarkedBy, completedTaskUpdatedAt };
+}
+
 function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
   const sameBaby = current.baby.birthDate === incoming.baby.birthDate &&
     current.baby.gestationalWeek === incoming.baby.gestationalWeek &&
@@ -249,6 +326,12 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     } : item);
   }
   const instructions = [...new Set([current.careInstructions?.trim(), incoming.careInstructions?.trim()].filter((note): note is string => Boolean(note)))];
+  const sameSleepPlanDay = current.sleepPlan.startDate === incoming.sleepPlan.startDate &&
+    current.sleepPlan.day === incoming.sleepPlan.day &&
+    current.sleepPlan.method === incoming.sleepPlan.method &&
+    current.sleepPlan.focus === incoming.sleepPlan.focus &&
+    current.sleepPlan.completedDate === incoming.sleepPlan.completedDate;
+  const dailySleepTasks = sameSleepPlanDay ? mergeDailySleepTasks(current.sleepPlan, incoming.sleepPlan) : {};
 
   return {
     ...current,
@@ -263,6 +346,7 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
     careTasks: mergedCareTasks,
     sleepPlan: {
       ...current.sleepPlan,
+      ...dailySleepTasks,
       checkIns: mergeCheckIns(current.sleepPlan.checkIns, incoming.sleepPlan.checkIns, deletedLogIds),
       savedGuideIds: [...new Set([...(current.sleepPlan.savedGuideIds ?? []), ...(incoming.sleepPlan.savedGuideIds ?? [])])].slice(0, 100),
       completedDays: mergeById(current.sleepPlan.completedDays.map((item) => ({ ...item, id: `${item.date}-${item.day}` })), incoming.sleepPlan.completedDays.map((item) => ({ ...item, id: `${item.date}-${item.day}` })))
