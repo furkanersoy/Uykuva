@@ -103,3 +103,37 @@ jobs:
             exit 1
           fi
           echo "Verified targetSdkVersion 36 in $manifest"
+
+  ios-native-build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify Apple build SDK
+        shell: bash
+        run: |
+          xcodebuild -version
+          ios_sdk="$(xcrun --sdk iphonesimulator --show-sdk-version)"
+          echo "iOS simulator SDK: $ios_sdk"
+          ios_sdk_major="${ios_sdk%%.*}"
+          if [ "$ios_sdk_major" -lt 26 ]; then
+            echo "App Store uploads require an iOS 26 SDK or later."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate clean iOS project
+        run: npx expo prebuild --clean --platform ios
+
+      - name: Build iOS Release for simulator
+        run: xcodebuild -workspace ios/Uykuva.xcworkspace -scheme Uykuva -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
