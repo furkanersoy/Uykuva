@@ -70,10 +70,15 @@ try {
 test("cloud sync stays disabled without explicit Supabase configuration", () => {
   delete process.env.EXPO_PUBLIC_SUPABASE_URL;
   delete process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  delete process.env.EXPO_PUBLIC_ENABLE_CLOUD_SYNC;
+  assert.equal(service.isCloudSyncConfigured(), false);
+  process.env.EXPO_PUBLIC_SUPABASE_URL = "https://uykuva.supabase.co";
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test_key_long_enough";
   assert.equal(service.isCloudSyncConfigured(), false);
 });
 
 test("family membership identifies the owner without granting ownership to invitees", async () => {
+  process.env.EXPO_PUBLIC_ENABLE_CLOUD_SYNC = "true";
   process.env.EXPO_PUBLIC_SUPABASE_URL = "https://uykuva.supabase.co";
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test_key_long_enough";
   const families = await service.getMyCloudFamilies();
