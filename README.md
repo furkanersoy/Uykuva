@@ -4,7 +4,7 @@ Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım 
 
 ## Mağaza yayın hazırlığı
 
-Play Store ve App Store yayın adımları, güncel politika bağlantıları ve açık kalan işler için [mağaza yayın kontrol listesine](STORE_RELEASE_CHECKLIST.md) bakın. [Gizlilik politikası](PRIVACY_POLICY_DRAFT.md) iletişim e-postası ve herkese açık URL belirlenene kadar taslaktır. Google Play için hazırlanan [512×512 simge](store-assets/google-play-icon-512.png) ve [1024×500 özellik görseli](store-assets/google-play-feature-1024x500.png) `store-assets/` klasöründedir.
+Play Store ve App Store yayın adımları, güncel politika bağlantıları ve açık kalan işler için [mağaza yayın kontrol listesine](STORE_RELEASE_CHECKLIST.md) bakın. [Türkçe mağaza metinleri](STORE_LISTING_TR.md) taslak olarak hazırdır. [Gizlilik politikası](PRIVACY_POLICY_DRAFT.md) iletişim e-postası ve herkese açık URL belirlenene kadar taslaktır. Google Play için hazırlanan [512×512 simge](store-assets/google-play-icon-512.png) ve [1024×500 özellik görseli](store-assets/google-play-feature-1024x500.png) `store-assets/` klasöründedir.
 
 ## Android emülatöründe çalıştırma
 
