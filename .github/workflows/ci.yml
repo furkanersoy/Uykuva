@@ -1,0 +1,47 @@
+name: Uykuva CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Run app tests
+        run: npm test
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Run database access tests
+        run: supabase test db
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: supabase stop
