@@ -16,7 +16,7 @@ Bulut eşitleme yapılandırılmadığında uygulama kayıtları cihazdaki yerel
 
 ## İsteğe bağlı bulut eşitleme
 
-Bulut aile eşitlemesi varsayılan olarak kapalıdır. Özellik yalnızca `EXPO_PUBLIC_ENABLE_CLOUD_SYNC=true` ve Supabase sunucu yapılandırması birlikte sağlandığında kullanılabilir; bu bayrak ilk mağaza sürümünde `false` kalmalıdır. Eşitleme etkinleştirilirse hesap e-posta adresi kimlik doğrulama için Supabase hizmetine gönderilebilir. Eşitleme kayıtları gönderilmeden önce uygulama tarafından şifrelenir; uygulama anahtar materyalini cihazın güvenli saklama alanında tutmayı amaçlar. Bu taslak, kullanılan hizmet sağlayıcısının alt işleyenlerini, veri konumlarını, saklama sürelerini ve silme akışını henüz kesinleştirmez. Bunlar doğrulanmadan eşitleme üretimde etkinleştirilmemelidir.
+Bulut aile eşitlemesi ilk mağaza sürümünün Release derlemelerinde kaynak kod düzeyinde kapalıdır; EAS ortam değişkeni bunu etkinleştiremez. Geliştirme derlemelerinde özellik yalnızca `EXPO_PUBLIC_ENABLE_CLOUD_SYNC=true` ve Supabase sunucu yapılandırması birlikte sağlandığında kullanılabilir. Bu nedenle ilk mağaza sürümünde aile hesabı ve eşitleme sunulmaz, e-posta adresi bu özellik için istenmez. Eşitleme geliştirme derlemesinde etkinleştirilirse hesap e-posta adresi kimlik doğrulama için Supabase hizmetine gönderilebilir. Eşitleme kayıtları gönderilmeden önce uygulama tarafından şifrelenir; uygulama anahtar materyalini cihazın güvenli saklama alanında tutmayı amaçlar. Bu taslak, kullanılan hizmet sağlayıcısının alt işleyenlerini, veri konumlarını, saklama sürelerini ve silme akışını henüz kesinleştirmez. Bunlar doğrulanmadan eşitleme üretimde etkinleştirilmemelidir.
 
 ## Mikrofon ve konuşma tanıma
 
