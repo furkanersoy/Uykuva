@@ -50,8 +50,13 @@ function publishableKey() {
   return process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "";
 }
 
+function cloudSyncExplicitlyEnabled() {
+  return process.env.EXPO_PUBLIC_ENABLE_CLOUD_SYNC?.trim().toLowerCase() === "true";
+}
+
 export function isCloudSyncConfigured() {
-  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl())
+  return cloudSyncExplicitlyEnabled()
+    && /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(supabaseUrl())
     && publishableKey().length > 20;
 }
 
