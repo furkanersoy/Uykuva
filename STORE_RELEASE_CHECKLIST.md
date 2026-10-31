@@ -58,6 +58,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - [ ] App Store ekran görüntülerini gerekli iPhone/iPad boyutlarında hazırla; tablet desteği açık olduğu için iPad deneyimini de doğrula veya tablet desteğini kapat.
 - [ ] Mağaza açıklamaları, yaş derecelendirmesi, destek URL'si, kategori ve içerik beyanlarını tamamla.
 - [ ] Gerçek cihaz/emülatörde soğuk açılış, izinler, bildirimler, çevrimdışı çalışma, yedekleme/geri yükleme, hesap/senkronizasyon (etkinleştirilecekse) ve silme senaryolarını dene.
+- [x] Android Pixel 10 Pro (API 37) emülatöründe Release varyantıyla soğuk açılış ve sabah uyanış saati → tahmini uyku penceresi akışı 31 Ekim 2026'da denendi; izin, bildirim, çevrimdışı, yedekleme/geri yükleme ve silme senaryoları henüz kapsam dışı.
 - [ ] Önceki Android geliştirme derlemesinde `updateSleepWindow` TurboModule argüman sayısı hatası raporlandı; GitHub'daki fazla JavaScript argümanı kaldırıldı ve regresyon testi eklendi. Güncel JS/native kodla Android uygulamasını yeniden yükleyip açılışta hatanın tekrarlanmadığını cihazda doğrula.
 - [ ] Türkçe karakterlerin ve erişilebilir metinlerin tüm mağaza görsellerinde doğru göründüğünü doğrula.
 - [x] Yüksek önem düzeyli Zod bildirimi Expo CLI'nin yamalı sürümünü lockfile'a alarak giderildi; `npm audit --omit=dev --audit-level=high` CI kontrolü geçti.
