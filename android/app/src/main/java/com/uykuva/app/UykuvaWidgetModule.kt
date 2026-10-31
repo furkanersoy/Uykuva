@@ -12,9 +12,9 @@ class UykuvaWidgetModule(context: ReactApplicationContext) : ReactContextBaseJav
   override fun getName() = "UykuvaWidget"
 
   @ReactMethod
-  fun updateSleepWindow(babyName: String, sleepWindow: String, status: String, feedingWindow: String, isSleeping: Boolean, promise: Promise) {
+  fun updateSleepWindow(babyName: String, sleepWindow: String, status: String, feedingWindow: String, promise: Promise) {
     try {
-      UykuvaWidgetProvider.saveSleepWindow(reactApplicationContext, babyName, sleepWindow, status, feedingWindow, isSleeping)
+      UykuvaWidgetProvider.saveSleepWindow(reactApplicationContext, babyName, sleepWindow, status, feedingWindow, false)
       promise.resolve(null)
     } catch (error: Exception) {
       promise.reject("WIDGET_UPDATE_FAILED", error)
