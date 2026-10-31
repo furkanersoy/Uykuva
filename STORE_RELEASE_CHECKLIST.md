@@ -55,6 +55,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - [x] Google Play özellik görseli (1024×500) hazırlandı.
 - [x] iOS uygulama simgesi 1024×1024 opak PNG olarak hazırlandı.
 - [ ] Farklı cihaz türlerinden gerçek uygulama ekran görüntüleri hazırla.
+- [x] iOS Release uygulaması GitHub Actions'ta Xcode 26.6 / iOS 26.5 ile derlendi, iPhone simülatörüne kuruldu ve açıldı; ilk açılış ekranı 14 günlük CI artefaktı olarak üretildi (31 Ekim 2026, [run 41223180458](https://github.com/furkanersoy/Uykuva/actions/runs/41223180458)). Bu QA ekran görüntüsü mağaza ekran görüntüsü setinin yerine geçmez.
 - [ ] App Store ekran görüntülerini gerekli iPhone/iPad boyutlarında hazırla; tablet desteği açık olduğu için iPad deneyimini de doğrula veya tablet desteğini kapat.
 - [ ] Mağaza açıklamaları, yaş derecelendirmesi, destek URL'si, kategori ve içerik beyanlarını tamamla.
 - [ ] Gerçek cihaz/emülatörde soğuk açılış, izinler, bildirimler, çevrimdışı çalışma, yedekleme/geri yükleme, hesap/senkronizasyon (etkinleştirilecekse) ve silme senaryolarını dene.
