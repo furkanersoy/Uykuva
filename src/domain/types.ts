@@ -103,6 +103,7 @@ export type SleepPlan = {
   wakeTime: string;
   routine: RoutineStep[];
   completedToday: string[];
+  completedTaskMarkedBy?: Record<string, string>;
   completedDays: SleepPlanDayRecord[];
   completedRuns: SleepPlanRun[];
   readinessCompleted: string[];
@@ -179,8 +180,16 @@ export type ChildProfile = {
   sleepPlan: SleepPlan;
 };
 
+export type SyncTombstones = {
+  eventIds: string[];
+  careTaskIds: string[];
+  nightWakeLogIds: string[];
+  childIds: string[];
+  caregiverIds: string[];
+};
+
 export type AppState = {
-  schemaVersion: 5;
+  schemaVersion: 6;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
@@ -194,6 +203,7 @@ export type AppState = {
   preferences: AppPreferences;
   children: ChildProfile[];
   activeChildId: string;
+  syncTombstones: SyncTombstones;
 };
 
 export type SleepForecast = {

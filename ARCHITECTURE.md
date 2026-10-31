@@ -148,6 +148,8 @@ Günün isteğe bağlı bağlamı (`illness`, `travel`, `teething`, `routineChan
 - Planı sonraki güne ilerletme
 - Her değişiklikten sonra cihaz içine kaydetme
 
+Uyku koçluğu görevi tamamlandığında `toggleTask`, görevi işaretleyen etkin bakım verenin görünen adını `completedTaskMarkedBy` alanında görev anahtarıyla birlikte saklar. Uyku ekranı bu adı tamamlanan görevin altında gösterir; bakım devri özeti de aynı görev/kişi eşleşmesini paylaşır. İşaret kaldırılırsa kişi kaydı silinir; plan yöntemi veya odağı değişince, yeni güne geçince ve plan yeniden başlatılınca günlük eşleşmeler sıfırlanır. Alan isteğe bağlıdır; eski yerel kayıtlar ve yedekler bu alan olmadan da geçerlidir. Bu, görevi kimin işaretlediğini söyler; fiziksel olarak kimin uyguladığını iddia etmez.
+
 ### Alan mantığı
 
 `src/domain` içindeki fonksiyonlar React Native'den bağımsızdır. Böylece tahmin ve planlama kuralları arayüz açılmadan test edilebilir.

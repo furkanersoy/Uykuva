@@ -1395,9 +1395,9 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         {plan.tasks.map((task) => {
           const done = app.state.sleepPlan.completedToday.includes(task);
           return (
-            <Pressable key={task} accessibilityRole="checkbox" accessibilityLabel={task} accessibilityState={{ checked: done, disabled: coachingPausedToday || alreadyAdvancedToday || programCompleted }} disabled={coachingPausedToday || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (coachingPausedToday || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
+            <Pressable key={task} accessibilityRole="checkbox" accessibilityLabel={done && app.state.sleepPlan.completedTaskMarkedBy?.[task] ? `${task}. İşaretleyen ${app.state.sleepPlan.completedTaskMarkedBy[task]}` : task} accessibilityState={{ checked: done, disabled: coachingPausedToday || alreadyAdvancedToday || programCompleted }} disabled={coachingPausedToday || alreadyAdvancedToday || programCompleted} onPress={() => app.toggleTask(task)} style={[styles.taskRow, (coachingPausedToday || alreadyAdvancedToday || programCompleted) && styles.pausedTask]}>
               <View style={[styles.checkbox, done && styles.checkboxDone]}><Text style={styles.check}>{done ? "✓" : ""}</Text></View>
-              <Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>
+              <View style={styles.flex}><Text style={[styles.taskText, done && styles.taskTextDone]}>{task}</Text>{done && app.state.sleepPlan.completedTaskMarkedBy?.[task] ? <Text style={styles.muted}>İşaretleyen: {app.state.sleepPlan.completedTaskMarkedBy[task]}</Text> : null}</View>
             </Pressable>
           );
         })}

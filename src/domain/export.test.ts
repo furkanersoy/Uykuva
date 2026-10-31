@@ -3,6 +3,30 @@ import test from "node:test";
 import { createInitialState } from "../data/seed";
 import { createDataExport, mergeDataStates, parseDataExport } from "./export";
 
+test("sleep coaching task markers round-trip, accept older backups, and reject invalid entries", () => {
+  const state = createInitialState();
+  state.sleepPlan.completedToday = ["bedtime routine"];
+  state.sleepPlan.completedTaskMarkedBy = { "bedtime routine": "Anne" };
+
+  const restored = parseDataExport(createDataExport(state));
+  assert.deepEqual(restored.sleepPlan.completedTaskMarkedBy, { "bedtime routine": "Anne" });
+
+  const olderBackup = JSON.parse(createDataExport(state));
+  delete olderBackup.sleepPlan.completedTaskMarkedBy;
+  for (const profile of (olderBackup.children ?? []) as { sleepPlan?: Record<string, unknown> }[]) {
+    if (profile.sleepPlan) delete profile.sleepPlan.completedTaskMarkedBy;
+  }
+  assert.deepEqual(parseDataExport(JSON.stringify(olderBackup)).sleepPlan.completedTaskMarkedBy, {});
+
+  const staleMarker = JSON.parse(createDataExport(state));
+  staleMarker.sleepPlan.completedTaskMarkedBy = { "unfinished task": "Baba" };
+  assert.throws(() => parseDataExport(JSON.stringify(staleMarker)));
+
+  const malformedMarker = JSON.parse(createDataExport(state));
+  malformedMarker.sleepPlan.completedTaskMarkedBy = { "bedtime routine": 42 };
+  assert.throws(() => parseDataExport(JSON.stringify(malformedMarker)));
+});
+
 test("memory photos round-trip in local backups and reject invalid or oversized image data", () => {
   const state = createInitialState();
   state.events = [{ id: "memory-photo", kind: "memory", memoryTitle: "İlk gülüş", memoryPhotoData: "data:image/jpeg;base64,AQID", startedAt: "2026-10-28T12:00:00.000Z", caregiver: "Anne" }];

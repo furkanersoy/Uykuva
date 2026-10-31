@@ -25,6 +25,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 
 ## Mevcut özellikler
 
+- Uyku koçluğu görevleri işaretlendiğinde aktif bakım verenin adını görev altında gösterme; bakım devri paylaşımında tamamlanan adımları işaretleyen kişiyi görevle birlikte belirtme
 - İsteğe bağlı aile hesabıyla farklı telefonlardan el ile eşitleme hazırlığı: hesap ve davet akışı, çakışma denetimli revizyon, SecureStore'da saklanan oturum/aile anahtarı ve sunucuya çıkmadan önce cihazda AES-GCM şifreleme. Eşitleme varsayılan olarak kapalıdır; sunucu adresi ve anahtarı olmadan yerel uygulama çalışmaya devam eder.
 
 - Açıklanabilir uyku penceresi tahmini

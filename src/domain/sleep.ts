@@ -1189,6 +1189,10 @@ export function handoffSummary(state: AppState, now = new Date(), windowHours: 2
     if (!state.sleepPlan.completedDate) {
       const todayPlan = coachingDay(state.sleepPlan.day, activeMethod, trainingReady, correctedAgeDays(state.baby, now), state.sleepPlan.focus);
       const remainingTasks = todayPlan.tasks.filter((task) => !state.sleepPlan.completedToday.includes(task));
+      const markedTasks = state.sleepPlan.completedToday
+        .filter((task) => state.sleepPlan.completedTaskMarkedBy?.[task])
+        .map((task) => `${state.sleepPlan.completedTaskMarkedBy![task]} · ${task}`);
+      if (markedTasks.length) parts.push(`Bugünün uyku adımlarını işaretleyenler: ${markedTasks.join("; ")}`);
       parts.push(remainingTasks.length
         ? `Bugünün uyku planı (${todayPlan.title}): ${remainingTasks.join("; ")}`
         : `Bugünün uyku planı tamamlandı (${todayPlan.title})`);

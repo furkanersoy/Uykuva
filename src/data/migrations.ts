@@ -24,6 +24,11 @@ function localDateOnly(value: string) {
   return Number.isNaN(date.getTime()) ? undefined : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function migratedTombstoneIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 128))];
+}
+
 function migrateSingleState(value: unknown): AppState {
   const initial = createInitialState();
   if (!value || typeof value !== "object") return initial;
@@ -39,6 +44,15 @@ function migrateSingleState(value: unknown): AppState {
   const completedRuns = Array.isArray(candidate.sleepPlan?.completedRuns)
     ? candidate.sleepPlan!.completedRuns!.filter((run) => run && typeof run.id === "string" && typeof run.startDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.startDate) && typeof run.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(run.completedDate) && Array.isArray(run.days) && run.days.length <= 14 && run.days.every(isSleepPlanDayRecord))
     : [];
+  const completedToday = Array.isArray(candidate.sleepPlan?.completedToday)
+    ? candidate.sleepPlan!.completedToday!.filter((task): task is string => typeof task === "string" && task.length > 0 && task.length <= 300).slice(0, 50)
+    : [];
+  const completedTaskMarkedByValue = candidate.sleepPlan?.completedTaskMarkedBy;
+  const completedTaskMarkedBy = completedTaskMarkedByValue && typeof completedTaskMarkedByValue === "object" && !Array.isArray(completedTaskMarkedByValue)
+    ? Object.fromEntries(Object.entries(completedTaskMarkedByValue as Record<string, unknown>)
+      .filter(([task, name]) => completedToday.includes(task) && task.length <= 300 && typeof name === "string" && name.trim().length > 0 && name.length <= 100)
+      .slice(0, 50)) as Record<string, string>
+    : {};
   const legacyRunStart = typeof candidate.sleepPlan?.startDate === "string" ? localDateOnly(candidate.sleepPlan.startDate) : undefined;
   const legacyCompletedDate = typeof candidate.sleepPlan?.completedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(candidate.sleepPlan.completedDate) ? candidate.sleepPlan.completedDate : undefined;
   if (legacyCompletedDate && legacyRunStart && completedDays.some((day) => day.date >= legacyRunStart) && !completedRuns.some((run) => run.completedDate === legacyCompletedDate)) {
@@ -47,7 +61,7 @@ function migrateSingleState(value: unknown): AppState {
   return {
     ...initial,
     ...candidate,
-    schemaVersion: 5,
+    schemaVersion: 6,
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: {
       ...initial.baby,
@@ -56,6 +70,13 @@ function migrateSingleState(value: unknown): AppState {
     },
     caregiverName,
     careInstructions: typeof candidate.careInstructions === "string" ? candidate.careInstructions.slice(0, 1000) : "",
+    syncTombstones: {
+      eventIds: migratedTombstoneIds(candidate.syncTombstones?.eventIds),
+      careTaskIds: migratedTombstoneIds(candidate.syncTombstones?.careTaskIds),
+      nightWakeLogIds: migratedTombstoneIds(candidate.syncTombstones?.nightWakeLogIds),
+      childIds: migratedTombstoneIds(candidate.syncTombstones?.childIds),
+      caregiverIds: migratedTombstoneIds(candidate.syncTombstones?.caregiverIds)
+    },
     developmentCheckIns: Array.isArray(candidate.developmentCheckIns) ? candidate.developmentCheckIns.filter(isDevelopmentCheckIn).slice(-12) : [],
     caregivers,
     activeCaregiverId: caregivers.some((item) => item.id === candidate.activeCaregiverId) ? candidate.activeCaregiverId! : caregivers[0]!.id,
@@ -73,7 +94,8 @@ function migrateSingleState(value: unknown): AppState {
       focus: ["bedtime", "nightWakings", "naps", "routine"].includes(String(candidate.sleepPlan?.focus)) ? candidate.sleepPlan!.focus! : initial.sleepPlan.focus,
       paused: candidate.sleepPlan?.paused ?? false,
       routine: candidate.sleepPlan?.routine ?? initial.sleepPlan.routine,
-      completedToday: candidate.sleepPlan?.completedToday ?? [],
+      completedToday,
+      completedTaskMarkedBy,
       completedDays,
       completedRuns,
       readinessCompleted: candidate.sleepPlan?.readinessCompleted ?? [],

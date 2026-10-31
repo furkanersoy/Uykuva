@@ -443,11 +443,12 @@ test("care handoff shares unfinished sleep coaching tasks with the next caregive
   state.sleepPlan.readinessCompleted = [...SLEEP_READINESS_ITEMS];
   const todayPlan = coachingDay(state.sleepPlan.day, "gradual", true, correctedAgeDays(state.baby, new Date("2026-10-30T12:00:00")), state.sleepPlan.focus);
   state.sleepPlan.completedToday = [todayPlan.tasks[0]!];
+  state.sleepPlan.completedTaskMarkedBy = { [todayPlan.tasks[0]!]: "Baba" };
   const summary = handoffSummary(state, new Date("2026-10-30T12:00:00"), 4);
 
   assert.match(summary, /Uyku yaklaşımı: Kademeli destek/);
+  assert.ok(summary.includes(`Bugünün uyku adımlarını işaretleyenler: Baba · ${todayPlan.tasks[0]}`));
   assert.ok(summary.includes(todayPlan.tasks[1]!));
-  assert.ok(!summary.includes(todayPlan.tasks[0]!));
 
   state.sleepPlan.paused = true;
   assert.doesNotMatch(handoffSummary(state, new Date("2026-10-30T12:00:00"), 4), /Bugünün uyku planı/);

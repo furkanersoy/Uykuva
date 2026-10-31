@@ -37,6 +37,19 @@ test("migration preserves unique saved sleep guides and drops malformed entries"
   assert.deepEqual(migrated.sleepPlan.savedGuideIds, ["safe-sleep-space", "routine"]);
 });
 
+test("migration keeps caregiver attribution only for completed sleep coaching tasks", () => {
+  const state = createInitialState();
+  state.caregiverName = "Baba";
+  state.sleepPlan.completedToday = ["Akşam ışıklarını azalt"];
+  state.sleepPlan.completedTaskMarkedBy = {
+    "Akşam ışıklarını azalt": "Baba",
+    "not completed": "Anne",
+    "Akşam ışıklarını azalt?": "x".repeat(101)
+  };
+  const migrated = migrateState(state);
+  assert.deepEqual(migrated.sleepPlan.completedTaskMarkedBy, { "Akşam ışıklarını azalt": "Baba" });
+});
+
 test("migration preserves all valid completed sleep plan cycles", () => {
   const state = createInitialState();
   state.sleepPlan.completedRuns = Array.from({ length: 12 }, (_, index) => {
