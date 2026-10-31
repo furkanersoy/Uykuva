@@ -3,6 +3,9 @@ const test = require("node:test");
 const Module = require("node:module");
 const path = require("node:path");
 
+// The service is tested in Node, so supply Metro's development-build constant explicitly.
+globalThis.__DEV__ = true;
+
 const secureValues = new Map();
 let clientOptions;
 const memberships = [
@@ -75,6 +78,18 @@ test("cloud sync stays disabled without explicit Supabase configuration", () => 
   process.env.EXPO_PUBLIC_SUPABASE_URL = "https://uykuva.supabase.co";
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test_key_long_enough";
   assert.equal(service.isCloudSyncConfigured(), false);
+});
+
+test("cloud sync stays disabled in release builds even when configured", () => {
+  process.env.EXPO_PUBLIC_ENABLE_CLOUD_SYNC = "true";
+  process.env.EXPO_PUBLIC_SUPABASE_URL = "https://uykuva.supabase.co";
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test_key_long_enough";
+  globalThis.__DEV__ = false;
+  try {
+    assert.equal(service.isCloudSyncConfigured(), false);
+  } finally {
+    globalThis.__DEV__ = true;
+  }
 });
 
 test("family membership identifies the owner without granting ownership to invitees", async () => {
