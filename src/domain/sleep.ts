@@ -300,6 +300,10 @@ export function createSleepForecast(baby: Baby, events: CareEvent[], now = new D
   };
 }
 
+export function hasCurrentAwakeDuration(forecast: SleepForecast): forecast is SleepForecast & { awakeMinutes: number } {
+  return forecast.available && typeof forecast.awakeMinutes === "number" && Number.isFinite(forecast.awakeMinutes);
+}
+
 export function hasSleepSinceWake(events: CareEvent[], wakeAt: Date): boolean {
   const wakeAtMs = wakeAt.getTime();
   if (!Number.isFinite(wakeAtMs)) return false;

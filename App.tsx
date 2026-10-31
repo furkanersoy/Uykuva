@@ -29,7 +29,7 @@ import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
-import { coachingDay, coachingWeek, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
+import { coachingDay, coachingWeek, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasCurrentAwakeDuration, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { recommendSleepMethods, type SleepMethodPreferences } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
 import { createDataExport, mergeDataStates, parseDataExport } from "./src/domain/export";
@@ -763,6 +763,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
     return hasSleepSinceWake(app.state.events, wakeAt);
   })();
   const displayedForecast = morningWakeForecast ?? forecast;
+  const displayedAwakeMinutes = hasCurrentAwakeDuration(displayedForecast) ? displayedForecast.awakeMinutes : undefined;
   const enabledRoutineMinutes = app.state.sleepPlan.routine.reduce((sum, item) => sum + (item.enabled ? item.minutes : 0), 0);
   const routineStartWindow = morningWakeForecast?.available && morningWakeForecast.start && morningWakeForecast.end && enabledRoutineMinutes > 0
     ? {
@@ -833,7 +834,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <Text style={styles.body}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı. Bitirmek için aşağıdaki “Uyandı” kaydını kullanın.` : displayedForecast.explanation}</Text>
         {!app.runningSleep && sleepWindowStatus ? <Text style={styles.awake}>{sleepWindowStatus}</Text> : null}
         {app.runningSleep ? <Text style={styles.awake}>{wakeEstimate.available && wakeEstimate.from && wakeEstimate.typical && wakeEstimate.to ? `Benzer uykulara göre olası uyanma ${time(wakeEstimate.from)}–${time(wakeEstimate.to)} (ortanca ${time(wakeEstimate.typical)}). ${wakeEstimate.sampleCount} kayıt.` : wakeEstimate.explanation}</Text> : null}
-        {!app.runningSleep && displayedForecast.available && displayedForecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{displayedForecast.awakeMinutes} dakikadır uyanık</Text> : null}
+        {!app.runningSleep && displayedAwakeMinutes !== undefined ? <Text style={styles.awake}>{displayedAwakeMinutes} dakikadır uyanık</Text> : null}
       </Card>
       <Card>
         <Text style={styles.cardTitle}>Sabah uyanışına göre uyku penceresi</Text>

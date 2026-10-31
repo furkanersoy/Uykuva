@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { coachingDay, coachingWeek, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, recommendSleepMethods, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
+import { coachingDay, coachingWeek, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasCurrentAwakeDuration, hasSleepSinceWake, isSleepPlanPausedToday, median, methodDescription, recommendSleepMethods, sleepDayContextLabel, sleepMinutesBetween, sleepProgramStage, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./sleep";
 import { Baby, CareEvent, SleepMethod } from "./types";
 import { createInitialState } from "../data/seed";
 import { detectRecordedMilestones } from "./milestones";
@@ -267,6 +267,18 @@ test("forecast returns an explainable range after a completed sleep", () => {
   assert.equal(result.available, true);
   assert.ok(result.start && result.end && result.start < result.end);
   assert.match(result.explanation, /yaşa göre/i);
+});
+
+test("awake duration is shown only while the sleep forecast is valid", () => {
+  const now = new Date("2026-10-30T09:00:00");
+  const recentSleep: CareEvent = { id: "recent", kind: "sleep", startedAt: "2026-10-30T07:00:00", endedAt: "2026-10-30T08:00:00", caregiver: "Anne" };
+  const oldSleep: CareEvent = { id: "old", kind: "sleep", startedAt: "2026-10-26T06:00:00", endedAt: "2026-10-26T07:00:00", caregiver: "Anne" };
+  const current = createSleepForecast(termBaby, [recentSleep], now);
+  const stale = createSleepForecast(termBaby, [oldSleep], now);
+  assert.equal(hasCurrentAwakeDuration(current), true);
+  assert.equal(hasCurrentAwakeDuration(stale), false);
+  assert.equal(stale.available, false);
+  assert.equal(stale.awakeMinutes, 4 * 24 * 60 + 2 * 60);
 });
 
 test("morning wake forecast advances after a sleep is recorded since wake", () => {
