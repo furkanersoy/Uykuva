@@ -208,6 +208,11 @@ test("backup merge combines records and check-ins while preserving current devic
 test("backup merge keeps the newest sleep-task check-in from both caregivers", () => {
   const current = createInitialState();
   const incoming = createInitialState();
+  // Keep the two plans on the same fixed day; createInitialState seeds the
+  // start date with the current instant, so two calls can otherwise differ
+  // by milliseconds and exercise the cross-day branch instead.
+  current.sleepPlan.startDate = "2026-10-31";
+  incoming.sleepPlan.startDate = "2026-10-31";
   current.sleepPlan.completedToday = ["routine", "comfort"];
   current.sleepPlan.completedTaskMarkedBy = { routine: "Anne", comfort: "Anne" };
   current.sleepPlan.completedTaskUpdatedAt = {
