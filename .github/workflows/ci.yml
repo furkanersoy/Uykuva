@@ -185,10 +185,26 @@ jobs:
           sleep 10
           xcrun simctl io "$simulator_udid" screenshot "$GITHUB_WORKSPACE/build/uykuva-iphone-first-launch.png"
 
-      - name: Upload iOS first-launch screenshot
+          ipad_line="$(xcrun simctl list devices available | grep -E 'iPad Pro.*13-inch|iPad Air.*13-inch' | head -n 1 || true)"
+          ipad_udid="$(printf '%s\\n' "$ipad_line" | grep -Eo '[[:xdigit:]-]{36}' | tail -n 1)"
+          if [ -z "$ipad_udid" ]; then
+            echo "No available 13-inch iPad simulator was found."
+            exit 1
+          fi
+          echo "Using iPad simulator: $ipad_line"
+          xcrun simctl boot "$ipad_udid" 2>/dev/null || true
+          xcrun simctl bootstatus "$ipad_udid" -b
+          xcrun simctl install "$ipad_udid" "$app_path"
+          xcrun simctl launch "$ipad_udid" com.uykuva.app
+          sleep 10
+          xcrun simctl io "$ipad_udid" screenshot "$GITHUB_WORKSPACE/build/uykuva-ipad-13-first-launch.png"
+
+      - name: Upload iOS first-launch screenshots
         uses: actions/upload-artifact@v4
         with:
           name: ios-first-launch-smoke
-          path: build/uykuva-iphone-first-launch.png
+          path: |
+            build/uykuva-iphone-first-launch.png
+            build/uykuva-ipad-13-first-launch.png
           if-no-files-found: error
           retention-days: 14
