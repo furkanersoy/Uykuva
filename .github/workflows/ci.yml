@@ -36,6 +36,25 @@ jobs:
       - name: Check Expo SDK compatibility
         run: npm run doctor
 
+      - name: Validate store build profile
+        shell: bash
+        run: |
+          node <<'NODE'
+          const assert = require("node:assert/strict");
+          const app = require("./app.json").expo;
+          const production = require("./eas.json").build.production;
+
+          assert.equal(app.name, "Uykuva");
+          assert.equal(app.slug, "uykuva");
+          assert.equal(app.ios.bundleIdentifier, "com.uykuva.app");
+          assert.equal(app.android.package, "com.uykuva.app");
+          assert.equal(production.autoIncrement, true);
+          assert.equal(production.android.buildType, "app-bundle");
+          assert.equal(production.env?.EXPO_PUBLIC_ENABLE_CLOUD_SYNC, "false");
+          assert.equal(production.ios.image, "macos-tahoe-26.5-xcode-26.6");
+          console.log("Verified production identifiers, signed store package type, pinned Xcode image, and cloud-sync-off default.");
+          NODE
+
       - name: Run app tests
         run: npm test
 
