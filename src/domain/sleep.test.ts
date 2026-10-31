@@ -352,6 +352,19 @@ test("each sleep approach gets distinct tasks throughout all coaching phases", (
   }
 });
 
+test("recently added coaching focuses produce their own tasks and check-in prompts", () => {
+  const cases = [
+    { focus: "earlyWaking" as const, task: "Sabah uyanış saatini", checkIn: "Erken sabah uyanışlarında" },
+    { focus: "bedtimeResistance" as const, task: "Yatma öncesinde zorlanılan anları", checkIn: "Yatma geçişini kolaylaştıran" },
+    { focus: "napResistance" as const, task: "Gündüz uykusu denemelerini", checkIn: "Gündüz dinlenme zamanında" }
+  ];
+  for (const item of cases) {
+    const plan = coachingDay(3, "responsive", true, 300, item.focus);
+    assert.ok(plan.tasks.some((task) => task.includes(item.task)), `${item.focus} should add a specific coaching task`);
+    assert.ok(plan.checkIn.includes(item.checkIn), `${item.focus} should ask a matching check-in question`);
+  }
+});
+
 test("sleep support stays foundational before six months", () => {
   const baby: Baby = { ...termBaby, birthDate: "2026-07-20" };
   const stage = sleepProgramStage(baby, new Date("2026-10-26T12:00:00"));

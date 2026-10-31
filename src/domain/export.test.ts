@@ -33,6 +33,15 @@ test("sleep coaching task markers round-trip, accept older backups, and reject i
   assert.throws(() => parseDataExport(JSON.stringify(malformedUpdate)));
 });
 
+test("new sleep coaching focus choices survive backup round-trips", () => {
+  for (const focus of ["earlyWaking", "bedtimeResistance", "napResistance"] as const) {
+    const state = createInitialState();
+    state.sleepPlan.focus = focus;
+    const restored = parseDataExport(createDataExport(state));
+    assert.equal(restored.sleepPlan.focus, focus);
+  }
+});
+
 test("memory photos round-trip in local backups and reject invalid or oversized image data", () => {
   const state = createInitialState();
   state.events = [{ id: "memory-photo", kind: "memory", memoryTitle: "İlk gülüş", memoryPhotoData: "data:image/jpeg;base64,AQID", startedAt: "2026-10-28T12:00:00.000Z", caregiver: "Anne" }];
