@@ -34,6 +34,7 @@ jobs:
         run: npm test
 
       - name: Set up Supabase CLI
+        id: setup_supabase
         uses: supabase/setup-cli@v3
 
       - name: Start local Supabase stack
@@ -43,5 +44,5 @@ jobs:
         run: supabase test db
 
       - name: Stop local Supabase stack
-        if: always()
+        if: always() && steps.setup_supabase.outcome == 'success'
         run: supabase stop
