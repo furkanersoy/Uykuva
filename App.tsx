@@ -2090,8 +2090,10 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
         <Text style={styles.hint}>Bu not bu cihazda saklanır ve yalnızca “Bakım özetini paylaş” düğmesine bastığınızda devir metnine eklenir.</Text>
       </Card>
       <PrimaryButton label="Bakım özetini paylaş" onPress={() => void Share.share({ message: summary })} />
-      <SectionTitle title="Cihazlar arasında aile eşitlemesi" />
-      <Card tone="mint"><Text style={styles.cardTitle}>{isCloudSyncConfigured() ? "İsteğe bağlı bulut eşitlemesi" : "Güvenli eşitleme hazırlığı"}</Text><Text style={styles.body}>{cloudSyncSetupMessage()}</Text><View style={styles.spacer12} /><PrimaryButton label="Aile hesabı ve eşitleme" quiet onPress={onOpenCloudSync} /><Text style={styles.hint}>Hesap açana ve ilk eşitlemeyi açıkça onaylayana kadar hiçbir bakım verisi gönderilmez. Bulut kopyası uçtan uca şifrelenir; anahtar aile üyeleriyle ayrı ve güvenli bir kanaldan paylaşılır.</Text></Card>
+      {isCloudSyncConfigured() ? <>
+        <SectionTitle title="Cihazlar arasında aile eşitlemesi" />
+        <Card tone="mint"><Text style={styles.cardTitle}>İsteğe bağlı bulut eşitlemesi</Text><Text style={styles.body}>{cloudSyncSetupMessage()}</Text><View style={styles.spacer12} /><PrimaryButton label="Aile hesabı ve eşitleme" quiet onPress={onOpenCloudSync} /><Text style={styles.hint}>Hesap açana ve ilk eşitlemeyi açıkça onaylayana kadar hiçbir bakım verisi gönderilmez. Bulut kopyası uçtan uca şifrelenir; anahtar aile üyeleriyle ayrı ve güvenli bir kanaldan paylaşılır.</Text></Card>
+      </> : null}
       <Card>
         <Text style={styles.cardTitle}>Bakım devri aralığı</Text>
         <Text style={styles.body}>Paylaşılan özetin kapsayacağı süreyi aile nöbetlerinize göre seçin.</Text>
