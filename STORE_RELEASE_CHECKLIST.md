@@ -10,8 +10,9 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - Expo production build profili: `eas.json`
 - Üretim Android çıktısı: Android App Bundle (`.aab`); dahili önizleme: APK
 - Uygulama sürümü şu an `0.1.0`; mağaza sürüm numaraları yükleme öncesi belirlenmeli.
-- Android API hedefi: mevcut debug manifestinde 36 olarak doğrulandı; üretim AAB'sinde de yükleme öncesi kontrol edilmeli.
+- Android API hedefi: debug manifestinde ve GitHub CI'ın temiz prebuild sonrası derlediği release AAB manifestinde `targetSdkVersion=36` doğrulandı (compile SDK 37). EAS imzalı mağaza AAB'si oluşturulunca gerçek yükleme dosyasında tekrar kontrol et.
 - Expo SDK 58 varsayılanları: Android target API 36, iOS minimum 16.4, Xcode minimum 26.4. EAS preview ve production iOS profilleri kararlı `macos-tahoe-26.5-xcode-26.6` imajına sabitlendi; SDK 58'in otomatik imajı şu anda Xcode 27.1 RC. [Expo SDK 58 platform tablosu](https://docs.expo.dev/versions/v58.0.0/) · [EAS iOS imajları](https://docs.expo.dev/build-reference/infrastructure/)
+- iOS GitHub CI derlemesi Xcode 26.6 / iOS 26.5 SDK ile simulator Release build'ini başarıyla tamamladı. Bu, App Store imzalı arşiv/TestFlight yüklemesinin yerine geçmez; EAS hesabı hazır olunca aynı SDK koşulunu üretim arşivinde doğrula.
 - Android release Gradle yapılandırması artık debug anahtarına düşmüyor. EAS imza anahtarını sağlamalı veya yerel release imzalama özellikleri tanımlanmalı.
 - Google Play simgesi hazır: [`store-assets/google-play-icon-512.png`](store-assets/google-play-icon-512.png), 512×512 PNG, 240,464 bayt.
 - Google Play özellik görseli hazır: [`store-assets/google-play-feature-1024x500.png`](store-assets/google-play-feature-1024x500.png), 1024×500 PNG.
