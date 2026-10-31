@@ -159,4 +159,36 @@ jobs:
         run: npx expo prebuild --clean --platform ios
 
       - name: Build iOS Release for simulator
-        run: xcodebuild -workspace ios/Uykuva.xcworkspace -scheme Uykuva -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -derivedDataPath build/ios-derived-data -workspace ios/Uykuva.xcworkspace -scheme Uykuva -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+
+      - name: Launch iOS Release app on simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          simulator_udid="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ { print $2; exit }')"
+          if [ -z "$simulator_udid" ]; then
+            echo "No available iPhone simulator was found."
+            exit 1
+          fi
+
+          xcrun simctl boot "$simulator_udid" 2>/dev/null || true
+          xcrun simctl bootstatus "$simulator_udid" -b
+          app_path="$GITHUB_WORKSPACE/build/ios-derived-data/Build/Products/Release-iphonesimulator/Uykuva.app"
+          if [ ! -d "$app_path" ]; then
+            echo "Release simulator app was not created at $app_path."
+            exit 1
+          fi
+
+          mkdir -p "$GITHUB_WORKSPACE/build"
+          xcrun simctl install "$simulator_udid" "$app_path"
+          xcrun simctl launch "$simulator_udid" com.uykuva.app
+          sleep 10
+          xcrun simctl io "$simulator_udid" screenshot "$GITHUB_WORKSPACE/build/uykuva-iphone-first-launch.png"
+
+      - name: Upload iOS first-launch screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-first-launch-smoke
+          path: build/uykuva-iphone-first-launch.png
+          if-no-files-found: error
+          retention-days: 14
