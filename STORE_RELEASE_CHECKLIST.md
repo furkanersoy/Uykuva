@@ -10,7 +10,11 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - Expo production build profili: `eas.json`
 - Üretim Android çıktısı: Android App Bundle (`.aab`); dahili önizleme: APK
 - Uygulama sürümü şu an `0.1.0`; mağaza sürüm numaraları yükleme öncesi belirlenmeli.
-- Android API hedefi: Expo/RN yapılandırmasıyla derleme çıktısında doğrulanmalı; Play'in güncel hedef API kuralı yükleme tarihinde kontrol edilmeli.
+- Android API hedefi: mevcut debug manifestinde 36 olarak doğrulandı; üretim AAB'sinde de yükleme öncesi kontrol edilmeli.
+- Android release Gradle yapılandırması artık debug anahtarına düşmüyor. EAS imza anahtarını sağlamalı veya yerel release imzalama özellikleri tanımlanmalı.
+- Google Play simgesi hazır: [`store-assets/google-play-icon-512.png`](store-assets/google-play-icon-512.png), 512×512 PNG, 240,464 bayt.
+- Google Play özellik görseli hazır: [`store-assets/google-play-feature-1024x500.png`](store-assets/google-play-feature-1024x500.png), 1024×500 PNG.
+- `.easignore`, derleme sunucusuna yerel `android/` ve `ios/` klasörlerini göndermeyip Expo yapılandırmasından temiz native projeler üretmesini söyler.
 
 ## Yayından önce tamamlanması gerekenler
 
@@ -34,8 +38,9 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 
 ### Mağaza varlıkları ve kalite
 
-- [ ] Google Play için 512×512 PNG, 1 MB altında mağaza ikonu üret. Mevcut `assets/icon.png` 1,242,915 bayt ve sınırı aşıyor; uygulama ikonundan ayrı optimize edilmiş mağaza görseli gerekiyor.
-- [ ] Google Play özellik görseli (1024×500) ve farklı cihaz türlerinden ekran görüntüleri hazırla.
+- [x] Google Play için 512×512 PNG, 1 MB altında mağaza ikonu üretildi. Mevcut `assets/icon.png` 1,242,915 bayt olduğu için mağaza görseli ayrı optimize edildi.
+- [x] Google Play özellik görseli (1024×500) hazırlandı.
+- [ ] Farklı cihaz türlerinden gerçek uygulama ekran görüntüleri hazırla.
 - [ ] App Store ekran görüntülerini gerekli iPhone/iPad boyutlarında hazırla; tablet desteği açık olduğu için iPad deneyimini de doğrula veya tablet desteğini kapat.
 - [ ] Mağaza açıklamaları, yaş derecelendirmesi, destek URL'si, kategori ve içerik beyanlarını tamamla.
 - [ ] Gerçek cihaz/emülatörde soğuk açılış, izinler, bildirimler, çevrimdışı çalışma, yedekleme/geri yükleme, hesap/senkronizasyon (etkinleştirilecekse) ve silme senaryolarını dene.
@@ -59,3 +64,7 @@ iOS derlemesi EAS bulutunda yapılabilir; App Store'a gönderim için Apple Deve
 ## Şimdiki durum
 
 EAS, Apple Developer ve Play Console hesapları henüz hazır değil. Destek e-postası da daha sonra belirlenecek. Bu nedenle mağaza kaydı, imzalı üretim çıktısı, politika URL'si ve gönderim tamamlanmış sayılmaz.
+
+## İmza anahtarı güvenliği
+
+`android/app/build.gradle` release varyantı debug anahtarını kullanmaz. EAS Build, EAS hesabına bağlı imzalama anahtarını kurup release yapılandırmasını ekleyebilir. Kendi imza anahtarını kullanacaksan `MYAPP_UPLOAD_STORE_FILE`, `MYAPP_UPLOAD_STORE_PASSWORD`, `MYAPP_UPLOAD_KEY_ALIAS` ve `MYAPP_UPLOAD_KEY_PASSWORD` değerlerini güvenli Gradle özellikleri olarak sağla; `credentials.json` ve keystore dosyaları `.gitignore` içindedir ve GitHub'a gönderilmemelidir. Keystore yedeğini güvenli, erişimi sınırlı bir yerde sakla.
