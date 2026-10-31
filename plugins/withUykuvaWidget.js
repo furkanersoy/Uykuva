@@ -90,7 +90,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.uimanager.ViewManager
-import java.time.Instant
+import java.util.TimeZone
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -132,7 +132,7 @@ class UykuvaWidgetModule(context: ReactApplicationContext) : ReactContextBaseJav
           ).apply { lockscreenVisibility = Notification.VISIBILITY_PRIVATE }
         )
       }
-      val startMillis = try { Instant.parse(startedAt).toEpochMilli() } catch (_: Exception) { System.currentTimeMillis() }
+      val startMillis = try { SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.parse(startedAt)?.time ?: System.currentTimeMillis() } catch (_: Exception) { System.currentTimeMillis() }
       val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
       val contentIntent = launchIntent?.let {
         PendingIntent.getActivity(context, 7301, it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
