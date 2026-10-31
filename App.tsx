@@ -1866,10 +1866,10 @@ function GrowthMetricChart({ indicator, measurements, baby }: { indicator: Growt
   const label = { weight: "Kilo · kg", length: "Boy · cm", head: "Baş çevresi · cm" }[indicator];
   if (!entries.length) return null;
   const plotHeight = 106, left = 28, right = 8, top = 8;
-  const minAge = entries[0]!.score.ageDays, maxAge = entries.at(-1)!.score.ageDays;
+  const minAge = entries[0]!.score.chronologicalAgeDays, maxAge = entries.at(-1)!.score.chronologicalAgeDays;
   const points = entries.map((item, index) => ({
     ...item,
-    x: left + (maxAge === minAge ? (width - left - right) / 2 : (width - left - right) * (item.score.ageDays - minAge) / (maxAge - minAge)),
+    x: left + (maxAge === minAge ? (width - left - right) / 2 : (width - left - right) * (item.score.chronologicalAgeDays - minAge) / (maxAge - minAge)),
     y: top + (plotHeight - top) * (1 - (Math.max(-3, Math.min(3, item.score.z)) + 3) / 6)
   }));
   const guides = [{ z: 1.2816, label: "P90" }, { z: 0, label: "P50" }, { z: -1.2816, label: "P10" }];

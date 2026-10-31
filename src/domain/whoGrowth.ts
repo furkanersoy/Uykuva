@@ -36,10 +36,10 @@ export function whoGrowthScore(baby: Baby, event: CareEvent, indicator: GrowthIn
 
   let adjustedValue = raw;
   if (indicator === "length") {
-    const position = event.lengthPosition ?? (ageDays < 731 ? "recumbent" : "standing");
-    if (ageDays < 274 && position === "standing") return null;
-    if (ageDays < 731 && position === "standing") adjustedValue += 0.7;
-    if (ageDays >= 731 && position === "recumbent") adjustedValue -= 0.7;
+    const position = event.lengthPosition ?? (chronologicalAgeDays < 731 ? "recumbent" : "standing");
+    if (chronologicalAgeDays < 274 && position === "standing") return null;
+    if (chronologicalAgeDays < 731 && position === "standing") adjustedValue += 0.7;
+    if (chronologicalAgeDays >= 731 && position === "recumbent") adjustedValue -= 0.7;
   }
 
   const sexCode = baby.growthChartSex === "male" ? 1 : 2;
