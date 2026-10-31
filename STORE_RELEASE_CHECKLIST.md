@@ -58,6 +58,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - [ ] Gerçek cihaz/emülatörde soğuk açılış, izinler, bildirimler, çevrimdışı çalışma, yedekleme/geri yükleme, hesap/senkronizasyon (etkinleştirilecekse) ve silme senaryolarını dene.
 - [ ] Önceki Android geliştirme derlemesinde `updateSleepWindow` TurboModule argüman sayısı hatası raporlandı; GitHub'daki fazla JavaScript argümanı kaldırıldı ve regresyon testi eklendi. Güncel JS/native kodla Android uygulamasını yeniden yükleyip açılışta hatanın tekrarlanmadığını cihazda doğrula.
 - [ ] Türkçe karakterlerin ve erişilebilir metinlerin tüm mağaza görsellerinde doğru göründüğünü doğrula.
+- [ ] Son üretim kilidinden önce `npm audit --omit=dev` ile üretim bağımlılıklarını denetle; CI `npm ci` çıktısı tüm bağımlılıklarda 13 advisory (2 yüksek) bildiriyor. Üretim bağımlılıkları için kalan bulguları sürüm notlarında değerlendir ve gider.
 - [ ] Release build'i mağaza öncesi kapalı test/TestFlight üzerinden test et; çökme ve ANR sorunlarını gider.
 - [ ] Üretim derlemelerinde kullanılan Android ve iOS SDK/Xcode sürümünü mağaza yüklemesinden önce doğrula.
 
