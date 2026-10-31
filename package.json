@@ -16,6 +16,7 @@
     "doctor": "expo-doctor"
   },
   "dependencies": {
+    "@expo/ui": "~58.0.26",
     "@noble/hashes": "^1.8.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.118.0",
@@ -33,6 +34,7 @@
     "expo-speech-recognition": "^58.0.0",
     "expo-sqlite": "~58.0.15",
     "expo-status-bar": "~58.0.4",
+    "expo-widgets": "~58.0.26",
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-url-polyfill": "^4.0.0"
@@ -45,4 +47,3 @@
     "typescript": "~6.0.3"
   }
 }
-

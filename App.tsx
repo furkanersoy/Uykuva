@@ -29,6 +29,7 @@ import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { File, Paths } from "expo-file-system";
 import { useUykuvaState } from "./src/state/useUykuvaState";
+import SleepTrackingActivity from "./src/widgets/SleepLiveActivity";
 import { coachingDay, coachingWeek, compareNapPatterns, compareSleepPlanCheckIns, correctedAgeDays, correctedAgeMonths, createAwakeWindowInsights, createDailyNapOutline, createSleepCoachGuidance, createSleepCoachInsights, createSleepForecast, estimateSleepWakeWindow, handoffSummary, hasCurrentAwakeDuration, hasSleepSinceWake, isSleepPlanPausedToday, methodDescription, NIGHT_WAKE_RESPONSE_OPTIONS, nightWakeResponseLabel, sleepDayContextLabel, sleepMinutesBetween, SLEEP_READINESS_GUIDANCE, SLEEP_READINESS_ITEMS, SLEEP_SUPPORT_OPTIONS, sleepProgramStage, sleepSupportLabel, summarizeNightSleep, summarizeNightWakeResponses, wakeWindowGuide, weeklySleepTotals } from "./src/domain/sleep";
 import { recommendSleepMethods, type SleepMethodPreferences } from "./src/domain/sleep";
 import { createDoctorSummary, createDoctorSummaryHtml, createMemoryBookHtml, createSleepWeekSummaryHtml, DoctorSummaryPeriod } from "./src/domain/reports";
@@ -172,6 +173,8 @@ export default function App() {
   const lastNotificationResponseId = useRef<string | null>(null);
   const openSleepCheckHandledId = useRef<string | null>(null);
   const initializedHome = useRef(false);
+  const pendingSleepStopLink = useRef(false);
+  const initialSleepLinkHandled = useRef(false);
   const [homeInitialized, setHomeInitialized] = useState(false);
   useEffect(() => {
     let awayFromApp = AppState.currentState !== "active";
@@ -200,6 +203,53 @@ export default function App() {
     setNightWakeOpen(false);
     setHomeInitialized(true);
   }, [app.hydrated, app.state.onboardingComplete]);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios" || !app.hydrated || !app.state.onboardingComplete) return;
+    const activities = SleepTrackingActivity.getInstances();
+    if (!app.runningSleep) {
+      activities.forEach((activity) => { void activity.end("immediate").catch(() => undefined); });
+      return;
+    }
+    const props = {
+      babyName: app.state.baby.name,
+      startedAt: app.runningSleep.startedAt,
+      startedAtLabel: time(app.runningSleep.startedAt)
+    };
+    if (activities.length > 0) {
+      void activities[0]!.update(props).catch(() => undefined);
+      activities.slice(1).forEach((activity) => { void activity.end("immediate").catch(() => undefined); });
+    } else {
+      try { SleepTrackingActivity.start(props, "uykuva://sleep"); } catch { /* Live Activities may be disabled in iOS Settings. */ }
+    }
+  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep?.startedAt, foregroundCycle]);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    const stopFromLink = () => {
+      if (!app.hydrated) {
+        pendingSleepStopLink.current = true;
+        return;
+      }
+      if (app.runningSleep) app.toggleSleep();
+    };
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      if (url.startsWith("uykuva://sleep/stop")) stopFromLink();
+    });
+    if (!initialSleepLinkHandled.current) {
+      initialSleepLinkHandled.current = true;
+      void Linking.getInitialURL().then((url) => {
+        if (url?.startsWith("uykuva://sleep/stop")) stopFromLink();
+      }).catch(() => undefined);
+    }
+    return () => subscription.remove();
+  }, [app.hydrated, app.runningSleep, app.toggleSleep]);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios" || !app.hydrated || !pendingSleepStopLink.current) return;
+    pendingSleepStopLink.current = false;
+    if (app.runningSleep) app.toggleSleep();
+  }, [app.hydrated, app.runningSleep, app.toggleSleep]);
   const todaySleepCheckIn = app.state.sleepPlan.checkIns.find((item) => item.date === localDateValue(clockNow));
   const savedMorningWake = todaySleepCheckIn?.wakeTime;
   const savedMorningWakeAt = useMemo(() => {

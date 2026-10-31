@@ -42,7 +42,9 @@
         }
       ],
       "./plugins/withUykuvaWidget",
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      "expo-widgets"
+    ],
+    "scheme": "uykuva"
   }
 }
