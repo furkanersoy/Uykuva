@@ -1,6 +1,6 @@
 # Uykuva mağaza metinleri — Türkçe taslak
 
-> Metinler mağaza girişi için taslaktır. İlk üretim sürümünün özellikleri ve gizlilik beyanları son kez doğrulanınca yayınlayın. Hesap/senkronizasyon bu derlemede kapalı tutulacaksa açıklamaya eklemeyin.
+> Metinler mağaza girişi için taslaktır. İlk üretim sürümünün özellikleri ve gizlilik beyanları son kez doğrulanınca yayınlayın. İlk üretim sürümünde aile hesabı ve cihazlar arası eşitleme kapalı olacaktır.
 
 ## Google Play
 
@@ -26,7 +26,7 @@ Uykuva, bebeğinizin uykusunu ve günlük bakımını tek yerde takip etmenize y
 **Aileyle birlikte kullanım**
 • Bakım devri için son kayıtları ve önemli notları özetleyin.
 • Anı günlüğüne metin ve fotoğraf ekleyin; seçtiğiniz kayıtları PDF olarak paylaşın.
-• Cihazlar arası aile eşitlemesi yalnızca ilgili hizmet yapılandırılmış ve kullanıcı tarafından etkinleştirilmişse kullanılabilir.
+• İlk mağaza sürümünde kayıtlar cihazınızda tutulur; aile hesabı ve cihazlar arası eşitleme sunulmaz.
 
 Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır; tanı, tedavi veya profesyonel sağlık önerisinin yerine geçmez. Bebeğinizin sağlık ve beslenme ihtiyaçları önceliklidir. Endişeleriniz için sağlık uzmanınıza danışın.
 
