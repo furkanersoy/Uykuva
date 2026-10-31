@@ -542,11 +542,13 @@ function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUyk
   if (step === "welcome") {
     return (
       <SafeAreaView style={styles.onboarding}>
-        <View style={styles.onboardingMark}><Text style={styles.onboardingMoon}>☾</Text></View>
-        <Text style={styles.onboardingBrand}>uykuva</Text>
-        <Text style={styles.onboardingTitle}>Bebeğinizin ritmi, herkesin elinde.</Text>
-        <Text style={styles.onboardingBody}>Uyku, beslenme ve günlük bakım kayıtlarını sakin bir akışta tutun. Tüm özellikler ücretsiz.</Text>
-        <View style={styles.onboardingBottom}><PrimaryButton label="Başlayalım" onPress={() => setStep("profile")} /><Text style={styles.privacyLine}>Verileriniz şimdilik yalnızca bu cihazda saklanır.</Text></View>
+        <View style={styles.onboardingContent}>
+          <View style={styles.onboardingMark}><Text style={styles.onboardingMoon}>☾</Text></View>
+          <Text style={styles.onboardingBrand}>uykuva</Text>
+          <Text style={styles.onboardingTitle}>Bebeğinizin ritmi, herkesin elinde.</Text>
+          <Text style={styles.onboardingBody}>Uyku, beslenme ve günlük bakım kayıtlarını sakin bir akışta tutun. Tüm özellikler ücretsiz.</Text>
+          <View style={styles.onboardingBottom}><PrimaryButton label="Başlayalım" onPress={() => setStep("profile")} /><Text style={styles.privacyLine}>Verileriniz şimdilik yalnızca bu cihazda saklanır.</Text></View>
+        </View>
       </SafeAreaView>
     );
   }
@@ -2895,7 +2897,8 @@ const styles = StyleSheet.create({
   center: { alignItems: "center", justifyContent: "center" },
   loadingText: { color: colors.inkSoft, fontSize: 13, marginTop: 12 },
   storageRecovery: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 24, paddingTop: 80 },
-  onboarding: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 26, paddingTop: 80 },
+  onboarding: { flex: 1, backgroundColor: colors.paper },
+  onboardingContent: { flex: 1, paddingHorizontal: 26, paddingTop: 80, paddingBottom: 28 },
   onboardingMark: { width: 74, height: 74, borderRadius: 26, backgroundColor: colors.mint, alignItems: "center", justifyContent: "center" },
   onboardingMoon: { color: colors.sageDark, fontSize: 38 },
   onboardingBrand: { color: colors.sageDark, fontSize: 18, fontWeight: "800", letterSpacing: 2, marginTop: 28 },
