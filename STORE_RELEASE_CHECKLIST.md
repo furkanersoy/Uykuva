@@ -42,6 +42,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - [ ] Uygulama içinde gizlilik politikası bağlantısı ekle; mağaza formlarındaki URL ile aynı olsun.
 - [ ] Uygulama sağlık/çocuk bakımına ilişkin içerik ve veri işlediğinden Play Console sağlık uygulaması beyanını tamamla; uygulamanın teşhis/tedavi vermediğini ve mağaza beyanlarını doğru anlat.
 - [ ] Play Data safety ve Apple App Privacy formlarını her SDK/servis dahil gerçek ağ trafiğine göre doldur.
+- [ ] Formları doldururken [`STORE_DATA_DISCLOSURES.md`](STORE_DATA_DISCLOSURES.md) taslağını kullan; release ağ trafiği ve SDK denetiminden sonra her satırı doğrula.
 - [ ] `EXPO_PUBLIC_ENABLE_CLOUD_SYNC` varsayılanı `false` kalmalı. Bulut eşitlemesini açmadan önce hesap ve ilişkili verileri silme akışını uygulama içine ve Google için web üzerinden erişilebilir silme talep sayfasına ekle; ardından gizlilik politikasını ve mağaza veri beyanlarını güncelle.
 - [ ] Çocuk profili, sağlık kayıtları, fotoğraf ve sesle yazıya çevirme akışlarını mağaza politikaları ve hedef ülke mevzuatı açısından gözden geçir.
 
