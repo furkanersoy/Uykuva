@@ -92,6 +92,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/"
   },
   {
+    id: "sleep-supportive-environment",
+    title: "Uykuya destek olan akşam ortamı",
+    age: "Bebekler ve küçük çocuklar",
+    minAgeMonths: 0,
+    maxAgeMonths: 60,
+    summary: "Yatış öncesi ışıkları azaltmak, sakin ve tekrarlanabilir bir akşam sırası oluşturmak ve odanın sıcaklığını rahat tutmak uykuya geçişi destekleyebilir. Bebeklerde aşırı ısınmadan kaçının, başlarını örtmeyin ve uyku alanını yastık, yorgan ve oyuncaklardan boş tutun. Tanıdık rutin adımlarını farklı bir bakım veren de benzer sırayla uygulayabilir. Bunlar uyku garantisi değildir; bebeğinizin beslenme ve yakınlık ihtiyaçları önceliklidir.",
+    category: "basics",
+    source: "AAP · Sağlıklı uyku alışkanlıkları",
+    url: "https://www.healthychildren.org/English/healthy-living/sleep/Pages/Healthy-Sleep-Habits-How-Many-Hours-Does-Your-Child-Need.aspx"
+  },
+  {
     id: "settling-supports",
     title: "Uykuya geçişte kullanılan destekler",
     age: "Bebek ve bakım verenler",
