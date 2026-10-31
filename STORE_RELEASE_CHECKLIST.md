@@ -30,7 +30,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 ### Hesaplar ve imzalama
 
 - [ ] EAS hesabı açıp projeyi `eas init` ile hesaba bağla.
-- [ ] Google Play Console geliştirici hesabı oluştur; yeni kişisel hesap ise kapalı test şartını kontrol et.
+- [ ] Google Play Console geliştirici hesabı oluştur. Hesap 13 Kasım 2023 sonrası açılmış kişisel hesapsa, üretim erişimi başvurusu öncesinde en az 12 test kullanıcısının kapalı testte aralıksız 14 gün kayıtlı kalması gerekir. [Google test şartı](https://support.google.com/googleplay/android-developer/answer/14151465)
 - [ ] Apple Developer Program ve App Store Connect hesabı oluştur.
 - [ ] Apple uygulama kaydını oluştur ve EAS iOS imzalama kimlik bilgilerini kur.
 - [ ] Play ve Apple mağaza kayıtları için paket/bundle kimliklerinin boşta ve doğru olduğunu doğrula.
