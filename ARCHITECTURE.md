@@ -564,3 +564,10 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Widget işleminden sonra asıl kayıt mevcut uygulama durumu katmanında oluşturulur; widget, bebeğin adını veya uyku olayını kendi başına ikinci bir veri kaynağına yazmaz.
 - Bu eylemler yalnızca kullanıcı widget düğmesine dokunduğunda uygulamayı açar; uygulama açılışında uyku formu otomatik gösterilmez.
 - Doğrulama: `npm.cmd run typecheck`; `npm.cmd test`; Android debug derlemesi.
+
+### Seyahatte güvenli uyku rehberi
+
+- Uyku kitaplığında 0–60 ay için çevrimdışı bir seyahat rehberi bulunur. Konaklama yerindeki portatif beşik/oyun alanının güvenlik standardını ve durumunu kontrol etmeyi, ürüne ait yatağı kullanmayı ve sonradan ek yatak ya da dolgu koymamayı hatırlatır.
+- Yolculuk bittikten sonra araba koltuğu veya pusette uyuyakalan bebeği mümkün olduğunda ayrı, sert ve düz uyku alanına alma bilgisini içerir. Uyku planının seyahat gününde zorlanması gerektiğini söylemez.
+- Kaynak: [AAP · Otel ve konaklama yerinde çocuk güvenliği](https://www.healthychildren.org/English/safety-prevention/on-the-go/Pages/Hotel-Dangers-that-Put-Baby-Safety-at-Risk.aspx).
+- Doğrulama: `npm.cmd run typecheck`; `npm.cmd test`.

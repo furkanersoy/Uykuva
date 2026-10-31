@@ -68,6 +68,20 @@ test("sleep education includes infant age changes and caregiver support", () => 
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "short-naps-and-variability"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "early-morning-waking"));
   assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "sleep-supportive-environment"));
+  assert.ok(SLEEP_GUIDES.some((guide) => guide.id === "safe-sleep-while-travelling"));
+});
+
+test("travel sleep guide helps caregivers check a portable sleep space without adding bedding", () => {
+  const guide = SLEEP_GUIDES.find((item) => item.id === "safe-sleep-while-travelling");
+  assert.ok(guide);
+  assert.match(guide.summary, /Konaklama yerindeki portatif beşik.*kontrol edin/i);
+  assert.match(guide.summary, /ek yatak, yastık ya da dolgu koymayın/i);
+  assert.match(guide.summary, /yolculuk bittikten sonra/i);
+  assert.match(guide.url, /healthychildren\.org/);
+  assert.ok(sleepGuidesForAge(0).some((item) => item.id === guide.id));
+  assert.ok(sleepGuidesForAge(60).some((item) => item.id === guide.id));
+  assert.ok(!sleepGuidesForAge(61).some((item) => item.id === guide.id));
+  assert.ok(searchSleepGuides(SLEEP_GUIDES, "seyahatte portatif beşik").some((item) => item.id === guide.id));
 });
 
 test("short nap guidance does not prescribe dropping naps from one short sleep", () => {

@@ -327,6 +327,17 @@ export const SLEEP_GUIDES: SleepGuide[] = [
     url: "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/Pages/Responding-to-Your-Babys-Cries.aspx"
   },
   {
+    id: "safe-sleep-while-travelling",
+    title: "Seyahatte güvenli uyku alanı hazırlama",
+    age: "Bebeklik · seyahat öncesi ve sırasında",
+    minAgeMonths: 0,
+    maxAgeMonths: 60,
+    summary: "Seyahatte de bebeğin uyku alanını önceden planlayın. Konaklama yerindeki portatif beşik veya oyun alanının güvenlik standardını, üretici talimatını ve hasarsız, eksiksiz parçalarını kontrol edin; yalnızca o ürüne ait yatağı kullanın ve ek yatak, yastık ya da dolgu koymayın. Yolculuk bittikten sonra bebek araba koltuğu, puset veya salıncakta uyuyakaldıysa, mümkün olduğunda onu sırtüstü, sert ve düz ayrı bir uyku yüzeyine alın. Tanıdık bir rutin isteğe bağlı olarak yardımcı olabilir; seyahat gününde uyku planını zorlamak gerekmez.",
+    category: "changes",
+    source: "AAP · Otel ve konaklama yerinde çocuk güvenliği",
+    url: "https://www.healthychildren.org/English/safety-prevention/on-the-go/Pages/Hotel-Dangers-that-Put-Baby-Safety-at-Risk.aspx"
+  },
+  {
     id: "cot-to-bed-transition",
     title: "Beşikten çocuk yatağına geçiş",
     age: "Yaklaşık 18 ay–4 yaş",
