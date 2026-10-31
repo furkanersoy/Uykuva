@@ -1,6 +1,6 @@
 # Uykuva mağaza veri beyanı envanteri — taslak
 
-Bu, Play Console **Data safety** ve App Store **App Privacy** formlarını doldurmaya hazırlık notudur; mağaza formu yerine geçmez. Envanter mevcut kaynak kodu ve yapılandırmaya dayanır. Üretim sürümünde son ağ trafiği, EAS ortam değişkenleri, işletim sistemi davranışı ve tüm SDK'lar denetlenmeden beyanları kesinleştirmeyin.
+Bu, Play Console **Data safety** ve App Store **App Privacy** formlarını doldurmaya hazırlık notudur; mağaza formu yerine geçmez. Envanter mevcut kaynak kodu ve yapılandırmaya dayanır. İlk mağaza Release derlemesinde bulut eşitlemesi kod düzeyinde kapalıdır; tabloda bu sütun gelecekteki/yalnız geliştirme derlemesinde etkinleştirme durumunu açıklar. Üretim sürümünde son ağ trafiği, EAS ortam değişkenleri, işletim sistemi davranışı ve tüm SDK'lar denetlenmeden beyanları kesinleştirmeyin.
 
 ## Veri ve işleme akışları
 
