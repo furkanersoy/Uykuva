@@ -2,6 +2,10 @@
 
 Uykuva, ebeveyn ve bakım verenlerin bebeğin uyku, beslenme ve günlük bakım ritmini birlikte takip etmesi için geliştirilen ücretsiz bir Expo/React Native uygulamasıdır.
 
+## Mağaza yayın hazırlığı
+
+Play Store ve App Store yayın adımları, güncel politika bağlantıları ve açık kalan işler için [mağaza yayın kontrol listesine](STORE_RELEASE_CHECKLIST.md) bakın. [Gizlilik politikası](PRIVACY_POLICY_DRAFT.md) iletişim e-postası ve herkese açık URL belirlenene kadar taslaktır. Google Play için hazırlanan [512×512 simge](store-assets/google-play-icon-512.png) ve [1024×500 özellik görseli](store-assets/google-play-feature-1024x500.png) `store-assets/` klasöründedir.
+
 ## Android emülatöründe çalıştırma
 
 Windows PowerShell'de proje klasörünü açın. Android Studio Device Manager'dan bir emülatör başlatın, sonra ilk kurulum için:
@@ -31,7 +35,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - İsteğe bağlı aile hesabıyla farklı telefonlardan el ile eşitleme hazırlığı: hesap ve davet akışı, çakışma denetimli revizyon, SecureStore'da saklanan oturum/aile anahtarı ve sunucuya çıkmadan önce cihazda AES-GCM şifreleme. Eşitleme varsayılan olarak kapalıdır; sunucu adresi ve anahtarı olmadan yerel uygulama çalışmaya devam eder.
 
 - Açıklanabilir uyku penceresi tahmini
-- Uyku sekmesinde, erken doğumda düzeltilmiş yaşa göre geçerli aralığı vurgulayan, yaş gruplarına göre uyanıklık aralığı rehberi
+- Uyku sekmesinde, erken doğumda düzeltilmiş yaşa göre geçerli aralığı vurgulayan, yaş gruplarına göre genel uyanıklık rehberi (ürün başlangıç aralıklarıdır; resmî tıbbi standart değildir)
 - Bugün ekranında kaydedilen uyku, beslenme, bez ve sağlık kayıtlarının hızlı özeti; ilk dokuz haftada kayan 24 saat, sonrasında yerel gün
 - Kullanıcının girdiği sonraki ilaç planı kontrol hatırlatmasını önümüzdeki 24 saatlik bakım planında gösterme; doz veya ilaç aralığı önermez
 - Android ana ekran widget'ında bebeğin adı, sıradaki uyku penceresi ve yeterli kayıt varsa kişisel beslenme aralığı; widget'a dokununca Uykuva açılır
