@@ -189,8 +189,14 @@ export type SyncTombstones = {
   caregiverIds: string[];
 };
 
+export type PregnancyProfile = {
+  dueDate?: string;
+  updatedAt: string;
+  deleted: boolean;
+};
+
 export type AppState = {
-  schemaVersion: 6;
+  schemaVersion: 7;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;
@@ -205,6 +211,7 @@ export type AppState = {
   children: ChildProfile[];
   activeChildId: string;
   syncTombstones: SyncTombstones;
+  pregnancyProfile?: PregnancyProfile;
 };
 
 export type SleepForecast = {

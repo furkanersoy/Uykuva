@@ -14,7 +14,7 @@ export function createInitialState(): AppState {
   const sleep3 = iso(7.1, 48);
   const sleep4 = iso(10.4, 55);
   const initialState: Omit<AppState, "children" | "activeChildId"> = {
-    schemaVersion: 5,
+    schemaVersion: 7,
     onboardingComplete: false,
     baby: { id: "baby-1", name: "Deniz", birthDate: birth.toISOString().slice(0, 10), gestationalWeek: 40 },
     caregiverName: "Anne",
@@ -68,7 +68,8 @@ export function createInitialState(): AppState {
       routineRemindersEnabled: false,
       quietStart: "21:00",
       quietEnd: "07:00"
-    }
+    },
+    syncTombstones: { eventIds: [], careTaskIds: [], nightWakeLogIds: [], childIds: [], caregiverIds: [] }
   };
   return {
     ...initialState,

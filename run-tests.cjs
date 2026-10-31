@@ -9,6 +9,8 @@ const tscPath = require.resolve("typescript/bin/tsc");
 const compiledTests = [
   "domain/sleep.test.js",
   "domain/export.test.js",
+  "domain/pregnancy.test.js",
+  "domain/pregnancyExport.test.js",
   "domain/feeding.test.js",
   "domain/milk.test.js",
   "domain/notificationRouting.test.js",

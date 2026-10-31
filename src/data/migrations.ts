@@ -29,6 +29,22 @@ function migratedTombstoneIds(value: unknown): string[] {
   return [...new Set(value.filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 128))];
 }
 
+function migratePregnancyProfile(value: unknown): AppState["pregnancyProfile"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const profile = value as Record<string, unknown>;
+  const updatedAt = typeof profile.updatedAt === "string" && Number.isFinite(new Date(profile.updatedAt).getTime()) ? profile.updatedAt : undefined;
+  const rawDate = typeof profile.dueDate === "string" ? profile.dueDate : undefined;
+  let dueDate: string | undefined;
+  if (rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+    const [year, month, day] = rawDate.split("-").map(Number);
+    const date = new Date(Date.UTC(year!, month! - 1, day!));
+    if (date.getUTCFullYear() === year && date.getUTCMonth() === month! - 1 && date.getUTCDate() === day) dueDate = rawDate;
+  }
+  const deleted = profile.deleted === true;
+  if (!updatedAt || (!deleted && !dueDate)) return undefined;
+  return { dueDate, updatedAt, deleted };
+}
+
 function migrateSingleState(value: unknown): AppState {
   const initial = createInitialState();
   if (!value || typeof value !== "object") return initial;
@@ -67,7 +83,8 @@ function migrateSingleState(value: unknown): AppState {
   return {
     ...initial,
     ...candidate,
-    schemaVersion: 6,
+    schemaVersion: 7,
+    pregnancyProfile: migratePregnancyProfile(candidate.pregnancyProfile),
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: {
       ...initial.baby,

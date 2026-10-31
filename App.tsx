@@ -45,6 +45,7 @@ import { DEVELOPMENT_CHECKPOINTS, developmentCheckpointForAge } from "./src/data
 import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, searchSleepGuides, sleepGuidesForAge, SleepGuideCategory } from "./src/data/sleepGuides";
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
+import { estimatePregnancy, isDateOnly } from "./src/domain/pregnancy";
 import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudFamilyInvites, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, revokeCloudFamilyInvite, saveEncryptedFamilyDocument, saveFamilyDocumentWithRevisionRetry, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
@@ -156,6 +157,7 @@ export default function App() {
   const [nightWakeOpen, setNightWakeOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [cloudSyncOpen, setCloudSyncOpen] = useState(false);
+  const [pregnancyOpen, setPregnancyOpen] = useState(false);
   const [nightMode, setNightMode] = useState(false);
   const [sleepEditor, setSleepEditor] = useState<CareEvent | "new" | null>(null);
   const [sleepEditorSuggestedStart, setSleepEditorSuggestedStart] = useState<string | null>(null);
@@ -484,7 +486,7 @@ export default function App() {
         {tab === "timeline" && <TimelineScreen events={app.state.events} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} now={clockNow} onDelete={app.deleteEvent} onEditSleep={(event) => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor(event); }} onEditRecord={setEventEditor} onAddSleep={() => { setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); setSleepEditor("new"); }} />}
         {tab === "coach" && <CoachScreen key={app.state.activeChildId} app={app} now={clockNow} />}
         {tab === "insights" && <InsightsScreen app={app} openTask={(mode) => { setTaskToEdit(null); setTaskMode(mode); }} openEditTask={(task) => { setTaskToEdit(task); setTaskMode(task.type); }} openVaccineSuggestions={() => setVaccineSuggestionsOpen(true)} now={clockNow} />}
-        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onAddChild={() => setChildOpen(true)} onRestoreData={() => setRestoreOpen(true)} onOpenCloudSync={() => setCloudSyncOpen(true)} />}
+        {tab === "family" && <FamilyScreen app={app} onEditProfile={() => setProfileOpen(true)} onAddCaregiver={() => setCaregiverOpen(true)} onAddChild={() => setChildOpen(true)} onRestoreData={() => setRestoreOpen(true)} onOpenCloudSync={() => setCloudSyncOpen(true)} onEditPregnancy={() => setPregnancyOpen(true)} />}
 
         {!nightMode ? <View style={styles.nav}>
           {tabs.map((item) => (
@@ -503,6 +505,7 @@ export default function App() {
       <CaregiverModal visible={caregiverOpen} close={() => setCaregiverOpen(false)} caregivers={app.state.caregivers.map((caregiver) => caregiver.name)} add={app.addCaregiver} />
       <DataRestoreModal visible={restoreOpen} close={() => setRestoreOpen(false)} currentState={app.state} restore={app.restoreData} />
       <CloudSyncModal visible={cloudSyncOpen} close={() => setCloudSyncOpen(false)} app={app} />
+      <PregnancyProfileModal visible={pregnancyOpen} close={() => setPregnancyOpen(false)} dueDate={app.state.pregnancyProfile?.deleted ? "" : app.state.pregnancyProfile?.dueDate ?? ""} save={(dueDate) => { app.updatePregnancyProfile(dueDate); setPregnancyOpen(false); }} remove={() => { app.updatePregnancyProfile(null); setPregnancyOpen(false); }} />
       <SleepEntryModal event={sleepEditor === "new" ? null : sleepEditor} initialStartAt={sleepEditorSuggestedStart ?? undefined} initialSuggestedWindow={sleepEditorSuggestedWindow ?? undefined} visible={sleepEditor !== null} close={() => { setSleepEditor(null); setSleepEditorSuggestedStart(null); setSleepEditorSuggestedWindow(null); }} add={app.addEvent} update={app.updateEvent} bedtime={app.state.sleepPlan.bedtime} wakeTime={app.state.sleepPlan.wakeTime} />
       <RecordTimeModal event={eventEditor} close={() => setEventEditor(null)} update={app.updateEvent} />
       {homeInitialized && app.hydrated && app.state.onboardingComplete && nightWakeOpen ? <NightWakeModal visible close={() => setNightWakeOpen(false)} save={saveNightWake} /> : null}
@@ -1903,7 +1906,7 @@ function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; 
   </>;
 }
 
-function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestoreData, onOpenCloudSync }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onAddChild: () => void; onRestoreData: () => void; onOpenCloudSync: () => void }) {
+function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestoreData, onOpenCloudSync, onEditPregnancy }: { app: ReturnType<typeof useUykuvaState>; onEditProfile: () => void; onAddCaregiver: () => void; onAddChild: () => void; onRestoreData: () => void; onOpenCloudSync: () => void; onEditPregnancy: () => void }) {
   const summary = handoffSummary(app.state, new Date(), app.state.preferences.handoffHours);
   const [encryptedBackupOpen, setEncryptedBackupOpen] = useState(false);
   const [quietStart, setQuietStart] = useState(app.state.preferences.quietStart);
@@ -1968,6 +1971,7 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
     app.updatePreferences({ quietStart, quietEnd });
     Alert.alert("Kaydedildi", "Bu saatler arasında sessiz bildirim tercihleri uygulanacak.");
   };
+  const pregnancy = app.state.pregnancyProfile?.deleted ? undefined : app.state.pregnancyProfile?.dueDate ? estimatePregnancy(app.state.pregnancyProfile.dueDate) : undefined;
   const exportPlainBackupFile = async () => {
     try {
       const file = new File(Paths.cache, `uykuva-yedek-${localDateValue(new Date())}.json`);
@@ -2001,6 +2005,13 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
     <>
     <ScrollView style={styles.content} contentContainerStyle={styles.contentInset}>
       <Text style={styles.pageTitle}>Aile ve bakım</Text><Text style={styles.pageIntro}>Devir anında arama yapmak yerine tek, güncel özet paylaşın.</Text>
+      <SectionTitle title="Beklenen bebek" action="İsteğe bağlı" />
+      <Card tone="mint">
+        <Text style={styles.cardTitle}>{pregnancy?.weekAvailable ? `${pregnancy.week}. hafta ${pregnancy.day}. gün` : pregnancy ? "Gebelik haftası henüz hesaplanamıyor" : "Gebelik takibi ekleyin"}</Text>
+        {pregnancy ? <Text style={styles.body}>{pregnancy.trimester ? `${pregnancy.trimester}. trimester · ` : ""}Tahmini doğum {new Date(`${pregnancy.dueDate}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}{pregnancy.daysUntilDue >= 0 ? ` · ${pregnancy.daysUntilDue} gün kaldı` : ` · ${Math.abs(pregnancy.daysUntilDue)} gün geçti`}</Text> : <Text style={styles.body}>Tahmini doğum tarihini girerek ailedeki beklenen bebeği takip edin.</Text>}
+        <View style={styles.spacer12} /><PrimaryButton label={pregnancy ? "Tahmini tarihi düzenle" : "Doğum tarihini ekle"} quiet onPress={onEditPregnancy} />
+        <Text style={styles.hint}>Hafta bilgisi girilen tarihten yaklaşık hesaplanır. Hekiminizin veya ultrasonun verdiği tarihlendirme önceliklidir; bu bölüm tıbbi öneri sunmaz.</Text>
+      </Card>
       <SectionTitle title="Çocuk profilleri" action={`${app.state.children.length} çocuk`} />
       <Card>{app.state.children.map((child) => {
         const active = child.baby.id === app.state.activeChildId;
@@ -2352,6 +2363,31 @@ function DataRestoreModal({ visible, close, currentState, restore }: { visible: 
     }
   };
   return <Modal visible transparent animationType="slide" onRequestClose={close}><Pressable style={styles.backdrop} onPress={close} /><ScrollView style={[styles.sheet, styles.quickSheet]} keyboardShouldPersistTaps="handled"><View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Yedeği aktar</Text><Text style={styles.pageIntro}>Şifreli Uykuva yedeğini dosyadan seçin veya içeriğini yapıştırın. Şifreli dosyalar için yedeği oluştururken belirlediğiniz parolayı girin. Aynı bebeğin kayıtlarını birleştirebilir ya da mevcut verilerin yerine tamamen geri yükleyebilirsiniz.</Text><PrimaryButton label="Uykuva yedek dosyası seç" quiet onPress={() => void pickBackupFile()} /><TextInput accessibilityLabel="Şifreli yedek parolası" value={password} onChangeText={setPassword} style={[styles.input, { marginTop: 12 }]} secureTextEntry autoCapitalize="none" autoCorrect={false} maxLength={128} placeholder="Parola · yalnızca şifreli yedek için" placeholderTextColor="#93A09C" /><TextInput accessibilityLabel="Yedek dosyası içeriği" value={raw} onChangeText={setRaw} style={[styles.input, { minHeight: 180, textAlignVertical: "top", marginTop: 12 }]} multiline maxLength={18_000_000} autoCapitalize="none" autoCorrect={false} placeholder="İsterseniz Uykuva yedeğini buraya yapıştırın" placeholderTextColor="#93A09C" /><Text style={styles.hint}>{raw.length.toLocaleString("tr-TR")} karakter · şifreli veya standart Uykuva yedeği</Text><View style={styles.spacer12} /><PrimaryButton label={decrypting ? "Yedek açılıyor…" : "Yedeği kontrol et ve aktar"} onPress={() => void reviewBackup()} /><View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} /></ScrollView></Modal>;
+}
+
+function PregnancyProfileModal({ visible, close, dueDate, save, remove }: { visible: boolean; close: () => void; dueDate: string; save: (dueDate: string) => void; remove: () => void }) {
+  const [value, setValue] = useState(dueDate);
+  useEffect(() => { if (visible) setValue(dueDate); }, [visible, dueDate]);
+  const submit = () => {
+    if (!isDateOnly(value)) return Alert.alert("Tarihi kontrol edin", "Tahmini doğum tarihini YYYY-AA-GG biçiminde ve geçerli bir tarih olarak yazın.");
+    save(value);
+  };
+  const confirmRemove = () => Alert.alert("Gebelik takibi kaldırılsın mı?", "Bu cihazdaki beklenen bebek kartı kaldırılır.", [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Kaldır", style: "destructive", onPress: remove }
+  ]);
+  return <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
+    <Pressable style={styles.backdrop} onPress={close} />
+    <ScrollView style={[styles.sheet, styles.quickSheet]} contentContainerStyle={styles.contentInset} keyboardShouldPersistTaps="handled">
+      <View style={styles.sheetHandle} /><Text style={styles.pageTitle}>Beklenen bebek</Text>
+      <Text style={styles.pageIntro}>Hekiminizin belirttiği tahmini doğum tarihini girin. Uykuva yaklaşık hafta ve gün bilgisini bu tarihten hesaplar.</Text>
+      <Field label="Tahmini doğum tarihi" value={value} onChangeText={setValue} placeholder="YYYY-AA-GG" keyboardType="numbers-and-punctuation" maxLength={10} />
+      <Text style={styles.hint}>Tarih, kayıtlı son adet tarihinden otomatik hesaplanmaz. Hekiminizin veya ultrasonun verdiği tarihlendirmeyi kullanın. Bu takip tıbbi öneri ya da muayene yerine geçmez.</Text>
+      <View style={styles.spacer12} /><PrimaryButton label="Tarihi kaydet" onPress={submit} />
+      {dueDate ? <><View style={styles.spacer12} /><PrimaryButton label="Gebelik takibini kaldır" quiet onPress={confirmRemove} /></> : null}
+      <View style={styles.spacer12} /><PrimaryButton label="Vazgeç" quiet onPress={close} /><View style={styles.spacer24} />
+    </ScrollView>
+  </Modal>;
 }
 
 function ProfileModal({ visible, close, app }: { visible: boolean; close: () => void; app: ReturnType<typeof useUykuvaState> }) {

@@ -20,7 +20,8 @@ export function createDataExport(state: AppState) {
     preferences: state.preferences,
     children,
     activeChildId: state.activeChildId,
-    syncTombstones: state.syncTombstones
+    syncTombstones: state.syncTombstones,
+    pregnancyProfile: state.pregnancyProfile
   }, null, 2);
 }
 
@@ -104,11 +105,14 @@ export function parseDataExport(raw: string): AppState {
   } catch {
     throw new Error("Metin geçerli bir JSON yedeği değil.");
   }
-  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4, 5, 6].includes(Number(parsed.schemaVersion))) {
+  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4, 5, 6, 7].includes(Number(parsed.schemaVersion))) {
     throw new Error("Bu dosya Uykuva'nın desteklenen yedek biçiminde değil.");
   }
   if (parsed.syncTombstones !== undefined && !isSyncTombstones(parsed.syncTombstones)) {
     throw new Error("Yedekteki eşitleme silme kayıtları geçersiz.");
+  }
+  if (parsed.pregnancyProfile !== undefined && (!isRecord(parsed.pregnancyProfile) || typeof parsed.pregnancyProfile.updatedAt !== "string" || !isDateString(parsed.pregnancyProfile.updatedAt) || typeof parsed.pregnancyProfile.deleted !== "boolean" || (parsed.pregnancyProfile.deleted !== true && (typeof parsed.pregnancyProfile.dueDate !== "string" || !isDateOnly(parsed.pregnancyProfile.dueDate))) || (parsed.pregnancyProfile.dueDate !== undefined && (typeof parsed.pregnancyProfile.dueDate !== "string" || !isDateOnly(parsed.pregnancyProfile.dueDate))))) {
+    throw new Error("Invalid pregnancy profile in backup.");
   }
   if (!isRecord(parsed.baby) || typeof parsed.baby.id !== "string" || typeof parsed.baby.name !== "string" || !parsed.baby.name.trim() || typeof parsed.baby.birthDate !== "string" || !isDateOnly(parsed.baby.birthDate) || typeof parsed.baby.gestationalWeek !== "number" || !Number.isInteger(parsed.baby.gestationalWeek) || parsed.baby.gestationalWeek < 22 || parsed.baby.gestationalWeek > 42) {
     throw new Error("Yedekte geçerli bir bebek profili bulunamadı.");
@@ -335,6 +339,7 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
 
   return {
     ...current,
+    pregnancyProfile: mergePregnancyProfile(current.pregnancyProfile, incoming.pregnancyProfile),
     baby: current.baby,
     caregiverName: current.caregiverName,
     careInstructions: instructions.join("\n").slice(0, 1000),
@@ -356,6 +361,12 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
       completedRuns: mergeById(current.sleepPlan.completedRuns, incoming.sleepPlan.completedRuns)
     }
   };
+}
+
+function mergePregnancyProfile(current: AppState["pregnancyProfile"], incoming: AppState["pregnancyProfile"]): AppState["pregnancyProfile"] {
+  if (!current) return incoming;
+  if (!incoming) return current;
+  return new Date(incoming.updatedAt).getTime() > new Date(current.updatedAt).getTime() ? incoming : current;
 }
 
 function childProfileFor(state: AppState): AppState["children"][number] {
@@ -414,6 +425,7 @@ export function mergeDataStates(current: AppState, incoming: AppState): AppState
   return {
     ...current,
     ...active,
+    pregnancyProfile: mergePregnancyProfile(current.pregnancyProfile, incoming.pregnancyProfile),
     syncTombstones,
     caregivers: caregiverMerge.caregivers,
     caregiverName: activeCaregiver.name,

@@ -111,6 +111,17 @@ export function useUykuvaState() {
     setState((current) => ({ ...current, careInstructions: careInstructions.slice(0, 1000) }));
   }, []);
 
+  const updatePregnancyProfile = useCallback((dueDate: string | null) => {
+    setState((current) => ({
+      ...current,
+      pregnancyProfile: {
+        dueDate: dueDate ?? current.pregnancyProfile?.dueDate,
+        updatedAt: new Date().toISOString(),
+        deleted: dueDate === null
+      }
+    }));
+  }, []);
+
   const addCaregiver = useCallback((caregiver: Omit<Caregiver, "id">) => {
     setState((current) => ({ ...current, caregivers: [...current.caregivers, { ...caregiver, id: id("caregiver") }] }));
   }, []);
@@ -470,6 +481,7 @@ export function useUykuvaState() {
     setActiveChild,
     deleteChild,
     updateCareInstructions,
+    updatePregnancyProfile,
     addCaregiver,
     setActiveCaregiver,
     deleteCaregiver,
