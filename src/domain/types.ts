@@ -73,7 +73,7 @@ export type RoutineStep = {
 };
 
 export type SleepMethod = "responsive" | "gradual" | "timedChecks" | "camping" | "bedtimeFading" | "pickUpPutDown" | "routineFirst";
-export type SleepFocus = "bedtime" | "nightWakings" | "naps" | "routine" | "earlyWaking" | "bedtimeResistance";
+export type SleepFocus = "bedtime" | "nightWakings" | "naps" | "routine" | "earlyWaking" | "bedtimeResistance" | "napResistance";
 
 export type SleepPlanDayRecord = {
   date: string;

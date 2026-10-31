@@ -76,7 +76,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Bakım devri paylaşımına saatli gece uyanmalarının son 7 gündeki yanıt dağılımını ekleme; yalnızca kayıtları sayar, bakım önerisi üretmez
 - Gün hastalık, seyahat, diş çıkarma veya düzen değişikliği olarak işaretlendiyse bakım devri özetinde nedeni ve koçluk planının beklediğini belirtme
 - Bakım devri özetinde, günün uyanış saati veya son uykudan hesaplanan sıradaki uyku penceresini ve tahmin güven düzeyini gösterme
-- Yedi yaklaşım içeren 14 günlük nazik uyku planı; yatma zamanı, gece uyanmaları, gündüz uykuları, akşam rutini, erken sabah uyanmaları veya yatağa direnmeye odaklanma; yöntemleri aile tercihine göre filtreleme ve karşılaştırma
+- Yedi yaklaşım içeren 14 günlük nazik uyku planı; yatma zamanı, gece uyanmaları, gündüz uykuları, akşam rutini, erken sabah uyanmaları, yatağa direnme veya gündüz uykusuna direnmeye odaklanma; yöntemleri aile tercihine göre filtreleme ve karşılaştırma
 - Yönteme, yaş aşamasına ve odağa göre 14 günlük plandan sonraki en fazla yedi günü günlük görev ve check-in sorularıyla metin/A4 PDF olarak ücretsiz paylaşma; olağan dışı günlerde bekleyen günü atlayıp durumu açıkça belirtme
 - Önceden kararlaştırılmış kısa kontroller yaklaşımı; Uykuva sabit aralık veya ağlama süresi önermez, beslenme ve sağlık ihtiyaçları her zaman önceliklidir
 - Yeni doğan, hazırlık ve destek azaltma aşamalarına göre her güne özel koçluk adımları ve sabah check-in soruları

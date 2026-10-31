@@ -728,6 +728,12 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
       routine: "Çocuğunuza iki kabul edilebilir rutin adımı arasında seçim sunun; güvenlik ve yatma sınırını sakin biçimde koruyun.",
       practice: "Rutini kısa ve öngörülebilir tutun; korku veya ayrılık kaygısını dinleyip rahatlatıcı bir vedalaşma adımı ekleyin.",
       consolidate: "İşe yarayan seçimleri ve sınırları bakım verenlerle paylaşın; direnç yoğun veya kalıcıysa çocuk doktoruyla görüşün."
+    },
+    napResistance: {
+      observe: "Gündüz uykusu denemelerini ve çocuğun uyku işaretlerini birkaç gün kaydedin; tek bir reddi nap bırakma işareti saymayın.",
+      routine: "Dinlenme öncesi kısa, tanıdık ve sakin bir adım deneyin; çocuğunuzun tepkisine göre süreyi esnetin.",
+      practice: "Uyku ihtiyacı sürüyorsa nazik destek sunun; uyku gelmiyorsa zorlamadan sakin bir dinlenme fırsatı verin.",
+      consolidate: "Kayıtları ve günün geri kalanındaki uyku işaretlerini birlikte değerlendirin; tek bir reddedilen uykuyla geçiş kararı vermeyin."
     }
   };
   const focusQuestions: Record<SleepFocus, string> = {
@@ -736,7 +742,8 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
     naps: "Gündüz uykularından hangisinde bebeğinizin işaretleri yol gösterdi?",
     routine: "Akşam rutininin hangi adımı ailenize daha uygun geldi?",
     earlyWaking: "Erken sabah uyanışlarında hangi koşul veya destek gözleminize yardımcı oldu?",
-    bedtimeResistance: "Yatma geçişini kolaylaştıran hangi seçim, rutin veya güvence işe yaradı?"
+    bedtimeResistance: "Yatma geçişini kolaylaştıran hangi seçim, rutin veya güvence işe yaradı?",
+    napResistance: "Gündüz dinlenme zamanında hangi uyku işareti veya destek size yol gösterdi?"
   };
   return {
     title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,
