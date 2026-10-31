@@ -5,7 +5,7 @@ const {
   withDangerousMod,
   withMainApplication,
   withStringsXml
-} = require("@expo/config-plugins");
+} = require("expo/config-plugins");
 
 const provider = `package com.uykuva.app
 
@@ -249,3 +249,4 @@ module.exports = function withUykuvaWidget(config) {
   config = withWidgetPackage(config);
   return withWidgetFiles(config);
 };
+
