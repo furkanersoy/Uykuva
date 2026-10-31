@@ -42,7 +42,29 @@ Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır; tanı, 
 
 **Anahtar kelimeler (taslak):** bebek,uyku,uyku takibi,bakım,bebek günlüğü,aile,rutin
 
-**Açıklama:** Google Play tam açıklamasındaki özellik metnini, App Store'un güncel alan sınırlarını ve gizlilik beyanlarını kontrol ederek kullanın.
+**Açıklama (App Store'a girilecek metin):**
+
+Uykuva, bebeğinizin uykusunu ve günlük bakımını düzenli biçimde takip etmenize yardımcı olur. Uyku kayıtlarını, beslenme ve bez değişimi gibi bakım notlarını ve aile rutinini tek yerde tutun.
+
+**Uyku düzenini takip edin**
+• Uyku başlangıç ve bitiş saatlerini kaydedin.
+• Sabah uyanış saatini girdikten sonra ilk gündüz uykusu için tahmini uyku penceresini görün.
+• Bebeğinizin yaşına göre genel uyanıklık aralıklarını inceleyin.
+• Yeterli kayıt oluştuğunda kişisel geçmiş özetlerinden yararlanın.
+• Tahminleri kesin saatler olarak değil, bebeğinizin işaretleriyle birlikte değerlendirebileceğiniz bir rehber olarak kullanın.
+
+**Günlük bakımı kaydedin**
+• Beslenme, bez, sağlık ve bakım notlarını zaman çizelgesinde düzenleyin.
+• Birden fazla çocuk profili oluşturup kayıtları ayrı ayrı takip edin.
+• Hatırlatıcıları ve akşam rutini adımlarını ailenizin düzenine göre ayarlayın.
+• Bakım devrinde son kayıtları ve önemli notları gözden geçirin.
+
+**Aile anılarını ve notlarını saklayın**
+• Anı günlüğüne metin ve seçtiğiniz fotoğrafları ekleyin.
+• Seçtiğiniz kayıtları PDF olarak dışa aktarın ve paylaşın.
+• İlk mağaza sürümünde kayıtlar cihazınızda tutulur; aile hesabı ve cihazlar arası eşitleme sunulmaz.
+
+Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır; tanı, tedavi veya profesyonel sağlık önerisinin yerine geçmez. Her bebeğin ihtiyaçları farklıdır. Bebeğinizin uyku işaretlerini gözetin ve sağlıkla ilgili endişelerinizde sağlık uzmanınıza danışın.
 
 **Destek URL'si:** E-posta/URL belirlenecek  
 **Gizlilik politikası URL'si:** Herkese açık HTTPS sayfası yayımlanınca eklenecek  
