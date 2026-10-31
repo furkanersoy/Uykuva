@@ -9,3 +9,7 @@ web-build/
 .env
 .env.*
 !.env.example
+
+credentials.json
+*.keystore
+*.jks
