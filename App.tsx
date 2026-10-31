@@ -1810,18 +1810,6 @@ function CareTaskRow({ task, assignedCaregiverName, onToggle, onDelete, onEdit }
   const taskType = task.type === "vaccine" ? "Aşı" : "Randevu";
   const taskDate = new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
   const completedDate = task.completedAt ? new Date(task.completedAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }) : undefined;
-  const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL?.trim() ?? "";
-  const openPrivacyPolicy = async () => {
-    if (!privacyPolicyUrl.startsWith("https://")) {
-      Alert.alert("Gizlilik politikası bağlantısı eklenmedi", "Yayın öncesinde herkese açık HTTPS gizlilik politikası adresi uygulama yapılandırmasına eklenmelidir.");
-      return;
-    }
-    try {
-      await Linking.openURL(privacyPolicyUrl);
-    } catch {
-      Alert.alert("Bağlantı açılamadı", "Gizlilik politikası adresini daha sonra yeniden deneyin.");
-    }
-  };
   const confirmDelete = () => Alert.alert("Kaydı sil?", `${task.title} ${taskType.toLocaleLowerCase("tr-TR")} kaydı kalıcı olarak silinecek.`, [
     { text: "Vazgeç", style: "cancel" },
     { text: "Sil", style: "destructive", onPress: onDelete }
@@ -2038,6 +2026,18 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
       setEncryptedBackupOpen(false);
     } catch (error) {
       Alert.alert("Şifreli yedek oluşturulamadı", error instanceof Error ? error.message : "Daha sonra yeniden deneyin.");
+    }
+  };
+  const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL?.trim() ?? "";
+  const openPrivacyPolicy = async () => {
+    if (!privacyPolicyUrl.startsWith("https://")) {
+      Alert.alert("Gizlilik politikası bağlantısı eklenmedi", "Yayın öncesinde herkese açık HTTPS gizlilik politikası adresi uygulama yapılandırmasına eklenmelidir.");
+      return;
+    }
+    try {
+      await Linking.openURL(privacyPolicyUrl);
+    } catch {
+      Alert.alert("Bağlantı açılamadı", "Gizlilik politikası adresini daha sonra yeniden deneyin.");
     }
   };
   const confirmDelete = () => Alert.alert(
