@@ -52,3 +52,49 @@ jobs:
       - name: Stop local Supabase stack
         if: always() && steps.setup_supabase.outcome == 'success'
         run: supabase stop
+
+  android-release-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Expo SDK 58 Android toolchain
+        run: sdkmanager "platforms;android-37" "build-tools;37.0.0" "ndk;27.1.12297006" "cmake;3.22.1"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate clean Android project
+        run: npx expo prebuild --clean --platform android
+
+      - name: Build Android release bundle
+        working-directory: android
+        run: ./gradlew --no-daemon :app:bundleRelease
+
+      - name: Verify Play target API in generated release manifest
+        shell: bash
+        run: |
+          manifest="$(find android/app/build/intermediates -type f -path '*release*' -name AndroidManifest.xml -print0 | xargs -0 grep -l 'targetSdkVersion="36"' | head -n 1)"
+          if [ -z "$manifest" ]; then
+            echo "Release manifest does not declare targetSdkVersion 36."
+            find android/app/build/intermediates -type f -path '*release*' -name AndroidManifest.xml -print
+            exit 1
+          fi
+          echo "Verified targetSdkVersion 36 in $manifest"
