@@ -13,7 +13,7 @@
     "db:start": "supabase start",
     "db:test": "supabase test db --local",
     "db:stop": "supabase stop",
-    "doctor": "npx expo-doctor"
+    "doctor": "expo-doctor"
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/react": "latest",
+    "expo-doctor": "^1.21.5",
     "supabase": "^2.122.0",
     "typescript": "~6.0.3"
   }
