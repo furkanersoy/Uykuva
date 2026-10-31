@@ -317,6 +317,18 @@ export default function App() {
   }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep, forecast, feedingForecast, clockNow]);
 
   useEffect(() => {
+    const sleepNotification = NativeModules.UykuvaWidget as {
+      updateSleepTracking?: (isSleeping: boolean, babyName: string, startedAt: string) => Promise<void>
+    } | undefined;
+    if (!app.hydrated || !app.state.onboardingComplete || !sleepNotification?.updateSleepTracking) return;
+    void sleepNotification.updateSleepTracking(
+      Boolean(app.runningSleep),
+      app.state.baby.name,
+      app.runningSleep?.startedAt ?? ""
+    ).catch(() => undefined);
+  }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep?.startedAt, app.runningSleep?.endedAt]);
+
+  useEffect(() => {
     const widget = NativeModules.UykuvaWidget as { consumePendingSleepAction?: () => Promise<"start" | "stop" | null> } | undefined;
     if (!app.hydrated || !app.state.onboardingComplete || !widget?.consumePendingSleepAction) return;
     let active = true;
