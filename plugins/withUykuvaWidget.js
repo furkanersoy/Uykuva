@@ -72,6 +72,17 @@ class UykuvaWidgetProvider : AppWidgetProvider() {
 
 const nativeModule = `package com.uykuva.app
 
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.Promise
@@ -79,6 +90,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.uimanager.ViewManager
+import java.time.Instant
 
 class UykuvaWidgetModule(context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
   override fun getName() = "UykuvaWidget"
@@ -91,6 +103,101 @@ class UykuvaWidgetModule(context: ReactApplicationContext) : ReactContextBaseJav
     } catch (error: Exception) {
       promise.reject("WIDGET_UPDATE_FAILED", error)
     }
+  }
+
+  @ReactMethod
+  fun updateSleepTracking(isSleeping: Boolean, babyName: String, startedAt: String, promise: Promise) {
+    try {
+      val context = reactApplicationContext
+      val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      if (!isSleeping) {
+        manager.cancel(UykuvaSleepTracking.NOTIFICATION_ID)
+        promise.resolve(null)
+        return
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        promise.resolve(null)
+        return
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        manager.createNotificationChannel(
+          NotificationChannel(
+            UykuvaSleepTracking.CHANNEL_ID,
+            "Uyku kaydı",
+            NotificationManager.IMPORTANCE_LOW
+          ).apply { lockscreenVisibility = Notification.VISIBILITY_PRIVATE }
+        )
+      }
+      val startMillis = try { Instant.parse(startedAt).toEpochMilli() } catch (_: Exception) { System.currentTimeMillis() }
+      val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+      val contentIntent = launchIntent?.let {
+        PendingIntent.getActivity(context, 7301, it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+          PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+      }
+      val stopIntent = Intent(context, UykuvaSleepActionReceiver::class.java).setAction(UykuvaSleepTracking.ACTION_STOP)
+      val stopPendingIntent = PendingIntent.getBroadcast(
+        context, 7302, stopIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+      )
+      val notification = NotificationCompat.Builder(context, UykuvaSleepTracking.CHANNEL_ID)
+        .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+        .setContentTitle("$babyName uyuyor")
+        .setContentText("Başlangıç saati")
+        .setWhen(startMillis)
+        .setShowWhen(true)
+        .setUsesChronometer(true)
+        .setChronometerCountDown(false)
+        .setOngoing(true)
+        .setOnlyAlertOnce(true)
+        .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+        .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+        .setPublicVersion(
+          NotificationCompat.Builder(context, UykuvaSleepTracking.CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setContentTitle("Uyku kaydı devam ediyor")
+            .setContentText("Ayrıntılar için kilidi açın")
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+        )
+        .addAction(android.R.drawable.ic_media_pause, "Uyandı", stopPendingIntent)
+        .apply { if (contentIntent != null) setContentIntent(contentIntent) }
+        .build()
+      manager.notify(UykuvaSleepTracking.NOTIFICATION_ID, notification)
+      promise.resolve(null)
+    } catch (error: Exception) {
+      promise.reject("SLEEP_NOTIFICATION_FAILED", error)
+    }
+  }
+
+  @ReactMethod
+  fun consumePendingSleepAction(promise: Promise) {
+    try {
+      val prefs = reactApplicationContext.getSharedPreferences(UykuvaSleepTracking.PREFS, Context.MODE_PRIVATE)
+      val action = prefs.getString(UykuvaSleepTracking.PENDING_ACTION, null)
+      prefs.edit().remove(UykuvaSleepTracking.PENDING_ACTION).apply()
+      promise.resolve(action)
+    } catch (error: Exception) {
+      promise.reject("SLEEP_ACTION_READ_FAILED", error)
+    }
+  }
+}
+
+object UykuvaSleepTracking {
+  const val CHANNEL_ID = "uykuva_sleep_tracking"
+  const val NOTIFICATION_ID = 7301
+  const val ACTION_STOP = "com.uykuva.app.STOP_SLEEP_TRACKING"
+  const val PREFS = "uykuva_sleep_tracking"
+  const val PENDING_ACTION = "pending_action"
+}
+
+class UykuvaSleepActionReceiver : android.content.BroadcastReceiver() {
+  override fun onReceive(context: Context, intent: Intent?) {
+    if (intent?.action != UykuvaSleepTracking.ACTION_STOP) return
+    context.getSharedPreferences(UykuvaSleepTracking.PREFS, Context.MODE_PRIVATE)
+      .edit().putString(UykuvaSleepTracking.PENDING_ACTION, "stop").apply()
+    val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    context.startActivity(launchIntent)
   }
 }
 
@@ -189,6 +296,12 @@ function withWidgetManifest(config) {
         $: { "android:name": ".UykuvaWidgetProvider", "android:exported": "true" },
         "intent-filter": [{ action: [{ $: { "android:name": "android.appwidget.action.APPWIDGET_UPDATE" } }] }],
         "meta-data": [{ $: { "android:name": "android.appwidget.provider", "android:resource": "@xml/uykuva_widget_info" } }]
+      });
+    }
+    if (!application.receiver.some((item) => item.$?.["android:name"] === ".UykuvaSleepActionReceiver")) {
+      application.receiver.push({
+        $: { "android:name": ".UykuvaSleepActionReceiver", "android:exported": "false" },
+        "intent-filter": [{ action: [{ $: { "android:name": "com.uykuva.app.STOP_SLEEP_TRACKING" } }] }]
       });
     }
     return mod;
