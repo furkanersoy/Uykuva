@@ -842,7 +842,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <View style={styles.timeFields}>
           <View style={styles.timeField}>
             <Text style={styles.inputLabel}>Bugün uyandığı saat</Text>
-            <TextInput accessibilityLabel="Bugün sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde ilk uyku penceresi hesaplanır." value={morningWake} onChangeText={updateMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} />
+            <TextInput accessibilityLabel="Bugün sabah uyanış saati" accessibilityHint="Ör. 07:00 girin. Geçerli saat girildiğinde ilk uyku penceresi hesaplanır." value={morningWake} onChangeText={updateMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="Ör. 07:00" keyboardType="number-pad" maxLength={12} />
           </View>
           <View style={[styles.timeField, { justifyContent: "flex-end" }]}>
             <PrimaryButton label={todayCheckIn?.wakeTime === morningWakeClock ? "Kaydedildi" : "Saati kaydet"} quiet onPress={saveMorningWake} />
@@ -873,7 +873,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
             ) : <Text style={styles.hint}>{displayedForecast.explanation}</Text>}
           </View>
         ) : (
-          <Text style={styles.hint}>Uyanış saatini girin (ör. 0700); ilk uyku penceresi burada anında görünür.</Text>
+          <Text style={styles.hint}>Uyanış saatini girin (ör. 07:00); bu alan boşken pencere hesaplanmaz, geçerli saat girilince burada görünür.</Text>
         )}
         <Text style={styles.hint}>Bu aralık tahmindir; bebeğinizin uyku işaretlerine göre esnetin.</Text>
       </Card>
@@ -1485,7 +1485,7 @@ function CoachScreen({ app, now }: { app: ReturnType<typeof useUykuvaState>; now
         </View>
         <Text style={styles.hint}>{nightSummary.minutes ? `${nightSummary.segments} uyku aralığı · ${nightSummary.hasExactWindow ? "girdiğiniz yatış ve uyanış saatleri" : "18:00–12:00 varsayılan gece aralığı"}. Eksik uyku kayıtları toplama dahil değildir.` : "Gece uykusu zamanlayıcı kayıtları burada toplanır; ölçülmeyen süre tahmin edilmez."}</Text>
         <Text style={styles.inputLabel}>Gece özeti · isteğe bağlı</Text>
-        <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Saati 0700 biçiminde yazın. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="0700" keyboardType="number-pad" maxLength={5} /></View></View>
+        <View style={styles.timeFields}><View style={styles.timeField}><Text style={styles.muted}>Dün gece yatış</Text><TextInput accessibilityLabel="Dün gece yatış saati" value={nightBedtime} onChangeText={(value) => setNightBedtime(normalizeClockInput(value))} style={styles.compactInput} placeholder="20:30" keyboardType="number-pad" maxLength={5} /></View><View style={styles.timeField}><Text style={styles.muted}>Sabah uyanış</Text><TextInput accessibilityLabel="Sabah uyanış saati" accessibilityHint="Ör. 07:00 girin. Geçerli saat girildiğinde uyku penceresi hesaplanır." value={morningWake} onChangeText={updateCoachMorningWake} onBlur={() => { if (isValidClock(morningWakeClock)) setMorningWake(morningWakeClock); }} style={styles.compactInput} placeholder="Ör. 07:00" keyboardType="number-pad" maxLength={12} /></View></View>
         {coachMorningWakeInputError ? <Text accessibilityLiveRegion="polite" style={styles.inputError}>{coachMorningWakeInputError}</Text> : morningWake.length > 0 && morningWake.length < 3 ? <Text style={styles.hint}>Saati rakamlarla yazın (ör. 0700 = 07:00).</Text> : null}
         <SleepDayContextPicker selected={todayCheckIn?.dayContext} onSelect={(dayContext) => app.saveCheckIn({ ...todayCheckIn, date: today, dayContext })} />
         <Text style={styles.inputLabel}>Dün gece uygulanan yaklaşım · isteğe bağlı</Text>
