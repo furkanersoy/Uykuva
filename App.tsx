@@ -833,7 +833,7 @@ function TodayScreen({ app, forecast, feedingForecast, openLog, now, nightMode, 
         <Text style={styles.body}>{app.runningSleep ? `Uyku ${time(app.runningSleep.startedAt)} saatinde başladı. Bitirmek için aşağıdaki “Uyandı” kaydını kullanın.` : displayedForecast.explanation}</Text>
         {!app.runningSleep && sleepWindowStatus ? <Text style={styles.awake}>{sleepWindowStatus}</Text> : null}
         {app.runningSleep ? <Text style={styles.awake}>{wakeEstimate.available && wakeEstimate.from && wakeEstimate.typical && wakeEstimate.to ? `Benzer uykulara göre olası uyanma ${time(wakeEstimate.from)}–${time(wakeEstimate.to)} (ortanca ${time(wakeEstimate.typical)}). ${wakeEstimate.sampleCount} kayıt.` : wakeEstimate.explanation}</Text> : null}
-        {!app.runningSleep && displayedForecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{displayedForecast.awakeMinutes} dakikadır uyanık</Text> : null}
+        {!app.runningSleep && displayedForecast.available && displayedForecast.awakeMinutes !== undefined ? <Text style={styles.awake}>{displayedForecast.awakeMinutes} dakikadır uyanık</Text> : null}
       </Card>
       <Card>
         <Text style={styles.cardTitle}>Sabah uyanışına göre uyku penceresi</Text>
