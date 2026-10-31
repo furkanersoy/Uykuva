@@ -16,6 +16,14 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - Google Play özellik görseli hazır: [`store-assets/google-play-feature-1024x500.png`](store-assets/google-play-feature-1024x500.png), 1024×500 PNG.
 - `.easignore`, derleme sunucusuna yerel `android/` ve `ios/` klasörlerini göndermeyip Expo yapılandırmasından temiz native projeler üretmesini söyler.
 
+## Doğrulanan güncel mağaza kuralları
+
+- Google Play'in 31 Ağustos 2026'dan itibaren yeni uygulama ve güncellemeler için hedef API 36 şartı var. Yerel derlemenin debug manifesti `targetSdkVersion=36` gösteriyor; üretim AAB'si ayrıca denetlenmeli. [Google Play hedef API politikası](https://support.google.com/googleplay/android-developer/answer/11926878)
+- Google Play sağlık uygulaması beyanı test kanalları dahil tüm Play uygulamaları için istenir. Uykuva'nın bakım ve sağlıkla ilgili işlevleri mağazada doğru beyan edilmeli. [Health apps declaration](https://support.google.com/googleplay/android-developer/answer/14738291)
+- Google Play simge şartı 512×512 PNG ve en fazla 1 MB; özellik görseli 1024×500 JPEG veya alfa içermeyen 24-bit PNG. Hazırlanan görseller boyut ve dosya ağırlığı bakımından bu değerlere uyuyor. [Play görsel şartları](https://support.google.com/googleplay/android-developer/answer/9866151)
+- App Store Connect yüklemeleri 28 Nisan 2026'dan beri Xcode 26 veya sonrası ve iOS 26 SDK ya da sonrası ile derlenmeli. EAS üretim derlemesi bu SDK şartıyla yapılmalı. [Apple SDK şartı](https://developer.apple.com/news/upcoming-requirements/?id=04282026a)
+- Sağlık/çocuk verileri ve varsa hesap oluşturma için gizlilik beyanı, uygulama içi politika bağlantısı ve hesap silme akışları mağaza politikalarıyla eşleşmeli. [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) · [Google hesap silme şartları](https://support.google.com/googleplay/android-developer/answer/13327111)
+
 ## Yayından önce tamamlanması gerekenler
 
 ### Hesaplar ve imzalama
@@ -46,6 +54,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - [ ] Gerçek cihaz/emülatörde soğuk açılış, izinler, bildirimler, çevrimdışı çalışma, yedekleme/geri yükleme, hesap/senkronizasyon (etkinleştirilecekse) ve silme senaryolarını dene.
 - [ ] Türkçe karakterlerin ve erişilebilir metinlerin tüm mağaza görsellerinde doğru göründüğünü doğrula.
 - [ ] Release build'i mağaza öncesi kapalı test/TestFlight üzerinden test et; çökme ve ANR sorunlarını gider.
+- [ ] Üretim derlemelerinde kullanılan Android ve iOS SDK/Xcode sürümünü mağaza yüklemesinden önce doğrula.
 
 ## EAS komutları
 
