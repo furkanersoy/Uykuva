@@ -5,6 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.uykuva.app"
@@ -12,7 +13,8 @@
     "android": {
       "package": "com.uykuva.app",
       "adaptiveIcon": {
-        "backgroundColor": "#F7F5F1"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#55B9B0"
       }
     },
     "plugins": [
