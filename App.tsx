@@ -294,7 +294,7 @@ export default function App() {
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.activeChildId, app.setActiveChild, app.updateEvent]);
 
   useEffect(() => {
-    const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string, feedingWindow: string, isSleeping: boolean) => Promise<void> } | undefined;
+    const widget = NativeModules.UykuvaWidget as { updateSleepWindow?: (babyName: string, sleepWindow: string, status: string, feedingWindow: string) => Promise<void> } | undefined;
     if (!app.hydrated || !app.state.onboardingComplete || !widget?.updateSleepWindow) return;
     const sleepWindow = app.runningSleep
       ? "Uyku devam ediyor"
@@ -313,7 +313,7 @@ export default function App() {
     const feedingWindow = feedingForecast.available && feedingForecast.start && feedingForecast.end
       ? `Beslenme · ${time(feedingForecast.start)}–${time(feedingForecast.end)}`
       : "Beslenme penceresi için kayıt gerekiyor";
-    void widget.updateSleepWindow(app.state.baby.name, sleepWindow, status, feedingWindow, Boolean(app.runningSleep)).catch(() => undefined);
+    void widget.updateSleepWindow(app.state.baby.name, sleepWindow, status, feedingWindow).catch(() => undefined);
   }, [app.hydrated, app.state.onboardingComplete, app.state.baby.name, app.runningSleep, forecast, feedingForecast, clockNow]);
 
   useEffect(() => {
