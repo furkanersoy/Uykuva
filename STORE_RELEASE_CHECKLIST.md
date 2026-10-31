@@ -14,6 +14,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 - Android release Gradle yapılandırması artık debug anahtarına düşmüyor. EAS imza anahtarını sağlamalı veya yerel release imzalama özellikleri tanımlanmalı.
 - Google Play simgesi hazır: [`store-assets/google-play-icon-512.png`](store-assets/google-play-icon-512.png), 512×512 PNG, 240,464 bayt.
 - Google Play özellik görseli hazır: [`store-assets/google-play-feature-1024x500.png`](store-assets/google-play-feature-1024x500.png), 1024×500 PNG.
+- App Store uygulama simgesi hazır: [`assets/app-store-icon-1024.png`](assets/app-store-icon-1024.png), 1024×1024 opak PNG, 819,246 bayt; `app.json` bu dosyaya işaret ediyor. [Apple simge ölçüsü](https://developer.apple.com/design/human-interface-guidelines/app-icons)
 - `.easignore`, derleme sunucusuna yerel `android/` ve `ios/` klasörlerini göndermeyip Expo yapılandırmasından temiz native projeler üretmesini söyler.
 
 ## Doğrulanan güncel mağaza kuralları
@@ -48,6 +49,7 @@ Bu belge 31 Ekim 2026 itibarıyla proje içindeki yapılandırmayı ve yayın ö
 
 - [x] Google Play için 512×512 PNG, 1 MB altında mağaza ikonu üretildi. Mevcut `assets/icon.png` 1,242,915 bayt olduğu için mağaza görseli ayrı optimize edildi.
 - [x] Google Play özellik görseli (1024×500) hazırlandı.
+- [x] iOS uygulama simgesi 1024×1024 opak PNG olarak hazırlandı.
 - [ ] Farklı cihaz türlerinden gerçek uygulama ekran görüntüleri hazırla.
 - [ ] App Store ekran görüntülerini gerekli iPhone/iPad boyutlarında hazırla; tablet desteği açık olduğu için iPad deneyimini de doğrula veya tablet desteğini kapat.
 - [ ] Mağaza açıklamaları, yaş derecelendirmesi, destek URL'si, kategori ve içerik beyanlarını tamamla.
