@@ -51,7 +51,10 @@ function publishableKey() {
 }
 
 function cloudSyncExplicitlyEnabled() {
-  return process.env.EXPO_PUBLIC_ENABLE_CLOUD_SYNC?.trim().toLowerCase() === "true";
+  // The first store release keeps family sync disabled even if an EAS environment variable overrides eas.json.
+  return typeof __DEV__ !== "undefined"
+    && __DEV__
+    && process.env.EXPO_PUBLIC_ENABLE_CLOUD_SYNC?.trim().toLowerCase() === "true";
 }
 
 export function isCloudSyncConfigured() {
