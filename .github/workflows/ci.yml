@@ -78,7 +78,7 @@ jobs:
           packages: platform-tools
 
       - name: Install Android 17 compile platform from preview channel
-        run: sdkmanager --channel=3 "platforms;android-37" "build-tools;37.0.0"
+        run: sdkmanager --channel=3 "platforms;android-37.0" "build-tools;37.0.0"
 
       - name: Install Expo SDK 58 native toolchain
         run: sdkmanager "ndk;27.1.12297006" "cmake;3.22.1"
