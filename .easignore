@@ -7,6 +7,9 @@ supabase/.temp/
 web-build/
 *.log
 .DS_Store
+.git/
+.idea/
+.vscode/
 .env
 .env.*
 !.env.example
@@ -19,3 +22,5 @@ credentials.json
 # EAS generate both Android and iOS projects from the Expo config.
 android/
 ios/
+uykuva-*.png
+uykuva-*.xml
