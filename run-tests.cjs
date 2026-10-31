@@ -24,7 +24,8 @@ const compiledTests = [
 const testFiles = [
   ...compiledTests,
   path.join(projectRoot, "src", "services", "notifications.test.cjs"),
-  path.join(projectRoot, "src", "services", "cloudSync.test.cjs")
+  path.join(projectRoot, "src", "services", "cloudSync.test.cjs"),
+  path.join(projectRoot, "src", "services", "androidWidgetContract.test.cjs")
 ];
 
 try {
