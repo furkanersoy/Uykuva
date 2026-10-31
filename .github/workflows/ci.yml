@@ -77,8 +77,11 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Expo SDK 58 Android toolchain
-        run: sdkmanager "platforms;android-37" "build-tools;37.0.0" "ndk;27.1.12297006" "cmake;3.22.1"
+      - name: Install Android 17 compile platform from preview channel
+        run: sdkmanager --channel=3 "platforms;android-37" "build-tools;37.0.0"
+
+      - name: Install Expo SDK 58 native toolchain
+        run: sdkmanager "ndk;27.1.12297006" "cmake;3.22.1"
 
       - name: Install dependencies
         run: npm ci
