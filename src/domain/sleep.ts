@@ -716,13 +716,20 @@ export function coachingDay(day: number, method: SleepMethod, canReduceSupport =
       routine: "İki veya üç sakin adımı benzer sırayla tekrarlayın.",
       practice: "Bebeğinizin işaretlerine göre rutini kısaltın, tekrarlayın veya ara verin.",
       consolidate: "Aileniz için uygulanabilir olan rutin sırasını koruyun."
+    },
+    earlyWaking: {
+      observe: "Sabah uyanış saatini ve ışık/ses gibi koşulları birkaç gün kaydedin; tek sabahı örüntü saymayın.",
+      routine: "Kesin bir kalkış hedefi koymadan sabah ortamını sakin tutun ve bebeğinizin ihtiyacına yanıt verin.",
+      practice: "Erken uyanışta beslenme, bez ve rahatsızlık gibi ihtiyaçları kontrol edin; uykusu sürüyorsa nazik destek sunun, zorlamayın.",
+      consolidate: "Son günlerin gerçek uyanış saatlerini ve ailenin dinlenmesini birlikte gözden geçirip işe yarayan esnek yanıtı sürdürün."
     }
   };
   const focusQuestions: Record<SleepFocus, string> = {
     bedtime: "Yatma saatine geçiş bugün nasıl hissettirdi?",
     nightWakings: "Gece uyanmalarında bebeğiniz hangi desteğe yanıt verdi?",
     naps: "Gündüz uykularından hangisinde bebeğinizin işaretleri yol gösterdi?",
-    routine: "Akşam rutininin hangi adımı ailenize daha uygun geldi?"
+    routine: "Akşam rutininin hangi adımı ailenize daha uygun geldi?",
+    earlyWaking: "Erken sabah uyanışlarında hangi koşul veya destek gözleminize yardımcı oldu?"
   };
   return {
     title: `${safeDay}. gün · ${METHOD_COPY[method].name}`,

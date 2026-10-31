@@ -86,7 +86,8 @@ const sleepFocusOptions: { id: SleepFocus; label: string }[] = [
   { id: "bedtime", label: "Yatma zamanı" },
   { id: "nightWakings", label: "Gece uyanmaları" },
   { id: "naps", label: "Gündüz uykuları" },
-  { id: "routine", label: "Akşam rutini" }
+  { id: "routine", label: "Akşam rutini" },
+  { id: "earlyWaking", label: "Erken sabah uyanmaları" }
 ];
 const sleepDayContextOptions: { id?: SleepDayContext; label: string }[] = [
   { label: "Olağan gün" },
