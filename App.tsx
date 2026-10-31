@@ -1810,6 +1810,18 @@ function CareTaskRow({ task, assignedCaregiverName, onToggle, onDelete, onEdit }
   const taskType = task.type === "vaccine" ? "Aşı" : "Randevu";
   const taskDate = new Date(task.dueAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" });
   const completedDate = task.completedAt ? new Date(task.completedAt).toLocaleDateString("tr-TR", { day: "2-digit", month: "short" }) : undefined;
+  const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL?.trim() ?? "";
+  const openPrivacyPolicy = async () => {
+    if (!privacyPolicyUrl.startsWith("https://")) {
+      Alert.alert("Gizlilik politikası bağlantısı eklenmedi", "Yayın öncesinde herkese açık HTTPS gizlilik politikası adresi uygulama yapılandırmasına eklenmelidir.");
+      return;
+    }
+    try {
+      await Linking.openURL(privacyPolicyUrl);
+    } catch {
+      Alert.alert("Bağlantı açılamadı", "Gizlilik politikası adresini daha sonra yeniden deneyin.");
+    }
+  };
   const confirmDelete = () => Alert.alert("Kaydı sil?", `${task.title} ${taskType.toLocaleLowerCase("tr-TR")} kaydı kalıcı olarak silinecek.`, [
     { text: "Vazgeç", style: "cancel" },
     { text: "Sil", style: "destructive", onPress: onDelete }
@@ -2110,6 +2122,7 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
         {app.state.preferences.milkExpiryRemindersEnabled ? <><Text style={styles.inputLabel}>Kullanım süresinden ne kadar önce?</Text><View style={styles.choiceRow}>{([{ lead: "adaptive", label: "Otomatik" }, { lead: 2, label: "2 saat" }, { lead: 6, label: "6 saat" }, { lead: 12, label: "12 saat" }, { lead: 24, label: "1 gün" }, { lead: 48, label: "2 gün" }] as const).map(({ lead, label }) => <Pill key={lead} label={label} active={app.state.preferences.milkExpiryReminderLead === lead} onPress={() => app.updatePreferences({ milkExpiryReminderLead: lead })} />)}</View><Text style={styles.hint}>{app.state.preferences.milkExpiryReminderLead === "adaptive" ? "Otomatik seçenek, kalan süreye göre hatırlatma zamanını ayarlar." : "Seçilen süre kullanım süresinden uzun kalırsa hatırlatma kalan sürenin yaklaşık yarısında gönderilir."} Dondurulmuş ve çözülmemiş süt için en iyi kalite önerisi ile tavsiye edilen son tarih ayrı hatırlatılır; sessiz saatler gözetilir.</Text><Text style={styles.hint}>Saklama aralıkları genel rehberdir; özel sağlık durumlarında sağlık uzmanınıza danışın.</Text></> : null}
       </Card>
       <SectionTitle title="Verileriniz" />
+      <Card><Text style={styles.cardTitle}>Gizlilik ve veri kullanımı</Text><Text style={styles.body}>Uykuva kayıtları cihazda saklar. Bulut eşitlemesi isteğe bağlıdır ve ilk sürümde kapalı tutulur. Fotoğraf, mikrofon, yedekleme ve eşitleme akışları hakkında ayrıntıları gizlilik politikasında okuyabilirsiniz.</Text>{privacyPolicyUrl.startsWith("https://") ? <><View style={styles.spacer12} /><PrimaryButton label="Gizlilik politikasını aç" quiet onPress={() => void openPrivacyPolicy()} /></> : <Text style={styles.hint}>Çevrimiçi gizlilik politikası bağlantısı yayın öncesinde eklenecek.</Text>}</Card>
       <Card><Text style={styles.cardTitle}>Kontrol sizde</Text><Text style={styles.body}>Parolalı yedeği aktarabilir, aynı bebeğin verileriyle birleştirebilir veya mevcut kayıtların yerine tamamen geri yükleyebilirsiniz.</Text><View style={styles.spacer12} /><PrimaryButton label="Yedek dosyasından aktar" quiet onPress={onRestoreData} /><View style={styles.spacer12} /><Pressable onPress={confirmDelete} style={styles.dangerButton}><Text style={styles.dangerText}>Tüm cihaz verilerini sil</Text></Pressable></Card>
     </ScrollView>
     <EncryptedBackupModal visible={encryptedBackupOpen} close={() => setEncryptedBackupOpen(false)} exportBackup={exportEncryptedBackupFile} />
