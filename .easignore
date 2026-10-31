@@ -1,0 +1,21 @@
+# EAS uses this file instead of .gitignore, so keep local/generated items excluded here too.
+node_modules/
+.expo/
+dist/
+.test-build/
+supabase/.temp/
+web-build/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+credentials.json
+*.keystore
+*.jks
+
+# Native projects are generated from app.json and config plugins on EAS Build.
+# This avoids uploading the incomplete/stale generated android folder and lets
+# EAS generate both Android and iOS projects from the Expo config.
+android/
+ios/
