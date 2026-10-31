@@ -125,7 +125,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 - Ateş, ilaç/belirti ve büyüme ölçümü kaydı
 - İlaç kaydında kullanıcının girdiği sonraki kontrol saatine tek seferlik yerel hatırlatma
 - Son sekiz büyüme ölçümünü tarih sırasıyla karşılaştırma
-- İsteğe bağlı WHO 0–5 yaş kilo, boy ve baş çevresi eğrileri; z-skoru/persentil özeti ve ölçüm konumu düzeltmesi
+- İsteğe bağlı WHO 0–5 yaş kilo, boy ve baş çevresi eğrileri; z-skoru/persentil özeti, ölçüm konumu ve prematüre doğum için yaş düzeltmesi
 - Paylaşılabilir yedi günlük doktor özeti
 - Kullanıcının eklediği aşı ve doktor randevusu takibi
 - Aşı ve randevu kaydının tarih, saat ve notunu geçmişi koruyarak düzenleme

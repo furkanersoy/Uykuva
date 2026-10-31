@@ -1885,7 +1885,7 @@ function GrowthMetricChart({ indicator, measurements, baby }: { indicator: Growt
       {points.map((point) => <View key={point.event.id} style={[styles.growthPoint, { left: point.x - 4, top: point.y - 4 }]} />)}
     </View>
     <View style={styles.growthChartDates}><Text style={styles.muted}>{growthAgeLabel(baby, entries[0]!.event)}</Text><Text style={styles.muted}>{growthAgeLabel(baby, entries.at(-1)!.event)}</Text></View>
-    <Text style={styles.hint}>Son ölçüm: P{Math.round(entries.at(-1)!.score.percentile)} · z {entries.at(-1)!.score.z.toFixed(1)}</Text>
+    <Text style={styles.hint}>Son ölçüm: P{Math.round(entries.at(-1)!.score.percentile)} · z {entries.at(-1)!.score.z.toFixed(1)}{entries.at(-1)!.score.usesGestationalCorrection ? " · düzeltilmiş yaş kullanıldı" : ""}</Text>
   </View>;
 }
 
@@ -1906,7 +1906,7 @@ function GrowthHistoryCard({ measurements, baby }: { measurements: CareEvent[]; 
         <View style={styles.measureRow}><Measure value={event.weightG ? `${event.weightG} g` : "—"} label="Kilo" /><Measure value={event.lengthCm ? `${event.lengthCm} cm` : "—"} label="Boy" /><Measure value={event.headCm ? `${event.headCm} cm` : "—"} label="Baş" /></View>
       </View>)}
       {measurements.length > rows.length ? <Text style={styles.hint}>Son 8 ölçüm gösteriliyor.</Text> : null}
-      <Text style={styles.hint}>WHO eğrileri 0–5 yaş standardını gösterir; tek bir persentil tıbbi değerlendirme veya tanı değildir. Ölçüm değişimini çocuk sağlığı uzmanıyla birlikte değerlendirin.</Text>
+      <Text style={styles.hint}>WHO eğrileri 0–5 yaş standardını gösterir. Prematüre doğumda ölçüm yaşı, WHO önerisine göre 32–36. haftada doğanlarda 1 yaşa, 32 haftadan önce doğanlarda 2 yaşa kadar gebelik haftası farkıyla düzeltilir; tarih çizelgede takvim yaşı olarak kalır. Tek bir persentil tıbbi değerlendirme veya tanı değildir; ölçüm değişimini çocuk sağlığı uzmanıyla birlikte değerlendirin.</Text>
     </Card>
   </>;
 }

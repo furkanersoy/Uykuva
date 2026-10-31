@@ -5,7 +5,7 @@ import { Baby, CareEvent } from "./types";
 
 type LmsRow = [sex: number, day: number, l: number, m: number, s: number];
 export type GrowthIndicator = "weight" | "length" | "head";
-export type GrowthScore = { z: number; percentile: number; adjustedValue: number; ageDays: number; indicator: GrowthIndicator };
+export type GrowthScore = { z: number; percentile: number; adjustedValue: number; ageDays: number; chronologicalAgeDays: number; usesGestationalCorrection: boolean; indicator: GrowthIndicator };
 
 const tables: Record<GrowthIndicator, LmsRow[]> = {
   weight: weightRows as LmsRow[],
@@ -22,7 +22,13 @@ function normalCdf(z: number) {
 
 export function whoGrowthScore(baby: Baby, event: CareEvent, indicator: GrowthIndicator): GrowthScore | null {
   if (!baby.growthChartSex) return null;
-  const ageDays = Math.floor((Date.parse(`${event.startedAt.slice(0, 10)}T00:00:00Z`) - Date.parse(`${baby.birthDate}T00:00:00Z`)) / 86_400_000);
+  const chronologicalAgeDays = Math.floor((Date.parse(`${event.startedAt.slice(0, 10)}T00:00:00Z`) - Date.parse(`${baby.birthDate}T00:00:00Z`)) / 86_400_000);
+  if (chronologicalAgeDays < 0) return null;
+  // WHO's Pocket Book recommends gestational correction through age 1 year
+  // for babies born at 32–36 weeks, and through 2 years if born before 32 weeks.
+  const correctionLimitDays = baby.gestationalWeek < 32 ? 730 : 365;
+  const usesGestationalCorrection = baby.gestationalWeek >= 22 && baby.gestationalWeek < 37 && chronologicalAgeDays < correctionLimitDays;
+  const ageDays = chronologicalAgeDays - (usesGestationalCorrection ? (40 - baby.gestationalWeek) * 7 : 0);
   if (ageDays < 0 || ageDays > 1826) return null;
   const raw = indicator === "weight" ? event.weightG === undefined ? NaN : event.weightG / 1000
     : indicator === "length" ? event.lengthCm ?? NaN : event.headCm ?? NaN;
@@ -51,13 +57,20 @@ export function whoGrowthScore(baby: Baby, event: CareEvent, indicator: GrowthIn
     const sd3 = l === 0 ? m * Math.exp(-3 * s) : m * Math.pow(1 - l * s * 3, 1 / l);
     z = -3 + (adjustedValue - sd3) / (sd2 - sd3);
   }
-  return { z, percentile: Math.max(0.1, Math.min(99.9, normalCdf(z) * 100)), adjustedValue, ageDays, indicator };
+  return { z, percentile: Math.max(0.1, Math.min(99.9, normalCdf(z) * 100)), adjustedValue, ageDays, chronologicalAgeDays, usesGestationalCorrection, indicator };
 }
 
 export function growthAgeLabel(baby: Baby, event: CareEvent) {
   const date = Date.parse(`${event.startedAt.slice(0, 10)}T00:00:00Z`);
   const birth = Date.parse(`${baby.birthDate}T00:00:00Z`);
-  const days = Math.max(0, Math.floor((date - birth) / 86_400_000));
-  const months = Math.floor(days / 30.4375);
-  return `${Math.floor(months / 12)}y ${months % 12}a`;
+  const chronologicalDays = Math.max(0, Math.floor((date - birth) / 86_400_000));
+  const monthsLabel = (days: number) => {
+    const months = Math.floor(days / 30.4375);
+    return `${Math.floor(months / 12)}y ${months % 12}a`;
+  };
+  const correctionLimitDays = baby.gestationalWeek < 32 ? 730 : 365;
+  const usesGestationalCorrection = baby.gestationalWeek >= 22 && baby.gestationalWeek < 37 && chronologicalDays < correctionLimitDays;
+  if (!usesGestationalCorrection) return monthsLabel(chronologicalDays);
+  const correctedDays = chronologicalDays - (40 - baby.gestationalWeek) * 7;
+  return `${monthsLabel(chronologicalDays)} takvim · ${monthsLabel(Math.max(0, correctedDays))} düzeltilmiş`;
 }
