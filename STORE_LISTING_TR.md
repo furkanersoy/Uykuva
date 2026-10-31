@@ -28,7 +28,7 @@ Uykuva, bebeğinizin uykusunu ve günlük bakımını tek yerde takip etmenize y
 • Anı günlüğüne metin ve fotoğraf ekleyin; seçtiğiniz kayıtları PDF olarak paylaşın.
 • İlk mağaza sürümünde kayıtlar cihazınızda tutulur; aile hesabı ve cihazlar arası eşitleme sunulmaz.
 
-Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır; tanı, tedavi veya profesyonel sağlık önerisinin yerine geçmez. Bebeğinizin sağlık ve beslenme ihtiyaçları önceliklidir. Endişeleriniz için sağlık uzmanınıza danışın.
+Uykuva tıbbi cihaz değildir; herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemeyi amaçlamaz. Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır; profesyonel sağlık önerisinin yerine geçmez. Bebeğinizin sağlık ve beslenme ihtiyaçları önceliklidir. Tıbbi öneri, tanı veya tedavi için sağlık uzmanınıza danışın.
 
 **Kategori önerisi:** Ebeveynlik / Yaşam tarzı (Play Console'daki uygun kategori adını seçin)
 
@@ -64,7 +64,7 @@ Uykuva, bebeğinizin uykusunu ve günlük bakımını düzenli biçimde takip et
 • Seçtiğiniz kayıtları PDF olarak dışa aktarın ve paylaşın.
 • İlk mağaza sürümünde kayıtlar cihazınızda tutulur; aile hesabı ve cihazlar arası eşitleme sunulmaz.
 
-Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır; tanı, tedavi veya profesyonel sağlık önerisinin yerine geçmez. Her bebeğin ihtiyaçları farklıdır. Bebeğinizin uyku işaretlerini gözetin ve sağlıkla ilgili endişelerinizde sağlık uzmanınıza danışın.
+Uykuva tıbbi cihaz değildir; herhangi bir tıbbi durumu teşhis etmez, tedavi etmez, iyileştirmez veya önlemeyi amaçlamaz. Uyku pencereleri ve rehber içerikleri genel bilgilendirme amaçlıdır ve profesyonel sağlık önerisinin yerine geçmez. Her bebeğin ihtiyaçları farklıdır. Bebeğinizin uyku işaretlerini gözetin; tıbbi öneri, tanı veya tedavi için sağlık uzmanınıza danışın.
 
 **Destek URL'si:** E-posta/URL belirlenecek  
 **Gizlilik politikası URL'si:** Herkese açık HTTPS sayfası yayımlanınca eklenecek  
