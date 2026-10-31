@@ -571,3 +571,10 @@ Windows PowerShell yürütme politikası `npm.ps1` dosyasını engelleyebildiği
 - Yolculuk bittikten sonra araba koltuğu veya pusette uyuyakalan bebeği mümkün olduğunda ayrı, sert ve düz uyku alanına alma bilgisini içerir. Uyku planının seyahat gününde zorlanması gerektiğini söylemez.
 - Kaynak: [AAP · Otel ve konaklama yerinde çocuk güvenliği](https://www.healthychildren.org/English/safety-prevention/on-the-go/Pages/Hotel-Dangers-that-Put-Baby-Safety-at-Risk.aspx).
 - Doğrulama: `npm.cmd run typecheck`; `npm.cmd test`.
+
+### 31 Ekim 2026 isteğe bağlı gebelik takibi
+
+- Aile ekranında beklenen bebek için tahmini doğum tarihi girilebilir; takvim hesabı yaklaşık hafta/gün, trimester ve doğuma kalan/geçen günü gösterir. Kayıt aile düzeyindedir, çocuk profillerini değiştirmez.
+- Hesaplama girilen tahmini doğum tarihi üzerinden ACOG'un 280 günlük gebelik yaşı formülünü izler. Hekim/ultrason tarihlendirmesinin öncelikli olduğu açıklanır; klinik öneri veya test akışı oluşturulmaz.
+- Durum şeması 7'ye yükseltildi. Tarih şifreli aile senkronizasyonu ve yedeklere dahildir; en yeni güncelleme korunur ve silme tombstone ile eşitlenir. Eski yedekler yeni alan olmadan da açılır.
+- Doğrulama: `npm.cmd run typecheck` başarılı; `npm.cmd test` 152/152 başarılı; Metro Android bundle HTTP 200 ile üretildi.
