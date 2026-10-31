@@ -46,7 +46,7 @@ import { SLEEP_GUIDES, SLEEP_GUIDE_CATEGORIES, searchSleepGuides, sleepGuidesFor
 import { weeklyDiaperTotals } from "./src/domain/diapers";
 import { summarizeSolidFoodHistory } from "./src/domain/solids";
 import { estimatePregnancy, isDateOnly } from "./src/domain/pregnancy";
-import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
+import { AppState as UykuvaAppState, CareEvent, CareTask, Caregiver, NightWakeResponse, PregnancyActivity, RoutineStep, SleepDayContext, SleepFocus, SleepMethod, SleepSupport } from "./src/domain/types";
 import { cancelSleepReminders, replaceOpenSleepCheckReminders, replaceWakeReminders, requestNotificationPermission, scheduleCareTaskReminders, scheduleDiaperReminder, scheduleMedicationReminders, scheduleMilkExpiryReminders, scheduleRoutineReminders, scheduleSleepReminder } from "./src/services/notifications";
 import { acceptCloudFamilyInvite, cloudSyncSetupMessage, createCloudFamily, createCloudFamilyInvite, createFamilyEncryptionKey, decryptFamilyDocument, fetchEncryptedFamilyDocument, getCloudFamilyInvites, getCloudSyncAccount, getFamilyEncryptionKey, getMyCloudFamilies, isCloudSyncConfigured, removeCloudFamily, removeFamilyEncryptionKey, revokeCloudFamilyInvite, saveEncryptedFamilyDocument, saveFamilyDocumentWithRevisionRetry, signInToCloudSync, signOutOfCloudSync, signUpForCloudSync, storeSharedFamilyEncryptionKey } from "./src/services/cloudSync";
 import { Card, Pill, PrimaryButton, SectionTitle } from "./src/ui/components";
@@ -441,7 +441,12 @@ export default function App() {
     })();
   }, [app.hydrated, app.state.onboardingComplete, app.state.children, app.state.preferences.milkExpiryRemindersEnabled, app.state.preferences.milkExpiryReminderLead, app.state.preferences.quietStart, app.state.preferences.quietEnd]);
 
-  const promptNightWake = () => setNightWakeOpen(true);
+  const promptNightWake = () => {
+    // This form is a user-invoked action from the Today or Night Mode screen.
+    // Ignore stale UI/notification callbacks while the app is still starting.
+    if (!homeInitialized || !app.hydrated || !app.state.onboardingComplete) return;
+    setNightWakeOpen(true);
+  };
   const switchCaregiver = () => {
     const caregivers = app.state.caregivers;
     if (caregivers.length < 2) return;
@@ -1971,7 +1976,30 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
     app.updatePreferences({ quietStart, quietEnd });
     Alert.alert("Kaydedildi", "Bu saatler arasında sessiz bildirim tercihleri uygulanacak.");
   };
-  const pregnancy = app.state.pregnancyProfile?.deleted ? undefined : app.state.pregnancyProfile?.dueDate ? estimatePregnancy(app.state.pregnancyProfile.dueDate) : undefined;
+  const pregnancyProfile = app.state.pregnancyProfile?.deleted ? undefined : app.state.pregnancyProfile;
+  const pregnancy = pregnancyProfile?.dueDate ? estimatePregnancy(pregnancyProfile.dueDate) : undefined;
+  const pregnancyActivities = (pregnancyProfile?.activities ?? []).filter((item) => !item.deletedAt);
+  const activeMovement = [...pregnancyActivities].reverse().find((item) => item.kind === "movement" && !item.endedAt);
+  const activeContraction = [...pregnancyActivities].reverse().find((item) => item.kind === "contraction" && !item.endedAt);
+  const startPregnancyActivity = (kind: "movement" | "contraction") => {
+    const now = new Date().toISOString();
+    const active = kind === "movement" ? activeMovement : activeContraction;
+    if (active) app.updatePregnancyActivity({ ...active, endedAt: now, updatedAt: now });
+    app.updatePregnancyActivity({ id: `pregnancy-${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, startedAt: now, movementCount: kind === "movement" ? 0 : undefined, updatedAt: now });
+  };
+  const incrementPregnancyMovement = () => {
+    if (!activeMovement) return;
+    app.updatePregnancyActivity({ ...activeMovement, movementCount: (activeMovement.movementCount ?? 0) + 1, updatedAt: new Date().toISOString() });
+  };
+  const finishPregnancyActivity = (activity: PregnancyActivity) => {
+    if (activity.endedAt) return;
+    const endedAt = new Date().toISOString();
+    app.updatePregnancyActivity({ ...activity, endedAt, updatedAt: endedAt });
+  };
+  const confirmDeletePregnancyActivity = (activityId: string) => Alert.alert("Gebelik kaydı silinsin mi?", "Bu kayıt diğer cihazlarda da silinmiş olarak işaretlenir.", [
+    { text: "Vazgeç", style: "cancel" },
+    { text: "Sil", style: "destructive", onPress: () => app.deletePregnancyActivity(activityId) }
+  ]);
   const exportPlainBackupFile = async () => {
     try {
       const file = new File(Paths.cache, `uykuva-yedek-${localDateValue(new Date())}.json`);
@@ -2012,6 +2040,20 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
         <View style={styles.spacer12} /><PrimaryButton label={pregnancy ? "Tahmini tarihi düzenle" : "Doğum tarihini ekle"} quiet onPress={onEditPregnancy} />
         <Text style={styles.hint}>Hafta bilgisi girilen tarihten yaklaşık hesaplanır. Hekiminizin veya ultrasonun verdiği tarihlendirme önceliklidir; bu bölüm tıbbi öneri sunmaz.</Text>
       </Card>
+      {pregnancy ? <>
+        <SectionTitle title="Gebelik kayıtları" action="Yorumlanmaz" />
+        <Card>
+          <Text style={styles.cardTitle}>Bebek hareketlerini sayma</Text>
+          <Text style={styles.body}>Kendi takibiniz için hareketleri dokunarak kaydedin. Uykuva hedef sayı belirlemez veya sonuçları yorumlamaz.</Text>
+          {activeMovement ? <><Text style={styles.awake}>Başlangıç {time(activeMovement.startedAt)} · {activeMovement.movementCount ?? 0} hareket · {compactMinutes((Date.now() - new Date(activeMovement.startedAt).getTime()) / 60_000)}</Text><View style={styles.spacer12} /><PrimaryButton label="Bir hareket kaydet" onPress={incrementPregnancyMovement} /><View style={styles.spacer12} /><PrimaryButton label="Sayımı bitir" quiet onPress={() => finishPregnancyActivity(activeMovement)} /></> : <><View style={styles.spacer12} /><PrimaryButton label="Hareket sayımını başlat" onPress={() => startPregnancyActivity("movement")} /></>}
+          <View style={styles.spacer24} />
+          <Text style={styles.cardTitle}>Kasılma zamanlayıcısı</Text>
+          <Text style={styles.body}>Başlangıç ve bitiş saatlerini kaydeder; aralık veya doğum zamanı hakkında tahmin üretmez.</Text>
+          {activeContraction ? <><Text style={styles.awake}>Başlangıç {time(activeContraction.startedAt)} · {compactMinutes((Date.now() - new Date(activeContraction.startedAt).getTime()) / 60_000)}</Text><View style={styles.spacer12} /><PrimaryButton label="Kasılmayı bitir" onPress={() => finishPregnancyActivity(activeContraction)} /></> : <><View style={styles.spacer12} /><PrimaryButton label="Kasılma zamanlayıcısını başlat" quiet onPress={() => startPregnancyActivity("contraction")} /></>}
+          {pregnancyActivities.length ? <><View style={styles.spacer24} /><Text style={styles.inputLabel}>Son kayıtlar</Text>{pregnancyActivities.slice(-6).reverse().map((activity) => <View key={activity.id} style={styles.eventRow}><View style={styles.eventDot} /><View style={styles.flex}><Text style={styles.eventTitle}>{activity.kind === "movement" ? `Hareket sayımı · ${activity.movementCount ?? 0}` : "Kasılma"}</Text><Text style={styles.muted}>{time(activity.startedAt)}{activity.endedAt ? ` – ${time(activity.endedAt)}` : " · sürüyor"}{activity.endedAt ? ` · ${compactMinutes((new Date(activity.endedAt).getTime() - new Date(activity.startedAt).getTime()) / 60_000)}` : ""}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Gebelik kaydını sil" onPress={() => confirmDeletePregnancyActivity(activity.id)} hitSlop={8}><Text style={styles.editLink}>Sil</Text></Pressable></View>)}</> : null}
+          <Text style={styles.hint}>Bu araçlar yalnızca girdiğiniz zaman ve sayıları saklar; tıbbi değerlendirme veya öneri sunmaz. Sağlıkla ilgili endişeniz varsa sağlık ekibinizle görüşün.</Text>
+        </Card>
+      </> : null}
       <SectionTitle title="Çocuk profilleri" action={`${app.state.children.length} çocuk`} />
       <Card>{app.state.children.map((child) => {
         const active = child.baby.id === app.state.activeChildId;

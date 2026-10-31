@@ -1,4 +1,4 @@
-import { AppState } from "../domain/types";
+import { AppState, PregnancyActivity } from "../domain/types";
 import { createInitialState } from "./seed";
 import { DevelopmentCheckIn } from "../domain/types";
 
@@ -42,7 +42,17 @@ function migratePregnancyProfile(value: unknown): AppState["pregnancyProfile"] {
   }
   const deleted = profile.deleted === true;
   if (!updatedAt || (!deleted && !dueDate)) return undefined;
-  return { dueDate, updatedAt, deleted };
+  const activities = Array.isArray(profile.activities) ? profile.activities.flatMap((value): PregnancyActivity[] => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+    const activity = value as Record<string, unknown>;
+    if (typeof activity.id !== "string" || !activity.id || activity.id.length > 128 || !["movement", "contraction"].includes(String(activity.kind)) || typeof activity.startedAt !== "string" || !Number.isFinite(new Date(activity.startedAt).getTime()) || typeof activity.updatedAt !== "string" || !Number.isFinite(new Date(activity.updatedAt).getTime()) || (activity.endedAt !== undefined && (typeof activity.endedAt !== "string" || !Number.isFinite(new Date(activity.endedAt).getTime()))) || (activity.deletedAt !== undefined && (typeof activity.deletedAt !== "string" || !Number.isFinite(new Date(activity.deletedAt).getTime()))) || (activity.movementCount !== undefined && (!Number.isInteger(activity.movementCount) || Number(activity.movementCount) < 0 || Number(activity.movementCount) > 100_000)) || (activity.kind === "movement" && activity.movementCount === undefined)) return [];
+    const normalized: PregnancyActivity = { id: activity.id, kind: activity.kind as "movement" | "contraction", startedAt: activity.startedAt, updatedAt: activity.updatedAt };
+    if (typeof activity.endedAt === "string") normalized.endedAt = activity.endedAt;
+    if (typeof activity.movementCount === "number") normalized.movementCount = activity.movementCount;
+    if (typeof activity.deletedAt === "string") normalized.deletedAt = activity.deletedAt;
+    return [normalized];
+  }).sort((a, b) => a.startedAt.localeCompare(b.startedAt)).slice(-500) : undefined;
+  return { dueDate, updatedAt, deleted, activities };
 }
 
 function migrateSingleState(value: unknown): AppState {
@@ -83,7 +93,7 @@ function migrateSingleState(value: unknown): AppState {
   return {
     ...initial,
     ...candidate,
-    schemaVersion: 7,
+    schemaVersion: 8,
     pregnancyProfile: migratePregnancyProfile(candidate.pregnancyProfile),
     onboardingComplete: candidate.onboardingComplete ?? true,
     baby: {

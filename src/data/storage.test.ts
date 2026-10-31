@@ -12,7 +12,7 @@ test("legacy state receives schema two defaults without losing events", () => {
     events: [{ id: "e", kind: "note", startedAt: "2026-10-26T10:00:00Z", caregiver: "Baba", note: "İyi" }],
     sleepPlan: { method: "responsive", startDate: "2026-10-26", day: 3, bedtime: "20:00", wakeTime: "07:00", routine: [], completedToday: [] }
   });
-  assert.equal(migrated.schemaVersion, 7);
+  assert.equal(migrated.schemaVersion, 8);
   assert.equal(migrated.onboardingComplete, true);
   assert.equal(migrated.preferences.milkExpiryReminderLead, "adaptive");
   assert.equal(migrated.events.length, 1);

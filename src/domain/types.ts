@@ -189,14 +189,25 @@ export type SyncTombstones = {
   caregiverIds: string[];
 };
 
+export type PregnancyActivity = {
+  id: string;
+  kind: "movement" | "contraction";
+  startedAt: string;
+  endedAt?: string;
+  movementCount?: number;
+  updatedAt: string;
+  deletedAt?: string;
+};
+
 export type PregnancyProfile = {
   dueDate?: string;
   updatedAt: string;
   deleted: boolean;
+  activities?: PregnancyActivity[];
 };
 
 export type AppState = {
-  schemaVersion: 7;
+  schemaVersion: 8;
   onboardingComplete: boolean;
   baby: Baby;
   caregiverName: string;

@@ -86,6 +86,10 @@ function isNightWakeLog(value: unknown) {
     ["feeding", "comfort", "diaper", "other"].includes(String(value.response)) && typeof value.caregiver === "string";
 }
 
+function isPregnancyActivity(value: unknown): boolean {
+  return isRecord(value) && typeof value.id === "string" && value.id.length > 0 && value.id.length <= 128 && ["movement", "contraction"].includes(String(value.kind)) && isDateString(value.startedAt) && isDateString(value.updatedAt) && (value.endedAt === undefined || isDateString(value.endedAt)) && (value.deletedAt === undefined || isDateString(value.deletedAt)) && (value.movementCount === undefined || Number.isInteger(value.movementCount) && Number(value.movementCount) >= 0 && Number(value.movementCount) <= 100_000) && (value.kind !== "movement" || Number.isInteger(value.movementCount));
+}
+
 function isSleepDayContext(value: unknown) {
   return ["illness", "travel", "teething", "routineChange"].includes(String(value));
 }
@@ -105,13 +109,13 @@ export function parseDataExport(raw: string): AppState {
   } catch {
     throw new Error("Metin geçerli bir JSON yedeği değil.");
   }
-  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4, 5, 6, 7].includes(Number(parsed.schemaVersion))) {
+  if (!isRecord(parsed) || parsed.format !== "uykuva-export" || ![3, 4, 5, 6, 7, 8].includes(Number(parsed.schemaVersion))) {
     throw new Error("Bu dosya Uykuva'nın desteklenen yedek biçiminde değil.");
   }
   if (parsed.syncTombstones !== undefined && !isSyncTombstones(parsed.syncTombstones)) {
     throw new Error("Yedekteki eşitleme silme kayıtları geçersiz.");
   }
-  if (parsed.pregnancyProfile !== undefined && (!isRecord(parsed.pregnancyProfile) || typeof parsed.pregnancyProfile.updatedAt !== "string" || !isDateString(parsed.pregnancyProfile.updatedAt) || typeof parsed.pregnancyProfile.deleted !== "boolean" || (parsed.pregnancyProfile.deleted !== true && (typeof parsed.pregnancyProfile.dueDate !== "string" || !isDateOnly(parsed.pregnancyProfile.dueDate))) || (parsed.pregnancyProfile.dueDate !== undefined && (typeof parsed.pregnancyProfile.dueDate !== "string" || !isDateOnly(parsed.pregnancyProfile.dueDate))))) {
+  if (parsed.pregnancyProfile !== undefined && (!isRecord(parsed.pregnancyProfile) || typeof parsed.pregnancyProfile.updatedAt !== "string" || !isDateString(parsed.pregnancyProfile.updatedAt) || typeof parsed.pregnancyProfile.deleted !== "boolean" || (parsed.pregnancyProfile.deleted !== true && (typeof parsed.pregnancyProfile.dueDate !== "string" || !isDateOnly(parsed.pregnancyProfile.dueDate))) || (parsed.pregnancyProfile.dueDate !== undefined && (typeof parsed.pregnancyProfile.dueDate !== "string" || !isDateOnly(parsed.pregnancyProfile.dueDate))) || (parsed.pregnancyProfile.activities !== undefined && (!Array.isArray(parsed.pregnancyProfile.activities) || parsed.pregnancyProfile.activities.length > 500 || !parsed.pregnancyProfile.activities.every(isPregnancyActivity))))) {
     throw new Error("Invalid pregnancy profile in backup.");
   }
   if (!isRecord(parsed.baby) || typeof parsed.baby.id !== "string" || typeof parsed.baby.name !== "string" || !parsed.baby.name.trim() || typeof parsed.baby.birthDate !== "string" || !isDateOnly(parsed.baby.birthDate) || typeof parsed.baby.gestationalWeek !== "number" || !Number.isInteger(parsed.baby.gestationalWeek) || parsed.baby.gestationalWeek < 22 || parsed.baby.gestationalWeek > 42) {
@@ -366,7 +370,13 @@ function mergeSingleDataState(current: AppState, incoming: AppState): AppState {
 function mergePregnancyProfile(current: AppState["pregnancyProfile"], incoming: AppState["pregnancyProfile"]): AppState["pregnancyProfile"] {
   if (!current) return incoming;
   if (!incoming) return current;
-  return new Date(incoming.updatedAt).getTime() > new Date(current.updatedAt).getTime() ? incoming : current;
+  const winner = new Date(incoming.updatedAt).getTime() > new Date(current.updatedAt).getTime() ? incoming : current;
+  const activities = new Map((current.activities ?? []).map((item) => [item.id, item]));
+  for (const activity of incoming.activities ?? []) {
+    const previous = activities.get(activity.id);
+    if (!previous || new Date(activity.updatedAt).getTime() > new Date(previous.updatedAt).getTime()) activities.set(activity.id, activity);
+  }
+  return { ...winner, activities: [...activities.values()].sort((a, b) => a.startedAt.localeCompare(b.startedAt)).slice(-500) };
 }
 
 function childProfileFor(state: AppState): AppState["children"][number] {

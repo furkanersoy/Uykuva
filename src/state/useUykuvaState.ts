@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type SetStateAction } from "react";
 import { Directory, File, Paths } from "expo-file-system";
-import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, ChildProfile, DevelopmentAnswer, EventKind, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
+import { AppPreferences, AppState, Baby, CareEvent, CareTask, Caregiver, ChildProfile, DevelopmentAnswer, EventKind, PregnancyActivity, SleepCheckIn, SleepFocus, SleepMethod } from "../domain/types";
 import { deleteChildWorkspace, saveActiveChild, selectChildWorkspace } from "../domain/children";
 import { createInitialState } from "../data/seed";
 import { loadState, resetState, saveState } from "../data/storage";
@@ -112,14 +112,36 @@ export function useUykuvaState() {
   }, []);
 
   const updatePregnancyProfile = useCallback((dueDate: string | null) => {
-    setState((current) => ({
-      ...current,
-      pregnancyProfile: {
-        dueDate: dueDate ?? current.pregnancyProfile?.dueDate,
-        updatedAt: new Date().toISOString(),
-        deleted: dueDate === null
-      }
-    }));
+    setState((current) => {
+      const updatedAt = new Date().toISOString();
+      const activities = current.pregnancyProfile?.activities?.map((activity) => dueDate === null
+        ? { ...activity, deletedAt: updatedAt, updatedAt }
+        : activity);
+      return {
+        ...current,
+        pregnancyProfile: { dueDate: dueDate ?? current.pregnancyProfile?.dueDate, updatedAt, deleted: dueDate === null, activities }
+      };
+    });
+  }, []);
+
+  const updatePregnancyActivity = useCallback((activity: PregnancyActivity) => {
+    setState((current) => {
+      const profile = current.pregnancyProfile;
+      if (!profile || profile.deleted) return current;
+      const rows = new Map((profile.activities ?? []).map((item) => [item.id, item]));
+      const previous = rows.get(activity.id);
+      rows.set(activity.id, previous && new Date(previous.updatedAt).getTime() > new Date(activity.updatedAt).getTime() ? previous : activity);
+      return { ...current, pregnancyProfile: { ...profile, updatedAt: activity.updatedAt, activities: [...rows.values()].sort((a, b) => a.startedAt.localeCompare(b.startedAt)).slice(-500) } };
+    });
+  }, []);
+
+  const deletePregnancyActivity = useCallback((activityId: string) => {
+    setState((current) => {
+      const profile = current.pregnancyProfile;
+      if (!profile || profile.deleted || !profile.activities?.some((item) => item.id === activityId)) return current;
+      const updatedAt = new Date().toISOString();
+      return { ...current, pregnancyProfile: { ...profile, updatedAt, activities: profile.activities.map((item) => item.id === activityId ? { ...item, deletedAt: updatedAt, updatedAt } : item) } };
+    });
   }, []);
 
   const addCaregiver = useCallback((caregiver: Omit<Caregiver, "id">) => {
@@ -482,6 +504,8 @@ export function useUykuvaState() {
     deleteChild,
     updateCareInstructions,
     updatePregnancyProfile,
+    updatePregnancyActivity,
+    deletePregnancyActivity,
     addCaregiver,
     setActiveCaregiver,
     deleteCaregiver,

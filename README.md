@@ -26,6 +26,7 @@ Ses tanıma gibi yerel Android/iOS modülü ekleyen değişikliklerden sonra em�
 ## Mevcut özellikler
 
 - Aile ekranında isteğe bağlı tahmini doğum tarihi ve girilen tarihten yaklaşık gebelik haftası/günü takibi; hekim tarihlendirmesinin öncelikli olduğunu açıkça belirtir
+- Gebelik takibinde isteğe bağlı bebek hareketi sayacı ve kasılma başlangıç/bitiş zamanlayıcısı; yalnızca ham kayıt tutar, sayı eşiği veya tıbbi yorum üretmez
 - Uyku koçluğu görevleri işaretlendiğinde aktif bakım verenin adını görev altında gösterme; bakım devri paylaşımında tamamlanan adımları işaretleyen kişiyi görevle birlikte belirtme ve aile cihazları arasında en yeni işaretleme/geri alma durumunu eşitleme
 - İsteğe bağlı aile hesabıyla farklı telefonlardan el ile eşitleme hazırlığı: hesap ve davet akışı, çakışma denetimli revizyon, SecureStore'da saklanan oturum/aile anahtarı ve sunucuya çıkmadan önce cihazda AES-GCM şifreleme. Eşitleme varsayılan olarak kapalıdır; sunucu adresi ve anahtarı olmadan yerel uygulama çalışmaya devam eder.
 
