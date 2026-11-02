@@ -82,6 +82,20 @@ const tabs: { id: Tab; label: string; glyph: string }[] = [
   { id: "family", label: "Aile", glyph: "♧" }
 ];
 
+const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL?.trim() ?? "";
+
+async function openPrivacyPolicy() {
+  if (!privacyPolicyUrl.startsWith("https://")) {
+    Alert.alert("Gizlilik politikası bağlantısı eklenmedi", "Yayın öncesinde herkese açık HTTPS gizlilik politikası adresi uygulama yapılandırmasına eklenmelidir.");
+    return;
+  }
+  try {
+    await Linking.openURL(privacyPolicyUrl);
+  } catch {
+    Alert.alert("Bağlantı açılamadı", "Gizlilik politikası adresini daha sonra yeniden deneyin.");
+  }
+}
+
 const memoryPrompts = ["İlk gülüş", "İlk yuvarlanma", "İlk katı gıda", "İlk diş", "İlk kelime", "İlk adım"];
 const sleepFocusOptions: { id: SleepFocus; label: string }[] = [
   { id: "bedtime", label: "Yatma zamanı" },
@@ -609,7 +623,7 @@ function OnboardingScreen({ onComplete }: { onComplete: ReturnType<typeof useUyk
           <Text style={styles.onboardingBrand}>uykuva</Text>
           <Text style={styles.onboardingTitle}>Bebeğinizin ritmi, herkesin elinde.</Text>
           <Text style={styles.onboardingBody}>Uyku, beslenme ve günlük bakım kayıtlarını sakin bir akışta tutun. Tüm özellikler ücretsiz.</Text>
-          <View style={styles.onboardingBottom}><PrimaryButton label="Başlayalım" onPress={() => setStep("profile")} /><Text style={styles.privacyLine}>Verileriniz şimdilik yalnızca bu cihazda saklanır.</Text></View>
+          <View style={styles.onboardingBottom}><PrimaryButton label="Başlayalım" onPress={() => setStep("profile")} /><Text style={styles.privacyLine}>Verileriniz şimdilik yalnızca bu cihazda saklanır.</Text><Pressable accessibilityRole="link" accessibilityLabel="Uykuva gizlilik politikasını aç" onPress={() => void openPrivacyPolicy()}><Text style={styles.privacyLink}>Gizlilik politikasını okuyun</Text></Pressable></View>
         </View>
       </SafeAreaView>
     );
@@ -2092,18 +2106,6 @@ function FamilyScreen({ app, onEditProfile, onAddCaregiver, onAddChild, onRestor
       Alert.alert("Şifreli yedek oluşturulamadı", error instanceof Error ? error.message : "Daha sonra yeniden deneyin.");
     }
   };
-  const privacyPolicyUrl = process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL?.trim() ?? "";
-  const openPrivacyPolicy = async () => {
-    if (!privacyPolicyUrl.startsWith("https://")) {
-      Alert.alert("Gizlilik politikası bağlantısı eklenmedi", "Yayın öncesinde herkese açık HTTPS gizlilik politikası adresi uygulama yapılandırmasına eklenmelidir.");
-      return;
-    }
-    try {
-      await Linking.openURL(privacyPolicyUrl);
-    } catch {
-      Alert.alert("Bağlantı açılamadı", "Gizlilik politikası adresini daha sonra yeniden deneyin.");
-    }
-  };
   const confirmDelete = () => Alert.alert(
     "Tüm cihaz verileri silinsin mi?",
     "Bebek profili, bakım kayıtları, uyku planı ve Uykuva'nın oluşturduğu yedek dosyaları bu cihazdan silinir. Planlı hatırlatmalar da kaldırılır.",
@@ -2968,6 +2970,7 @@ const styles = StyleSheet.create({
   onboardingBody: { color: colors.inkSoft, fontSize: 16, lineHeight: 25, marginTop: 16 },
   onboardingBottom: { marginTop: "auto", paddingBottom: 28 },
   privacyLine: { color: colors.inkSoft, fontSize: 11, textAlign: "center", marginTop: 13 },
+  privacyLink: { color: colors.sageDark, fontSize: 12, fontWeight: "700", textAlign: "center", marginTop: 6 },
   formPage: { paddingHorizontal: 22, paddingTop: 28, paddingBottom: 40 },
   shell: { flex: 1, backgroundColor: colors.paper },
   header: { height: 72, paddingHorizontal: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
