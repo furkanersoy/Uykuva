@@ -41,7 +41,7 @@ Bu belge 2 Kasım 2026 itibarıyla proje içindeki yapılandırmayı ve yayın �
 
 - [ ] Destek/gizlilik iletişim e-postasını belirle.
 - [ ] `PRIVACY_POLICY_DRAFT.md` içeriğini gerçek veri akışlarıyla hukuk/gizlilik incelemesinden geçir, e-posta ve herkese açık HTTPS adresini ekle.
-- [x] Aile ve bakım ekranına gizlilik/veri kullanımı açıklaması eklendi; yayın URL'si olmadığında eksiklik uygulamada açıkça gösterilir.
+- [x] Gizlilik politikası bağlantısı onboarding ekranından ve Aile ve bakım ayarlarından erişilebilir; herkese açık HTTPS adresi `EXPO_PUBLIC_PRIVACY_POLICY_URL` ile ayarlanır. Adres eklenmediğinde uygulama bağlantının eksik olduğunu bildirir.
 - [ ] `EXPO_PUBLIC_PRIVACY_POLICY_URL` değerini herkese açık HTTPS politika adresiyle ayarla; uygulamadaki bağlantı ile mağaza formlarındaki URL aynı olmalı.
 - [ ] Uygulama sağlık/çocuk bakımına ilişkin içerik ve veri işlediğinden Play Console sağlık uygulaması beyanını tamamla; uygulamanın teşhis/tedavi vermediğini ve mağaza beyanlarını doğru anlat.
 - [ ] Play Data safety ve Apple App Privacy formlarını her SDK/servis dahil gerçek ağ trafiğine göre doldur.
